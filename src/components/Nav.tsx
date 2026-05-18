@@ -19,6 +19,11 @@ export function Nav() {
   const [scrolled, setScrolled] = useState(false);
   const [catOpen, setCatOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerClosing, setDrawerClosing] = useState(false);
+  const closeDrawer = () => {
+    setDrawerClosing(true);
+    window.setTimeout(() => { setDrawerOpen(false); setDrawerClosing(false); }, 360);
+  };
   const [searchOpen, setSearchOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -39,7 +44,7 @@ export function Nav() {
 
   useEffect(() => {
     if (!drawerOpen) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setDrawerOpen(false); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") closeDrawer(); };
     window.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
     return () => { window.removeEventListener("keydown", onKey); document.body.style.overflow = ""; };
@@ -154,7 +159,7 @@ export function Nav() {
 
       {/* Mobile + tablet slide-in drawer */}
       {drawerOpen && (
-        <div className="fixed inset-0 z-[60] xl:hidden" onClick={() => setDrawerOpen(false)}>
+        <div className={`fixed inset-0 z-[60] xl:hidden ${drawerClosing ? "drawer-closing" : ""}`} onClick={closeDrawer}>
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm drawer-scrim" />
           <aside
             className="drawer-panel absolute right-0 top-0 bottom-0 w-[88%] max-w-md overflow-y-auto"
@@ -166,7 +171,7 @@ export function Nav() {
             <div className="drawer-stagger drawer-stagger-1 flex items-center justify-between mb-5 relative z-10">
               <img src={logo} alt="Plugin Warehouse" className="h-10 w-auto" />
               <button
-                onClick={() => setDrawerOpen(false)}
+                onClick={closeDrawer}
                 aria-label="Close"
                 className="drawer-close-pill"
               >
@@ -196,7 +201,7 @@ export function Nav() {
                       key={c.slug}
                       to="/shop/$category"
                       params={{ category: c.slug }}
-                      onClick={() => setDrawerOpen(false)}
+                      onClick={closeDrawer}
                       className="drawer-item"
                     >
                       <Icon className="drawer-item-icon" strokeWidth={1.4} />
@@ -217,7 +222,7 @@ export function Nav() {
                 <Link
                   to="/sale/$slug"
                   params={{ slug: "summer-steals" }}
-                  onClick={() => setDrawerOpen(false)}
+                  onClick={closeDrawer}
                   className="drawer-item"
                 >
                   <span className="drawer-item-label text-red">DEALS</span>
@@ -225,7 +230,7 @@ export function Nav() {
                 <Link
                   to="/shop"
                   search={{ sort: "fresh" } as any}
-                  onClick={() => setDrawerOpen(false)}
+                  onClick={closeDrawer}
                   className="drawer-item"
                 >
                   <span className="drawer-item-label">NEW</span>
@@ -239,16 +244,16 @@ export function Nav() {
             <div className="drawer-stagger drawer-stagger-5 relative z-10 pb-6">
               <div className="drawer-section-label">You</div>
               <nav className="flex flex-col">
-                <Link to="/account" onClick={() => setDrawerOpen(false)} className="drawer-item">
+                <Link to="/account" onClick={closeDrawer} className="drawer-item">
                   <User className="drawer-item-icon" strokeWidth={1.4} />
                   <span className="drawer-item-label">Account</span>
                 </Link>
-                <Link to="/account/saved" onClick={() => setDrawerOpen(false)} className="drawer-item">
+                <Link to="/account/saved" onClick={closeDrawer} className="drawer-item">
                   <Heart className="drawer-item-icon" strokeWidth={1.4} />
                   <span className="drawer-item-label">Wishlist</span>
                 </Link>
                 <button
-                  onClick={() => { setDrawerOpen(false); actions.openCart(); }}
+                  onClick={() => { closeDrawer(); actions.openCart(); }}
                   className="drawer-item w-full text-left"
                 >
                   <ShoppingCart className="drawer-item-icon" strokeWidth={1.4} />
