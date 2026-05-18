@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Search, Crate } from "lucide-react";
+import { Search } from "lucide-react";
 import { GlassCard } from "@/components/GlassCard";
 import { library as defaultLibrary, getLibProduct, formatDate, type LibraryItem } from "@/lib/account-data";
 
