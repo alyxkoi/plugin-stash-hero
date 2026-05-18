@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Search, ChevronDown, ExternalLink, X } from "lucide-react";
+import { Search, ChevronDown, ExternalLink } from "lucide-react";
 import { GlassCard } from "@/components/GlassCard";
 import { orders, getLibProduct, formatDate, totalSpent, type Order } from "@/lib/account-data";
 
@@ -9,21 +9,11 @@ export const Route = createFileRoute("/account/orders")({
   component: OrdersPage,
 });
 
-type SortKey = "MOST RECENT" | "OLDEST" | "HIGHEST TOTAL" | "LOWEST TOTAL";
-type RangeKey = "ALL TIME" | "THIS YEAR" | "LAST YEAR" | "LAST 30 DAYS";
-
 function OrdersPage() {
   const [query, setQuery] = useState("");
-  const [sort, setSort] = useState<SortKey>("MOST RECENT");
-  const [range, setRange] = useState<RangeKey>("ALL TIME");
 
   const filtered = useMemo(() => {
-    const now = new Date();
     return orders.filter(o => {
-      const d = new Date(o.date);
-      if (range === "THIS YEAR" && d.getFullYear() !== now.getFullYear()) return false;
-      if (range === "LAST YEAR" && d.getFullYear() !== now.getFullYear() - 1) return false;
-      if (range === "LAST 30 DAYS" && (now.getTime() - d.getTime()) > 30 * 86400000) return false;
       if (query) {
         const q = query.toLowerCase();
         const inId = o.id.toLowerCase().includes(q);
@@ -31,13 +21,8 @@ function OrdersPage() {
         if (!inId && !inItems) return false;
       }
       return true;
-    }).sort((a, b) => {
-      if (sort === "OLDEST") return a.date.localeCompare(b.date);
-      if (sort === "HIGHEST TOTAL") return b.total - a.total;
-      if (sort === "LOWEST TOTAL") return a.total - b.total;
-      return b.date.localeCompare(a.date);
-    });
-  }, [query, sort, range]);
+    }).sort((a, b) => b.date.localeCompare(a.date));
+  }, [query]);
 
   const byYear = useMemo(() => {
     const map = new Map<number, Order[]>();
@@ -49,51 +34,27 @@ function OrdersPage() {
     return Array.from(map.entries()).sort((a, b) => b[0] - a[0]);
   }, [filtered]);
 
-  const activeFilters = [
-    range !== "ALL TIME" && { label: range, clear: () => setRange("ALL TIME") },
-    sort !== "MOST RECENT" && { label: `SORT: ${sort}`, clear: () => setSort("MOST RECENT") },
-  ].filter(Boolean) as { label: string; clear: () => void }[];
-
   return (
     <div className="space-y-8">
       <header>
-        <div className="font-mono text-xs tracking-[0.18em] text-[var(--accent-red-glow)] mb-3">// EVERY ORDER YOU'VE EVER MADE</div>
-        <h1 className="font-black text-[clamp(2.25rem,5vw,4rem)] leading-[0.95] tracking-tight chrome-text">YOUR ORDERS</h1>
-        <div className="mt-4 font-mono text-[11px] tracking-[0.14em] text-white/55 flex flex-wrap gap-3">
+        <h1 className="font-display text-[clamp(2.25rem,5vw,4rem)] leading-[0.95] tracking-tight">YOUR ORDERS</h1>
+        <div className="mt-4 label-mini flex flex-wrap gap-3">
           <span>{orders.length} ORDERS</span><span className="text-white/25">·</span>
           <span>${totalSpent} TOTAL</span><span className="text-white/25">·</span>
-          <span>LAST ORDER {formatDate(orders[0].date).toUpperCase()}</span>
+          <span>LAST ORDER {formatDate(orders[0].date)}</span>
         </div>
       </header>
 
-      <div className="flex flex-col md:flex-row gap-3 sticky top-24 z-30 -mx-2 px-2 py-2">
-        <div className="relative flex-1">
-          <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Find an order or plugin in your history" className="input-glass !pl-11 !rounded-full" />
-        </div>
-        <select value={range} onChange={(e) => setRange(e.target.value as RangeKey)} className="input-glass !rounded-full md:w-44 font-mono text-xs tracking-wider cursor-pointer">
-          <option>ALL TIME</option><option>THIS YEAR</option><option>LAST YEAR</option><option>LAST 30 DAYS</option>
-        </select>
-        <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className="input-glass !rounded-full md:w-52 font-mono text-xs tracking-wider cursor-pointer">
-          <option>MOST RECENT</option><option>OLDEST</option><option>HIGHEST TOTAL</option><option>LOWEST TOTAL</option>
-        </select>
+      <div className="relative">
+        <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
+        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Find an order or plugin in your history" className="input-glass !pl-11 !rounded-full" />
       </div>
-
-      {activeFilters.length > 0 && (
-        <div className="flex flex-wrap gap-2 -mt-4">
-          {activeFilters.map(f => (
-            <button key={f.label} onClick={f.clear} className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/15 bg-white/[0.04] text-xs font-mono tracking-wider hover:border-white/40">
-              {f.label} <X className="w-3 h-3" />
-            </button>
-          ))}
-        </div>
-      )}
 
       {byYear.length === 0 ? (
         <GlassCard className="p-12 text-center">
           <div className="opacity-30 mb-6 mx-auto w-24 h-24 flex items-center justify-center text-6xl">▢</div>
-          <h2 className="font-black text-3xl tracking-tight mb-2">NO ORDERS YET. TIME TO CHANGE THAT.</h2>
-          <p className="text-white/65 mb-8">Your DAW won't load itself.</p>
+          <h2 className="font-display text-3xl tracking-wide mb-2">NO ORDERS YET. TIME TO CHANGE THAT.</h2>
+          <p className="text-white/70 mb-8">Your DAW won't load itself.</p>
           <Link to="/shop" className="btn-primary">BROWSE THE WAREHOUSE →</Link>
         </GlassCard>
       ) : (
@@ -102,9 +63,9 @@ function OrdersPage() {
           return (
             <section key={year}>
               <div className="flex items-end gap-4 mb-5">
-                <h2 className="font-mono text-2xl font-bold chrome-text">{year}</h2>
-                <div className="flex-1 h-px bg-gradient-to-r from-white/30 to-transparent mb-2" />
-                <div className="font-mono text-[11px] tracking-[0.14em] text-white/55">{orders.length} ORDERS · ${spent} SPENT</div>
+                <h2 className="font-display text-3xl">{year}</h2>
+                <div className="flex-1 h-px bg-gradient-to-r from-white/20 to-transparent mb-2" />
+                <div className="label-mini">{orders.length} ORDERS · ${spent} SPENT</div>
               </div>
               <div className="space-y-4">
                 {orders.map(o => <OrderCard key={o.id} order={o} />)}
@@ -116,6 +77,7 @@ function OrdersPage() {
     </div>
   );
 }
+
 
 export function OrderCard({ order, defaultOpen = false }: { order: Order; defaultOpen?: boolean }) {
   const [open, setOpen] = useState(defaultOpen);
