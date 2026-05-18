@@ -102,7 +102,7 @@ export function OrderCard({ order, defaultOpen = false }: { order: Order; defaul
             </div>
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-mono text-[11px] tracking-[0.14em] text-[var(--accent-red-glow)] mb-2">// ORDER #{order.id}</div>
+            <div className="label-mini mb-2">Order #{order.id}</div>
             <div className="flex items-center mb-2">
               {itemsWithProduct.slice(0, 4).map((it, i) => (
                 <div key={it.slug} className="w-9 h-9 rounded-lg border border-white/20 -ml-3 first:ml-0 shadow-md" style={{ background: it.product.coverGradient, zIndex: 10 - i }} />
