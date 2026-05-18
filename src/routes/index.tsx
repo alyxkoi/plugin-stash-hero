@@ -3,7 +3,8 @@ import { useEffect, useRef } from "react";
 import { ProductCard } from "@/components/ProductCard";
 import { GlassCard } from "@/components/GlassCard";
 import { SectionTitle, FadeIn } from "@/components/SectionTitle";
-import { featuredProducts, newProducts, categories, SALE, products } from "@/lib/mock-data";
+import { Zap, Infinity as InfinityIcon, Plug } from "lucide-react";
+import { bestsellerProducts, recentProducts, categories, SALE, products } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/")({
   head: () => ({
