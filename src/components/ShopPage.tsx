@@ -25,7 +25,6 @@ export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageP
     let r: Product[] = [...ALL];
     if (selectedCats.length) r = r.filter((p) => selectedCats.includes(p.category));
     if (query) r = r.filter((p) => p.name.toLowerCase().includes(query.toLowerCase()) || p.maker.toLowerCase().includes(query.toLowerCase()));
-    if (selectedDaws.length) r = r.filter((p) => p.daws.some((d) => selectedDaws.includes(d)));
     if (selectedFormats.length) r = r.filter((p) => p.formats.some((f) => selectedFormats.includes(f)));
     if (saleStatus === "sale") r = r.filter((p) => p.compareAtPrice && p.compareAtPrice > p.price);
     if (saleStatus === "free") r = r.filter((p) => p.isFree);
@@ -38,7 +37,7 @@ export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageP
       default: r.sort((a, b) => (b.isBestseller ? 1 : 0) - (a.isBestseller ? 1 : 0));
     }
     return r;
-  }, [query, selectedCats, selectedDaws, selectedFormats, saleStatus, sort]);
+  }, [query, selectedCats, selectedFormats, saleStatus, sort]);
 
   const togglePill = <T,>(list: T[], v: T, set: (l: T[]) => void) =>
     set(list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
