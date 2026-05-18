@@ -3,6 +3,8 @@ import { Search, ShoppingCart, User, Heart, ChevronDown } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useStore, actions } from "@/lib/store";
 import { categories } from "@/lib/mock-data";
+import logo from "@/assets/logo.png";
+
 
 export function Nav() {
   const cart = useStore((s) => s.cart);
