@@ -23,12 +23,12 @@ function Index() {
     <div>
       <Hero />
       <Ticker />
-      <Section title="LOADED & READY">
-        <Grid>{featuredProducts.map((p) => <ProductCard key={p.slug} product={p} />)}</Grid>
+      <Section title="ON ROTATION">
+        <Grid>{(bestsellerProducts.length >= 4 ? bestsellerProducts : recentProducts).slice(0, 4).map((p) => <ProductCard key={p.slug} product={p} />)}</Grid>
       </Section>
       <TuneIn />
-      <Section title="FRESH OFF THE TRUCK">
-        <Grid>{(newProducts.length >= 4 ? newProducts : products.slice(0, 4)).slice(0, 4).map((p) => <ProductCard key={p.slug} product={p} />)}</Grid>
+      <Section title="JUST DROPPED">
+        <Grid>{recentProducts.slice(0, 4).map((p) => <ProductCard key={p.slug} product={p} />)}</Grid>
       </Section>
       <PluginOfTheWeek />
       <Difference />
