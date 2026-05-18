@@ -154,7 +154,7 @@ function PasswordSection() {
       {!editing ? (
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           <button onClick={() => setEditing(true)} className="btn-ghost !text-xs">CHANGE PASSWORD →</button>
-          <div className="font-mono text-[11px] tracking-[0.14em] text-white/55">// LAST CHANGED {mockUser.passwordLastChanged.toUpperCase()}</div>
+          <div className="label-mini">Last changed {mockUser.passwordLastChanged}</div>
         </div>
       ) : (
         <div className="space-y-4 max-w-md">
