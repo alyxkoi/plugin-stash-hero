@@ -24,6 +24,7 @@ import { Route as AccountRouteImport } from './routes/account'
 import { Route as R404RouteImport } from './routes/404'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShopIndexRouteImport } from './routes/shop.index'
+import { Route as AccountIndexRouteImport } from './routes/account.index'
 import { Route as ShopCategoryRouteImport } from './routes/shop.$category'
 import { Route as SaleSlugRouteImport } from './routes/sale.$slug'
 import { Route as ShopPSlugRouteImport } from './routes/shop.p.$slug'
@@ -103,6 +104,11 @@ const ShopIndexRoute = ShopIndexRouteImport.update({
   path: '/shop/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountIndexRoute = AccountIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AccountRoute,
+} as any)
 const ShopCategoryRoute = ShopCategoryRouteImport.update({
   id: '/shop/$category',
   path: '/shop/$category',
@@ -122,7 +128,7 @@ const ShopPSlugRoute = ShopPSlugRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/404': typeof R404Route
-  '/account': typeof AccountRoute
+  '/account': typeof AccountRouteWithChildren
   '/contact-us': typeof ContactUsRoute
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -136,13 +142,13 @@ export interface FileRoutesByFullPath {
   '/terms-of-service': typeof TermsOfServiceRoute
   '/sale/$slug': typeof SaleSlugRoute
   '/shop/$category': typeof ShopCategoryRoute
+  '/account/': typeof AccountIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/shop/p/$slug': typeof ShopPSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/404': typeof R404Route
-  '/account': typeof AccountRoute
   '/contact-us': typeof ContactUsRoute
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -156,6 +162,7 @@ export interface FileRoutesByTo {
   '/terms-of-service': typeof TermsOfServiceRoute
   '/sale/$slug': typeof SaleSlugRoute
   '/shop/$category': typeof ShopCategoryRoute
+  '/account': typeof AccountIndexRoute
   '/shop': typeof ShopIndexRoute
   '/shop/p/$slug': typeof ShopPSlugRoute
 }
@@ -163,7 +170,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/404': typeof R404Route
-  '/account': typeof AccountRoute
+  '/account': typeof AccountRouteWithChildren
   '/contact-us': typeof ContactUsRoute
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -177,6 +184,7 @@ export interface FileRoutesById {
   '/terms-of-service': typeof TermsOfServiceRoute
   '/sale/$slug': typeof SaleSlugRoute
   '/shop/$category': typeof ShopCategoryRoute
+  '/account/': typeof AccountIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/shop/p/$slug': typeof ShopPSlugRoute
 }
@@ -199,13 +207,13 @@ export interface FileRouteTypes {
     | '/terms-of-service'
     | '/sale/$slug'
     | '/shop/$category'
+    | '/account/'
     | '/shop/'
     | '/shop/p/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/404'
-    | '/account'
     | '/contact-us'
     | '/faq'
     | '/forgot-password'
@@ -219,6 +227,7 @@ export interface FileRouteTypes {
     | '/terms-of-service'
     | '/sale/$slug'
     | '/shop/$category'
+    | '/account'
     | '/shop'
     | '/shop/p/$slug'
   id:
@@ -239,6 +248,7 @@ export interface FileRouteTypes {
     | '/terms-of-service'
     | '/sale/$slug'
     | '/shop/$category'
+    | '/account/'
     | '/shop/'
     | '/shop/p/$slug'
   fileRoutesById: FileRoutesById
@@ -246,7 +256,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   R404Route: typeof R404Route
-  AccountRoute: typeof AccountRoute
+  AccountRoute: typeof AccountRouteWithChildren
   ContactUsRoute: typeof ContactUsRoute
   FaqRoute: typeof FaqRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
@@ -371,6 +381,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShopIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/account/': {
+      id: '/account/'
+      path: '/'
+      fullPath: '/account/'
+      preLoaderRoute: typeof AccountIndexRouteImport
+      parentRoute: typeof AccountRoute
+    }
     '/shop/$category': {
       id: '/shop/$category'
       path: '/shop/$category'
@@ -395,10 +412,21 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AccountRouteChildren {
+  AccountIndexRoute: typeof AccountIndexRoute
+}
+
+const AccountRouteChildren: AccountRouteChildren = {
+  AccountIndexRoute: AccountIndexRoute,
+}
+
+const AccountRouteWithChildren =
+  AccountRoute._addFileChildren(AccountRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   R404Route: R404Route,
-  AccountRoute: AccountRoute,
+  AccountRoute: AccountRouteWithChildren,
   ContactUsRoute: ContactUsRoute,
   FaqRoute: FaqRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
