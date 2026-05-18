@@ -160,7 +160,7 @@ function Ticker() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="px-4 md:px-12 py-16 md:py-24">
-      <SectionTitle>{title}</SectionTitle>
+      <AuroraTitle>{title}</AuroraTitle>
       <FadeIn>{children}</FadeIn>
     </section>
   );
@@ -183,7 +183,7 @@ const TUNE_IN_BARS: { slug: string; name: string; count: number; bg: string }[] 
 function TuneIn() {
   return (
     <section className="py-16 md:py-24">
-      <SectionTitle>TUNE IN</SectionTitle>
+      <AuroraTitle>TUNE IN</AuroraTitle>
       <FadeIn>
         <div className="flex flex-col">
           {TUNE_IN_BARS.map((b) => <TuneInBar key={b.slug} {...b} />)}
@@ -245,7 +245,7 @@ function PluginOfTheWeek() {
   const featured = products.find(p => p.slug === "omnisphere") || products[0];
   return (
     <section className="px-4 md:px-12 py-16 md:py-24">
-      <SectionTitle>PLUGIN OF THE WEEK</SectionTitle>
+      <AuroraTitle>PLUGIN OF THE WEEK</AuroraTitle>
       <FadeIn>
         <div className="max-w-2xl mx-auto relative">
           <div className="spin-glow" />
@@ -289,7 +289,7 @@ function Difference() {
   ];
   return (
     <section className="px-4 md:px-12 py-16 md:py-24">
-      <SectionTitle>THE DIFFERENCE</SectionTitle>
+      <AuroraTitle>THE DIFFERENCE</AuroraTitle>
       <FadeIn>
         <div className="grid md:grid-cols-3 gap-6 md:gap-8">
           {items.map(({ t, d, Icon }) => (
