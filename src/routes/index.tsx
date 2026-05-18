@@ -310,7 +310,7 @@ function Newsletter() {
     <section className="px-4 md:px-12 py-16 md:py-24">
       <div className="max-w-2xl mx-auto">
         <GlassCard variant="heavy" className="p-10 md:p-14 text-center">
-          <h2 className="font-display text-4xl md:text-5xl mb-4">GET DROPS BEFORE THEY HIT.</h2>
+          <AuroraTitle as="h2" className="!mb-2">GET DROPS BEFORE THEY HIT.</AuroraTitle>
           <p className="text-white/70 mb-8">First in line on every drop. No spam, just heat.</p>
           <form className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto" onSubmit={(e) => e.preventDefault()}>
             <input type="email" placeholder="you@email.com" className="input-glass flex-1" required />
