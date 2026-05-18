@@ -10,33 +10,84 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ShopIndexRouteImport } from './routes/shop.index'
+import { Route as ShopCategoryRouteImport } from './routes/shop.$category'
+import { Route as SaleSlugRouteImport } from './routes/sale.$slug'
+import { Route as ShopPSlugRouteImport } from './routes/shop.p.$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ShopIndexRoute = ShopIndexRouteImport.update({
+  id: '/shop/',
+  path: '/shop/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShopCategoryRoute = ShopCategoryRouteImport.update({
+  id: '/shop/$category',
+  path: '/shop/$category',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SaleSlugRoute = SaleSlugRouteImport.update({
+  id: '/sale/$slug',
+  path: '/sale/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShopPSlugRoute = ShopPSlugRouteImport.update({
+  id: '/shop/p/$slug',
+  path: '/shop/p/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/sale/$slug': typeof SaleSlugRoute
+  '/shop/$category': typeof ShopCategoryRoute
+  '/shop/': typeof ShopIndexRoute
+  '/shop/p/$slug': typeof ShopPSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/sale/$slug': typeof SaleSlugRoute
+  '/shop/$category': typeof ShopCategoryRoute
+  '/shop': typeof ShopIndexRoute
+  '/shop/p/$slug': typeof ShopPSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/sale/$slug': typeof SaleSlugRoute
+  '/shop/$category': typeof ShopCategoryRoute
+  '/shop/': typeof ShopIndexRoute
+  '/shop/p/$slug': typeof ShopPSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/sale/$slug'
+    | '/shop/$category'
+    | '/shop/'
+    | '/shop/p/$slug'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/sale/$slug' | '/shop/$category' | '/shop' | '/shop/p/$slug'
+  id:
+    | '__root__'
+    | '/'
+    | '/sale/$slug'
+    | '/shop/$category'
+    | '/shop/'
+    | '/shop/p/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  SaleSlugRoute: typeof SaleSlugRoute
+  ShopCategoryRoute: typeof ShopCategoryRoute
+  ShopIndexRoute: typeof ShopIndexRoute
+  ShopPSlugRoute: typeof ShopPSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,12 +99,54 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/shop/': {
+      id: '/shop/'
+      path: '/shop'
+      fullPath: '/shop/'
+      preLoaderRoute: typeof ShopIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/shop/$category': {
+      id: '/shop/$category'
+      path: '/shop/$category'
+      fullPath: '/shop/$category'
+      preLoaderRoute: typeof ShopCategoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sale/$slug': {
+      id: '/sale/$slug'
+      path: '/sale/$slug'
+      fullPath: '/sale/$slug'
+      preLoaderRoute: typeof SaleSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/shop/p/$slug': {
+      id: '/shop/p/$slug'
+      path: '/shop/p/$slug'
+      fullPath: '/shop/p/$slug'
+      preLoaderRoute: typeof ShopPSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  SaleSlugRoute: SaleSlugRoute,
+  ShopCategoryRoute: ShopCategoryRoute,
+  ShopIndexRoute: ShopIndexRoute,
+  ShopPSlugRoute: ShopPSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
