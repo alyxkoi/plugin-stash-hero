@@ -29,15 +29,20 @@ export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageP
     if (saleStatus === "sale") r = r.filter((p) => p.compareAtPrice && p.compareAtPrice > p.price);
     if (saleStatus === "free") r = r.filter((p) => p.isFree);
 
-    switch (sort) {
-      case "fresh": r.sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0)); break;
-      case "low": r.sort((a, b) => a.price - b.price); break;
-      case "high": r.sort((a, b) => b.price - a.price); break;
-      case "sale": r.sort((a, b) => ((b.compareAtPrice || 0) - b.price) - ((a.compareAtPrice || 0) - a.price)); break;
-      default: r.sort((a, b) => (b.isBestseller ? 1 : 0) - (a.isBestseller ? 1 : 0));
+    if (priceSort === "low") {
+      r.sort((a, b) => a.price - b.price);
+    } else if (priceSort === "high") {
+      r.sort((a, b) => b.price - a.price);
+    } else {
+      // Default: newest first (by `updated` month/year).
+      r.sort((a, b) => {
+        const ta = Date.parse(`1 ${a.updated}`) || 0;
+        const tb = Date.parse(`1 ${b.updated}`) || 0;
+        return tb - ta;
+      });
     }
     return r;
-  }, [query, selectedCats, selectedFormats, saleStatus, sort]);
+  }, [query, selectedCats, selectedFormats, saleStatus, priceSort]);
 
   const togglePill = <T,>(list: T[], v: T, set: (l: T[]) => void) =>
     set(list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
