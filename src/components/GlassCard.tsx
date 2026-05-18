@@ -21,9 +21,9 @@ export const GlassCard = forwardRef<HTMLDivElement, GlassCardProps>(
         const rect = card.getBoundingClientRect();
         const x = (e.clientX - rect.left) / rect.width;
         const y = (e.clientY - rect.top) / rect.height;
-        const tiltX = (y - 0.5) * 6;
-        const tiltY = (x - 0.5) * -6;
-        card.style.transform = `perspective(1200px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) translateY(-4px)`;
+        const tiltX = (y - 0.5) * 2.5;
+        const tiltY = (x - 0.5) * -2.5;
+        card.style.transform = `perspective(1400px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) translateY(-3px)`;
         card.style.setProperty("--glare-peak", `${x * 100}%`);
       };
       const leave = () => {

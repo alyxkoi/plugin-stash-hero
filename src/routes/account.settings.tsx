@@ -22,20 +22,20 @@ function SettingsPage() {
   return (
     <div className="space-y-8">
       <header>
-        <div className="font-mono text-xs tracking-[0.18em] text-[var(--accent-red-glow)] mb-3">// ACCOUNT SETTINGS</div>
-        <h1 className="font-black text-[clamp(2.25rem,5vw,4rem)] leading-[0.95] tracking-tight chrome-text">SETTINGS</h1>
-        <p className="text-white/65 mt-3">Set it how you want.</p>
+        <h1 className="font-display text-[clamp(2.25rem,5vw,4rem)] leading-[0.95] tracking-tight">SETTINGS</h1>
+        <p className="text-white/70 mt-3">Set it how you want.</p>
       </header>
 
-      <div className="sticky top-24 z-30 -mx-2 px-2 py-2 overflow-x-auto no-scrollbar">
+      <div className="-mx-2 px-2 py-2 overflow-x-auto no-scrollbar">
         <div className="flex gap-2 min-w-max">
           {SECTIONS.map(s => (
-            <a key={s.id} href={`#${s.id}`} onClick={() => setActive(s.id)} className={`px-4 h-10 rounded-full border whitespace-nowrap flex items-center font-mono text-[11px] tracking-[0.12em] ${
-              active === s.id ? "bg-gradient-to-r from-[var(--accent-red)] to-[var(--accent-red-glow)] text-white border-white/20" : "bg-white/[0.03] border-white/10 text-white/65 hover:text-white"
+            <a key={s.id} href={`#${s.id}`} onClick={() => setActive(s.id)} className={`px-4 h-10 rounded-full border whitespace-nowrap flex items-center font-display text-[12px] tracking-wider ${
+              active === s.id ? "bg-gradient-to-r from-[var(--accent-red)] to-[var(--accent-red-glow)] text-white border-white/20" : "bg-white/[0.03] border-white/10 text-white/70 hover:text-white"
             }`}>{s.label}</a>
           ))}
         </div>
       </div>
+
 
       <ProfileSection />
       <AlertsSection />
@@ -95,7 +95,6 @@ function ProfileSection() {
 }
 
 const ALERT_TOGGLES = [
-  { key: "marketing", label: "Marketing emails", sub: "New drops, sales, and producer-only deals." },
   { key: "sales", label: "Sale alerts", sub: "Tell me when a sale goes live." },
   { key: "updates", label: "Update alerts", sub: "Email me when plugins I own get updated." },
   { key: "wishlist", label: "Wishlist alerts", sub: "Tell me when something in my Saved drops in price." },
@@ -155,7 +154,7 @@ function PasswordSection() {
       {!editing ? (
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           <button onClick={() => setEditing(true)} className="btn-ghost !text-xs">CHANGE PASSWORD →</button>
-          <div className="font-mono text-[11px] tracking-[0.14em] text-white/55">// LAST CHANGED {mockUser.passwordLastChanged.toUpperCase()}</div>
+          <div className="label-mini">Last changed {mockUser.passwordLastChanged}</div>
         </div>
       ) : (
         <div className="space-y-4 max-w-md">
@@ -217,8 +216,8 @@ function DataSection() {
         </div>
         <div className="py-5 flex flex-col md:flex-row md:items-center gap-4">
           <div className="flex-1">
-            <div className="font-bold text-[var(--accent-red-glow)]">Delete your account</div>
-            <div className="text-sm text-white/60">This is permanent. Your library and orders will be removed. Refunds remain processable for 30 days after deletion.</div>
+            <div className="font-display text-red text-lg tracking-wide">DELETE YOUR ACCOUNT</div>
+            <div className="text-sm text-white/70">This is permanent. Your library and orders will be anonymized.</div>
           </div>
           <button onClick={() => setConfirmOpen(true)} className="btn-ghost !text-xs border-[var(--accent-red)]/60 !text-[var(--accent-red-glow)]">DELETE ACCOUNT</button>
         </div>

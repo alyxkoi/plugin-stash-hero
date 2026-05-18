@@ -15,19 +15,16 @@ interface ShopPageProps {
 export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageProps) {
   const [query, setQuery] = useState("");
   const [selectedCats, setSelectedCats] = useState<Category[]>(category ? [category] : []);
-  const [selectedDaws, setSelectedDaws] = useState<string[]>([]);
   const [selectedFormats, setSelectedFormats] = useState<string[]>([]);
   const [saleStatus, setSaleStatus] = useState<"all" | "sale" | "free">(initialOnSale ? "sale" : "all");
   const [sort, setSort] = useState<"loaded" | "fresh" | "low" | "high" | "sale">("loaded");
 
-  const allDaws = ["Ableton", "FL Studio", "Logic", "Pro Tools", "Studio One", "Cubase", "Reaper"];
   const allFormats = ["VST", "VST3", "AU", "AAX", "Standalone"];
 
   const filtered = useMemo(() => {
     let r: Product[] = [...ALL];
     if (selectedCats.length) r = r.filter((p) => selectedCats.includes(p.category));
     if (query) r = r.filter((p) => p.name.toLowerCase().includes(query.toLowerCase()) || p.maker.toLowerCase().includes(query.toLowerCase()));
-    if (selectedDaws.length) r = r.filter((p) => p.daws.some((d) => selectedDaws.includes(d)));
     if (selectedFormats.length) r = r.filter((p) => p.formats.some((f) => selectedFormats.includes(f)));
     if (saleStatus === "sale") r = r.filter((p) => p.compareAtPrice && p.compareAtPrice > p.price);
     if (saleStatus === "free") r = r.filter((p) => p.isFree);
@@ -40,12 +37,11 @@ export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageP
       default: r.sort((a, b) => (b.isBestseller ? 1 : 0) - (a.isBestseller ? 1 : 0));
     }
     return r;
-  }, [query, selectedCats, selectedDaws, selectedFormats, saleStatus, sort]);
+  }, [query, selectedCats, selectedFormats, saleStatus, sort]);
 
   const togglePill = <T,>(list: T[], v: T, set: (l: T[]) => void) =>
     set(list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
 
-  const showDaws = !["daws", "software", "freebies"].includes(category || "");
   const showFormat = !["software", "freebies"].includes(category || "");
 
   return (
@@ -67,7 +63,7 @@ export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageP
           <GlassCard variant="subtle" className="p-5">
             <div className="flex items-center justify-between mb-4">
               <div className="font-black uppercase tracking-wider">FILTERS</div>
-              <button onClick={() => { setSelectedCats(category ? [category] : []); setSelectedDaws([]); setSelectedFormats([]); setSaleStatus("all"); setQuery(""); }} className="text-xs text-white/50 hover:text-white">CLEAR</button>
+              <button onClick={() => { setSelectedCats(category ? [category] : []); setSelectedFormats([]); setSaleStatus("all"); setQuery(""); }} className="text-xs text-white/50 hover:text-white">CLEAR</button>
             </div>
             <input className="input-glass mb-5" placeholder={`Search within ${category || "warehouse"}`} value={query} onChange={(e) => setQuery(e.target.value)} />
 
@@ -85,11 +81,6 @@ export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageP
               </FilterGroup>
             )}
 
-            {showDaws && (
-              <FilterGroup title="DAW Compatibility">
-                <PillGroup options={allDaws} selected={selectedDaws} onToggle={(v) => togglePill(selectedDaws, v, setSelectedDaws)} />
-              </FilterGroup>
-            )}
 
             {showFormat && (
               <FilterGroup title="Format">
@@ -126,7 +117,7 @@ export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageP
             <GlassCard className="p-12 text-center">
               <h3 className="font-black text-3xl mb-2">NOTHING IN THIS COMBO.</h3>
               <p className="text-white/60 mb-6">Loosen up the filters.</p>
-              <button onClick={() => { setSelectedDaws([]); setSelectedFormats([]); setSaleStatus("all"); setQuery(""); }} className="btn-ghost">CLEAR FILTERS</button>
+              <button onClick={() => { setSelectedFormats([]); setSaleStatus("all"); setQuery(""); }} className="btn-ghost">CLEAR FILTERS</button>
             </GlassCard>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8">

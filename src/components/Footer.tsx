@@ -35,10 +35,10 @@ export function Footer() {
           </div>
 
           <div className="mt-10 pt-6 border-t border-white/10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="font-mono text-xs uppercase tracking-[0.15em] text-[var(--accent-red-glow)]">
-              // PLUGIN PRICING HAS BEEN A SCAM. WE FIXED IT.
+            <div className="font-display text-sm uppercase tracking-[0.12em] text-red">
+              Plugin pricing has been a scam. We fixed it.
             </div>
-            <div className="font-mono text-xs text-white/40">© 2026 Plugin Warehouse</div>
+            <div className="font-mono text-xs text-white/40">© 2026 <span className="text-red">Plugin Warehouse</span></div>
           </div>
         </div>
       </div>
@@ -49,7 +49,7 @@ export function Footer() {
 function FooterCol({ title, links }: { title: string; links: { to: string; label: string }[] }) {
   return (
     <div>
-      <div className="font-mono text-xs tracking-[0.15em] text-white/40 mb-3">{title}</div>
+      <div className="label-mini mb-3">{title}</div>
       <ul className="space-y-2">
         {links.map((l) => (
           <li key={l.to}>
