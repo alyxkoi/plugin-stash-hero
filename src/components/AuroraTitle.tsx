@@ -38,10 +38,10 @@ export function AuroraTitle({ children, className = "", as: Tag = "h2", decorati
         <span className="aurora-blob aurora-blob--red" />
         <span className="aurora-blob aurora-blob--blue" />
       </div>
-      <div className="aurora-strip" aria-hidden>
-        <div className="aurora-strip-edge" />
-      </div>
-      <Tag className="aurora-title-text">{children}</Tag>
+      <Tag className="aurora-title-text">
+        <span className="aurora-strip-bg" aria-hidden />
+        <span className="aurora-title-inner">{children}</span>
+      </Tag>
       {decoration}
     </div>
   );
