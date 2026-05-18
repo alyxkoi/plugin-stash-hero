@@ -68,7 +68,7 @@ export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageP
           <GlassCard variant="subtle" className="p-5">
             <div className="flex items-center justify-between mb-4">
               <div className="font-black uppercase tracking-wider">FILTERS</div>
-              <button onClick={() => { setSelectedCats(category ? [category] : []); setSelectedFormats([]); setSaleStatus("all"); setQuery(""); }} className="text-xs text-white/50 hover:text-white">CLEAR</button>
+              <button onClick={() => { setSelectedCats(category ? [category] : []); setSelectedFormats([]); setSaleStatus("all"); setQuery(""); setPriceSort("none"); }} className="text-xs text-white/50 hover:text-white">CLEAR</button>
             </div>
             <input className="input-glass mb-5" placeholder={`Search within ${category || "warehouse"}`} value={query} onChange={(e) => setQuery(e.target.value)} />
 
@@ -102,6 +102,20 @@ export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageP
                 ))}
               </div>
             </FilterGroup>
+
+            <FilterGroup title="Sort by Price">
+              <div className="flex gap-1 p-1 rounded-full bg-white/5 border border-white/10">
+                {([
+                  { v: "none", l: "None" },
+                  { v: "low", l: "Low → High" },
+                  { v: "high", l: "High → Low" },
+                ] as const).map((opt) => (
+                  <button key={opt.v} onClick={() => setPriceSort(opt.v)} className={`flex-1 py-1.5 rounded-full text-[11px] font-bold uppercase transition ${priceSort === opt.v ? "bg-[var(--accent-red)] text-white" : "text-white/60"}`}>
+                    {opt.l}
+                  </button>
+                ))}
+              </div>
+            </FilterGroup>
           </GlassCard>
         </aside>
 
@@ -109,23 +123,16 @@ export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageP
         <div>
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
             <div className="font-mono text-sm text-white/60">{filtered.length} {filtered.length === 1 ? "PLUGIN" : "PLUGINS"}</div>
-            <select value={sort} onChange={(e) => setSort(e.target.value as any)} className="input-glass !py-2 !px-4 !w-auto !text-sm !font-mono">
-              <option value="loaded">MOST LOADED</option>
-              <option value="fresh">FRESH</option>
-              <option value="low">PRICE: LOW → HIGH</option>
-              <option value="high">PRICE: HIGH → LOW</option>
-              <option value="sale">ON SALE</option>
-            </select>
           </div>
 
           {filtered.length === 0 ? (
             <GlassCard className="p-12 text-center">
               <h3 className="font-black text-3xl mb-2">NOTHING IN THIS COMBO.</h3>
               <p className="text-white/60 mb-6">Loosen up the filters.</p>
-              <button onClick={() => { setSelectedFormats([]); setSaleStatus("all"); setQuery(""); }} className="btn-ghost">CLEAR FILTERS</button>
+              <button onClick={() => { setSelectedFormats([]); setSaleStatus("all"); setQuery(""); setPriceSort("none"); }} className="btn-ghost">CLEAR FILTERS</button>
             </GlassCard>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8">
+            <div className="grid grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
               {filtered.map((p) => <ProductCard key={p.slug} product={p} />)}
             </div>
           )}
