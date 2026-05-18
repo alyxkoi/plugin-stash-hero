@@ -162,13 +162,13 @@ export function Nav() {
         <div className={`fixed inset-0 z-[60] xl:hidden ${drawerClosing ? "drawer-closing" : ""}`} onClick={closeDrawer}>
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm drawer-scrim" />
           <aside
-            className="drawer-panel absolute right-0 top-0 bottom-0 w-[88%] max-w-md overflow-y-auto"
+            className="drawer-panel fixed right-0 top-0 bottom-0 w-[88%] max-w-md flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="drawer-top-glare" />
 
-            {/* Header row — logo + close */}
-            <div className="drawer-stagger drawer-stagger-1 flex items-center justify-between mb-5 relative z-10">
+            {/* Sticky header row — logo + close */}
+            <div className="drawer-header drawer-stagger drawer-stagger-1 flex items-center justify-between relative z-20">
               <img src={logo} alt="Plugin Warehouse" className="h-10 w-auto" />
               <button
                 onClick={closeDrawer}
@@ -179,88 +179,80 @@ export function Nav() {
               </button>
             </div>
 
-            {/* Search */}
-            <div className="drawer-stagger drawer-stagger-2 relative z-10 mb-6">
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/45" />
-                <input
-                  placeholder="What are you hunting?"
-                  className="input-glass !rounded-full !pl-11"
-                />
+            {/* Scrollable body */}
+            <div className="drawer-body relative z-10 flex-1 overflow-y-auto">
+              {/* CATEGORIES */}
+              <div className="drawer-stagger drawer-stagger-3">
+                <div className="drawer-section-label">Categories</div>
+                <nav className="flex flex-col">
+                  {categories.map((c) => {
+                    const Icon = catIcons[c.slug] ?? Piano;
+                    return (
+                      <Link
+                        key={c.slug}
+                        to="/shop/$category"
+                        params={{ category: c.slug }}
+                        onClick={closeDrawer}
+                        className="drawer-item"
+                      >
+                        <Icon className="drawer-item-icon" strokeWidth={1.4} />
+                        <span className="drawer-item-label">{c.name}</span>
+                        <span className="drawer-item-count">{c.count}</span>
+                      </Link>
+                    );
+                  })}
+                </nav>
               </div>
-            </div>
 
-            {/* CATEGORIES */}
-            <div className="drawer-stagger drawer-stagger-3 relative z-10">
-              <div className="drawer-section-label">Categories</div>
-              <nav className="flex flex-col">
-                {categories.map((c) => {
-                  const Icon = catIcons[c.slug] ?? Piano;
-                  return (
-                    <Link
-                      key={c.slug}
-                      to="/shop/$category"
-                      params={{ category: c.slug }}
-                      onClick={closeDrawer}
-                      className="drawer-item"
-                    >
-                      <Icon className="drawer-item-icon" strokeWidth={1.4} />
-                      <span className="drawer-item-label">{c.name}</span>
-                      <span className="drawer-item-count">{c.count}</span>
-                    </Link>
-                  );
-                })}
-              </nav>
-            </div>
+              <div className="drawer-divider" />
 
-            <div className="drawer-divider" />
+              {/* SHOP */}
+              <div className="drawer-stagger drawer-stagger-4">
+                <div className="drawer-section-label">Shop</div>
+                <nav className="flex flex-col">
+                  <Link
+                    to="/sale/$slug"
+                    params={{ slug: "summer-steals" }}
+                    onClick={closeDrawer}
+                    className="drawer-item"
+                  >
+                    <span className="drawer-item-label text-red">DEALS</span>
+                  </Link>
+                  <Link
+                    to="/shop"
+                    search={{ sort: "fresh" } as any}
+                    onClick={closeDrawer}
+                    className="drawer-item"
+                  >
+                    <span className="drawer-item-label">NEW</span>
+                  </Link>
+                </nav>
+              </div>
 
-            {/* SHOP */}
-            <div className="drawer-stagger drawer-stagger-4 relative z-10">
-              <div className="drawer-section-label">Shop</div>
-              <nav className="flex flex-col">
-                <Link
-                  to="/sale/$slug"
-                  params={{ slug: "summer-steals" }}
-                  onClick={closeDrawer}
-                  className="drawer-item"
-                >
-                  <span className="drawer-item-label text-red">DEALS</span>
-                </Link>
-                <Link
-                  to="/shop"
-                  search={{ sort: "fresh" } as any}
-                  onClick={closeDrawer}
-                  className="drawer-item"
-                >
-                  <span className="drawer-item-label">NEW</span>
-                </Link>
-              </nav>
-            </div>
+              <div className="drawer-divider" />
 
-            <div className="drawer-divider" />
-
-            {/* YOU */}
-            <div className="drawer-stagger drawer-stagger-5 relative z-10 pb-6">
-              <div className="drawer-section-label">You</div>
-              <nav className="flex flex-col">
-                <Link to="/account" onClick={closeDrawer} className="drawer-item">
-                  <User className="drawer-item-icon" strokeWidth={1.4} />
-                  <span className="drawer-item-label">Account</span>
-                </Link>
-                <Link to="/account/saved" onClick={closeDrawer} className="drawer-item">
-                  <Heart className="drawer-item-icon" strokeWidth={1.4} />
-                  <span className="drawer-item-label">Wishlist</span>
-                </Link>
-                <button
-                  onClick={() => { closeDrawer(); actions.openCart(); }}
-                  className="drawer-item w-full text-left"
-                >
-                  <ShoppingCart className="drawer-item-icon" strokeWidth={1.4} />
-                  <span className="drawer-item-label">Cart</span>
-                  {count > 0 && <span className="drawer-item-count text-red">{count}</span>}
-                </button>
-              </nav>
+              {/* YOU */}
+              <div className="drawer-stagger drawer-stagger-5 pb-6">
+                <div className="drawer-section-label">You</div>
+                <nav className="flex flex-col">
+                  <Link to="/account" onClick={closeDrawer} className="drawer-item">
+                    <User className="drawer-item-icon" strokeWidth={1.4} />
+                    <span className="drawer-item-label">Account</span>
+                  </Link>
+                  <Link to="/account/saved" onClick={closeDrawer} className="drawer-item">
+                    <Heart className="drawer-item-icon" strokeWidth={1.4} />
+                    <span className="drawer-item-label">Wishlist</span>
+                  </Link>
+                  <button
+                    onClick={() => { closeDrawer(); actions.openCart(); }}
+                    className="drawer-item w-full text-left"
+                  >
+                    <ShoppingCart className="drawer-item-icon" strokeWidth={1.4} />
+                    <span className="drawer-item-label">Cart</span>
+                    {count > 0 && <span className="drawer-item-count text-red">{count}</span>}
+                  </button>
+                </nav>
+              </div>
             </div>
           </aside>
         </div>
