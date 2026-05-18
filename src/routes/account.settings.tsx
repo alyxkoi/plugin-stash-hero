@@ -22,20 +22,20 @@ function SettingsPage() {
   return (
     <div className="space-y-8">
       <header>
-        <div className="font-mono text-xs tracking-[0.18em] text-[var(--accent-red-glow)] mb-3">// ACCOUNT SETTINGS</div>
-        <h1 className="font-black text-[clamp(2.25rem,5vw,4rem)] leading-[0.95] tracking-tight chrome-text">SETTINGS</h1>
-        <p className="text-white/65 mt-3">Set it how you want.</p>
+        <h1 className="font-display text-[clamp(2.25rem,5vw,4rem)] leading-[0.95] tracking-tight">SETTINGS</h1>
+        <p className="text-white/70 mt-3">Set it how you want.</p>
       </header>
 
-      <div className="sticky top-24 z-30 -mx-2 px-2 py-2 overflow-x-auto no-scrollbar">
+      <div className="-mx-2 px-2 py-2 overflow-x-auto no-scrollbar">
         <div className="flex gap-2 min-w-max">
           {SECTIONS.map(s => (
-            <a key={s.id} href={`#${s.id}`} onClick={() => setActive(s.id)} className={`px-4 h-10 rounded-full border whitespace-nowrap flex items-center font-mono text-[11px] tracking-[0.12em] ${
-              active === s.id ? "bg-gradient-to-r from-[var(--accent-red)] to-[var(--accent-red-glow)] text-white border-white/20" : "bg-white/[0.03] border-white/10 text-white/65 hover:text-white"
+            <a key={s.id} href={`#${s.id}`} onClick={() => setActive(s.id)} className={`px-4 h-10 rounded-full border whitespace-nowrap flex items-center font-display text-[12px] tracking-wider ${
+              active === s.id ? "bg-gradient-to-r from-[var(--accent-red)] to-[var(--accent-red-glow)] text-white border-white/20" : "bg-white/[0.03] border-white/10 text-white/70 hover:text-white"
             }`}>{s.label}</a>
           ))}
         </div>
       </div>
+
 
       <ProfileSection />
       <AlertsSection />
