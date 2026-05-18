@@ -8,24 +8,24 @@ interface Props {
 
 function useFadeIn<T extends HTMLElement>() {
   const ref = useRef<T>(null);
-  const [visible, setVisible] = useState(false);
+  // Default to visible so SSR + any IO failure still renders content.
+  const [visible, setVisible] = useState(true);
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduce) { setVisible(true); return; }
+    if (reduce) return;
 
-    // If already in viewport on mount, reveal immediately.
     const rect = el.getBoundingClientRect();
-    if (rect.top < window.innerHeight && rect.bottom > 0) {
-      setVisible(true);
-      return;
-    }
+    // If already on screen at mount, leave it visible (no animation needed).
+    if (rect.top < window.innerHeight && rect.bottom > 0) return;
 
+    // Below the fold: hide then fade in on scroll.
+    setVisible(false);
     const io = new IntersectionObserver(
       ([entry]) => { if (entry.isIntersecting) { setVisible(true); io.disconnect(); } },
-      { threshold: 0, rootMargin: "0px 0px -10% 0px" }
+      { threshold: 0, rootMargin: "0px 0px -5% 0px" }
     );
     io.observe(el);
     return () => io.disconnect();
