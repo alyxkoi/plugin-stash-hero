@@ -1,15 +1,24 @@
 import { Link } from "@tanstack/react-router";
-import { Search, ShoppingCart, User, Heart, ChevronDown, Menu, X } from "lucide-react";
+import { Search, ShoppingCart, User, Heart, ChevronDown, Menu, X, Piano, Waves, BookOpen, AudioLines, AppWindow, Gift } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useStore, actions } from "@/lib/store";
 import { categories } from "@/lib/mock-data";
 import logo from "@/assets/logo.png";
 
+const catIcons: Record<string, typeof Piano> = {
+  instruments: Piano,
+  effects: Waves,
+  libraries: BookOpen,
+  daws: AudioLines,
+  software: AppWindow,
+  freebies: Gift,
+};
+
 export function Nav() {
   const cart = useStore((s) => s.cart);
   const [scrolled, setScrolled] = useState(false);
   const [catOpen, setCatOpen] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -29,12 +38,12 @@ export function Nav() {
   }, [searchOpen]);
 
   useEffect(() => {
-    if (!mobileOpen) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setMobileOpen(false); };
+    if (!drawerOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setDrawerOpen(false); };
     window.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
     return () => { window.removeEventListener("keydown", onKey); document.body.style.overflow = ""; };
-  }, [mobileOpen]);
+  }, [drawerOpen]);
 
   const count = cart.reduce((n, i) => n + i.qty, 0);
 
@@ -55,8 +64,8 @@ export function Nav() {
               <img src={logo} alt="Plugin Warehouse" className="h-10 md:h-11 w-auto object-contain" style={{ filter: "drop-shadow(0 2px 8px rgba(255,0,60,0.3))" }} />
             </Link>
 
-            {/* Desktop nav */}
-            <nav className="hidden lg:flex items-center gap-1 text-sm">
+            {/* Desktop nav — full desktop only */}
+            <nav className="hidden xl:flex items-center gap-1 text-sm">
               <div className="relative" onMouseEnter={() => setCatOpen(true)} onMouseLeave={() => setCatOpen(false)}>
                 <button className="flex items-center gap-1 px-3 py-2 rounded-full hover:bg-white/5 transition font-display tracking-wider">
                   PLUGINS <ChevronDown className="w-3 h-3" />
@@ -80,8 +89,8 @@ export function Nav() {
 
             <div className="flex-1" />
 
-            {/* Right icons — desktop */}
-            <div className="hidden md:flex items-center gap-1 shrink-0">
+            {/* Right icons — full desktop only */}
+            <div className="hidden xl:flex items-center gap-1 shrink-0">
               <button onClick={() => setSearchOpen(true)} aria-label="Search" className="p-2.5 rounded-full hover:bg-white/5 transition">
                 <Search className="w-5 h-5" />
               </button>
@@ -101,12 +110,12 @@ export function Nav() {
               </button>
             </div>
 
-            {/* Mobile/tablet icons */}
-            <div className="flex md:hidden items-center gap-1 shrink-0">
+            {/* Mobile + tablet icons */}
+            <div className="flex xl:hidden items-center gap-1 shrink-0">
               <button onClick={() => setSearchOpen(true)} aria-label="Search" className="p-2.5 rounded-full hover:bg-white/5 transition">
                 <Search className="w-5 h-5" />
               </button>
-              <button onClick={() => setMobileOpen(true)} aria-label="Open menu" className="p-2.5 rounded-full hover:bg-white/5 transition relative">
+              <button onClick={() => setDrawerOpen(true)} aria-label="Open menu" className="p-2.5 rounded-full hover:bg-white/5 transition relative">
                 <Menu className="w-5 h-5" />
                 {count > 0 && <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[var(--accent-red)]" />}
               </button>
@@ -143,38 +152,111 @@ export function Nav() {
         </div>
       )}
 
-      {/* Mobile slide-in panel */}
-      {mobileOpen && (
-        <div className="fixed inset-0 z-[60] md:hidden" onClick={() => setMobileOpen(false)}>
-          <div className="absolute inset-0 bg-black/55 backdrop-blur-sm fade-in" />
-          <aside className="absolute right-0 top-0 bottom-0 w-[88%] max-w-sm smoked-menu !rounded-none !rounded-l-2xl slide-in-right overflow-y-auto" onClick={(e) => e.stopPropagation()} style={{ padding: "1.25rem" }}>
-            <div className="flex items-center justify-between mb-5">
-              <img src={logo} alt="Plugin Warehouse" className="h-9 w-auto" />
-              <button onClick={() => setMobileOpen(false)} aria-label="Close" className="p-2 rounded-full hover:bg-white/10">
-                <X className="w-5 h-5" />
+      {/* Mobile + tablet slide-in drawer */}
+      {drawerOpen && (
+        <div className="fixed inset-0 z-[60] xl:hidden" onClick={() => setDrawerOpen(false)}>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm drawer-scrim" />
+          <aside
+            className="drawer-panel absolute right-0 top-0 bottom-0 w-[88%] max-w-md overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="drawer-top-glare" />
+
+            {/* Header row — logo + close */}
+            <div className="drawer-stagger drawer-stagger-1 flex items-center justify-between mb-5 relative z-10">
+              <img src={logo} alt="Plugin Warehouse" className="h-10 w-auto" />
+              <button
+                onClick={() => setDrawerOpen(false)}
+                aria-label="Close"
+                className="drawer-close-pill"
+              >
+                <X className="w-4 h-4" />
               </button>
             </div>
-            <input placeholder="What are you hunting?" className="input-glass !rounded-full mb-5" />
-            <div className="label-mini mb-2">Categories</div>
-            <nav className="flex flex-col mb-4">
-              {categories.map(c => (
-                <Link key={c.slug} to="/shop/$category" params={{ category: c.slug }} onClick={() => setMobileOpen(false)} className="smoked-item">
-                  <span>{c.name}</span>
-                  <span className="font-mono text-xs text-white/40">{c.count}</span>
+
+            {/* Search */}
+            <div className="drawer-stagger drawer-stagger-2 relative z-10 mb-6">
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/45" />
+                <input
+                  placeholder="What are you hunting?"
+                  className="input-glass !rounded-full !pl-11"
+                />
+              </div>
+            </div>
+
+            {/* CATEGORIES */}
+            <div className="drawer-stagger drawer-stagger-3 relative z-10">
+              <div className="drawer-section-label">Categories</div>
+              <nav className="flex flex-col">
+                {categories.map((c) => {
+                  const Icon = catIcons[c.slug] ?? Piano;
+                  return (
+                    <Link
+                      key={c.slug}
+                      to="/shop/$category"
+                      params={{ category: c.slug }}
+                      onClick={() => setDrawerOpen(false)}
+                      className="drawer-item"
+                    >
+                      <Icon className="drawer-item-icon" strokeWidth={1.4} />
+                      <span className="drawer-item-label">{c.name}</span>
+                      <span className="drawer-item-count">{c.count}</span>
+                    </Link>
+                  );
+                })}
+              </nav>
+            </div>
+
+            <div className="drawer-divider" />
+
+            {/* SHOP */}
+            <div className="drawer-stagger drawer-stagger-4 relative z-10">
+              <div className="drawer-section-label">Shop</div>
+              <nav className="flex flex-col">
+                <Link
+                  to="/sale/$slug"
+                  params={{ slug: "summer-steals" }}
+                  onClick={() => setDrawerOpen(false)}
+                  className="drawer-item"
+                >
+                  <span className="drawer-item-label text-red">DEALS</span>
                 </Link>
-              ))}
-            </nav>
-            <div className="label-mini mb-2">Shop</div>
-            <nav className="flex flex-col mb-4">
-              <Link to="/sale/$slug" params={{ slug: "summer-steals" }} onClick={() => setMobileOpen(false)} className="smoked-item"><span className="text-red">DEALS</span></Link>
-              <Link to="/shop" search={{ sort: "fresh" } as any} onClick={() => setMobileOpen(false)} className="smoked-item">NEW</Link>
-            </nav>
-            <div className="label-mini mb-2">You</div>
-            <nav className="flex flex-col">
-              <Link to="/account" onClick={() => setMobileOpen(false)} className="smoked-item">Account</Link>
-              <Link to="/account/saved" onClick={() => setMobileOpen(false)} className="smoked-item">Wishlist</Link>
-              <button onClick={() => { setMobileOpen(false); actions.openCart(); }} className="smoked-item w-full"><span>Cart</span>{count > 0 && <span className="font-mono text-xs text-red">{count}</span>}</button>
-            </nav>
+                <Link
+                  to="/shop"
+                  search={{ sort: "fresh" } as any}
+                  onClick={() => setDrawerOpen(false)}
+                  className="drawer-item"
+                >
+                  <span className="drawer-item-label">NEW</span>
+                </Link>
+              </nav>
+            </div>
+
+            <div className="drawer-divider" />
+
+            {/* YOU */}
+            <div className="drawer-stagger drawer-stagger-5 relative z-10 pb-6">
+              <div className="drawer-section-label">You</div>
+              <nav className="flex flex-col">
+                <Link to="/account" onClick={() => setDrawerOpen(false)} className="drawer-item">
+                  <User className="drawer-item-icon" strokeWidth={1.4} />
+                  <span className="drawer-item-label">Account</span>
+                </Link>
+                <Link to="/account/saved" onClick={() => setDrawerOpen(false)} className="drawer-item">
+                  <Heart className="drawer-item-icon" strokeWidth={1.4} />
+                  <span className="drawer-item-label">Wishlist</span>
+                </Link>
+                <button
+                  onClick={() => { setDrawerOpen(false); actions.openCart(); }}
+                  className="drawer-item w-full text-left"
+                >
+                  <ShoppingCart className="drawer-item-icon" strokeWidth={1.4} />
+                  <span className="drawer-item-label">Cart</span>
+                  {count > 0 && <span className="drawer-item-count text-red">{count}</span>}
+                </button>
+              </nav>
+            </div>
           </aside>
         </div>
       )}
