@@ -82,7 +82,15 @@ export const categories: { slug: Category; name: string; description: string; co
 export const getProductBySlug = (slug: string) => products.find(p => p.slug === slug);
 export const getProductsByCategory = (cat: Category) => products.filter(p => p.category === cat);
 export const featuredProducts = products.filter(p => p.isFeatured).slice(0, 4);
-export const newProducts = products.filter(p => p.isNew).slice(0, 4);
+
+const parseUpdated = (s: string) => {
+  const t = Date.parse(`1 ${s}`);
+  return isNaN(t) ? 0 : t;
+};
+/** Most-recent first, used for "JUST DROPPED" / default shop sort. */
+export const recentProducts = [...products].sort((a, b) => parseUpdated(b.updated) - parseUpdated(a.updated));
+export const newProducts = recentProducts.slice(0, 4);
+/** Best-sellers first, used for "ON ROTATION". */
 export const bestsellerProducts = products.filter(p => p.isBestseller).slice(0, 4);
 
 export const SALE = {
