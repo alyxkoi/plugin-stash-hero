@@ -46,8 +46,15 @@ export function Nav() {
     if (!drawerOpen) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") closeDrawer(); };
     window.addEventListener("keydown", onKey);
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevHtmlOverflowX = document.documentElement.style.overflowX;
     document.body.style.overflow = "hidden";
-    return () => { window.removeEventListener("keydown", onKey); document.body.style.overflow = ""; };
+    document.documentElement.style.overflowX = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevBodyOverflow;
+      document.documentElement.style.overflowX = prevHtmlOverflowX;
+    };
   }, [drawerOpen]);
 
   const count = cart.reduce((n, i) => n + i.qty, 0);
