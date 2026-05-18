@@ -2,13 +2,13 @@ import { Link, Outlet, useLocation } from "@tanstack/react-router";
 import { Home, Library, Receipt, Heart, Settings, LogOut } from "lucide-react";
 import { mockUser } from "@/lib/account-data";
 
-const NAV = [
+const NAV: { to: string; label: string; icon: typeof Home; exact?: boolean }[] = [
   { to: "/account", label: "DASHBOARD", icon: Home, exact: true },
   { to: "/account/library", label: "YOUR STASH", icon: Library },
   { to: "/account/orders", label: "ORDERS", icon: Receipt },
   { to: "/account/saved", label: "SAVED", icon: Heart },
   { to: "/account/settings", label: "SETTINGS", icon: Settings },
-] as const;
+];
 
 export function AccountLayout() {
   const loc = useLocation();
