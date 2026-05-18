@@ -440,9 +440,17 @@
   from { transform: translateX(100%); }
   to { transform: translateX(0); }
 }
+@keyframes drawer-slide-out {
+  from { transform: translateX(0); }
+  to { transform: translateX(100%); }
+}
 @keyframes drawer-fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+@keyframes drawer-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
 }
 @keyframes drawer-item-in {
   from { opacity: 0; transform: translateX(14px); }
@@ -450,6 +458,10 @@
 }
 
 .drawer-scrim { animation: drawer-fade-in 0.25s ease-out both; }
+.drawer-closing .drawer-scrim { animation: drawer-fade-out 0.32s ease-in both; }
+.drawer-closing .drawer-panel {
+  animation: drawer-slide-out 0.36s cubic-bezier(0.55, 0, 0.65, 0.2) forwards;
+}
 
 .drawer-panel {
   background: linear-gradient(180deg, rgba(19,0,44,0.92), rgba(10,0,24,0.94));
