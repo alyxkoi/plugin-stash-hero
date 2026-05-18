@@ -704,41 +704,6 @@
   100% { transform: translate(6%, 2%) scale(1.1); }
 }
 
-.aurora-strip {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: min(90%, max(60%, 18ch));
-  height: 1.35em;
-  font-size: clamp(2rem, 4vw, 3.5rem);
-  transform: translate(-50%, -50%) rotate(-6deg);
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(14px) saturate(140%);
-  -webkit-backdrop-filter: blur(14px) saturate(140%);
-  border-radius: 10px;
-  z-index: 1;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.25),
-    0 8px 32px -8px rgba(0, 0, 0, 0.45);
-}
-.aurora-strip-edge {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(110deg,
-    rgba(255, 0, 60, 0.55) 0%,
-    rgba(255, 255, 255, 0.25) 35%,
-    rgba(43, 40, 255, 0.55) 70%,
-    rgba(255, 255, 255, 0.18) 100%);
-  -webkit-mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-          mask-composite: exclude;
-  pointer-events: none;
-}
 .aurora-title-text {
   position: relative;
   z-index: 2;
@@ -754,6 +719,46 @@
   text-shadow:
     0 0 18px rgba(255, 255, 255, 0.45),
     0 0 2px rgba(255, 255, 255, 0.7);
+  padding: 0.15em 0.6em;
+  isolation: isolate;
+}
+.aurora-title-inner {
+  position: relative;
+  z-index: 2;
+  display: inline-block;
+}
+.aurora-strip-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  transform: rotate(-6deg);
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border-radius: 10px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.25),
+    0 8px 32px -8px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+}
+.aurora-strip-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(110deg,
+    rgba(255, 0, 60, 0.6) 0%,
+    rgba(255, 255, 255, 0.25) 35%,
+    rgba(43, 40, 255, 0.6) 70%,
+    rgba(255, 255, 255, 0.18) 100%);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  pointer-events: none;
 }
 
 /* Draw-on-scroll curved underline */
