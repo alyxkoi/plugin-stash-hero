@@ -46,8 +46,15 @@ export function Nav() {
     if (!drawerOpen) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") closeDrawer(); };
     window.addEventListener("keydown", onKey);
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevHtmlOverflowX = document.documentElement.style.overflowX;
     document.body.style.overflow = "hidden";
-    return () => { window.removeEventListener("keydown", onKey); document.body.style.overflow = ""; };
+    document.documentElement.style.overflowX = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevBodyOverflow;
+      document.documentElement.style.overflowX = prevHtmlOverflowX;
+    };
   }, [drawerOpen]);
 
   const count = cart.reduce((n, i) => n + i.qty, 0);
@@ -159,7 +166,7 @@ export function Nav() {
 
       {/* Mobile + tablet slide-in drawer */}
       {drawerOpen && (
-        <div className={`fixed inset-0 z-[60] xl:hidden ${drawerClosing ? "drawer-closing" : ""}`} onClick={closeDrawer}>
+        <div className={`fixed inset-0 z-[60] xl:hidden overflow-hidden ${drawerClosing ? "drawer-closing" : ""}`} onClick={closeDrawer}>
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm drawer-scrim" />
           <aside
             className="drawer-panel fixed right-0 top-0 bottom-0 w-[88%] max-w-md flex flex-col"
