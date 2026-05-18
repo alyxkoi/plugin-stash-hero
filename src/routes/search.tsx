@@ -27,7 +27,7 @@ function Search() {
       </form>
 
       <div className="font-mono text-sm text-white/60 mb-6">{results.length} {results.length === 1 ? "result" : "results"} {q && `for "${q}"`}</div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
         {results.map((p) => <ProductCard key={p.slug} product={p} />)}
       </div>
     </div>

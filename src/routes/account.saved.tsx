@@ -80,7 +80,7 @@ function SavedPage() {
           <Link to="/shop" className="btn-primary">BROWSE THE WAREHOUSE →</Link>
         </GlassCard>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {items.map(item => <SavedCard key={item.slug} item={item} selected={selected.has(item.slug)} onToggle={() => toggleSel(item.slug)} onRemove={() => remove(item.slug)} />)}
         </div>
       )}

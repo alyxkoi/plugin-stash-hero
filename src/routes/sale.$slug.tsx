@@ -92,7 +92,7 @@ function SaleEvent() {
       <section className="px-4 md:px-12 mb-12">
         <div className="font-mono text-xs tracking-[0.2em] text-[var(--accent-red-glow)] mb-3">// TODAY'S SPOTLIGHT</div>
         <h2 className="section-header chrome-text">HAND-PICKED FOR THE STEALS.</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
           {spotlight.map((p) => <ProductCard key={p.slug} product={p} />)}
         </div>
       </section>
