@@ -258,20 +258,21 @@ function PluginOfTheWeek() {
 
 function Difference() {
   const items = [
-    { t: "DELIVERED IN SECONDS.", d: "In your library before your DAW finishes booting." },
-    { t: "YOURS FOREVER.", d: "Re-download whenever. Updates included. No license keys to babysit." },
-    { t: "WORKS WITH WHATEVER YOU RUN.", d: "VST. VST3. AU. AAX. Whatever your DAW speaks, we speak." },
+    { t: "DELIVERED IN SECONDS.", d: "In your library before your DAW finishes booting.", Icon: Zap },
+    { t: "YOURS FOREVER.", d: "Re-download whenever. Updates included. No license keys to babysit.", Icon: InfinityIcon },
+    { t: "WORKS WITH WHATEVER YOU RUN.", d: "VST. VST3. AU. AAX. Whatever your DAW speaks, we speak.", Icon: Plug },
   ];
   return (
     <section className="px-4 md:px-12 py-16 md:py-24">
       <SectionTitle>THE DIFFERENCE</SectionTitle>
       <FadeIn>
-        <div className="grid md:grid-cols-3 gap-8">
-          {items.map((i) => (
-            <GlassCard key={i.t} className="p-8">
-              <h3 className="font-display text-2xl mb-3 leading-tight">{i.t}</h3>
-              <p className="text-white/70 leading-relaxed">{i.d}</p>
-            </GlassCard>
+        <div className="grid md:grid-cols-3 gap-6 md:gap-8">
+          {items.map(({ t, d, Icon }) => (
+            <div key={t} className="difference-card group">
+              <Icon className="difference-icon" strokeWidth={2.5} aria-hidden />
+              <h3 className="difference-title font-display text-2xl leading-tight mb-3">{t}</h3>
+              <p className="text-white leading-relaxed">{d}</p>
+            </div>
           ))}
         </div>
       </FadeIn>
