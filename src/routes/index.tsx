@@ -142,7 +142,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 function Grid({ children }: { children: React.ReactNode }) {
-  return <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">{children}</div>;
+  return <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">{children}</div>;
 }
 
 /* ===== TUNE IN — full-width flat category bars ===== */
