@@ -82,7 +82,7 @@ export function Nav() {
 
           {/* Right */}
           <div className="flex items-center gap-1 shrink-0">
-            <Link to="/login" className="hidden md:flex items-center gap-2 px-3 py-2 rounded-full hover:bg-white/5 transition text-sm">
+            <Link to="/account" className="hidden md:flex items-center gap-2 px-3 py-2 rounded-full hover:bg-white/5 transition text-sm">
               <User className="w-4 h-4" /> <span className="hidden lg:inline">ACCOUNT</span>
             </Link>
             <button className="relative p-2 rounded-full hover:bg-white/5 transition">
