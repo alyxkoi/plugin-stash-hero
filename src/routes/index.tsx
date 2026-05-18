@@ -47,9 +47,14 @@ function Index() {
         <Grid>{(bestsellerProducts.length >= 4 ? bestsellerProducts : recentProducts).slice(0, 4).map((p) => <ProductCard key={p.slug} product={p} />)}</Grid>
       </Section>
       <TuneIn />
-      <Section title="JUST DROPPED">
-        <Grid>{recentProducts.slice(0, 4).map((p) => <ProductCard key={p.slug} product={p} />)}</Grid>
-      </Section>
+      <section className="px-4 md:px-12 py-16 md:py-24">
+        <AuroraTitle>
+          SOUNDS OF THE <span className="relative inline-block">DECADE<DrawUnderline /></span>
+        </AuroraTitle>
+        <FadeIn>
+          <Grid>{recentProducts.slice(0, 4).map((p) => <ProductCard key={p.slug} product={p} />)}</Grid>
+        </FadeIn>
+      </section>
       <PluginOfTheWeek />
       <Difference />
       <Newsletter />
