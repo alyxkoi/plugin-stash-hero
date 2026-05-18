@@ -81,11 +81,6 @@ export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageP
               </FilterGroup>
             )}
 
-            {showDaws && (
-              <FilterGroup title="DAW Compatibility">
-                <PillGroup options={allDaws} selected={selectedDaws} onToggle={(v) => togglePill(selectedDaws, v, setSelectedDaws)} />
-              </FilterGroup>
-            )}
 
             {showFormat && (
               <FilterGroup title="Format">
