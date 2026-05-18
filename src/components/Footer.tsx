@@ -49,7 +49,7 @@ export function Footer() {
 function FooterCol({ title, links }: { title: string; links: { to: string; label: string }[] }) {
   return (
     <div>
-      <div className="font-mono text-xs tracking-[0.15em] text-white/40 mb-3">{title}</div>
+      <div className="label-mini mb-3">{title}</div>
       <ul className="space-y-2">
         {links.map((l) => (
           <li key={l.to}>
