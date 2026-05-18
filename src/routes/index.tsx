@@ -1,10 +1,30 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ProductCard } from "@/components/ProductCard";
 import { GlassCard } from "@/components/GlassCard";
-import { SectionTitle, FadeIn } from "@/components/SectionTitle";
+import { FadeIn } from "@/components/SectionTitle";
+import { AuroraTitle } from "@/components/AuroraTitle";
 import { Zap, Infinity as InfinityIcon, Plug } from "lucide-react";
 import { bestsellerProducts, recentProducts, categories, SALE, products } from "@/lib/mock-data";
+
+/** Curved underline that draws itself on scroll-into-view. */
+function DrawUnderline() {
+  const ref = useRef<SVGSVGElement>(null);
+  const [drawn, setDrawn] = useState(false);
+  useEffect(() => {
+    const el = ref.current; if (!el) return;
+    const io = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) { setDrawn(true); io.disconnect(); }
+    }, { threshold: 0.4 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  return (
+    <svg ref={ref} className={`draw-underline ${drawn ? "is-drawn" : ""}`} viewBox="0 0 240 18" preserveAspectRatio="none" aria-hidden>
+      <path d="M4 12 Q 60 -2, 120 8 T 236 6" />
+    </svg>
+  );
+}
 
 export const Route = createFileRoute("/")({
   head: () => ({
