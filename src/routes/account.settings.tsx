@@ -95,7 +95,6 @@ function ProfileSection() {
 }
 
 const ALERT_TOGGLES = [
-  { key: "marketing", label: "Marketing emails", sub: "New drops, sales, and producer-only deals." },
   { key: "sales", label: "Sale alerts", sub: "Tell me when a sale goes live." },
   { key: "updates", label: "Update alerts", sub: "Email me when plugins I own get updated." },
   { key: "wishlist", label: "Wishlist alerts", sub: "Tell me when something in my Saved drops in price." },
