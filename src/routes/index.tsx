@@ -291,12 +291,12 @@ function Difference() {
     <section className="px-4 md:px-12 py-16 md:py-24">
       <AuroraTitle>THE DIFFERENCE</AuroraTitle>
       <FadeIn>
-        <div className="grid md:grid-cols-3 gap-6 md:gap-8">
+        <div className="grid md:grid-cols-3 gap-8 md:gap-10 pt-4">
           {items.map(({ t, d, Icon }) => (
-            <div key={t} className="difference-card group">
-              <Icon className="difference-icon" strokeWidth={2.5} aria-hidden />
-              <h3 className="difference-title font-display text-2xl leading-tight mb-3">{t}</h3>
-              <p className="text-white leading-relaxed">{d}</p>
+            <div key={t} className="difference-card-light group">
+              <Icon className="difference-icon-light" strokeWidth={2.5} aria-hidden />
+              <h3 className="difference-title-light font-display text-2xl leading-tight mb-3">{t}</h3>
+              <p className="difference-body-light leading-relaxed">{d}</p>
             </div>
           ))}
         </div>
