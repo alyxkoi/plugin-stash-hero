@@ -216,8 +216,8 @@ function DataSection() {
         </div>
         <div className="py-5 flex flex-col md:flex-row md:items-center gap-4">
           <div className="flex-1">
-            <div className="font-bold text-[var(--accent-red-glow)]">Delete your account</div>
-            <div className="text-sm text-white/60">This is permanent. Your library and orders will be removed. Refunds remain processable for 30 days after deletion.</div>
+            <div className="font-display text-red text-lg tracking-wide">DELETE YOUR ACCOUNT</div>
+            <div className="text-sm text-white/70">This is permanent. Your library and orders will be anonymized.</div>
           </div>
           <button onClick={() => setConfirmOpen(true)} className="btn-ghost !text-xs border-[var(--accent-red)]/60 !text-[var(--accent-red-glow)]">DELETE ACCOUNT</button>
         </div>
