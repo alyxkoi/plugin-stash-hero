@@ -74,7 +74,7 @@ function Hero() {
           </p>
           <div className="flex flex-wrap gap-3">
             <Link to="/sale/$slug" params={{ slug: "summer-steals" }} className="btn-primary !text-base !py-4 !px-8">LOAD UP →</Link>
-            <Link to="/shop" search={{ sort: "fresh" } as any} className="btn-ghost !text-base !py-4 !px-8">WHAT'S NEW</Link>
+            <Link to="/shop" className="btn-ghost !text-base !py-4 !px-8">WHAT'S NEW</Link>
           </div>
         </div>
 

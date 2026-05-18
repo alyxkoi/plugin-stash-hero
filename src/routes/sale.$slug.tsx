@@ -51,7 +51,7 @@ function SaleEvent() {
             </div>
             <div className="flex gap-3 flex-wrap">
               <a href="#grid" className="btn-primary !text-base !py-4 !px-8">SHOP THE SALE →</a>
-              <Link to="/shop" search={{ sort: "fresh" } as any} className="btn-ghost !text-base !py-4 !px-8">WHAT'S NEW</Link>
+              <Link to="/shop" className="btn-ghost !text-base !py-4 !px-8">WHAT'S NEW</Link>
             </div>
           </div>
           <div className="relative h-[420px] hidden lg:block">
