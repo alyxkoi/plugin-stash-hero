@@ -183,7 +183,7 @@ const TUNE_IN_BARS: { slug: string; name: string; count: number; bg: string }[] 
 function TuneIn() {
   return (
     <section className="py-16 md:py-24">
-      <AuroraTitle>TUNE IN</AuroraTitle>
+      <AuroraTitle>CATEGORIES</AuroraTitle>
       <FadeIn>
         <div className="flex flex-col">
           {TUNE_IN_BARS.map((b) => <TuneInBar key={b.slug} {...b} />)}
