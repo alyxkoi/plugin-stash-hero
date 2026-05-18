@@ -27,6 +27,8 @@ import { Route as ShopIndexRouteImport } from './routes/shop.index'
 import { Route as AccountIndexRouteImport } from './routes/account.index'
 import { Route as ShopCategoryRouteImport } from './routes/shop.$category'
 import { Route as SaleSlugRouteImport } from './routes/sale.$slug'
+import { Route as AccountSettingsRouteImport } from './routes/account.settings'
+import { Route as AccountSavedRouteImport } from './routes/account.saved'
 import { Route as AccountOrdersRouteImport } from './routes/account.orders'
 import { Route as AccountLibraryRouteImport } from './routes/account.library'
 import { Route as ShopPSlugRouteImport } from './routes/shop.p.$slug'
@@ -122,6 +124,16 @@ const SaleSlugRoute = SaleSlugRouteImport.update({
   path: '/sale/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountSettingsRoute = AccountSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AccountRoute,
+} as any)
+const AccountSavedRoute = AccountSavedRouteImport.update({
+  id: '/saved',
+  path: '/saved',
+  getParentRoute: () => AccountRoute,
+} as any)
 const AccountOrdersRoute = AccountOrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
@@ -160,6 +172,8 @@ export interface FileRoutesByFullPath {
   '/terms-of-service': typeof TermsOfServiceRoute
   '/account/library': typeof AccountLibraryRoute
   '/account/orders': typeof AccountOrdersRouteWithChildren
+  '/account/saved': typeof AccountSavedRoute
+  '/account/settings': typeof AccountSettingsRoute
   '/sale/$slug': typeof SaleSlugRoute
   '/shop/$category': typeof ShopCategoryRoute
   '/account/': typeof AccountIndexRoute
@@ -183,6 +197,8 @@ export interface FileRoutesByTo {
   '/terms-of-service': typeof TermsOfServiceRoute
   '/account/library': typeof AccountLibraryRoute
   '/account/orders': typeof AccountOrdersRouteWithChildren
+  '/account/saved': typeof AccountSavedRoute
+  '/account/settings': typeof AccountSettingsRoute
   '/sale/$slug': typeof SaleSlugRoute
   '/shop/$category': typeof ShopCategoryRoute
   '/account': typeof AccountIndexRoute
@@ -208,6 +224,8 @@ export interface FileRoutesById {
   '/terms-of-service': typeof TermsOfServiceRoute
   '/account/library': typeof AccountLibraryRoute
   '/account/orders': typeof AccountOrdersRouteWithChildren
+  '/account/saved': typeof AccountSavedRoute
+  '/account/settings': typeof AccountSettingsRoute
   '/sale/$slug': typeof SaleSlugRoute
   '/shop/$category': typeof ShopCategoryRoute
   '/account/': typeof AccountIndexRoute
@@ -234,6 +252,8 @@ export interface FileRouteTypes {
     | '/terms-of-service'
     | '/account/library'
     | '/account/orders'
+    | '/account/saved'
+    | '/account/settings'
     | '/sale/$slug'
     | '/shop/$category'
     | '/account/'
@@ -257,6 +277,8 @@ export interface FileRouteTypes {
     | '/terms-of-service'
     | '/account/library'
     | '/account/orders'
+    | '/account/saved'
+    | '/account/settings'
     | '/sale/$slug'
     | '/shop/$category'
     | '/account'
@@ -281,6 +303,8 @@ export interface FileRouteTypes {
     | '/terms-of-service'
     | '/account/library'
     | '/account/orders'
+    | '/account/saved'
+    | '/account/settings'
     | '/sale/$slug'
     | '/shop/$category'
     | '/account/'
@@ -438,6 +462,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SaleSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/account/settings': {
+      id: '/account/settings'
+      path: '/settings'
+      fullPath: '/account/settings'
+      preLoaderRoute: typeof AccountSettingsRouteImport
+      parentRoute: typeof AccountRoute
+    }
+    '/account/saved': {
+      id: '/account/saved'
+      path: '/saved'
+      fullPath: '/account/saved'
+      preLoaderRoute: typeof AccountSavedRouteImport
+      parentRoute: typeof AccountRoute
+    }
     '/account/orders': {
       id: '/account/orders'
       path: '/orders'
@@ -484,12 +522,16 @@ const AccountOrdersRouteWithChildren = AccountOrdersRoute._addFileChildren(
 interface AccountRouteChildren {
   AccountLibraryRoute: typeof AccountLibraryRoute
   AccountOrdersRoute: typeof AccountOrdersRouteWithChildren
+  AccountSavedRoute: typeof AccountSavedRoute
+  AccountSettingsRoute: typeof AccountSettingsRoute
   AccountIndexRoute: typeof AccountIndexRoute
 }
 
 const AccountRouteChildren: AccountRouteChildren = {
   AccountLibraryRoute: AccountLibraryRoute,
   AccountOrdersRoute: AccountOrdersRouteWithChildren,
+  AccountSavedRoute: AccountSavedRoute,
+  AccountSettingsRoute: AccountSettingsRoute,
   AccountIndexRoute: AccountIndexRoute,
 }
 
@@ -519,3 +561,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
