@@ -30,6 +30,7 @@ import { Route as SaleSlugRouteImport } from './routes/sale.$slug'
 import { Route as AccountOrdersRouteImport } from './routes/account.orders'
 import { Route as AccountLibraryRouteImport } from './routes/account.library'
 import { Route as ShopPSlugRouteImport } from './routes/shop.p.$slug'
+import { Route as AccountOrdersIdRouteImport } from './routes/account.orders.$id'
 
 const TermsOfServiceRoute = TermsOfServiceRouteImport.update({
   id: '/terms-of-service',
@@ -136,6 +137,11 @@ const ShopPSlugRoute = ShopPSlugRouteImport.update({
   path: '/shop/p/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountOrdersIdRoute = AccountOrdersIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AccountOrdersRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -153,11 +159,12 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/terms-of-service': typeof TermsOfServiceRoute
   '/account/library': typeof AccountLibraryRoute
-  '/account/orders': typeof AccountOrdersRoute
+  '/account/orders': typeof AccountOrdersRouteWithChildren
   '/sale/$slug': typeof SaleSlugRoute
   '/shop/$category': typeof ShopCategoryRoute
   '/account/': typeof AccountIndexRoute
   '/shop/': typeof ShopIndexRoute
+  '/account/orders/$id': typeof AccountOrdersIdRoute
   '/shop/p/$slug': typeof ShopPSlugRoute
 }
 export interface FileRoutesByTo {
@@ -175,11 +182,12 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/terms-of-service': typeof TermsOfServiceRoute
   '/account/library': typeof AccountLibraryRoute
-  '/account/orders': typeof AccountOrdersRoute
+  '/account/orders': typeof AccountOrdersRouteWithChildren
   '/sale/$slug': typeof SaleSlugRoute
   '/shop/$category': typeof ShopCategoryRoute
   '/account': typeof AccountIndexRoute
   '/shop': typeof ShopIndexRoute
+  '/account/orders/$id': typeof AccountOrdersIdRoute
   '/shop/p/$slug': typeof ShopPSlugRoute
 }
 export interface FileRoutesById {
@@ -199,11 +207,12 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/terms-of-service': typeof TermsOfServiceRoute
   '/account/library': typeof AccountLibraryRoute
-  '/account/orders': typeof AccountOrdersRoute
+  '/account/orders': typeof AccountOrdersRouteWithChildren
   '/sale/$slug': typeof SaleSlugRoute
   '/shop/$category': typeof ShopCategoryRoute
   '/account/': typeof AccountIndexRoute
   '/shop/': typeof ShopIndexRoute
+  '/account/orders/$id': typeof AccountOrdersIdRoute
   '/shop/p/$slug': typeof ShopPSlugRoute
 }
 export interface FileRouteTypes {
@@ -229,6 +238,7 @@ export interface FileRouteTypes {
     | '/shop/$category'
     | '/account/'
     | '/shop/'
+    | '/account/orders/$id'
     | '/shop/p/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -251,6 +261,7 @@ export interface FileRouteTypes {
     | '/shop/$category'
     | '/account'
     | '/shop'
+    | '/account/orders/$id'
     | '/shop/p/$slug'
   id:
     | '__root__'
@@ -274,6 +285,7 @@ export interface FileRouteTypes {
     | '/shop/$category'
     | '/account/'
     | '/shop/'
+    | '/account/orders/$id'
     | '/shop/p/$slug'
   fileRoutesById: FileRoutesById
 }
@@ -447,18 +459,37 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShopPSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/account/orders/$id': {
+      id: '/account/orders/$id'
+      path: '/$id'
+      fullPath: '/account/orders/$id'
+      preLoaderRoute: typeof AccountOrdersIdRouteImport
+      parentRoute: typeof AccountOrdersRoute
+    }
   }
 }
 
+interface AccountOrdersRouteChildren {
+  AccountOrdersIdRoute: typeof AccountOrdersIdRoute
+}
+
+const AccountOrdersRouteChildren: AccountOrdersRouteChildren = {
+  AccountOrdersIdRoute: AccountOrdersIdRoute,
+}
+
+const AccountOrdersRouteWithChildren = AccountOrdersRoute._addFileChildren(
+  AccountOrdersRouteChildren,
+)
+
 interface AccountRouteChildren {
   AccountLibraryRoute: typeof AccountLibraryRoute
-  AccountOrdersRoute: typeof AccountOrdersRoute
+  AccountOrdersRoute: typeof AccountOrdersRouteWithChildren
   AccountIndexRoute: typeof AccountIndexRoute
 }
 
 const AccountRouteChildren: AccountRouteChildren = {
   AccountLibraryRoute: AccountLibraryRoute,
-  AccountOrdersRoute: AccountOrdersRoute,
+  AccountOrdersRoute: AccountOrdersRouteWithChildren,
   AccountIndexRoute: AccountIndexRoute,
 }
 
