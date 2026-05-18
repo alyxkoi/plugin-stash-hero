@@ -27,6 +27,7 @@ import { Route as ShopIndexRouteImport } from './routes/shop.index'
 import { Route as AccountIndexRouteImport } from './routes/account.index'
 import { Route as ShopCategoryRouteImport } from './routes/shop.$category'
 import { Route as SaleSlugRouteImport } from './routes/sale.$slug'
+import { Route as AccountLibraryRouteImport } from './routes/account.library'
 import { Route as ShopPSlugRouteImport } from './routes/shop.p.$slug'
 
 const TermsOfServiceRoute = TermsOfServiceRouteImport.update({
@@ -119,6 +120,11 @@ const SaleSlugRoute = SaleSlugRouteImport.update({
   path: '/sale/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountLibraryRoute = AccountLibraryRouteImport.update({
+  id: '/library',
+  path: '/library',
+  getParentRoute: () => AccountRoute,
+} as any)
 const ShopPSlugRoute = ShopPSlugRouteImport.update({
   id: '/shop/p/$slug',
   path: '/shop/p/$slug',
@@ -140,6 +146,7 @@ export interface FileRoutesByFullPath {
   '/search': typeof SearchRoute
   '/signup': typeof SignupRoute
   '/terms-of-service': typeof TermsOfServiceRoute
+  '/account/library': typeof AccountLibraryRoute
   '/sale/$slug': typeof SaleSlugRoute
   '/shop/$category': typeof ShopCategoryRoute
   '/account/': typeof AccountIndexRoute
@@ -160,6 +167,7 @@ export interface FileRoutesByTo {
   '/search': typeof SearchRoute
   '/signup': typeof SignupRoute
   '/terms-of-service': typeof TermsOfServiceRoute
+  '/account/library': typeof AccountLibraryRoute
   '/sale/$slug': typeof SaleSlugRoute
   '/shop/$category': typeof ShopCategoryRoute
   '/account': typeof AccountIndexRoute
@@ -182,6 +190,7 @@ export interface FileRoutesById {
   '/search': typeof SearchRoute
   '/signup': typeof SignupRoute
   '/terms-of-service': typeof TermsOfServiceRoute
+  '/account/library': typeof AccountLibraryRoute
   '/sale/$slug': typeof SaleSlugRoute
   '/shop/$category': typeof ShopCategoryRoute
   '/account/': typeof AccountIndexRoute
@@ -205,6 +214,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/signup'
     | '/terms-of-service'
+    | '/account/library'
     | '/sale/$slug'
     | '/shop/$category'
     | '/account/'
@@ -225,6 +235,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/signup'
     | '/terms-of-service'
+    | '/account/library'
     | '/sale/$slug'
     | '/shop/$category'
     | '/account'
@@ -246,6 +257,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/signup'
     | '/terms-of-service'
+    | '/account/library'
     | '/sale/$slug'
     | '/shop/$category'
     | '/account/'
@@ -402,6 +414,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SaleSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/account/library': {
+      id: '/account/library'
+      path: '/library'
+      fullPath: '/account/library'
+      preLoaderRoute: typeof AccountLibraryRouteImport
+      parentRoute: typeof AccountRoute
+    }
     '/shop/p/$slug': {
       id: '/shop/p/$slug'
       path: '/shop/p/$slug'
@@ -413,10 +432,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface AccountRouteChildren {
+  AccountLibraryRoute: typeof AccountLibraryRoute
   AccountIndexRoute: typeof AccountIndexRoute
 }
 
 const AccountRouteChildren: AccountRouteChildren = {
+  AccountLibraryRoute: AccountLibraryRoute,
   AccountIndexRoute: AccountIndexRoute,
 }
 
