@@ -159,7 +159,7 @@ export function Nav() {
 
       {/* Mobile + tablet slide-in drawer */}
       {drawerOpen && (
-        <div className={`fixed inset-0 z-[60] xl:hidden ${drawerClosing ? "drawer-closing" : ""}`} onClick={closeDrawer}>
+        <div className={`fixed inset-0 z-[60] xl:hidden overflow-hidden ${drawerClosing ? "drawer-closing" : ""}`} onClick={closeDrawer}>
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm drawer-scrim" />
           <aside
             className="drawer-panel fixed right-0 top-0 bottom-0 w-[88%] max-w-md flex flex-col"
