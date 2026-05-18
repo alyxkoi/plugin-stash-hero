@@ -19,6 +19,11 @@ export function Nav() {
   const [scrolled, setScrolled] = useState(false);
   const [catOpen, setCatOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerClosing, setDrawerClosing] = useState(false);
+  const closeDrawer = () => {
+    setDrawerClosing(true);
+    window.setTimeout(() => { setDrawerOpen(false); setDrawerClosing(false); }, 360);
+  };
   const [searchOpen, setSearchOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
 
