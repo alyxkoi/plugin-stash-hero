@@ -227,11 +227,10 @@ export function Nav() {
                   </Link>
                   <Link
                     to="/shop"
-                    search={{ sort: "fresh" } as any}
                     onClick={closeDrawer}
                     className="drawer-item"
                   >
-                    <span className="drawer-item-label">NEW</span>
+                    <span className="drawer-item-label">SHOP ALL</span>
                   </Link>
                 </nav>
               </div>
