@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import logo from "@/assets/logo.png";
 
 export function Footer() {
   return (
@@ -8,17 +9,10 @@ export function Footer() {
         <div className="relative z-10">
           <div className="grid gap-10 md:grid-cols-4">
             <div>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 rounded-md flex items-center justify-center" style={{ background: "linear-gradient(135deg,#FF003C,#0E0BD1)" }}>
-                  <span className="font-mono text-xs">PW</span>
-                </div>
-                <div className="leading-none">
-                  <div className="font-black">PLUGIN</div>
-                  <div className="font-mono text-[9px] tracking-[0.25em] text-white/60">WAREHOUSE</div>
-                </div>
-              </div>
+              <img src={logo} alt="Plugin Warehouse" className="h-12 w-auto object-contain mb-4" style={{ filter: "drop-shadow(0 2px 12px rgba(255,0,60,0.35))" }} />
               <p className="text-sm text-white/60 max-w-xs">Pro-tier creative software at a fraction of the price. Yours forever.</p>
             </div>
+
             <FooterCol title="SHOP" links={[
               { to: "/shop", label: "All Plugins" },
               { to: "/shop/instruments", label: "Instruments" },

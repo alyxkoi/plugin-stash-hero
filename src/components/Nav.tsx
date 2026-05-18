@@ -3,6 +3,8 @@ import { Search, ShoppingCart, User, Heart, ChevronDown } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useStore, actions } from "@/lib/store";
 import { categories } from "@/lib/mock-data";
+import logo from "@/assets/logo.png";
+
 
 export function Nav() {
   const cart = useStore((s) => s.cart);
@@ -31,21 +33,10 @@ export function Nav() {
         <div className="glass-noise" />
         <div className="relative z-10 flex items-center gap-3 md:gap-6">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 shrink-0">
-            <div className="w-8 h-8 rounded-md flex items-center justify-center" style={{ background: "linear-gradient(135deg,#FF003C,#0E0BD1)" }}>
-              <div className="flex gap-[2px] items-end h-4">
-                <span className="w-[2px] bg-white h-1" />
-                <span className="w-[2px] bg-white h-3" />
-                <span className="w-[2px] bg-white h-2" />
-                <span className="w-[2px] bg-white h-4" />
-                <span className="w-[2px] bg-white h-2" />
-              </div>
-            </div>
-            <div className="leading-none hidden sm:block">
-              <div className="font-black text-base tracking-tight">PLUGIN</div>
-              <div className="font-mono text-[9px] tracking-[0.25em] text-white/60">WAREHOUSE</div>
-            </div>
+          <Link to="/" className="flex items-center shrink-0">
+            <img src={logo} alt="Plugin Warehouse" className="h-9 md:h-10 w-auto object-contain" style={{ filter: "drop-shadow(0 2px 8px rgba(255,0,60,0.3))" }} />
           </Link>
+
 
           {/* Center nav */}
           <nav className="hidden lg:flex items-center gap-1 text-sm font-medium">
