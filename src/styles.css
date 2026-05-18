@@ -474,22 +474,40 @@
     -24px 0 60px -20px rgba(255,0,60,0.28),
     -2px 0 0 0 rgba(255,0,60,0.12),
     inset 1px 0 0 rgba(255,255,255,0.04);
-  padding: 1.25rem 1.1rem;
   animation: drawer-slide-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
-  position: relative;
-  overflow: hidden auto;
+  overflow: hidden;
+}
+
+.drawer-header {
+  padding: 1.25rem 1.1rem 1rem;
+  flex-shrink: 0;
+}
+.drawer-body {
+  padding: 0.25rem 1.1rem 1.25rem;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .drawer-top-glare {
   position: absolute; top: 0; left: 0; right: 0; height: 1px;
   background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
   pointer-events: none;
+  z-index: 30;
 }
 .drawer-panel::before {
   content: "";
   position: absolute; top: 0; left: 0; right: 0; height: 120px;
   background: linear-gradient(180deg, rgba(255,255,255,0.06), transparent);
   pointer-events: none;
+}
+
+@media (max-width: 767px) {
+  .drawer-header { padding: 1rem 0.9rem 0.6rem; }
+  .drawer-body { padding: 0.1rem 0.9rem 1rem; }
+  .drawer-item { padding: 0.65rem 0.75rem; }
+  .drawer-item-label { font-size: 1.1rem; }
+  .drawer-divider { margin: 0.7rem 0.5rem; }
+  .drawer-section-label { margin-bottom: 0.25rem; }
 }
 
 .drawer-stagger { opacity: 0; animation: drawer-item-in 0.45s cubic-bezier(0.22,1,0.36,1) both; }
