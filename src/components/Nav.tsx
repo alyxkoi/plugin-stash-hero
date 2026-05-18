@@ -96,7 +96,7 @@ export function Nav() {
                 )}
               </div>
               <Link to="/sale/$slug" params={{ slug: "summer-steals" }} className="px-3 py-2 rounded-full text-red hover:bg-white/5 transition font-display tracking-wider">DEALS</Link>
-              <Link to="/shop" search={{ sort: "fresh" } as any} className="px-3 py-2 rounded-full hover:bg-white/5 transition font-display tracking-wider">NEW</Link>
+              <Link to="/shop" className="px-3 py-2 rounded-full hover:bg-white/5 transition font-display tracking-wider">SHOP ALL</Link>
             </nav>
 
             <div className="flex-1" />
@@ -227,11 +227,10 @@ export function Nav() {
                   </Link>
                   <Link
                     to="/shop"
-                    search={{ sort: "fresh" } as any}
                     onClick={closeDrawer}
                     className="drawer-item"
                   >
-                    <span className="drawer-item-label">NEW</span>
+                    <span className="drawer-item-label">SHOP ALL</span>
                   </Link>
                 </nav>
               </div>

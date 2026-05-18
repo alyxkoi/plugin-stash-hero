@@ -622,3 +622,34 @@
 
 /* Sticky purchase bar mobile safe area */
 .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+
+/* ===== THE DIFFERENCE — solid color cards with hover invert ===== */
+.difference-card {
+  background: #0E0BD1;
+  padding: 2rem;
+  border-radius: 1.25rem;
+  color: #ffffff;
+  transition: background-color 300ms ease;
+  position: relative;
+  overflow: hidden;
+}
+.difference-card:hover {
+  background: #FF003C;
+}
+.difference-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  color: #ffffff;
+  margin-bottom: 1.25rem;
+  display: block;
+}
+.difference-title {
+  color: #FF003C;
+  transition: color 300ms ease;
+}
+.difference-card:hover .difference-title {
+  color: #0E0BD1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .difference-card, .difference-title { transition: none !important; }
+}

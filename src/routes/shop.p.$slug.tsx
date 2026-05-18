@@ -124,7 +124,7 @@ function ProductDetail() {
       <section className="mt-16">
         <div className="font-mono text-xs tracking-[0.2em] text-[var(--accent-red-glow)] mb-3">// IF YOU LIKE THIS</div>
         <h2 className="section-header chrome-text">MORE HEAT</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
           {related.map((r) => <ProductCard key={r.slug} product={r} />)}
         </div>
       </section>

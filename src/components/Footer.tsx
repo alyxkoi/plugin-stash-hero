@@ -35,8 +35,8 @@ export function Footer() {
           </div>
 
           <div className="mt-10 pt-6 border-t border-white/10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="font-display text-sm uppercase tracking-[0.12em] text-red">
-              Plugin pricing has been a scam. We fixed it.
+            <div className="font-display text-sm uppercase tracking-[0.12em]">
+              <span className="text-white">The same plugins.</span> <span className="text-red">Fraction of the price.</span>
             </div>
             <div className="font-mono text-xs text-white/40">© 2026 <span className="text-red">Plugin Warehouse</span></div>
           </div>

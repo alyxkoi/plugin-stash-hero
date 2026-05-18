@@ -3,7 +3,8 @@ import { useEffect, useRef } from "react";
 import { ProductCard } from "@/components/ProductCard";
 import { GlassCard } from "@/components/GlassCard";
 import { SectionTitle, FadeIn } from "@/components/SectionTitle";
-import { featuredProducts, newProducts, categories, SALE, products } from "@/lib/mock-data";
+import { Zap, Infinity as InfinityIcon, Plug } from "lucide-react";
+import { bestsellerProducts, recentProducts, categories, SALE, products } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -22,12 +23,12 @@ function Index() {
     <div>
       <Hero />
       <Ticker />
-      <Section title="LOADED & READY">
-        <Grid>{featuredProducts.map((p) => <ProductCard key={p.slug} product={p} />)}</Grid>
+      <Section title="ON ROTATION">
+        <Grid>{(bestsellerProducts.length >= 4 ? bestsellerProducts : recentProducts).slice(0, 4).map((p) => <ProductCard key={p.slug} product={p} />)}</Grid>
       </Section>
       <TuneIn />
-      <Section title="FRESH OFF THE TRUCK">
-        <Grid>{(newProducts.length >= 4 ? newProducts : products.slice(0, 4)).slice(0, 4).map((p) => <ProductCard key={p.slug} product={p} />)}</Grid>
+      <Section title="JUST DROPPED">
+        <Grid>{recentProducts.slice(0, 4).map((p) => <ProductCard key={p.slug} product={p} />)}</Grid>
       </Section>
       <PluginOfTheWeek />
       <Difference />
@@ -73,7 +74,7 @@ function Hero() {
           </p>
           <div className="flex flex-wrap gap-3">
             <Link to="/sale/$slug" params={{ slug: "summer-steals" }} className="btn-primary !text-base !py-4 !px-8">LOAD UP →</Link>
-            <Link to="/shop" search={{ sort: "fresh" } as any} className="btn-ghost !text-base !py-4 !px-8">WHAT'S NEW</Link>
+            <Link to="/shop" className="btn-ghost !text-base !py-4 !px-8">WHAT'S NEW</Link>
           </div>
         </div>
 
@@ -141,7 +142,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 function Grid({ children }: { children: React.ReactNode }) {
-  return <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">{children}</div>;
+  return <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">{children}</div>;
 }
 
 /* ===== TUNE IN — full-width flat category bars ===== */
@@ -257,20 +258,21 @@ function PluginOfTheWeek() {
 
 function Difference() {
   const items = [
-    { t: "DELIVERED IN SECONDS.", d: "In your library before your DAW finishes booting." },
-    { t: "YOURS FOREVER.", d: "Re-download whenever. Updates included. No license keys to babysit." },
-    { t: "WORKS WITH WHATEVER YOU RUN.", d: "VST. VST3. AU. AAX. Whatever your DAW speaks, we speak." },
+    { t: "DELIVERED IN SECONDS.", d: "In your library before your DAW finishes booting.", Icon: Zap },
+    { t: "YOURS FOREVER.", d: "Re-download whenever. Updates included. No license keys to babysit.", Icon: InfinityIcon },
+    { t: "WORKS WITH WHATEVER YOU RUN.", d: "VST. VST3. AU. AAX. Whatever your DAW speaks, we speak.", Icon: Plug },
   ];
   return (
     <section className="px-4 md:px-12 py-16 md:py-24">
       <SectionTitle>THE DIFFERENCE</SectionTitle>
       <FadeIn>
-        <div className="grid md:grid-cols-3 gap-8">
-          {items.map((i) => (
-            <GlassCard key={i.t} className="p-8">
-              <h3 className="font-display text-2xl mb-3 leading-tight">{i.t}</h3>
-              <p className="text-white/70 leading-relaxed">{i.d}</p>
-            </GlassCard>
+        <div className="grid md:grid-cols-3 gap-6 md:gap-8">
+          {items.map(({ t, d, Icon }) => (
+            <div key={t} className="difference-card group">
+              <Icon className="difference-icon" strokeWidth={2.5} aria-hidden />
+              <h3 className="difference-title font-display text-2xl leading-tight mb-3">{t}</h3>
+              <p className="text-white leading-relaxed">{d}</p>
+            </div>
           ))}
         </div>
       </FadeIn>
