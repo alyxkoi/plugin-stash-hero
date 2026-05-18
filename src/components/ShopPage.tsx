@@ -15,12 +15,10 @@ interface ShopPageProps {
 export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageProps) {
   const [query, setQuery] = useState("");
   const [selectedCats, setSelectedCats] = useState<Category[]>(category ? [category] : []);
-  const [selectedDaws, setSelectedDaws] = useState<string[]>([]);
   const [selectedFormats, setSelectedFormats] = useState<string[]>([]);
   const [saleStatus, setSaleStatus] = useState<"all" | "sale" | "free">(initialOnSale ? "sale" : "all");
   const [sort, setSort] = useState<"loaded" | "fresh" | "low" | "high" | "sale">("loaded");
 
-  const allDaws = ["Ableton", "FL Studio", "Logic", "Pro Tools", "Studio One", "Cubase", "Reaper"];
   const allFormats = ["VST", "VST3", "AU", "AAX", "Standalone"];
 
   const filtered = useMemo(() => {
