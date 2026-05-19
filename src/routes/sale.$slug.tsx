@@ -2,6 +2,7 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ShopPage } from "@/components/ShopPage";
 import { GlassCard } from "@/components/GlassCard";
+import { AuroraTitle } from "@/components/AuroraTitle";
 import { ProductCard } from "@/components/ProductCard";
 import { SALE, products } from "@/lib/mock-data";
 
