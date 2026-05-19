@@ -786,3 +786,50 @@
 @media (prefers-reduced-motion: reduce) {
   .difference-card-light, .difference-title-light, .difference-body-light, .difference-icon-light { transition: none !important; }
 }
+
+/* ===== ROUTE TRANSITION — quick blur fade between pages ===== */
+@keyframes route-blur-in {
+  from { opacity: 0; filter: blur(10px); transform: translateY(6px); }
+  to   { opacity: 1; filter: blur(0);    transform: translateY(0); }
+}
+.route-transition {
+  animation: route-blur-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: opacity, filter, transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  .route-transition { animation: none !important; }
+}
+
+/* ===== DASHBOARD PILLS — smooth color transfer ===== */
+.dash-pill {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  transition:
+    color 360ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 360ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 360ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 360ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.dash-pill::before {
+  content: "";
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent-red), var(--accent-red-glow));
+  opacity: 0;
+  transform: scale(0.94);
+  transition: opacity 380ms cubic-bezier(0.22, 1, 0.36, 1), transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+  z-index: -1;
+}
+.dash-pill[data-active="true"]::before {
+  opacity: 1;
+  transform: scale(1);
+}
+.dash-pill[data-active="true"] {
+  color: #ffffff;
+  border-color: rgba(255,255,255,0.22);
+  box-shadow: 0 8px 24px rgba(255,0,60,0.4);
+}
+@media (prefers-reduced-motion: reduce) {
+  .dash-pill, .dash-pill::before { transition: none !important; }
+}
