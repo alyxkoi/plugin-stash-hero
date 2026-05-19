@@ -790,9 +790,18 @@
   .difference-card-light, .difference-title-light, .difference-body-light, .difference-icon-light { transition: none !important; }
 }
 
-/* ===== ROUTE TRANSITION — disabled (no blur on page change) ===== */
-.route-transition,
-.route-transition > * { animation: none !important; }
+/* ===== ROUTE TRANSITION — subtle fade + lift on route/category/tab change ===== */
+@keyframes route-fade-in {
+  from { opacity: 0; transform: translate3d(0, 8px, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+.route-transition {
+  animation: route-fade-in 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: opacity, transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  .route-transition { animation: none !important; }
+}
 
 
 
