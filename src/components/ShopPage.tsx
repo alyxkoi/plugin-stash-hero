@@ -47,7 +47,7 @@ export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageP
   const togglePill = <T,>(list: T[], v: T, set: (l: T[]) => void) =>
     set(list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
 
-  const showFormat = !["software", "freebies"].includes(category || "");
+  const showFormat = !initialOnSale && !["software", "freebies"].includes(category || "");
 
   return (
     <div>
