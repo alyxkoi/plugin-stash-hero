@@ -130,6 +130,13 @@
   transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
   will-change: transform;
 }
+
+/* Only product cards get content-visibility — applying it to the Nav glass-card
+   clips the absolutely-positioned PLUGINS dropdown. */
+.product-card {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 420px;
+}
 .glass-card::after {
   content: "";
   position: absolute;
