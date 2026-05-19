@@ -29,17 +29,12 @@ function useFadeIn<T extends HTMLElement>() {
   return { ref, visible };
 }
 
-/** Aurora Title — drifting color glow + slanted frosted strip + glowing text. */
+/** Aurora Title — bold slanted frosted text with aurora gradient inside the letters. */
 export function AuroraTitle({ children, className = "", as: Tag = "h2", decoration }: Props) {
   const { ref, visible } = useFadeIn<HTMLDivElement>();
   return (
     <div ref={ref} className={`aurora-title-wrap title-fade ${visible ? "is-visible" : ""} ${className}`}>
-      <div className="aurora-blobs" aria-hidden>
-        <span className="aurora-blob aurora-blob--red" />
-        <span className="aurora-blob aurora-blob--blue" />
-      </div>
-      <Tag className="aurora-title-text">
-        <span className="aurora-strip-bg" aria-hidden />
+      <Tag className="aurora-title-text" data-text={typeof children === "string" ? children : undefined}>
         <span className="aurora-title-inner">{children}</span>
       </Tag>
       {decoration}
