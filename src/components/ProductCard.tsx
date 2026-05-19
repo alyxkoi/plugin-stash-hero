@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useRef, useEffect } from "react";
-import { Heart } from "lucide-react";
+import { Heart, ShoppingCart } from "lucide-react";
 import type { Product } from "@/lib/mock-data";
 import { useStore, actions } from "@/lib/store";
 
