@@ -1,10 +1,30 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ProductCard } from "@/components/ProductCard";
 import { GlassCard } from "@/components/GlassCard";
-import { SectionTitle, FadeIn } from "@/components/SectionTitle";
+import { FadeIn } from "@/components/SectionTitle";
+import { AuroraTitle } from "@/components/AuroraTitle";
 import { Zap, Infinity as InfinityIcon, Plug } from "lucide-react";
 import { bestsellerProducts, recentProducts, categories, SALE, products } from "@/lib/mock-data";
+
+/** Curved underline that draws itself on scroll-into-view. */
+function DrawUnderline() {
+  const ref = useRef<SVGSVGElement>(null);
+  const [drawn, setDrawn] = useState(false);
+  useEffect(() => {
+    const el = ref.current; if (!el) return;
+    const io = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) { setDrawn(true); io.disconnect(); }
+    }, { threshold: 0.4 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  return (
+    <svg ref={ref} className={`draw-underline ${drawn ? "is-drawn" : ""}`} viewBox="0 0 240 18" preserveAspectRatio="none" aria-hidden>
+      <path d="M4 12 Q 60 -2, 120 8 T 236 6" />
+    </svg>
+  );
+}
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -27,9 +47,14 @@ function Index() {
         <Grid>{(bestsellerProducts.length >= 4 ? bestsellerProducts : recentProducts).slice(0, 4).map((p) => <ProductCard key={p.slug} product={p} />)}</Grid>
       </Section>
       <TuneIn />
-      <Section title="JUST DROPPED">
-        <Grid>{recentProducts.slice(0, 4).map((p) => <ProductCard key={p.slug} product={p} />)}</Grid>
-      </Section>
+      <section className="px-4 md:px-12 py-16 md:py-24">
+        <AuroraTitle>
+          SOUNDS OF THE <span className="relative inline-block">DECADE<DrawUnderline /></span>
+        </AuroraTitle>
+        <FadeIn>
+          <Grid>{recentProducts.slice(0, 4).map((p) => <ProductCard key={p.slug} product={p} />)}</Grid>
+        </FadeIn>
+      </section>
       <PluginOfTheWeek />
       <Difference />
       <Newsletter />
@@ -135,7 +160,7 @@ function Ticker() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="px-4 md:px-12 py-16 md:py-24">
-      <SectionTitle>{title}</SectionTitle>
+      <AuroraTitle>{title}</AuroraTitle>
       <FadeIn>{children}</FadeIn>
     </section>
   );
@@ -158,7 +183,7 @@ const TUNE_IN_BARS: { slug: string; name: string; count: number; bg: string }[] 
 function TuneIn() {
   return (
     <section className="py-16 md:py-24">
-      <SectionTitle>TUNE IN</SectionTitle>
+      <AuroraTitle>CATEGORIES</AuroraTitle>
       <FadeIn>
         <div className="flex flex-col">
           {TUNE_IN_BARS.map((b) => <TuneInBar key={b.slug} {...b} />)}
@@ -220,7 +245,7 @@ function PluginOfTheWeek() {
   const featured = products.find(p => p.slug === "omnisphere") || products[0];
   return (
     <section className="px-4 md:px-12 py-16 md:py-24">
-      <SectionTitle>PLUGIN OF THE WEEK</SectionTitle>
+      <AuroraTitle>PLUGIN OF THE WEEK</AuroraTitle>
       <FadeIn>
         <div className="max-w-2xl mx-auto relative">
           <div className="spin-glow" />
@@ -264,14 +289,14 @@ function Difference() {
   ];
   return (
     <section className="px-4 md:px-12 py-16 md:py-24">
-      <SectionTitle>THE DIFFERENCE</SectionTitle>
+      <AuroraTitle>THE DIFFERENCE</AuroraTitle>
       <FadeIn>
-        <div className="grid md:grid-cols-3 gap-6 md:gap-8">
+        <div className="grid md:grid-cols-3 gap-8 md:gap-10 pt-4">
           {items.map(({ t, d, Icon }) => (
-            <div key={t} className="difference-card group">
-              <Icon className="difference-icon" strokeWidth={2.5} aria-hidden />
-              <h3 className="difference-title font-display text-2xl leading-tight mb-3">{t}</h3>
-              <p className="text-white leading-relaxed">{d}</p>
+            <div key={t} className="difference-card-light group">
+              <Icon className="difference-icon-light" strokeWidth={2.5} aria-hidden />
+              <h3 className="difference-title-light font-display text-2xl leading-tight mb-3">{t}</h3>
+              <p className="difference-body-light leading-relaxed">{d}</p>
             </div>
           ))}
         </div>
@@ -285,7 +310,7 @@ function Newsletter() {
     <section className="px-4 md:px-12 py-16 md:py-24">
       <div className="max-w-2xl mx-auto">
         <GlassCard variant="heavy" className="p-10 md:p-14 text-center">
-          <h2 className="font-display text-4xl md:text-5xl mb-4">GET DROPS BEFORE THEY HIT.</h2>
+          <AuroraTitle as="h2" className="!mb-2">GET DROPS BEFORE THEY HIT.</AuroraTitle>
           <p className="text-white/70 mb-8">First in line on every drop. No spam, just heat.</p>
           <form className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto" onSubmit={(e) => e.preventDefault()}>
             <input type="email" placeholder="you@email.com" className="input-glass flex-1" required />
