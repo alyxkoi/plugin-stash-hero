@@ -20,8 +20,8 @@ function DrawUnderline() {
     return () => io.disconnect();
   }, []);
   return (
-    <svg ref={ref} className={`draw-underline ${drawn ? "is-drawn" : ""}`} viewBox="0 0 240 18" preserveAspectRatio="none" aria-hidden>
-      <path d="M4 12 Q 60 -2, 120 8 T 236 6" />
+    <svg ref={ref} className={`draw-underline ${drawn ? "is-drawn" : ""}`} viewBox="0 0 240 14" preserveAspectRatio="none" aria-hidden>
+      <path d="M2 9 Q 120 -2, 238 7" />
     </svg>
   );
 }
