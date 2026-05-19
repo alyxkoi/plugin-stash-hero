@@ -37,9 +37,10 @@ export function AccountLayout() {
                         key={item.to}
                         to={item.to}
                         aria-current={active ? "page" : undefined}
-                        className={`group flex items-center gap-3 px-3 h-11 rounded-full border transition-all ${
+                        data-active={active}
+                        className={`dash-pill group flex items-center gap-3 px-3 h-11 rounded-full border ${
                           active
-                            ? "bg-gradient-to-r from-[var(--accent-red)] to-[var(--accent-red-glow)] text-white border-white/20 shadow-[0_8px_24px_rgba(255,0,60,0.4)]"
+                            ? "text-white"
                             : "bg-white/[0.02] border-white/10 text-white/75 hover:bg-white/[0.06] hover:border-white/25 hover:text-white"
                         }`}
                       >
@@ -79,9 +80,10 @@ export function AccountLayout() {
                   key={item.to}
                   to={item.to}
                   aria-current={active ? "page" : undefined}
-                  className={`flex items-center gap-2 px-4 h-11 rounded-full border whitespace-nowrap ${
+                  data-active={active}
+                  className={`dash-pill flex items-center gap-2 px-4 h-11 rounded-full border whitespace-nowrap ${
                     active
-                      ? "bg-gradient-to-r from-[var(--accent-red)] to-[var(--accent-red-glow)] text-white border-white/20"
+                      ? "text-white"
                       : "bg-white/[0.03] border-white/10 text-white/70"
                   }`}
                 >
