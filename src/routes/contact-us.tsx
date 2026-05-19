@@ -12,7 +12,7 @@ function Contact() {
   const [subject, setSubject] = useState("general");
   return (
     <div className="px-4 md:px-12 py-12 max-w-2xl mx-auto">
-      <div className="font-mono text-xs tracking-[0.2em] text-[var(--accent-red-glow)] mb-3">// REAL HUMAN, REAL FAST</div>
+      
       <h1 className="font-black chrome-text leading-[0.95] mb-3" style={{ fontSize: "clamp(2.5rem, 6vw, 4.5rem)" }}>GET IN TOUCH.</h1>
       <p className="text-lg text-white/65 mb-8">Most replies hit within a few hours during business hours.</p>
 
