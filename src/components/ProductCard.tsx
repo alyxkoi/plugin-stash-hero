@@ -35,7 +35,7 @@ export function ProductCard({ product, variant = "default", rank }: { product: P
   const onSale = product.compareAtPrice && product.compareAtPrice > product.price;
 
   return (
-    <div ref={cardRef} className={`glass-card group ${variant === "blue" ? "glass-card--blue" : ""} h-full flex flex-col`}>
+    <div ref={cardRef} className={`glass-card product-card group ${variant === "blue" ? "glass-card--blue" : ""} h-full flex flex-col`}>
       <div className="chromatic-edge" />
       <div className="glass-noise" />
       <div className="relative z-10 p-4 flex flex-col h-full">
