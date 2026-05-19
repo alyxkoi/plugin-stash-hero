@@ -717,7 +717,7 @@
   position: absolute;
   left: 50%;
   bottom: -0.08em;
-  transform: translateX(-50%) skewX(-6deg);
+  transform: translateX(-50%);
   width: 112%;
   height: 14px;
   z-index: 3;
