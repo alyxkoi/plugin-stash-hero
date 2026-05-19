@@ -80,9 +80,10 @@ export function AccountLayout() {
                   key={item.to}
                   to={item.to}
                   aria-current={active ? "page" : undefined}
-                  className={`flex items-center gap-2 px-4 h-11 rounded-full border whitespace-nowrap ${
+                  data-active={active}
+                  className={`dash-pill flex items-center gap-2 px-4 h-11 rounded-full border whitespace-nowrap ${
                     active
-                      ? "bg-gradient-to-r from-[var(--accent-red)] to-[var(--accent-red-glow)] text-white border-white/20"
+                      ? "text-white"
                       : "bg-white/[0.03] border-white/10 text-white/70"
                   }`}
                 >
