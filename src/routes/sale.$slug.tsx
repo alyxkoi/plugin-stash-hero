@@ -2,6 +2,7 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ShopPage } from "@/components/ShopPage";
 import { GlassCard } from "@/components/GlassCard";
+import { AuroraTitle } from "@/components/AuroraTitle";
 import { ProductCard } from "@/components/ProductCard";
 import { SALE, products } from "@/lib/mock-data";
 
@@ -73,25 +74,9 @@ function SaleEvent() {
         </div>
       </section>
 
-      {/* Stats strip */}
-      <div className="px-4 md:px-12 mb-12">
-        <GlassCard className="p-5">
-          <div className="h-px -mt-5 -mx-5 mb-5" style={{ background: "linear-gradient(90deg, transparent, #FF1F5C, transparent)" }} />
-          <div className="flex flex-wrap gap-x-8 gap-y-2 justify-center font-mono text-xs text-white/70">
-            <span>{products.filter((p) => p.compareAtPrice).length} PLUGINS ON SALE</span>
-            <span className="text-white/30">·</span>
-            <span>35% OFF EVERYTHING</span>
-            <span className="text-white/30">·</span>
-            <span>8,420 LOADED THIS WEEK</span>
-            <span className="text-white/30">·</span>
-            <span>ENDS {SALE.endsLabel.toUpperCase()}</span>
-          </div>
-        </GlassCard>
-      </div>
-
       <section className="px-4 md:px-12 mb-12">
         <div className="font-mono text-xs tracking-[0.2em] text-[var(--accent-red-glow)] mb-3">// TODAY'S SPOTLIGHT</div>
-        <h2 className="section-header chrome-text">HAND-PICKED FOR THE STEALS.</h2>
+        <AuroraTitle>HAND-PICKED FOR THE STEALS.</AuroraTitle>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
           {spotlight.map((p) => <ProductCard key={p.slug} product={p} />)}
         </div>
