@@ -654,7 +654,7 @@
   .difference-card, .difference-title { transition: none !important; }
 }
 
-/* ===== AURORA TITLE ===== */
+/* ===== AURORA TITLE — bold slanted frosted text with aurora gradient inside the letters ===== */
 .aurora-title-wrap {
   position: relative;
   display: flex;
@@ -662,46 +662,8 @@
   align-items: center;
   width: 100%;
   margin: 0 auto 2.5rem;
-  padding: 1.5rem 1rem;
+  padding: 0.75rem 1rem;
   isolation: isolate;
-}
-.aurora-blobs {
-  position: absolute;
-  inset: -40% -10%;
-  pointer-events: none;
-  z-index: 0;
-  overflow: visible;
-}
-.aurora-blob {
-  position: absolute;
-  width: 55%;
-  height: 220%;
-  border-radius: 50%;
-  filter: blur(70px);
-  opacity: 0.55;
-  will-change: transform;
-}
-.aurora-blob--red {
-  left: 8%;
-  top: -40%;
-  background: radial-gradient(circle, #FF003C 0%, transparent 65%);
-  animation: aurora-drift-a 14s ease-in-out infinite alternate;
-}
-.aurora-blob--blue {
-  right: 8%;
-  top: -30%;
-  background: radial-gradient(circle, #2B28FF 0%, transparent 65%);
-  animation: aurora-drift-b 17s ease-in-out infinite alternate;
-}
-@keyframes aurora-drift-a {
-  0%   { transform: translate(-6%, -4%) scale(1); }
-  50%  { transform: translate(10%, 6%) scale(1.1); }
-  100% { transform: translate(-2%, 8%) scale(0.95); }
-}
-@keyframes aurora-drift-b {
-  0%   { transform: translate(4%, 6%) scale(1.05); }
-  50%  { transform: translate(-8%, -4%) scale(0.95); }
-  100% { transform: translate(6%, 2%) scale(1.1); }
 }
 
 .aurora-title-text {
@@ -711,66 +673,56 @@
   font-family: "Anton", system-ui, sans-serif;
   font-weight: 400;
   text-transform: uppercase;
-  letter-spacing: 0.02em;
-  font-size: clamp(2rem, 4vw, 3.5rem);
-  color: #ffffff;
+  letter-spacing: 0.015em;
+  font-size: clamp(2.25rem, 4.4vw, 4rem);
   text-align: center;
   margin: 0;
-  text-shadow:
-    0 0 18px rgba(255, 255, 255, 0.45),
-    0 0 2px rgba(255, 255, 255, 0.7);
-  padding: 0.15em 0.6em;
-  isolation: isolate;
+  /* slight slant + bolder via stroke */
+  transform: skewX(-6deg);
+  -webkit-text-stroke: 0.045em currentColor;
+  paint-order: stroke fill;
+  color: #ffffff;
+  /* aurora gradient INSIDE the letters */
+  background: linear-gradient(110deg,
+    #ffffff 0%,
+    #ffd7e1 18%,
+    #FF1F5C 38%,
+    #ffffff 55%,
+    #6f6cff 72%,
+    #2B28FF 88%,
+    #ffffff 100%);
+  background-size: 220% 100%;
+  background-position: 0% 50%;
+  -webkit-background-clip: text;
+          background-clip: text;
+  -webkit-text-fill-color: transparent;
+  /* frosted/glow halo around the text */
+  filter:
+    drop-shadow(0 0 14px rgba(255, 255, 255, 0.35))
+    drop-shadow(0 0 32px rgba(255, 31, 92, 0.28))
+    drop-shadow(0 0 42px rgba(43, 40, 255, 0.22));
+  animation: aurora-shift 9s ease-in-out infinite alternate;
 }
 .aurora-title-inner {
-  position: relative;
-  z-index: 2;
   display: inline-block;
 }
-.aurora-strip-bg {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  transform: rotate(-6deg);
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(14px) saturate(140%);
-  -webkit-backdrop-filter: blur(14px) saturate(140%);
-  border-radius: 10px;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.25),
-    0 8px 32px -8px rgba(0, 0, 0, 0.45);
-  pointer-events: none;
-}
-.aurora-strip-bg::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(110deg,
-    rgba(255, 0, 60, 0.6) 0%,
-    rgba(255, 255, 255, 0.25) 35%,
-    rgba(43, 40, 255, 0.6) 70%,
-    rgba(255, 255, 255, 0.18) 100%);
-  -webkit-mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-          mask-composite: exclude;
-  pointer-events: none;
+@keyframes aurora-shift {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
 }
 
-/* Draw-on-scroll curved underline */
+/* Draw-on-scroll curved underline — single slight curve, slightly longer than the word,
+   sits barely overlapping the bottom of the letters. */
 .draw-underline {
   position: absolute;
   left: 50%;
-  bottom: -0.45em;
-  transform: translateX(-50%);
-  width: clamp(110px, 22%, 260px);
-  height: 18px;
+  bottom: -0.08em;
+  transform: translateX(-50%) skewX(-6deg);
+  width: 112%;
+  height: 14px;
   z-index: 3;
   pointer-events: none;
+  overflow: visible;
 }
 .draw-underline path {
   fill: none;
@@ -779,13 +731,13 @@
   stroke-linecap: round;
   stroke-dasharray: 300;
   stroke-dashoffset: 300;
-  transition: stroke-dashoffset 1.2s cubic-bezier(0.65, 0, 0.35, 1);
-  filter: drop-shadow(0 0 6px rgba(255, 0, 60, 0.45));
+  transition: stroke-dashoffset 1.1s cubic-bezier(0.65, 0, 0.35, 1);
+  filter: drop-shadow(0 0 6px rgba(255, 0, 60, 0.55));
 }
 .draw-underline.is-drawn path { stroke-dashoffset: 0; }
 
 @media (prefers-reduced-motion: reduce) {
-  .aurora-blob { animation: none !important; }
+  .aurora-title-text { animation: none !important; }
   .draw-underline path { transition: none !important; stroke-dashoffset: 0 !important; }
 }
 
