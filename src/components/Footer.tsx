@@ -25,7 +25,6 @@ export function Footer() {
             <FooterCol title="SUPPORT" links={[
               { to: "/faq", label: "FAQ" },
               { to: "/contact-us", label: "Contact" },
-              { to: "/return-policy", label: "Returns" },
             ]} />
             <FooterCol title="BRAND" links={[
               { to: "/our-story", label: "Our Story" },

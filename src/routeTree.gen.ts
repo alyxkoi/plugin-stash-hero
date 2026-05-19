@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermsOfServiceRouteImport } from './routes/terms-of-service'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SearchRouteImport } from './routes/search'
-import { Route as ReturnPolicyRouteImport } from './routes/return-policy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as OurStoryRouteImport } from './routes/our-story'
@@ -48,11 +47,6 @@ const SignupRoute = SignupRouteImport.update({
 const SearchRoute = SearchRouteImport.update({
   id: '/search',
   path: '/search',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ReturnPolicyRoute = ReturnPolicyRouteImport.update({
-  id: '/return-policy',
-  path: '/return-policy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -172,7 +166,6 @@ export interface FileRoutesByFullPath {
   '/our-story': typeof OurStoryRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/return-policy': typeof ReturnPolicyRoute
   '/search': typeof SearchRoute
   '/signup': typeof SignupRoute
   '/terms-of-service': typeof TermsOfServiceRoute
@@ -198,7 +191,6 @@ export interface FileRoutesByTo {
   '/our-story': typeof OurStoryRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/return-policy': typeof ReturnPolicyRoute
   '/search': typeof SearchRoute
   '/signup': typeof SignupRoute
   '/terms-of-service': typeof TermsOfServiceRoute
@@ -226,7 +218,6 @@ export interface FileRoutesById {
   '/our-story': typeof OurStoryRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/return-policy': typeof ReturnPolicyRoute
   '/search': typeof SearchRoute
   '/signup': typeof SignupRoute
   '/terms-of-service': typeof TermsOfServiceRoute
@@ -255,7 +246,6 @@ export interface FileRouteTypes {
     | '/our-story'
     | '/privacy-policy'
     | '/reset-password'
-    | '/return-policy'
     | '/search'
     | '/signup'
     | '/terms-of-service'
@@ -281,7 +271,6 @@ export interface FileRouteTypes {
     | '/our-story'
     | '/privacy-policy'
     | '/reset-password'
-    | '/return-policy'
     | '/search'
     | '/signup'
     | '/terms-of-service'
@@ -308,7 +297,6 @@ export interface FileRouteTypes {
     | '/our-story'
     | '/privacy-policy'
     | '/reset-password'
-    | '/return-policy'
     | '/search'
     | '/signup'
     | '/terms-of-service'
@@ -336,7 +324,6 @@ export interface RootRouteChildren {
   OurStoryRoute: typeof OurStoryRoute
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
-  ReturnPolicyRoute: typeof ReturnPolicyRoute
   SearchRoute: typeof SearchRoute
   SignupRoute: typeof SignupRoute
   TermsOfServiceRoute: typeof TermsOfServiceRoute
@@ -368,13 +355,6 @@ declare module '@tanstack/react-router' {
       path: '/search'
       fullPath: '/search'
       preLoaderRoute: typeof SearchRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/return-policy': {
-      id: '/return-policy'
-      path: '/return-policy'
-      fullPath: '/return-policy'
-      preLoaderRoute: typeof ReturnPolicyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset-password': {
@@ -569,7 +549,6 @@ const rootRouteChildren: RootRouteChildren = {
   OurStoryRoute: OurStoryRoute,
   PrivacyPolicyRoute: PrivacyPolicyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
-  ReturnPolicyRoute: ReturnPolicyRoute,
   SearchRoute: SearchRoute,
   SignupRoute: SignupRoute,
   TermsOfServiceRoute: TermsOfServiceRoute,
