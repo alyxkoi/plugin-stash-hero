@@ -1,4 +1,4 @@
-import { ReactNode, createContext, isValidElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { ReactNode, createContext, isValidElement, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useRouterState, Outlet } from "@tanstack/react-router";
 import {
   LayoutDashboard, Package, ShoppingBag, Tag, Users, BarChart3,
@@ -26,13 +26,14 @@ interface Props {
 
 type DashboardChrome = { setPage: (title: string, action?: ReactNode) => void };
 const DashboardChromeContext = createContext<DashboardChrome | null>(null);
+const useBrowserLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 export function DashboardShell({ title, action, children }: Props) {
   const nestedChrome = useContext(DashboardChromeContext);
   const actionSig = useMemo(() => getActionSignature(action), [action]);
-  useEffect(() => {
+  useBrowserLayoutEffect(() => {
     nestedChrome?.setPage(title, action);
-  }, [nestedChrome, title, action, actionSig]);
+  }, [nestedChrome, title, actionSig]);
 
   if (nestedChrome) return <>{children}</>;
 
