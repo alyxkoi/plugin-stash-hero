@@ -55,16 +55,6 @@ function NewSale() {
           </div>
           {scope === "selected" && <input className="ipt mt-3" placeholder="Search products to include..." />}
         </DashCard>
-        <DashCard title="Theme">
-          <div className="flex gap-2 mb-3">
-            {THEMES.map(t => <button key={t.name} onClick={() => setTheme(t.color)} className={`px-3 py-2 rounded-lg text-xs border ${theme === t.color ? "border-white" : "border-white/15"}`} style={{ background: t.color + "22", color: t.color }}>{t.name}</button>)}
-          </div>
-          <input type="color" value={theme} onChange={e => setTheme(e.target.value)} className="w-16 h-10 rounded border border-white/15 bg-transparent" />
-          <div className="mt-4 rounded-xl p-6 text-center" style={{ background: `linear-gradient(135deg, ${theme}33, ${theme}11)`, border: `1px solid ${theme}55` }}>
-            <div className="font-display text-3xl" style={{ color: theme }}>{pct}% OFF. EVERYTHING.</div>
-            <div className="text-xs mt-1 text-white/60">Banner preview</div>
-          </div>
-        </DashCard>
         <DashCard title="Preview"><button className="btn-ghost !text-xs !py-2 !px-4">Preview landing page →</button></DashCard>
       </div>
       <div className="fixed bottom-0 left-0 md:left-[220px] right-0 z-30 border-t border-white/10 bg-[#13002C]/95 backdrop-blur-md px-6 py-3 flex items-center gap-3">
