@@ -15,12 +15,13 @@ export function Shell() {
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={pathname}
-            initial={reduce ? false : { opacity: 0, y: 10 }}
+            initial={reduce ? false : { opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={reduce ? { opacity: 0 } : { opacity: 0, y: -6 }}
+            exit={reduce ? { opacity: 0 } : { opacity: 0, y: -4 }}
             transition={{
-              duration: reduce ? 0 : 0.38,
+              duration: reduce ? 0 : 0.42,
               ease: [0.22, 1, 0.36, 1],
+              opacity: { duration: reduce ? 0 : 0.42 },
             }}
             style={{ willChange: "opacity, transform" }}
           >
