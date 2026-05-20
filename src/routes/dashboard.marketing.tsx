@@ -69,16 +69,31 @@ function Marketing() {
       )}
 
       {tab === "campaigns" && (
-        <DashCard>
-          <table className="w-full text-sm">
-            <thead className="text-[10px] uppercase tracking-wider text-white/40"><tr><th className="text-left py-2">Name</th><th className="text-left py-2 px-3">Sent</th><th className="text-right py-2">Recipients</th><th className="text-right py-2">Open</th><th className="text-right py-2">Click</th><th className="text-right py-2">Revenue</th></tr></thead>
-            <tbody>
-              {campaigns.map(c => (
-                <tr key={c.id} className="border-t border-white/5"><td className="py-2 text-sm">{c.name}</td><td className="py-2 px-3 text-[10px] font-mono text-white/50">{new Date(c.sentAt).toLocaleDateString()}</td><td className="py-2 text-right font-mono text-xs">{c.recipients.toLocaleString()}</td><td className="py-2 text-right font-mono text-xs">{c.openRate}%</td><td className="py-2 text-right font-mono text-xs">{c.clickRate}%</td><td className="py-2 text-right font-mono text-xs">{formatMoney(c.revenue)}</td></tr>
-              ))}
-            </tbody>
-          </table>
-        </DashCard>
+        <div className="space-y-5">
+          <div className="glass-card p-4 flex items-center gap-3">
+            <div className="chromatic-edge" />
+            <div className="relative z-10 flex items-center gap-3 w-full">
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center text-lg" style={{ background: "linear-gradient(135deg, #FFE01B, #FFB800)", color: "#13002C" }}>M</div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm">Mailchimp connected</div>
+                <div className="text-[11px] text-white/50 font-mono">Open / click / revenue rows below sync from Mailchimp campaign reports. Clicks are tagged with <code>utm_source=mailchimp</code> for attribution in Analytics.</div>
+              </div>
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-mono uppercase tracking-wider border bg-emerald-500/15 text-emerald-300 border-emerald-500/30">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-dot" /> Live
+              </span>
+            </div>
+          </div>
+          <DashCard>
+            <table className="w-full text-sm">
+              <thead className="text-[10px] uppercase tracking-wider text-white/40"><tr><th className="text-left py-2">Name</th><th className="text-left py-2 px-3">Sent</th><th className="text-right py-2">Recipients</th><th className="text-right py-2">Open</th><th className="text-right py-2">Click</th><th className="text-right py-2">Revenue</th></tr></thead>
+              <tbody>
+                {campaigns.map(c => (
+                  <tr key={c.id} className="border-t border-white/5"><td className="py-2 text-sm">{c.name}</td><td className="py-2 px-3 text-[10px] font-mono text-white/50">{new Date(c.sentAt).toLocaleDateString()}</td><td className="py-2 text-right font-mono text-xs">{c.recipients.toLocaleString()}</td><td className="py-2 text-right font-mono text-xs">{c.openRate}%</td><td className="py-2 text-right font-mono text-xs">{c.clickRate}%</td><td className="py-2 text-right font-mono text-xs">{formatMoney(c.revenue)}</td></tr>
+                ))}
+              </tbody>
+            </table>
+          </DashCard>
+        </div>
       )}
 
       {genOpen && (
