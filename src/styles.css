@@ -832,3 +832,183 @@
 @media (prefers-reduced-motion: reduce) {
   .dash-pill, .dash-pill::before { transition: none !important; }
 }
+
+/* ===== HOMEPAGE REDESIGN ADDITIONS ===== */
+
+/* Dark glass variant for The Difference cards */
+.difference-card-dark {
+  position: relative;
+  background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.02));
+  padding: 2rem;
+  border-radius: 1.25rem;
+  color: #ffffff;
+  transition: transform 260ms ease, box-shadow 260ms ease, border-color 260ms ease;
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow:
+    0 1px 2px rgba(0,0,0,0.4),
+    0 8px 24px rgba(0,0,0,0.35),
+    inset 0 1px 0 rgba(255,255,255,0.10);
+}
+.difference-card-dark::before {
+  content: "";
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at top, rgba(255,0,60,0.10), transparent 60%);
+  opacity: 0;
+  transition: opacity 260ms ease;
+  pointer-events: none;
+}
+.difference-card-dark:hover {
+  transform: translateY(-3px);
+  border-color: rgba(255,31,92,0.35);
+  box-shadow:
+    0 1px 2px rgba(0,0,0,0.4),
+    0 16px 40px rgba(0,0,0,0.45),
+    0 0 28px rgba(255,0,60,0.25),
+    inset 0 1px 0 rgba(255,255,255,0.14);
+}
+.difference-card-dark:hover::before { opacity: 1; }
+.difference-card-dark .diff-icon-dark {
+  width: 2.25rem; height: 2.25rem;
+  color: var(--accent-red-glow);
+  margin-bottom: 1.25rem;
+  display: block;
+  filter: drop-shadow(0 0 12px rgba(255,31,92,0.45));
+}
+
+/* On Rotation horizontal carousel */
+.rotation-track {
+  display: flex;
+  gap: 1.25rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  padding: 0.5rem 0.25rem 1.5rem;
+  -webkit-overflow-scrolling: touch;
+}
+.rotation-track > * { scroll-snap-align: start; flex-shrink: 0; }
+.rotation-card {
+  width: calc((100% - 1.25rem * 3) / 4 - 1.25rem / 4);
+  min-width: 220px;
+  aspect-ratio: 1 / 1;
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 220ms ease, box-shadow 240ms ease;
+}
+@media (max-width: 1100px) {
+  .rotation-card { width: 70vw; max-width: 360px; min-width: 240px; }
+}
+@media (min-width: 1101px) {
+  /* peek 5th square */
+  .rotation-card { width: calc((100% - 1.25rem * 4.4) / 4.4); }
+}
+.rotation-card:hover { transform: translateY(-4px); }
+.rotation-card:hover .rotation-overlay { transform: translateY(0); opacity: 1; }
+.rotation-card:hover .rotation-artwork { transform: scale(1.05); }
+.rotation-artwork {
+  position: absolute; inset: 0;
+  transition: transform 380ms cubic-bezier(0.22,1,0.36,1);
+}
+.rotation-overlay {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  padding: 0.85rem 0.9rem 0.9rem;
+  background: linear-gradient(180deg, rgba(10,0,24,0) 0%, rgba(10,0,24,0.85) 35%, rgba(10,0,24,0.95) 100%);
+  backdrop-filter: blur(8px);
+  transform: translateY(40%);
+  opacity: 0;
+  transition: transform 280ms cubic-bezier(0.22,1,0.36,1), opacity 240ms ease;
+}
+@media (max-width: 768px) {
+  .rotation-overlay { transform: translateY(0); opacity: 1; backdrop-filter: blur(4px); }
+}
+
+/* Plugin Recipe card */
+.recipe-card {
+  position: relative;
+  padding: 1.75rem;
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.02));
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow:
+    0 1px 2px rgba(0,0,0,0.4),
+    0 18px 50px -16px rgba(0,0,0,0.6),
+    inset 0 1px 0 rgba(255,255,255,0.12);
+  transition: transform 240ms ease, box-shadow 260ms ease, border-color 260ms ease;
+  overflow: hidden;
+}
+.recipe-card:hover {
+  border-color: rgba(255,31,92,0.28);
+  box-shadow:
+    0 1px 2px rgba(0,0,0,0.4),
+    0 24px 60px -16px rgba(0,0,0,0.7),
+    0 0 36px rgba(255,0,60,0.22),
+    inset 0 1px 0 rgba(255,255,255,0.16);
+}
+.recipe-card:hover .recipe-symbol { color: var(--accent-red-glow); text-shadow: 0 0 14px rgba(255,31,92,0.7); }
+.recipe-card:hover .recipe-tile-a { transform: translateX(6px); }
+.recipe-card:hover .recipe-tile-b { transform: translateX(-6px); }
+.recipe-tile {
+  position: relative;
+  padding: 0.9rem;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.10);
+  transition: transform 280ms ease, border-color 200ms ease, background 200ms ease;
+  cursor: pointer;
+  display: flex; flex-direction: column; gap: 0.5rem;
+}
+.recipe-tile:hover { border-color: rgba(255,255,255,0.32); background: rgba(255,255,255,0.07); transform: translateY(-2px); }
+.recipe-symbol {
+  font-family: "Anton", sans-serif;
+  font-size: 1.75rem;
+  color: rgba(255,255,255,0.55);
+  display: flex; align-items: center; justify-content: center;
+  transition: color 200ms ease, text-shadow 200ms ease;
+}
+.recipe-outcome {
+  margin-top: 1.25rem;
+  padding: 1.25rem 1.25rem 1.5rem;
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255,0,60,0.10), rgba(43,40,255,0.08));
+  border: 1px solid rgba(255,255,255,0.10);
+  position: relative;
+}
+
+/* Vault row */
+.vault-row {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  cursor: pointer;
+}
+.vault-row:last-child { border-bottom: 1px solid rgba(255,255,255,0.08); }
+.vault-row-bg {
+  position: absolute; inset: 0;
+  transition: transform 500ms cubic-bezier(0.22,1,0.36,1), filter 400ms ease;
+  transform: scale(1.15);
+}
+.vault-row:hover .vault-row-bg { transform: scale(1.22) translateX(2%); filter: brightness(1.15); }
+.vault-row-scrim {
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.35) 60%, rgba(0,0,0,0.75) 100%);
+}
+.vault-row:hover .vault-arrow { transform: translateX(8px); color: var(--accent-red-glow); }
+.vault-arrow { transition: transform 260ms ease, color 220ms ease; }
+
+/* Carousel control */
+.carousel-ctrl {
+  width: 44px; height: 44px;
+  border-radius: 9999px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.14);
+  color: #fff;
+  transition: background 200ms, border-color 200ms, transform 200ms;
+  cursor: pointer;
+}
+.carousel-ctrl:hover { background: rgba(255,255,255,0.10); border-color: var(--accent-red-glow); transform: translateY(-1px); }
+.carousel-ctrl:disabled { opacity: 0.35; cursor: not-allowed; }
