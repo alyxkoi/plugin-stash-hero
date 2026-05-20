@@ -1196,7 +1196,7 @@ function SoundsOfTheDecade() {
   );
 }
 
-function FeaturedSoundCard({ product, tag }: { product: Product; tag: string }) {
+function FeaturedSoundCard({ product }: { product: Product }) {
   const [added, setAdded] = useState(false);
   const onSale = product.compareAtPrice && product.compareAtPrice > product.price;
   return (
@@ -1217,9 +1217,6 @@ function FeaturedSoundCard({ product, tag }: { product: Product; tag: string }) 
       <div className="relative z-10 flex flex-col h-full p-6 md:p-8">
         <div className="flex items-center gap-2">
           <span className="label-mini !text-[var(--accent-red-glow)]">Featured</span>
-          <span className="font-mono text-[10px] tracking-[0.15em] uppercase px-2 py-0.5 rounded-full border border-white/20 text-white/80">
-            {tag}
-          </span>
         </div>
         <div className="mt-auto">
           <div className="label-mini mb-1">{product.maker}</div>
