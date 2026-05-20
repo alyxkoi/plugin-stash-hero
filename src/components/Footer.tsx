@@ -20,6 +20,7 @@ export function Footer() {
                 { to: "/shop/effects", label: "Effects" },
                 { to: "/shop/libraries", label: "Libraries" },
                 { to: "/shop/daws", label: "DAWs" },
+                { to: "/shop/software", label: "Software" },
                 { to: "/shop/freebies", label: "Freebies" },
               ]} />
               <FooterCol title="SUPPORT" links={[
