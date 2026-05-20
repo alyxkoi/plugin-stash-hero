@@ -192,19 +192,14 @@ function Hero() {
 
 function Ticker() {
   const items = [
-    <>
-      🌴 <span className="text-red">Summer Steals</span> active
-    </>,
-    <>
-      <span className="text-red">35% OFF</span> store-wide
-    </>,
-    <>
-      Ends <span className="text-red">{SALE.endsLabel}</span>
-    </>,
-    <>Curated for producers</>,
-    <>Instant access · Yours forever</>,
+    <span key="a" className="font-display font-black tracking-[0.18em]">
+      FOR PRODUCERS, BY PRODUCERS
+    </span>,
+    <span key="b" className="font-display font-black tracking-[0.18em]">
+      <span className="rainbow-glass-text">35% OFF</span> STOREWIDE
+    </span>,
   ];
-  const repeated = [...items, ...items, ...items, ...items];
+  const repeated = Array.from({ length: 8 }).flatMap(() => items);
   return (
     <div className="relative overflow-hidden border-y border-white/10 marquee-pause">
       <div
@@ -214,12 +209,12 @@ function Ticker() {
             "linear-gradient(90deg, transparent, #FF1F5C, #2B28FF, #FF1F5C, transparent)",
         }}
       />
-      <div className="py-3 overflow-hidden">
-        <div className="marquee-track flex gap-12 whitespace-nowrap font-display text-sm tracking-[0.12em] text-white/80 uppercase">
+      <div className="py-4 overflow-hidden">
+        <div className="marquee-track flex gap-16 whitespace-nowrap text-base md:text-lg uppercase">
           {repeated.map((item, i) => (
-            <span key={i} className="flex items-center gap-12 shrink-0">
+            <span key={i} className="flex items-center gap-16 shrink-0">
               {item}
-              <span className="w-1 h-1 rounded-full bg-[var(--accent-red-glow)]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-red-glow)]" />
             </span>
           ))}
         </div>
@@ -228,86 +223,77 @@ function Ticker() {
   );
 }
 
-/* ============ ON ROTATION (carousel) ============ */
+/* ============ ON ROTATION (auto-marquee + progress) ============ */
+
+const ROTATION_DURATION_MS = 38000;
 
 function OnRotation() {
   const list = (bestsellerProducts.length >= 5 ? bestsellerProducts : recentProducts).slice(0, 8);
-  const trackRef = useRef<HTMLDivElement>(null);
-  const [canPrev, setCanPrev] = useState(false);
-  const [canNext, setCanNext] = useState(true);
   const [progress, setProgress] = useState(0);
+  const wrapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const el = trackRef.current;
-    if (!el) return;
-    const update = () => {
-      const max = el.scrollWidth - el.clientWidth;
-      setCanPrev(el.scrollLeft > 4);
-      setCanNext(el.scrollLeft < max - 4);
-      setProgress(max > 0 ? el.scrollLeft / max : 0);
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) {
+      setProgress(0);
+      return;
+    }
+    let raf = 0;
+    let start = performance.now();
+    let pausedAt: number | null = null;
+    const wrap = wrapRef.current;
+
+    const onEnter = () => { pausedAt = performance.now(); };
+    const onLeave = () => {
+      if (pausedAt != null) {
+        start += performance.now() - pausedAt;
+        pausedAt = null;
+      }
     };
-    update();
-    el.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
+    wrap?.addEventListener("mouseenter", onEnter);
+    wrap?.addEventListener("mouseleave", onLeave);
+
+    const loop = (t: number) => {
+      const ref = pausedAt ?? t;
+      const elapsed = (ref - start) % ROTATION_DURATION_MS;
+      setProgress(elapsed / ROTATION_DURATION_MS);
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
     return () => {
-      el.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
+      cancelAnimationFrame(raf);
+      wrap?.removeEventListener("mouseenter", onEnter);
+      wrap?.removeEventListener("mouseleave", onLeave);
     };
   }, []);
 
-  const scrollBy = (dir: 1 | -1) => {
-    const el = trackRef.current;
-    if (!el) return;
-    const card = el.querySelector<HTMLElement>(".rotation-card");
-    const step = card ? card.offsetWidth + 20 : el.clientWidth * 0.8;
-    el.scrollBy({ left: dir * step * 2, behavior: "smooth" });
-  };
-
   return (
     <section className="px-4 md:px-12 py-16 md:py-24">
-      <div className="flex items-end justify-between gap-4 mb-2">
-        <div className="flex-1">
-          <AuroraTitle className="!mb-2">ON ROTATION</AuroraTitle>
-        </div>
-        <div className="hidden md:flex gap-2 mb-10">
-          <button
-            className="carousel-ctrl"
-            onClick={() => scrollBy(-1)}
-            disabled={!canPrev}
-            aria-label="Previous"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <button
-            className="carousel-ctrl"
-            onClick={() => scrollBy(1)}
-            disabled={!canNext}
-            aria-label="Next"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
-        </div>
+      <div className="mb-6">
+        <AuroraTitle className="!mb-2">ON ROTATION</AuroraTitle>
       </div>
       <FadeIn>
-        <div ref={trackRef} className="rotation-track no-scrollbar">
-          {list.map((p) => (
-            <RotationCard key={p.slug} product={p} />
-          ))}
-        </div>
-        <div className="mt-2 h-[3px] rounded-full bg-white/8 overflow-hidden max-w-md mx-auto">
+        <div ref={wrapRef} className="rotation-marquee-wrap">
           <div
-            className="h-full rounded-full"
-            style={{
-              width: `${Math.max(12, progress * 100)}%`,
-              background: "linear-gradient(90deg, var(--accent-red), var(--accent-blue-glow))",
-              transition: "width 200ms ease",
-            }}
+            className="rotation-marquee-track"
+            style={{ animationDuration: `${ROTATION_DURATION_MS}ms` }}
+          >
+            {[...list, ...list].map((p, i) => (
+              <RotationCard key={`${p.slug}-${i}`} product={p} />
+            ))}
+          </div>
+        </div>
+        <div className="rotation-progress mt-2">
+          <div
+            className="rotation-progress-fill"
+            style={{ width: `${progress * 100}%` }}
           />
         </div>
       </FadeIn>
     </section>
   );
 }
+
 
 function RotationCard({ product }: { product: Product }) {
   const wished = useStore((s) => s.wishlist.includes(product.slug));
