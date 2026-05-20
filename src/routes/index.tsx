@@ -216,7 +216,7 @@ function Ticker() {
         }}
       />
       <div className="py-4 overflow-hidden">
-        <div className="marquee-track flex gap-16 whitespace-nowrap text-base md:text-lg uppercase">
+        <div className="marquee-track marquee-track--fast flex gap-16 whitespace-nowrap text-base md:text-lg uppercase">
           {repeated.map((item, i) => (
             <span key={i} className="flex items-center gap-16 shrink-0">
               {item}
