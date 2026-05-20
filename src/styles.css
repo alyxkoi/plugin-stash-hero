@@ -1227,10 +1227,14 @@
   border: 1px solid rgba(255,255,255,0.10);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 12px 30px -18px rgba(0,0,0,0.6);
   backdrop-filter: blur(14px);
-  overflow-x: auto;
+  overflow-x: visible;
+  flex-wrap: wrap;
   scrollbar-width: none;
 }
 .console-tabs::-webkit-scrollbar { display: none; }
+@media (max-width: 699px) {
+  .console-tabs { overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
+}
 .console-tab {
   position: relative;
   display: inline-flex;
