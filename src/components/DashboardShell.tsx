@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useRef, useState } from "react";
+import { ReactNode, createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useRouterState, Outlet } from "@tanstack/react-router";
 import {
   LayoutDashboard, Package, ShoppingBag, Tag, Users, BarChart3,
@@ -24,12 +24,33 @@ interface Props {
   children: ReactNode;
 }
 
+type DashboardChrome = { setPage: (title: string, action?: ReactNode) => void };
+const DashboardChromeContext = createContext<DashboardChrome | null>(null);
+
 export function DashboardShell({ title, action, children }: Props) {
+  const nestedChrome = useContext(DashboardChromeContext);
+  useEffect(() => {
+    nestedChrome?.setPage(title, action);
+  }, [nestedChrome, title, action]);
+
+  if (nestedChrome) return <>{children}</>;
+
+  return <DashboardChromeRoot initialTitle={title} initialAction={action}>{children}</DashboardChromeRoot>;
+}
+
+function DashboardChromeRoot({ initialTitle, initialAction, children }: { initialTitle: string; initialAction?: ReactNode; children: ReactNode }) {
   const [session, setSession] = useState<AdminSession | null>(null);
   const [menu, setMenu] = useState(false);
+  const [page, setPageState] = useState<{ title: string; action?: ReactNode }>({ title: initialTitle, action: initialAction });
   const bottomNavRef = useRef<HTMLElement | null>(null);
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+  const setPage = useCallback((nextTitle: string, nextAction?: ReactNode) => {
+    setPageState({ title: nextTitle, action: nextAction });
+  }, []);
+
+  const chrome = useMemo(() => ({ setPage }), [setPage]);
 
   useEffect(() => { setSession(getAdminSession()); }, []);
 
@@ -95,9 +116,9 @@ export function DashboardShell({ title, action, children }: Props) {
       <div className="flex-1 flex flex-col min-w-0 md:ml-0">
         <header className="sticky top-0 z-20">
           <div className="dash-header-floating px-4 md:px-6 py-3 flex items-center gap-3">
-            <h1 className="font-display text-xl md:text-2xl text-white">{title}</h1>
+            <h1 className="font-display text-xl md:text-2xl text-white">{page.title}</h1>
             <div className="dash-header-right ml-auto flex items-center gap-3 min-w-0">
-              {action && <div className="dash-header-actions min-w-0 overflow-x-auto">{action}</div>}
+              {page.action && <div className="dash-header-actions min-w-0 overflow-x-auto">{page.action}</div>}
               <div className="relative">
                 <button onClick={() => setMenu(!menu)} className="flex items-center gap-2 px-2 py-1.5 rounded-lg border border-white/15 hover:border-white/30 transition h-9">
                   <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[var(--accent-red)] to-[var(--accent-blue)] flex items-center justify-center text-xs font-bold">
@@ -118,7 +139,7 @@ export function DashboardShell({ title, action, children }: Props) {
         </header>
 
         <main key={pathname} className="dash-page flex-1 p-4 md:p-8 pb-28 lg:pb-8 overflow-x-hidden">
-          {children}
+          <DashboardChromeContext.Provider value={chrome}>{children}</DashboardChromeContext.Provider>
         </main>
       </div>
 
