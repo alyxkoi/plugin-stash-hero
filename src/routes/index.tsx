@@ -809,7 +809,7 @@ function BrowseTheVault() {
 
               {/* Right */}
               <div className="console-right">
-                <DawVisual />
+                <CategoryVisual slug={active.slug} />
                 <div className="console-preview-grid">
                   {previews.map((p) => (
                     <ConsolePreviewCard key={p.slug} product={p} />
