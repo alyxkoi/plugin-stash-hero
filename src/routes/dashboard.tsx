@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { DashboardShell } from "@/components/DashboardShell";
 import { getAdminSession } from "@/lib/dashboard-mock";
 
 // Layout wrapper for ALL /dashboard/* routes.
@@ -21,5 +22,11 @@ function DashboardLayout() {
     }
   }, [isLogin, navigate]);
 
-  return <Outlet />;
+  if (isLogin) return <Outlet />;
+
+  return (
+    <DashboardShell title="Dashboard">
+      <Outlet />
+    </DashboardShell>
+  );
 }
