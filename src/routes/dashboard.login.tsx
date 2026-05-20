@@ -15,13 +15,19 @@ function DashboardLogin() {
   const [error, setError] = useState<string | null>(null);
   const [recover, setRecover] = useState(false);
 
+  const ADMIN_EMAIL = "pluginwh@gmail.com";
+  const ADMIN_PASSWORD = "Pluginwh1237!";
+
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     if (!email || !password) { setError("Enter email and password."); return; }
     // TODO: backend — replace with supabase.auth.signInWithPassword + users.is_admin check.
-    // Mock: any email/password works; we treat the session as admin.
-    setAdminSession(email);
+    if (email.trim().toLowerCase() !== ADMIN_EMAIL || password !== ADMIN_PASSWORD) {
+      setError("Invalid admin credentials.");
+      return;
+    }
+    setAdminSession(email.trim().toLowerCase());
     navigate({ to: "/dashboard" as any });
   };
 
