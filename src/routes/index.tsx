@@ -629,98 +629,249 @@ function RecipeTile({ product, className = "" }: { product: Product; className?:
   );
 }
 
-/* ============ BROWSE THE VAULT ============ */
+/* ============ BROWSE THE VAULT — SOUND CONSOLE TABS ============ */
 
-const VAULT_ROWS: { slug: string; name: string; desc: string; bg: string }[] = [
+import {
+  Piano,
+  Sliders,
+  Library,
+  AudioWaveform,
+  AppWindow,
+  Gift,
+} from "lucide-react";
+
+type VaultTab = {
+  slug: "instruments" | "effects" | "libraries" | "daws" | "software" | "freebies";
+  label: string;
+  title: string;
+  description: string;
+  chips: string[];
+  ctaLabel: string;
+  bg: string;
+  Icon: typeof Piano;
+};
+
+const VAULT_TABS: VaultTab[] = [
   {
     slug: "instruments",
-    name: "INSTRUMENTS",
-    desc: "Synths, keys, samplers, bass, and virtual instruments.",
-    bg: "radial-gradient(ellipse at 30% 50%, #FF003C 0%, #1F0540 45%, #0a0018 100%), linear-gradient(120deg, #2b0050, #13002C)",
+    label: "Instruments",
+    title: "Instruments",
+    description: "Synths, samplers, drum machines, and playable virtual instruments.",
+    chips: ["Synths", "Samplers", "Keys", "Bass", "Drum Machines"],
+    ctaLabel: "Browse Instruments",
+    bg: "radial-gradient(ellipse at 25% 30%, #FF003C 0%, #1F0540 45%, #0a0018 100%)",
+    Icon: Piano,
   },
   {
     slug: "effects",
-    name: "EFFECTS",
-    desc: "Mixing, mastering, modulation, EQ, compression, and creative FX.",
+    label: "Effects",
+    title: "Effects",
+    description: "Mixing, mastering, modulation, EQ, compression, and creative FX.",
+    chips: ["EQ", "Compression", "Reverb", "Delay", "Mastering"],
+    ctaLabel: "Browse Effects",
     bg: "radial-gradient(ellipse at 70% 50%, #0E0BD1 0%, #1F0540 45%, #0a0018 100%)",
+    Icon: Sliders,
   },
   {
     slug: "libraries",
-    name: "LIBRARIES",
-    desc: "Loops, one-shots, presets, sample packs, and construction kits.",
-    bg: "linear-gradient(90deg, #13002C 0%, #FF1F5C 50%, #13002C 100%)",
+    label: "Libraries",
+    title: "Libraries",
+    description: "Loops, one-shots, presets, sample packs, and construction kits.",
+    chips: ["Kontakt", "Sample Packs", "Loops", "Presets", "Cinematic"],
+    ctaLabel: "Browse Libraries",
+    bg: "linear-gradient(120deg, #13002C 0%, #FF1F5C 55%, #13002C 100%)",
+    Icon: Library,
   },
   {
     slug: "daws",
-    name: "DAWS",
-    desc: "Recording platforms, production tools, and workflow essentials.",
+    label: "DAWs",
+    title: "DAWs",
+    description: "Powerful digital audio workstations built for creators and producers.",
+    chips: ["Production", "Recording", "Mixing", "Mastering", "Live", "All Platforms"],
+    ctaLabel: "Browse DAWs",
     bg: "radial-gradient(ellipse at 50% 30%, #2B28FF 0%, #0E0BD1 35%, #0a0018 100%)",
+    Icon: AudioWaveform,
   },
   {
     slug: "software",
-    name: "SOFTWARE",
-    desc: "Utilities, editors, and creative audio tools.",
+    label: "Software",
+    title: "Software",
+    description: "Creative software, video editors, audio repair, and pro utilities.",
+    chips: ["Video", "Motion", "Photo", "Audio Repair", "Utilities"],
+    ctaLabel: "Browse Software",
     bg: "linear-gradient(120deg, #FF003C 0%, #FF1F5C 30%, #1F0540 70%, #0a0018 100%)",
+    Icon: AppWindow,
   },
   {
     slug: "freebies",
-    name: "FREEBIES",
-    desc: "Starter tools, free sounds, and zero-cost downloads.",
+    label: "Freebies",
+    title: "Freebies",
+    description: "Starter tools, free sounds, and zero-cost downloads.",
+    chips: ["Free Synths", "Free EQ", "Starter Packs"],
+    ctaLabel: "Browse Freebies",
     bg: "linear-gradient(60deg, #0E0BD1 0%, #2B28FF 35%, #FF003C 100%)",
+    Icon: Gift,
   },
 ];
 
 function BrowseTheVault() {
+  // Default active: DAWs
+  const [activeSlug, setActiveSlug] = useState<VaultTab["slug"]>("daws");
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const active = VAULT_TABS.find((t) => t.slug === activeSlug) ?? VAULT_TABS[3];
+  const count = categories.find((c) => c.slug === active.slug)?.count ?? 0;
+  const previews = products.filter((p) => p.category === active.slug).slice(0, 4);
+
+  const onTabKey = (e: React.KeyboardEvent, i: number) => {
+    if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+      e.preventDefault();
+      const dir = e.key === "ArrowRight" ? 1 : -1;
+      const next = (i + dir + VAULT_TABS.length) % VAULT_TABS.length;
+      setActiveSlug(VAULT_TABS[next].slug);
+      tabRefs.current[next]?.focus();
+    }
+  };
+
   return (
-    <section className="py-16 md:py-24">
-      <AuroraTitle>BROWSE THE VAULT</AuroraTitle>
+    <section className="px-4 md:px-12 py-16 md:py-24">
+      <AuroraTitle className="!mb-2">BROWSE THE VAULT</AuroraTitle>
+      <p className="text-center text-white/70 mb-8 text-base md:text-lg max-w-2xl mx-auto">
+        Find the tools by sound, workflow, or format.
+      </p>
       <FadeIn>
-        <div className="flex flex-col">
-          {VAULT_ROWS.map((r) => {
-            const count = categories.find((c) => c.slug === r.slug)?.count ?? 0;
-            return <VaultRow key={r.slug} {...r} count={count} />;
-          })}
+        <div className="max-w-6xl mx-auto">
+          <div
+            className="console-tabs"
+            role="tablist"
+            aria-label="Browse the Vault categories"
+          >
+            {VAULT_TABS.map((t, i) => {
+              const isActive = t.slug === activeSlug;
+              const Icon = t.Icon;
+              return (
+                <button
+                  key={t.slug}
+                  ref={(el) => { tabRefs.current[i] = el; }}
+                  role="tab"
+                  aria-selected={isActive}
+                  aria-controls={`vault-panel-${t.slug}`}
+                  tabIndex={isActive ? 0 : -1}
+                  data-active={isActive}
+                  onClick={() => setActiveSlug(t.slug)}
+                  onKeyDown={(e) => onTabKey(e, i)}
+                  className="console-tab"
+                >
+                  <Icon className="console-tab-icon" strokeWidth={2} />
+                  {t.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <div
+            key={active.slug}
+            id={`vault-panel-${active.slug}`}
+            role="tabpanel"
+            className="console-panel console-fade-in"
+          >
+            <div className="console-panel-bg" style={{ background: active.bg }} />
+            <div className="console-panel-scrim" />
+            <div className="console-panel-grid">
+              {/* Left */}
+              <div className="flex flex-col">
+                <div className="label-mini !text-[var(--accent-red-glow)] mb-2">
+                  Category
+                </div>
+                <h3 className="font-display text-4xl md:text-5xl leading-[0.95] uppercase mb-3">
+                  {active.title}
+                </h3>
+                <p className="text-white/80 text-sm md:text-base leading-relaxed mb-4 max-w-md">
+                  {active.description}
+                </p>
+                <div className="flex flex-wrap gap-1.5 mb-5">
+                  {active.chips.map((c) => (
+                    <span key={c} className="console-chip">{c}</span>
+                  ))}
+                </div>
+                <div className="font-mono text-xs tracking-[0.15em] uppercase text-white/60 mb-5">
+                  {count} {active.label} Tools
+                </div>
+                <Link
+                  to="/shop/$category"
+                  params={{ category: active.slug }}
+                  className="btn-primary !text-sm !py-3 !px-5 console-cta self-start"
+                >
+                  {active.ctaLabel}
+                  <span className="console-cta-arrow">→</span>
+                </Link>
+              </div>
+
+              {/* Right */}
+              <div>
+                <div className="label-mini mb-3">Featured in {active.label}</div>
+                <div className="console-preview-grid">
+                  {previews.map((p) => (
+                    <ConsolePreviewCard key={p.slug} product={p} />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </FadeIn>
     </section>
   );
 }
 
-function VaultRow({
-  slug,
-  name,
-  desc,
-  bg,
-  count,
-}: {
-  slug: string;
-  name: string;
-  desc: string;
-  bg: string;
-  count: number;
-}) {
+function ConsolePreviewCard({ product }: { product: Product }) {
+  const navigate = useNavigate();
+  const [added, setAdded] = useState(false);
+  const open = () => navigate({ to: "/shop/p/$slug", params: { slug: product.slug } });
   return (
-    <Link
-      to="/shop/$category"
-      params={{ category: slug }}
-      className="vault-row group"
-      aria-label={`${name} — ${desc}`}
+    <div
+      className="console-preview-card"
+      onClick={open}
+      role="link"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === "Enter") open(); }}
     >
-      <div className="vault-row-bg" style={{ background: bg }} />
-      <div className="vault-row-scrim" />
-      <div className="relative z-10 flex items-center justify-between gap-4 md:gap-8 px-5 md:px-16 py-8 md:py-12">
-        <div className="min-w-0 flex-1">
-          <h3 className="font-display text-[clamp(2rem,5.5vw,4.5rem)] leading-none tracking-tight uppercase">
-            {name}
-          </h3>
-          <p className="text-white/75 text-sm md:text-base mt-2 max-w-2xl">{desc}</p>
-        </div>
-        <div className="flex items-center gap-3 md:gap-6 shrink-0">
-          <span className="label-mini hidden sm:inline">{count} ITEMS</span>
-          <span className="vault-arrow text-3xl md:text-5xl text-white/85">→</span>
+      <div className="console-preview-art" style={{ background: product.coverGradient }}>
+        <div className="absolute inset-0 flex items-center justify-center text-center p-2">
+          <div>
+            <div className="label-mini !text-[0.55rem] mb-1">{product.maker}</div>
+            <div className="font-display text-base leading-tight">{product.name}</div>
+          </div>
         </div>
       </div>
-    </Link>
+      <div className="font-mono text-[10px] tracking-[0.14em] uppercase text-white/60 truncate">
+        {product.subType ?? product.category}
+      </div>
+      <div className="flex items-center justify-between gap-2">
+        <div className="font-mono text-sm font-bold">
+          {product.isFree ? "FREE" : `$${product.price}`}
+        </div>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            actions.addToCart(product);
+            setAdded(true);
+            setTimeout(() => setAdded(false), 1200);
+          }}
+          className="btn-primary !py-1.5 !px-2.5"
+          aria-label={`Add ${product.name} to cart`}
+          style={
+            added
+              ? {
+                  background: "linear-gradient(180deg,#2B28FF 0%,#0E0BD1 100%)",
+                  boxShadow: "0 8px 24px rgba(14,11,209,0.45)",
+                }
+              : undefined
+          }
+        >
+          {added ? <Check className="w-3.5 h-3.5" /> : <ShoppingCart className="w-3.5 h-3.5" />}
+        </button>
+      </div>
+    </div>
   );
 }
 
