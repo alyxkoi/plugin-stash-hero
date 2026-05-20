@@ -48,6 +48,10 @@ function DashboardChromeRoot({ initialTitle, initialAction, children }: { initia
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
+  useBrowserLayoutEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
+  }, [pathname]);
+
   const setPage = useCallback((nextTitle: string, nextAction?: ReactNode) => {
     setPageState({ title: nextTitle, action: nextAction });
   }, []);
