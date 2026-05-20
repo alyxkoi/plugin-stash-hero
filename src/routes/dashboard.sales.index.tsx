@@ -25,23 +25,25 @@ function SalesPage() {
         </div>
       )}
       <DashCard title="All sale events">
+        <div className="overflow-x-auto -mx-2">
         <table className="w-full text-sm">
-          <thead className="text-[10px] uppercase tracking-wider text-white/40"><tr><th className="text-left py-2">Event</th><th className="text-right py-2">Discount</th><th className="text-left py-2 px-3">Start</th><th className="text-left py-2 px-3">End</th><th className="text-left py-2">Products</th><th className="text-left py-2">Status</th><th className="text-right py-2">Revenue</th><th className="text-right py-2">Actions</th></tr></thead>
+          <thead className="text-[10px] uppercase tracking-wider text-white/40"><tr><th className="text-left py-2 px-2">Event</th><th className="text-right py-2 px-2">Discount</th><th className="hidden md:table-cell text-left py-2 px-3">Start</th><th className="hidden md:table-cell text-left py-2 px-3">End</th><th className="hidden md:table-cell text-left py-2 px-2">Products</th><th className="text-left py-2 px-2">Status</th><th className="text-right py-2 px-2">Revenue</th><th className="hidden md:table-cell text-right py-2 px-2">Actions</th></tr></thead>
           <tbody>
             {saleEvents.map(s => (
               <tr key={s.id} className="border-t border-white/5">
-                <td className="py-2"><Link to={"/dashboard/sales/$id" as any} params={{ id: s.id } as any} className="hover:text-[var(--accent-red-glow)]">{s.name}</Link></td>
-                <td className="py-2 text-right font-mono text-xs">{s.discountPct}%</td>
-                <td className="py-2 px-3 text-[10px] text-white/50 font-mono">{new Date(s.startAt).toLocaleDateString()}</td>
-                <td className="py-2 px-3 text-[10px] text-white/50 font-mono">{new Date(s.endAt).toLocaleDateString()}</td>
-                <td className="py-2 text-xs text-white/60">{s.scope === "all" ? "All" : s.productCount}</td>
-                <td className="py-2"><StatusBadge status={s.status} /></td>
-                <td className="py-2 text-right font-mono text-xs">{s.revenue ? formatMoney(s.revenue) : "—"}</td>
-                <td className="py-2 text-right text-xs"><Link to={"/dashboard/sales/$id" as any} params={{ id: s.id } as any} className="text-white/60 hover:text-white">Edit</Link></td>
+                <td className="py-2 px-2"><Link to={"/dashboard/sales/$id" as any} params={{ id: s.id } as any} className="hover:text-[var(--accent-red-glow)]">{s.name}</Link></td>
+                <td className="py-2 px-2 text-right font-mono text-xs">{s.discountPct}%</td>
+                <td className="hidden md:table-cell py-2 px-3 text-[10px] text-white/50 font-mono">{new Date(s.startAt).toLocaleDateString()}</td>
+                <td className="hidden md:table-cell py-2 px-3 text-[10px] text-white/50 font-mono">{new Date(s.endAt).toLocaleDateString()}</td>
+                <td className="hidden md:table-cell py-2 px-2 text-xs text-white/60">{s.scope === "all" ? "All" : s.productCount}</td>
+                <td className="py-2 px-2"><StatusBadge status={s.status} /></td>
+                <td className="py-2 px-2 text-right font-mono text-xs">{s.revenue ? formatMoney(s.revenue) : "—"}</td>
+                <td className="hidden md:table-cell py-2 px-2 text-right text-xs"><Link to={"/dashboard/sales/$id" as any} params={{ id: s.id } as any} className="text-white/60 hover:text-white">Edit</Link></td>
               </tr>
             ))}
           </tbody>
         </table>
+        </div>
       </DashCard>
     </DashboardShell>
   );

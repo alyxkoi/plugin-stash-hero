@@ -47,22 +47,24 @@ function CustomersPage() {
         </select>
       </div>
       <DashCard>
+        <div className="overflow-x-auto -mx-2">
         <table className="w-full text-sm">
-          <thead className="text-[10px] uppercase tracking-wider text-white/40"><tr><th className="text-left py-2">Customer</th><th className="text-right py-2">Spent</th><th className="text-right py-2">Orders</th><th className="text-right py-2">Last</th><th className="text-left py-2 px-3">Source</th><th className="text-left py-2">Tags</th><th className="text-right py-2"></th></tr></thead>
+          <thead className="text-[10px] uppercase tracking-wider text-white/40"><tr><th className="text-left py-2 px-2">Customer</th><th className="text-right py-2 px-2">Spent</th><th className="hidden md:table-cell text-right py-2 px-2">Orders</th><th className="text-right py-2 px-2">Last</th><th className="hidden md:table-cell text-left py-2 px-3">Source</th><th className="hidden md:table-cell text-left py-2 px-2">Tags</th><th className="hidden md:table-cell text-right py-2 px-2"></th></tr></thead>
           <tbody>
             {filtered.map(c => (
               <tr key={c.id} className="border-t border-white/5 hover:bg-white/[0.03]">
-                <td className="py-2"><Link to={"/dashboard/customers/$id" as any} params={{ id: c.id } as any} className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--accent-red)] to-[var(--accent-blue)] flex items-center justify-center text-[10px] font-bold">{c.initials}</div><div><div className="text-sm">{c.name}</div><div className="text-[10px] text-white/40 font-mono">{c.email}</div></div></Link></td>
-                <td className="py-2 text-right font-mono text-xs">{formatMoney(c.totalSpent)}</td>
-                <td className="py-2 text-right font-mono text-xs">{c.ordersCount}</td>
-                <td className="py-2 text-right text-[10px] font-mono text-white/50">{relativeTime(c.lastPurchaseAt)}</td>
-                <td className="py-2 px-3"><span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/5 border border-white/10">{c.primarySource}</span></td>
-                <td className="py-2 flex gap-1">{c.ordersCount >= 2 && <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-[var(--accent-blue)]/20 text-[var(--accent-blue-glow)] border border-[var(--accent-blue)]/40">Repeat</span>}{c.status === "banned" && <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-[var(--accent-red)]/20 text-[var(--accent-red-glow)] border border-[var(--accent-red)]/40">Banned</span>}</td>
-                <td className="py-2 text-right"><button className="p-1.5 rounded hover:bg-white/10 text-white/60 hover:text-white"><Mail size={13} /></button></td>
+                <td className="py-2 px-2"><Link to={"/dashboard/customers/$id" as any} params={{ id: c.id } as any} className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--accent-red)] to-[var(--accent-blue)] flex items-center justify-center text-[10px] font-bold shrink-0">{c.initials}</div><div className="min-w-0"><div className="text-sm truncate">{c.name}</div><div className="text-[10px] text-white/40 font-mono truncate">{c.email}</div></div></Link></td>
+                <td className="py-2 px-2 text-right font-mono text-xs">{formatMoney(c.totalSpent)}</td>
+                <td className="hidden md:table-cell py-2 px-2 text-right font-mono text-xs">{c.ordersCount}</td>
+                <td className="py-2 px-2 text-right text-[10px] font-mono text-white/50 whitespace-nowrap">{relativeTime(c.lastPurchaseAt)}</td>
+                <td className="hidden md:table-cell py-2 px-3"><span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/5 border border-white/10">{c.primarySource}</span></td>
+                <td className="hidden md:table-cell py-2 px-2"><div className="flex gap-1">{c.ordersCount >= 2 && <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-[var(--accent-blue)]/20 text-[var(--accent-blue-glow)] border border-[var(--accent-blue)]/40">Repeat</span>}{c.status === "banned" && <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-[var(--accent-red)]/20 text-[var(--accent-red-glow)] border border-[var(--accent-red)]/40">Banned</span>}</div></td>
+                <td className="hidden md:table-cell py-2 px-2 text-right"><button className="p-1.5 rounded hover:bg-white/10 text-white/60 hover:text-white"><Mail size={13} /></button></td>
               </tr>
             ))}
           </tbody>
         </table>
+        </div>
       </DashCard>
     </DashboardShell>
   );

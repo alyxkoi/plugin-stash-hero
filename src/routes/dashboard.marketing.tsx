@@ -29,22 +29,24 @@ function Marketing() {
 
       {tab === "codes" && (
         <DashCard>
+          <div className="overflow-x-auto -mx-2">
           <table className="w-full text-sm">
-            <thead className="text-[10px] uppercase tracking-wider text-white/40"><tr><th className="text-left py-2">Code</th><th className="text-left py-2">Type</th><th className="text-right py-2">Value</th><th className="text-right py-2">Uses</th><th className="text-left py-2 px-3">Expires</th><th className="text-left py-2">Status</th><th className="text-right py-2">Actions</th></tr></thead>
+            <thead className="text-[10px] uppercase tracking-wider text-white/40"><tr><th className="text-left py-2 px-2">Code</th><th className="text-left py-2 px-2">Type</th><th className="text-right py-2 px-2">Value</th><th className="hidden md:table-cell text-right py-2 px-2">Uses</th><th className="text-left py-2 px-3">Expires</th><th className="hidden md:table-cell text-left py-2 px-2">Status</th><th className="hidden md:table-cell text-right py-2 px-2">Actions</th></tr></thead>
             <tbody>
               {discountCodes.map(c => (
                 <tr key={c.id} className="border-t border-white/5">
-                  <td className="py-2 font-mono text-xs text-[var(--accent-red-glow)]">{c.code}</td>
-                  <td className="py-2 text-[10px] font-mono">{c.type === "percent" ? "%" : "$"}</td>
-                  <td className="py-2 text-right font-mono text-xs">{c.type === "percent" ? `${c.value}%` : `$${c.value}`}</td>
-                  <td className="py-2 text-right font-mono text-xs">{c.uses}{c.usageLimit ? ` / ${c.usageLimit}` : ""}</td>
-                  <td className="py-2 px-3 text-[10px] font-mono text-white/50">{c.expiresAt ? new Date(c.expiresAt).toLocaleDateString() : "Never"}</td>
-                  <td className="py-2"><StatusBadge status={c.status} /></td>
-                  <td className="py-2 text-right"><button onClick={() => { navigator.clipboard.writeText(c.code); toast.success("Code copied"); }} className="p-1.5 rounded hover:bg-white/10"><Copy size={13} /></button></td>
+                  <td className="py-2 px-2 font-mono text-xs text-[var(--accent-red-glow)]">{c.code}</td>
+                  <td className="py-2 px-2 text-[10px] font-mono">{c.type === "percent" ? "%" : "$"}</td>
+                  <td className="py-2 px-2 text-right font-mono text-xs">{c.type === "percent" ? `${c.value}%` : `$${c.value}`}</td>
+                  <td className="hidden md:table-cell py-2 px-2 text-right font-mono text-xs">{c.uses}{c.usageLimit ? ` / ${c.usageLimit}` : ""}</td>
+                  <td className="py-2 px-3 text-[10px] font-mono text-white/50 whitespace-nowrap">{c.expiresAt ? new Date(c.expiresAt).toLocaleDateString() : "Never"}</td>
+                  <td className="hidden md:table-cell py-2 px-2"><StatusBadge status={c.status} /></td>
+                  <td className="hidden md:table-cell py-2 px-2 text-right"><button onClick={() => { navigator.clipboard.writeText(c.code); toast.success("Code copied"); }} className="p-1.5 rounded hover:bg-white/10"><Copy size={13} /></button></td>
                 </tr>
               ))}
             </tbody>
           </table>
+          </div>
         </DashCard>
       )}
 
