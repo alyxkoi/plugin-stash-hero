@@ -719,7 +719,7 @@ function BrowseTheVault() {
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const active = VAULT_TABS.find((t) => t.slug === activeSlug) ?? VAULT_TABS[3];
   const count = categories.find((c) => c.slug === active.slug)?.count ?? 0;
-  const previews = products.filter((p) => p.category === active.slug).slice(0, 4);
+  const previews = products.filter((p) => p.category === active.slug).slice(0, 3);
 
   const onTabKey = (e: React.KeyboardEvent, i: number) => {
     if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
@@ -777,37 +777,39 @@ function BrowseTheVault() {
             <div className="console-panel-scrim" />
             <div className="console-panel-grid">
               {/* Left */}
-              <div className="flex flex-col">
-                <div className="label-mini !text-[var(--accent-red-glow)] mb-2">
-                  Category
-                </div>
-                <h3 className="font-display text-4xl md:text-5xl leading-[0.95] uppercase mb-3">
+              <div className="flex flex-col console-left">
+                <h3 className="console-title chrome-text">
                   {active.title}
                 </h3>
-                <p className="text-white/80 text-sm md:text-base leading-relaxed mb-4 max-w-md">
+                <p className="text-white/75 text-sm md:text-base leading-relaxed mb-5 max-w-md">
                   {active.description}
                 </p>
-                <div className="flex flex-wrap gap-1.5 mb-5">
+                <div className="flex flex-wrap gap-1.5 mb-6 max-w-md">
                   {active.chips.map((c) => (
-                    <span key={c} className="console-chip">{c}</span>
+                    <span key={c} className="console-chip"><span className="console-chip-dot" />{c}</span>
                   ))}
                 </div>
-                <div className="font-mono text-xs tracking-[0.15em] uppercase text-white/60 mb-5">
-                  {count} {active.label} Tools
+                <div className="flex items-end gap-5 mt-auto">
+                  <div>
+                    <div className="font-display text-4xl leading-none chrome-text">{count || "—"}</div>
+                    <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-white/55 mt-1">
+                      {active.label} Tools
+                    </div>
+                  </div>
+                  <Link
+                    to="/shop/$category"
+                    params={{ category: active.slug }}
+                    className="btn-primary !text-sm !py-3 !px-5 console-cta"
+                  >
+                    {active.ctaLabel}
+                    <span className="console-cta-arrow">→</span>
+                  </Link>
                 </div>
-                <Link
-                  to="/shop/$category"
-                  params={{ category: active.slug }}
-                  className="btn-primary !text-sm !py-3 !px-5 console-cta self-start"
-                >
-                  {active.ctaLabel}
-                  <span className="console-cta-arrow">→</span>
-                </Link>
               </div>
 
               {/* Right */}
-              <div>
-                <div className="label-mini mb-3">Featured in {active.label}</div>
+              <div className="console-right">
+                <DawVisual />
                 <div className="console-preview-grid">
                   {previews.map((p) => (
                     <ConsolePreviewCard key={p.slug} product={p} />
@@ -815,10 +817,90 @@ function BrowseTheVault() {
                 </div>
               </div>
             </div>
+            <Link
+              to="/shop/$category"
+              params={{ category: active.slug }}
+              className="console-footer-link"
+            >
+              View All {active.label} <span className="console-cta-arrow">→</span>
+            </Link>
           </div>
         </div>
       </FadeIn>
     </section>
+  );
+}
+
+function DawVisual() {
+  // Stable pseudo-random track blocks
+  const tracks = [
+    [{ s: 4, w: 22, c: "m" }, { s: 30, w: 28, c: "b" }, { s: 62, w: 18, c: "m" }, { s: 84, w: 12, c: "b" }],
+    [{ s: 2, w: 16, c: "b" }, { s: 22, w: 34, c: "m" }, { s: 60, w: 22, c: "b" }, { s: 86, w: 10, c: "m" }],
+    [{ s: 8, w: 28, c: "m" }, { s: 40, w: 16, c: "b" }, { s: 60, w: 14, c: "m" }, { s: 78, w: 18, c: "b" }],
+    [{ s: 0, w: 20, c: "b" }, { s: 24, w: 24, c: "m" }, { s: 52, w: 30, c: "b" }, { s: 86, w: 12, c: "m" }],
+    [{ s: 6, w: 14, c: "m" }, { s: 24, w: 20, c: "b" }, { s: 48, w: 32, c: "m" }, { s: 84, w: 14, c: "b" }],
+    [{ s: 2, w: 30, c: "b" }, { s: 36, w: 18, c: "m" }, { s: 58, w: 22, c: "b" }, { s: 84, w: 14, c: "m" }],
+  ];
+  return (
+    <div className="daw-visual" aria-hidden="true">
+      <div className="daw-top">
+        <div className="daw-dots">
+          <span className="daw-dot" style={{ background: "#FF1F5C" }} />
+          <span className="daw-dot" style={{ background: "#FFB400" }} />
+          <span className="daw-dot" style={{ background: "#2BD27A" }} />
+        </div>
+        <div className="daw-timecode">00:01:32:14</div>
+        <div className="daw-top-right">
+          <span className="daw-pill">REC</span>
+          <span className="daw-pill">MIX</span>
+        </div>
+      </div>
+      <div className="daw-body">
+        <div className="daw-tracks">
+          {tracks.map((row, ri) => (
+            <div key={ri} className="daw-track">
+              <div className="daw-track-head">
+                <span className="daw-track-num">{String(ri + 1).padStart(2, "0")}</span>
+              </div>
+              <div className="daw-track-lane">
+                {row.map((b, bi) => (
+                  <div
+                    key={bi}
+                    className={`daw-block daw-block-${b.c}`}
+                    style={{ left: `${b.s}%`, width: `${b.w}%` }}
+                  >
+                    <svg className="daw-wave" viewBox="0 0 100 24" preserveAspectRatio="none">
+                      <path
+                        d="M0,12 Q5,4 10,12 T20,12 T30,12 T40,12 T50,12 T60,12 T70,12 T80,12 T90,12 T100,12"
+                        fill="none"
+                        stroke="rgba(255,255,255,0.85)"
+                        strokeWidth="1.2"
+                      />
+                    </svg>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+          <div className="daw-playhead" />
+          <div className="daw-grid-lines">
+            {Array.from({ length: 7 }).map((_, i) => (
+              <span key={i} style={{ left: `${(i + 1) * 12.5}%` }} />
+            ))}
+          </div>
+        </div>
+        <div className="daw-mixer">
+          <div className="daw-mixer-label">MASTER</div>
+          <div className="daw-mixer-lufs">-8.7 <span>LUFS</span></div>
+          <div className="daw-meters">
+            <div className="daw-meter"><span style={{ height: "82%" }} /></div>
+            <div className="daw-meter"><span style={{ height: "74%" }} /></div>
+          </div>
+          <div className="daw-knob"><div className="daw-knob-dot" /></div>
+          <div className="daw-mixer-label" style={{ opacity: 0.55 }}>OUTPUT</div>
+        </div>
+      </div>
+    </div>
   );
 }
 
