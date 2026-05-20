@@ -4,7 +4,7 @@ import { AuthLayout, Field } from "@/components/AuthLayout";
 export const Route = createFileRoute("/reset-password")({
   head: () => ({ meta: [{ title: "Reset Password — Plugin Warehouse" }] }),
   component: () => (
-    <AuthLayout eyebrow="// SET A NEW ONE" headline="NEW PASSWORD." sub="Make it a good one.">
+    <AuthLayout eyebrow="SET A NEW ONE" headline="NEW PASSWORD." sub="Make it a good one.">
       <form onSubmit={(e) => e.preventDefault()}>
         <Field label="NEW PASSWORD" type="password" required />
         <Field label="CONFIRM PASSWORD" type="password" required />

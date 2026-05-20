@@ -73,7 +73,7 @@ export function CartDrawer() {
                       <span className="font-mono text-[8px] text-white/70 px-1 text-center leading-tight">{item.product.name}</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-mono text-[9px] text-white/40 tracking-wider">// {item.product.maker.toUpperCase()}</div>
+                      <div className="font-mono text-[9px] text-white/40 tracking-wider">{item.product.maker.toUpperCase()}</div>
                       <div className="font-bold truncate">{item.product.name}</div>
                       <button onClick={() => actions.removeFromCart(item.product.slug)} className="text-xs text-white/50 hover:text-[var(--accent-red)] mt-1 transition">
                         Remove

@@ -75,12 +75,11 @@ export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageP
             {!category && (
               <FilterGroup title="Category">
                 {categories.map((c) => (
-                  <label key={c.slug} className="flex items-center justify-between text-sm py-1.5 cursor-pointer hover:text-white text-white/70">
+                  <label key={c.slug} className="flex items-center text-sm py-1.5 cursor-pointer hover:text-white text-white/70">
                     <span className="flex items-center gap-2">
                       <input type="checkbox" checked={selectedCats.includes(c.slug)} onChange={() => togglePill(selectedCats, c.slug, setSelectedCats)} className="accent-[var(--accent-red)]" />
                       {c.name}
                     </span>
-                    <span className="font-mono text-xs text-white/40">{c.count}</span>
                   </label>
                 ))}
               </FilterGroup>

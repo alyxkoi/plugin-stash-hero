@@ -43,7 +43,7 @@ export function ProductCard({ product, variant = "default", rank }: { product: P
           <div className="relative aspect-square rounded-2xl overflow-hidden mb-4" style={{ background: product.coverGradient }}>
             <div className="absolute inset-0 flex items-center justify-center p-4">
               <div className="text-center">
-                <div className="font-mono text-[10px] tracking-[0.2em] text-white/60 mb-1">// {product.maker.toUpperCase()}</div>
+                <div className="font-mono text-[10px] tracking-[0.2em] text-white/60 mb-1">{product.maker.toUpperCase()}</div>
                 <div className="font-black text-2xl leading-tight chrome-text">{product.name}</div>
               </div>
             </div>
@@ -67,7 +67,7 @@ export function ProductCard({ product, variant = "default", rank }: { product: P
               </div>
             )}
           </div>
-          <div className="font-mono text-[10px] tracking-[0.15em] text-[var(--accent-red-glow)] mb-1">// {product.maker.toUpperCase()}</div>
+          <div className="font-mono text-[10px] tracking-[0.15em] text-[var(--accent-red-glow)] mb-1">{product.maker.toUpperCase()}</div>
           <h3 className="font-bold text-lg leading-tight mb-2 group-hover:text-white">{product.name}</h3>
           <div className="flex flex-wrap gap-1 mb-3">
             {product.formats.slice(0, 2).map((f) => (

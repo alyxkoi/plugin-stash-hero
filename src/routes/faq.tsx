@@ -26,7 +26,7 @@ export const Route = createFileRoute("/faq")({
     const [query, setQuery] = useState("");
     return (
       <div className="px-4 md:px-12 py-12 max-w-3xl mx-auto">
-        <div className="font-mono text-xs tracking-[0.2em] text-[var(--accent-red-glow)] mb-3">// EVERYTHING YOU MIGHT BE WONDERING</div>
+        <div className="font-mono text-xs tracking-[0.2em] text-[var(--accent-red-glow)] mb-3">EVERYTHING YOU MIGHT BE WONDERING</div>
         <h1 className="font-black chrome-text leading-[0.95] mb-3" style={{ fontSize: "clamp(2.5rem, 6vw, 5rem)" }}>FAQ.</h1>
         <p className="text-lg text-white/65 mb-8">Quick answers. If yours isn't here, hit us up.</p>
 

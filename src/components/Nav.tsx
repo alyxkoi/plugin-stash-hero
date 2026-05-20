@@ -88,15 +88,14 @@ export function Nav() {
                       {categories.map((c) => (
                         <Link key={c.slug} to="/shop/$category" params={{ category: c.slug }} className="smoked-item">
                           <span>{c.name}</span>
-                          <span className="font-mono text-xs text-white/40">{c.count}</span>
                         </Link>
                       ))}
                     </div>
                   </div>
                 )}
               </div>
-              <Link to="/sale/$slug" params={{ slug: "summer-steals" }} className="px-3 py-2 rounded-full text-red hover:bg-white/5 transition font-display tracking-wider">DEALS</Link>
               <Link to="/shop" className="px-3 py-2 rounded-full hover:bg-white/5 transition font-display tracking-wider">SHOP ALL</Link>
+              <Link to="/sale/$slug" params={{ slug: "summer-steals" }} className="px-3 py-2 rounded-full text-red hover:bg-white/5 transition font-display tracking-wider">DEALS</Link>
             </nav>
 
             <div className="flex-1" />
@@ -204,7 +203,7 @@ export function Nav() {
                       >
                         <Icon className="drawer-item-icon" strokeWidth={1.4} />
                         <span className="drawer-item-label">{c.name}</span>
-                        <span className="drawer-item-count">{c.count}</span>
+                        
                       </Link>
                     );
                   })}

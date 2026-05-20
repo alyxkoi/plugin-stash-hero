@@ -20,7 +20,7 @@ function Search() {
 
   return (
     <div className="px-4 md:px-12 py-12">
-      <div className="font-mono text-xs tracking-[0.2em] text-[var(--accent-red-glow)] mb-3">// HUNT MODE</div>
+      <div className="font-mono text-xs tracking-[0.2em] text-[var(--accent-red-glow)] mb-3">HUNT MODE</div>
       <h1 className="font-black chrome-text mb-6" style={{ fontSize: "clamp(2.5rem, 5vw, 4rem)" }}>SEARCH.</h1>
       <form onSubmit={(e) => { e.preventDefault(); navigate({ to: "/search", search: { q: val } }); }} className="mb-8 max-w-xl">
         <input className="input-glass" placeholder="What are you hunting?" value={val} onChange={(e) => setVal(e.target.value)} autoFocus />

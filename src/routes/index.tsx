@@ -25,7 +25,6 @@ import {
 import {
   bestsellerProducts,
   recentProducts,
-  categories,
   SALE,
   products,
   getProductBySlug,
@@ -718,7 +717,6 @@ function BrowseTheVault() {
   const [activeSlug, setActiveSlug] = useState<VaultTab["slug"]>("daws");
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const active = VAULT_TABS.find((t) => t.slug === activeSlug) ?? VAULT_TABS[3];
-  const count = categories.find((c) => c.slug === active.slug)?.count ?? 0;
   const previews = products.filter((p) => p.category === active.slug).slice(0, 3);
 
   const onTabKey = (e: React.KeyboardEvent, i: number) => {
@@ -789,13 +787,7 @@ function BrowseTheVault() {
                     <span key={c} className="console-chip"><span className="console-chip-dot" />{c}</span>
                   ))}
                 </div>
-                <div className="flex items-end gap-5 mt-auto">
-                  <div>
-                    <div className="font-display text-4xl leading-none chrome-text">{count || "—"}</div>
-                    <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-white/55 mt-1">
-                      {active.label} Tools
-                    </div>
-                  </div>
+                <div className="flex items-center gap-4 mt-auto">
                   <Link
                     to="/shop/$category"
                     params={{ category: active.slug }}

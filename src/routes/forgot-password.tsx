@@ -9,7 +9,7 @@ export const Route = createFileRoute("/forgot-password")({
     const [sent, setSent] = useState(false);
     const [email, setEmail] = useState("");
     return (
-      <AuthLayout eyebrow="// LET'S GET YOU BACK IN" headline={sent ? "CHECK YOUR INBOX." : "FORGOT IT? HAPPENS."} sub={sent ? `Reset link sent to ${email}. Should hit within a minute.` : "Drop your email, we'll send a reset link."}>
+      <AuthLayout eyebrow="LET'S GET YOU BACK IN" headline={sent ? "CHECK YOUR INBOX." : "FORGOT IT? HAPPENS."} sub={sent ? `Reset link sent to ${email}. Should hit within a minute.` : "Drop your email, we'll send a reset link."}>
         {!sent ? (
           <form onSubmit={(e) => { e.preventDefault(); setSent(true); }}>
             <Field label="EMAIL" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />

@@ -5,7 +5,7 @@ export const Route = createFileRoute("/terms-of-service")({
   head: () => ({ meta: [{ title: "Terms of Service — Plugin Warehouse" }] }),
   component: () => (
     <StaticPage
-      eyebrow="// LAST UPDATED: MAY 2026"
+      eyebrow="LAST UPDATED: MAY 2026"
       headline="TERMS OF SERVICE."
       sub="Educational presets only. Read before you download."
       sections={[

@@ -38,7 +38,7 @@ function ProductDetail() {
             <GlassCard variant="heavy" className="p-4">
               <div className="aspect-square rounded-2xl overflow-hidden" style={{ background: p.coverGradient }}>
                 <div className="h-full w-full flex flex-col items-center justify-center">
-                  <div className="font-mono text-xs text-white/60 mb-3 tracking-[0.25em]">// {p.maker.toUpperCase()}</div>
+                  <div className="font-mono text-xs text-white/60 mb-3 tracking-[0.25em]">{p.maker.toUpperCase()}</div>
                   <div className="font-black chrome-text text-center px-6" style={{ fontSize: "clamp(2.5rem,6vw,4.5rem)", lineHeight: 1 }}>{p.name}</div>
                   <div className="font-mono text-xs text-white/50 mt-4 tracking-[0.2em]">VERSION {p.version}</div>
                 </div>
@@ -49,7 +49,7 @@ function ProductDetail() {
 
         {/* Decision col */}
         <div>
-          <div className="font-mono text-xs tracking-[0.2em] text-[var(--accent-red-glow)] mb-2">// {p.maker.toUpperCase()}</div>
+          <div className="font-mono text-xs tracking-[0.2em] text-[var(--accent-red-glow)] mb-2">{p.maker.toUpperCase()}</div>
           <h1 className="font-black chrome-text leading-[0.95] mb-3" style={{ fontSize: "clamp(2.5rem, 5vw, 4rem)" }}>{p.name}</h1>
           <p className="text-white/70 italic text-lg mb-6">{p.tagline}</p>
 
@@ -81,7 +81,7 @@ function ProductDetail() {
             <Meta label="UPDATED" value={p.updated} />
           </div>
 
-          {showDawLine && <div className="font-mono text-xs text-white/50">// Your DAW's been waiting for this.</div>}
+          {showDawLine && <div className="font-mono text-xs text-white/50">Your DAW's been waiting for this.</div>}
         </div>
       </div>
 
@@ -122,7 +122,7 @@ function ProductDetail() {
       </section>
 
       <section className="mt-16">
-        <div className="font-mono text-xs tracking-[0.2em] text-[var(--accent-red-glow)] mb-3">// IF YOU LIKE THIS</div>
+        <div className="font-mono text-xs tracking-[0.2em] text-[var(--accent-red-glow)] mb-3">IF YOU LIKE THIS</div>
         <h2 className="section-header chrome-text">MORE HEAT</h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
           {related.map((r) => <ProductCard key={r.slug} product={r} />)}

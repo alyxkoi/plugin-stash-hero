@@ -4,7 +4,7 @@ import { AuthLayout, Field } from "@/components/AuthLayout";
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "Sign In — Plugin Warehouse" }] }),
   component: () => (
-    <AuthLayout eyebrow="// PULL UP" headline="WELCOME BACK." sub="Sign in to your stash." footer={<>New here? <Link to="/signup" className="text-[var(--accent-red-glow)] font-bold">CREATE ACCOUNT →</Link></>}>
+    <AuthLayout eyebrow="PULL UP" headline="WELCOME BACK." sub="Sign in to your stash." footer={<>New here? <Link to="/signup" className="text-[var(--accent-red-glow)] font-bold">CREATE ACCOUNT →</Link></>}>
       <form onSubmit={(e) => e.preventDefault()}>
         <Field label="EMAIL" type="email" required />
         <Field label="PASSWORD" type="password" required />
