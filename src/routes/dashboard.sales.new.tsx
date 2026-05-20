@@ -3,12 +3,10 @@ import { useState } from "react";
 import { DashboardShell, DashCard } from "@/components/DashboardShell";
 import { toast } from "sonner";
 
-const THEMES = [
-  { name: "Summer", color: "#FF6B6B" }, { name: "Halloween", color: "#FF7A1A" },
-  { name: "Plugmas", color: "#E11D2E" }, { name: "BFCM", color: "#D4AF37" },
-];
-
 export const Route = createFileRoute("/dashboard/sales/new")({
+  head: () => ({ meta: [{ title: "New sale — Plugin Warehouse" }] }),
+  component: NewSale,
+});
   head: () => ({ meta: [{ title: "New sale — Plugin Warehouse" }] }),
   component: NewSale,
 });
@@ -18,7 +16,6 @@ function NewSale() {
   const [slug, setSlug] = useState("");
   const [pct, setPct] = useState(25);
   const [scope, setScope] = useState<"all" | "selected">("all");
-  const [theme, setTheme] = useState(THEMES[0].color);
 
   return (
     <DashboardShell title="New sale">
@@ -30,8 +27,20 @@ function NewSale() {
           <Field label="Subheadline"><input className="ipt" placeholder="Sun's out. Prices down." /></Field>
         </DashCard>
         <DashCard title="Discount">
-          <input type="range" min={5} max={75} step={5} value={pct} onChange={e => setPct(Number(e.target.value))} className="w-full accent-[var(--accent-red)]" />
-          <div className="text-center font-mono text-2xl mt-2 text-[var(--accent-red-glow)]">{pct}% off</div>
+          <input
+            type="range"
+            min={5}
+            max={75}
+            step={5}
+            value={pct}
+            onChange={e => setPct(Number(e.target.value))}
+            className="glass-slider"
+            style={{ ["--val" as any]: `${((pct - 5) / 70) * 100}%` }}
+          />
+          <div className="flex items-baseline justify-center gap-2 mt-4">
+            <span className="font-display text-4xl text-[var(--accent-red-glow)]" style={{ textShadow: "0 0 18px rgba(255,0,60,0.55)" }}>{pct}%</span>
+            <span className="text-xs text-white/60 font-mono uppercase tracking-wider">off everything</span>
+          </div>
           <div className="text-center text-xs text-white/60 mt-1">Save ${Math.round(99 * pct / 100)} on a $99 plugin</div>
         </DashCard>
         <DashCard title="Schedule">
