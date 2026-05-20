@@ -165,16 +165,21 @@ function DashboardChromeRoot({ initialTitle, initialAction, children }: { initia
         </main>
       </div>
 
-      <nav ref={bottomNavRef} className="dashboard-bottom-nav lg:hidden" aria-label="Dashboard navigation">
-        <div className="dashboard-bottom-track">
-          <span className="bottom-nav-glow" style={{ left: glowLeft, width: MOBILE_ITEM_W }} />
-          {NAV.map((n) => {
+      <nav className="dashboard-bottom-nav lg:hidden" aria-label="Dashboard navigation">
+        <div ref={trackRef} className="dashboard-bottom-track">
+          <span className="bottom-nav-glow" style={{ left: glowRect.left, width: glowRect.width }} />
+          {NAV.map((n, i) => {
             const active = n.exact ? pathname === n.to : pathname.startsWith(n.to);
             const Icon = n.icon;
             return (
-              <Link key={n.to} to={n.to as any} className={`bottom-nav-link ${active ? "is-active" : ""}`} style={{ width: MOBILE_ITEM_W }}>
-                <Icon size={18} />
-                <span>{n.label}</span>
+              <Link
+                key={n.to}
+                to={n.to as any}
+                ref={(el) => { itemRefs.current[i] = el; }}
+                className={`bottom-nav-link ${active ? "is-active" : ""}`}
+                aria-label={n.label}
+              >
+                <Icon size={20} />
               </Link>
             );
           })}
