@@ -718,7 +718,6 @@ function BrowseTheVault() {
   const [activeSlug, setActiveSlug] = useState<VaultTab["slug"]>("daws");
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const active = VAULT_TABS.find((t) => t.slug === activeSlug) ?? VAULT_TABS[3];
-  const count = categories.find((c) => c.slug === active.slug)?.count ?? 0;
   const previews = products.filter((p) => p.category === active.slug).slice(0, 3);
 
   const onTabKey = (e: React.KeyboardEvent, i: number) => {
