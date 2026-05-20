@@ -2,9 +2,9 @@ import { ReactNode, useEffect, useState } from "react";
 import { Link, useNavigate, useRouterState, Outlet } from "@tanstack/react-router";
 import {
   LayoutDashboard, Package, ShoppingBag, Tag, Users, BarChart3,
-  Megaphone, Settings, LogOut, ExternalLink, ChevronDown, Menu, X
+  Megaphone, Settings, LogOut, ExternalLink, ChevronDown
 } from "lucide-react";
-import logo from "@/assets/logo.png";
+import logo from "@/assets/logo-dashboard.webp";
 import { clearAdminSession, getAdminSession, type AdminSession } from "@/lib/dashboard-mock";
 
 const NAV: { to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean }[] = [
@@ -42,17 +42,19 @@ export function DashboardShell({ title, action, children }: Props) {
   const activeIdx = NAV.findIndex(n => n.exact ? pathname === n.to : pathname.startsWith(n.to));
   const ITEM_H = 40;
   const GAP = 4;
+  const MOBILE_ITEM_W = 82;
   const glowTop = activeIdx >= 0 ? activeIdx * (ITEM_H + GAP) : -100;
+  const glowLeft = activeIdx >= 0 ? activeIdx * (MOBILE_ITEM_W + GAP) : -100;
 
   return (
     <div className="dashboard-scope min-h-screen flex w-full" style={{ background: "var(--bg-base)" }}>
       {/* Sidebar */}
-      <aside className={`fixed md:sticky top-0 left-0 h-screen w-[220px] z-40 transform transition-transform md:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"}`}>
-        <div className="glass-card h-full !rounded-none md:!rounded-r-2xl p-4 flex flex-col">
+      <aside className="dashboard-sidebar hidden lg:block sticky top-0 left-0 h-screen w-[220px] z-40">
+        <div className="glass-card h-full !rounded-none !rounded-r-2xl p-4 flex flex-col">
           <div className="chromatic-edge" />
           <div className="relative z-10 flex-1 flex flex-col">
             <Link to="/dashboard" className="flex items-center gap-2 mb-1">
-              <img src={logo} alt="Plugin Warehouse" className="h-7 w-auto object-contain" style={{ filter: "drop-shadow(0 2px 12px rgba(255,0,60,0.35))" }} />
+              <img src={logo} alt="Plugin Warehouse" width={420} height={120} className="h-7 w-auto object-contain" />
             </Link>
             <div className="label-mini opacity-50 text-[9px] mb-6 pl-1">Dashboard</div>
 
@@ -64,7 +66,7 @@ export function DashboardShell({ title, action, children }: Props) {
                 const Icon = n.icon;
                 return (
                   <Link key={n.to} to={n.to as any} className={`group relative flex items-center gap-3 px-3 rounded-lg transition-colors duration-300 ${active ? "text-[var(--accent-red)]" : "text-white/70 hover:text-white"}`} style={{ height: ITEM_H }}>
-                    <Icon size={18} style={active ? { filter: "drop-shadow(0 0 6px var(--accent-red))" } : undefined} />
+                    <Icon size={18} />
                     <span className="text-sm">{n.label}</span>
                   </Link>
                 );
@@ -83,17 +85,13 @@ export function DashboardShell({ title, action, children }: Props) {
         </div>
       </aside>
 
-      {/* Backdrop for mobile */}
-      {open && <div className="fixed inset-0 bg-black/60 z-30 md:hidden" onClick={() => setOpen(false)} />}
-
       {/* Main column */}
       <div className="flex-1 flex flex-col min-w-0 md:ml-0">
         <header className="sticky top-0 z-20">
           <div className="dash-header-floating px-4 md:px-6 py-3 flex items-center gap-3">
-            <button className="md:hidden text-white/80" onClick={() => setOpen(true)} aria-label="Open menu"><Menu size={22} /></button>
             <h1 className="font-display text-xl md:text-2xl text-white">{title}</h1>
-            <div className="ml-auto flex items-center gap-3">
-              {action}
+            <div className="dash-header-right ml-auto flex items-center gap-3 min-w-0">
+              {action && <div className="dash-header-actions min-w-0 overflow-x-auto">{action}</div>}
               <div className="relative">
                 <button onClick={() => setMenu(!menu)} className="flex items-center gap-2 px-2 py-1.5 rounded-lg border border-white/15 hover:border-white/30 transition h-9">
                   <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[var(--accent-red)] to-[var(--accent-blue)] flex items-center justify-center text-xs font-bold">
@@ -113,10 +111,26 @@ export function DashboardShell({ title, action, children }: Props) {
           </div>
         </header>
 
-        <main key={pathname} className="dash-page flex-1 p-4 md:p-8 overflow-x-hidden">
+        <main key={pathname} className="dash-page flex-1 p-4 md:p-8 pb-28 lg:pb-8 overflow-x-hidden">
           {children}
         </main>
       </div>
+
+      <nav className="dashboard-bottom-nav lg:hidden" aria-label="Dashboard navigation">
+        <div className="dashboard-bottom-track">
+          <span className="bottom-nav-glow" style={{ left: glowLeft, width: MOBILE_ITEM_W }} />
+          {NAV.map((n) => {
+            const active = n.exact ? pathname === n.to : pathname.startsWith(n.to);
+            const Icon = n.icon;
+            return (
+              <Link key={n.to} to={n.to as any} className={`bottom-nav-link ${active ? "is-active" : ""}`} style={{ width: MOBILE_ITEM_W }}>
+                <Icon size={18} />
+                <span>{n.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
     </div>
   );
 }
@@ -128,9 +142,9 @@ export function DashCard({ children, className = "", title, action }: { children
       <div className="chromatic-edge" />
       <div className="relative z-10">
         {(title || action) && (
-          <div className="flex items-center justify-between mb-4 gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3 min-w-0">
             {title && <h2 className="font-display text-base md:text-lg tracking-wide">{title}</h2>}
-            {action}
+            {action && <div className="max-w-full overflow-x-auto">{action}</div>}
           </div>
         )}
         {children}
