@@ -7,9 +7,6 @@ export const Route = createFileRoute("/dashboard/sales/new")({
   head: () => ({ meta: [{ title: "New sale — Plugin Warehouse" }] }),
   component: NewSale,
 });
-  head: () => ({ meta: [{ title: "New sale — Plugin Warehouse" }] }),
-  component: NewSale,
-});
 
 function NewSale() {
   const [name, setName] = useState("");
