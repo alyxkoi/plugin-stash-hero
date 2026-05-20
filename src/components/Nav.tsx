@@ -88,7 +88,6 @@ export function Nav() {
                       {categories.map((c) => (
                         <Link key={c.slug} to="/shop/$category" params={{ category: c.slug }} className="smoked-item">
                           <span>{c.name}</span>
-                          <span className="font-mono text-xs text-white/40">{c.count}</span>
                         </Link>
                       ))}
                     </div>
