@@ -1962,13 +1962,129 @@
 
 /* Floating glass header (dashboard) */
 .dash-header-floating {
-  margin: 14px 14px 0;
+  margin: 12px 12px 0;
   border-radius: 16px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+  background: linear-gradient(180deg, rgba(42, 10, 72, 0.92), rgba(18, 2, 42, 0.88));
   border: 1px solid rgba(255,255,255,0.12);
-  backdrop-filter: blur(22px) saturate(140%);
-  -webkit-backdrop-filter: blur(22px) saturate(140%);
   box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.12);
+}
+
+.dashboard-scope .dashboard-sidebar .glass-card {
+  box-shadow:
+    0 1px 2px rgba(0,0,0,0.36),
+    0 12px 34px -16px rgba(255,0,60,0.28),
+    inset 0 1px 0 rgba(255,255,255,0.2);
+}
+
+.dash-header-actions,
+.dashboard-bottom-nav,
+.dashboard-bottom-track,
+.dashboard-scope .overflow-x-auto {
+  scrollbar-width: none;
+}
+.dash-header-actions::-webkit-scrollbar,
+.dashboard-bottom-nav::-webkit-scrollbar,
+.dashboard-bottom-track::-webkit-scrollbar,
+.dashboard-scope .overflow-x-auto::-webkit-scrollbar {
+  display: none;
+}
+
+.dashboard-bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 45;
+  padding: 10px 10px max(10px, env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, transparent, rgba(10,0,24,0.88) 30%, rgba(10,0,24,0.96));
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+.dashboard-bottom-track {
+  position: relative;
+  display: flex;
+  gap: 4px;
+  width: max-content;
+  min-width: 100%;
+  padding: 6px;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(42,10,72,0.94), rgba(18,2,42,0.96));
+  box-shadow: 0 16px 38px -18px rgba(0,0,0,0.82), inset 0 1px 0 rgba(255,255,255,0.16);
+}
+
+.bottom-nav-glow {
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  border-radius: 13px;
+  background: linear-gradient(180deg, rgba(255,0,60,0.24), rgba(255,0,60,0.08));
+  box-shadow: inset 0 0 0 1px rgba(255,0,60,0.28), 0 0 24px rgba(255,0,60,0.22);
+  transition: left 0.56s cubic-bezier(0.22, 1, 0.36, 1), width 0.3s ease-out;
+  pointer-events: none;
+}
+
+.bottom-nav-link {
+  position: relative;
+  z-index: 1;
+  height: 52px;
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: rgba(255,255,255,0.62);
+  border-radius: 13px;
+  transition: color 0.28s ease-out, transform 0.28s ease-out;
+}
+
+.bottom-nav-link span {
+  max-width: 76px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+  line-height: 1;
+}
+
+.bottom-nav-link.is-active {
+  color: var(--accent-red-glow);
+  transform: translateY(-1px);
+}
+
+@media (max-width: 1023px) {
+  .dashboard-scope {
+    display: block;
+  }
+  .dash-header-floating {
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .dash-header-right {
+    flex: 1;
+    justify-content: flex-end;
+  }
+  .dash-header-actions {
+    max-width: min(58vw, 520px);
+  }
+}
+
+@media (max-width: 520px) {
+  .dash-header-floating {
+    flex-wrap: wrap;
+    padding: 12px;
+  }
+  .dash-header-right {
+    width: 100%;
+    margin-left: 0;
+  }
+  .dash-header-actions {
+    order: 2;
+    flex: 1 1 100%;
+    max-width: calc(100vw - 24px);
+  }
 }
 
 /* Glass slider (sale discount, etc) */
