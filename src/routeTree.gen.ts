@@ -18,6 +18,7 @@ import { Route as OurStoryRouteImport } from './routes/our-story'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as FaqRouteImport } from './routes/faq'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ContactUsRouteImport } from './routes/contact-us'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as R404RouteImport } from './routes/404'
@@ -27,6 +28,7 @@ import { Route as AccountIndexRouteImport } from './routes/account.index'
 import { Route as ShopCategoryRouteImport } from './routes/shop.$category'
 import { Route as SaleSlugRouteImport } from './routes/sale.$slug'
 import { Route as LibraryTokenRouteImport } from './routes/library.$token'
+import { Route as DashboardLoginRouteImport } from './routes/dashboard.login'
 import { Route as AccountSettingsRouteImport } from './routes/account.settings'
 import { Route as AccountSavedRouteImport } from './routes/account.saved'
 import { Route as AccountOrdersRouteImport } from './routes/account.orders'
@@ -79,6 +81,11 @@ const FaqRoute = FaqRouteImport.update({
   path: '/faq',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ContactUsRoute = ContactUsRouteImport.update({
   id: '/contact-us',
   path: '/contact-us',
@@ -124,6 +131,11 @@ const LibraryTokenRoute = LibraryTokenRouteImport.update({
   path: '/library/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardLoginRoute = DashboardLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const AccountSettingsRoute = AccountSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -160,6 +172,7 @@ export interface FileRoutesByFullPath {
   '/404': typeof R404Route
   '/account': typeof AccountRouteWithChildren
   '/contact-us': typeof ContactUsRoute
+  '/dashboard': typeof DashboardRouteWithChildren
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
@@ -173,6 +186,7 @@ export interface FileRoutesByFullPath {
   '/account/orders': typeof AccountOrdersRouteWithChildren
   '/account/saved': typeof AccountSavedRoute
   '/account/settings': typeof AccountSettingsRoute
+  '/dashboard/login': typeof DashboardLoginRoute
   '/library/$token': typeof LibraryTokenRoute
   '/sale/$slug': typeof SaleSlugRoute
   '/shop/$category': typeof ShopCategoryRoute
@@ -185,6 +199,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/404': typeof R404Route
   '/contact-us': typeof ContactUsRoute
+  '/dashboard': typeof DashboardRouteWithChildren
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
@@ -198,6 +213,7 @@ export interface FileRoutesByTo {
   '/account/orders': typeof AccountOrdersRouteWithChildren
   '/account/saved': typeof AccountSavedRoute
   '/account/settings': typeof AccountSettingsRoute
+  '/dashboard/login': typeof DashboardLoginRoute
   '/library/$token': typeof LibraryTokenRoute
   '/sale/$slug': typeof SaleSlugRoute
   '/shop/$category': typeof ShopCategoryRoute
@@ -212,6 +228,7 @@ export interface FileRoutesById {
   '/404': typeof R404Route
   '/account': typeof AccountRouteWithChildren
   '/contact-us': typeof ContactUsRoute
+  '/dashboard': typeof DashboardRouteWithChildren
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
@@ -225,6 +242,7 @@ export interface FileRoutesById {
   '/account/orders': typeof AccountOrdersRouteWithChildren
   '/account/saved': typeof AccountSavedRoute
   '/account/settings': typeof AccountSettingsRoute
+  '/dashboard/login': typeof DashboardLoginRoute
   '/library/$token': typeof LibraryTokenRoute
   '/sale/$slug': typeof SaleSlugRoute
   '/shop/$category': typeof ShopCategoryRoute
@@ -240,6 +258,7 @@ export interface FileRouteTypes {
     | '/404'
     | '/account'
     | '/contact-us'
+    | '/dashboard'
     | '/faq'
     | '/forgot-password'
     | '/login'
@@ -253,6 +272,7 @@ export interface FileRouteTypes {
     | '/account/orders'
     | '/account/saved'
     | '/account/settings'
+    | '/dashboard/login'
     | '/library/$token'
     | '/sale/$slug'
     | '/shop/$category'
@@ -265,6 +285,7 @@ export interface FileRouteTypes {
     | '/'
     | '/404'
     | '/contact-us'
+    | '/dashboard'
     | '/faq'
     | '/forgot-password'
     | '/login'
@@ -278,6 +299,7 @@ export interface FileRouteTypes {
     | '/account/orders'
     | '/account/saved'
     | '/account/settings'
+    | '/dashboard/login'
     | '/library/$token'
     | '/sale/$slug'
     | '/shop/$category'
@@ -291,6 +313,7 @@ export interface FileRouteTypes {
     | '/404'
     | '/account'
     | '/contact-us'
+    | '/dashboard'
     | '/faq'
     | '/forgot-password'
     | '/login'
@@ -304,6 +327,7 @@ export interface FileRouteTypes {
     | '/account/orders'
     | '/account/saved'
     | '/account/settings'
+    | '/dashboard/login'
     | '/library/$token'
     | '/sale/$slug'
     | '/shop/$category'
@@ -318,6 +342,7 @@ export interface RootRouteChildren {
   R404Route: typeof R404Route
   AccountRoute: typeof AccountRouteWithChildren
   ContactUsRoute: typeof ContactUsRoute
+  DashboardRoute: typeof DashboardRouteWithChildren
   FaqRoute: typeof FaqRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
@@ -399,6 +424,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FaqRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/contact-us': {
       id: '/contact-us'
       path: '/contact-us'
@@ -461,6 +493,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/library/$token'
       preLoaderRoute: typeof LibraryTokenRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/dashboard/login': {
+      id: '/dashboard/login'
+      path: '/login'
+      fullPath: '/dashboard/login'
+      preLoaderRoute: typeof DashboardLoginRouteImport
+      parentRoute: typeof DashboardRoute
     }
     '/account/settings': {
       id: '/account/settings'
@@ -538,11 +577,24 @@ const AccountRouteChildren: AccountRouteChildren = {
 const AccountRouteWithChildren =
   AccountRoute._addFileChildren(AccountRouteChildren)
 
+interface DashboardRouteChildren {
+  DashboardLoginRoute: typeof DashboardLoginRoute
+}
+
+const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardLoginRoute: DashboardLoginRoute,
+}
+
+const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
+  DashboardRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   R404Route: R404Route,
   AccountRoute: AccountRouteWithChildren,
   ContactUsRoute: ContactUsRoute,
+  DashboardRoute: DashboardRouteWithChildren,
   FaqRoute: FaqRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
@@ -561,3 +613,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
