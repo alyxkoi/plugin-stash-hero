@@ -180,6 +180,7 @@ function DashboardChromeRoot({ initialTitle, initialAction, children }: { initia
                 aria-label={n.label}
               >
                 <Icon size={20} />
+                <span className="bottom-nav-label">{n.label}</span>
               </Link>
             );
           })}
