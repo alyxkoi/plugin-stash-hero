@@ -26,13 +26,11 @@ interface Props {
 
 export function DashboardShell({ title, action, children }: Props) {
   const [session, setSession] = useState<AdminSession | null>(null);
-  const [open, setOpen] = useState(false);
   const [menu, setMenu] = useState(false);
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => { setSession(getAdminSession()); }, []);
-  useEffect(() => { setOpen(false); }, [pathname]);
 
   const logout = () => {
     clearAdminSession();
