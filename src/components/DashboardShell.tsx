@@ -62,6 +62,8 @@ function DashboardChromeRoot({ initialTitle, initialAction, children }: { initia
   };
 
   const activeIdx = NAV.findIndex(n => n.exact ? pathname === n.to : pathname.startsWith(n.to));
+  const routeTitle = activeIdx >= 0 ? NAV[activeIdx].label : page.title;
+  const displayTitle = page.title === initialTitle ? routeTitle : page.title;
   const ITEM_H = 40;
   const GAP = 4;
   const MOBILE_ITEM_W = 82;
@@ -118,7 +120,7 @@ function DashboardChromeRoot({ initialTitle, initialAction, children }: { initia
       <div className="flex-1 flex flex-col min-w-0 md:ml-0">
         <header className="sticky top-0 z-20">
           <div className="dash-header-floating px-4 md:px-6 py-3 flex items-center gap-3">
-            <h1 className="font-display text-xl md:text-2xl text-white">{page.title}</h1>
+            <h1 className="font-display text-xl md:text-2xl text-white">{displayTitle}</h1>
             <div className="dash-header-right ml-auto flex items-center gap-3 min-w-0">
               {page.action && <div className="dash-header-actions min-w-0 overflow-x-auto">{page.action}</div>}
               <div className="relative">
