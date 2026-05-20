@@ -1,4 +1,4 @@
-import { ReactNode, createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { ReactNode, createContext, isValidElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useRouterState, Outlet } from "@tanstack/react-router";
 import {
   LayoutDashboard, Package, ShoppingBag, Tag, Users, BarChart3,
@@ -29,9 +29,10 @@ const DashboardChromeContext = createContext<DashboardChrome | null>(null);
 
 export function DashboardShell({ title, action, children }: Props) {
   const nestedChrome = useContext(DashboardChromeContext);
+  const actionSig = useMemo(() => getActionSignature(action), [action]);
   useEffect(() => {
     nestedChrome?.setPage(title, action);
-  }, [nestedChrome, title, action]);
+  }, [nestedChrome, title, actionSig]);
 
   if (nestedChrome) return <>{children}</>;
 
@@ -160,6 +161,20 @@ function DashboardChromeRoot({ initialTitle, initialAction, children }: { initia
       </nav>
     </div>
   );
+}
+
+function getActionSignature(action: ReactNode): string {
+  if (!action) return "";
+  if (typeof action === "string" || typeof action === "number") return String(action);
+  if (Array.isArray(action)) return action.map(getActionSignature).join("|");
+  if (!isValidElement(action)) return "node";
+  const type = typeof action.type === "string" ? action.type : (action.type as any).displayName || (action.type as any).name || "component";
+  const props = action.props as Record<string, unknown>;
+  const primitiveProps = Object.entries(props)
+    .filter(([key, value]) => key !== "children" && ["string", "number", "boolean"].includes(typeof value))
+    .map(([key, value]) => `${key}:${String(value)}`)
+    .join(",");
+  return `${type}(${primitiveProps})[${getActionSignature(props.children as ReactNode)}]`;
 }
 
 // Reusable glass section card
