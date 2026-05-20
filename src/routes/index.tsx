@@ -789,13 +789,7 @@ function BrowseTheVault() {
                     <span key={c} className="console-chip"><span className="console-chip-dot" />{c}</span>
                   ))}
                 </div>
-                <div className="flex items-end gap-5 mt-auto">
-                  <div>
-                    <div className="font-display text-4xl leading-none chrome-text">{count || "—"}</div>
-                    <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-white/55 mt-1">
-                      {active.label} Tools
-                    </div>
-                  </div>
+                <div className="flex items-center gap-4 mt-auto">
                   <Link
                     to="/shop/$category"
                     params={{ category: active.slug }}
