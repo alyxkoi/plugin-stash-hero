@@ -207,7 +207,7 @@ function Ticker() {
   ];
   const repeated = Array.from({ length: 8 }).flatMap(() => items);
   return (
-    <div className="relative overflow-hidden border-y border-white/10 marquee-pause">
+    <div className="relative overflow-hidden border-y border-white/10">
       <div
         className="h-px"
         style={{
