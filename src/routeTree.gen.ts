@@ -29,15 +29,25 @@ import { Route as AccountIndexRouteImport } from './routes/account.index'
 import { Route as ShopCategoryRouteImport } from './routes/shop.$category'
 import { Route as SaleSlugRouteImport } from './routes/sale.$slug'
 import { Route as LibraryTokenRouteImport } from './routes/library.$token'
+import { Route as DashboardSettingsRouteImport } from './routes/dashboard.settings'
+import { Route as DashboardMarketingRouteImport } from './routes/dashboard.marketing'
 import { Route as DashboardLoginRouteImport } from './routes/dashboard.login'
+import { Route as DashboardAnalyticsRouteImport } from './routes/dashboard.analytics'
 import { Route as AccountSettingsRouteImport } from './routes/account.settings'
 import { Route as AccountSavedRouteImport } from './routes/account.saved'
 import { Route as AccountOrdersRouteImport } from './routes/account.orders'
 import { Route as AccountLibraryRouteImport } from './routes/account.library'
+import { Route as DashboardSalesIndexRouteImport } from './routes/dashboard.sales.index'
 import { Route as DashboardProductsIndexRouteImport } from './routes/dashboard.products.index'
+import { Route as DashboardOrdersIndexRouteImport } from './routes/dashboard.orders.index'
+import { Route as DashboardCustomersIndexRouteImport } from './routes/dashboard.customers.index'
 import { Route as ShopPSlugRouteImport } from './routes/shop.p.$slug'
+import { Route as DashboardSalesNewRouteImport } from './routes/dashboard.sales.new'
+import { Route as DashboardSalesIdRouteImport } from './routes/dashboard.sales.$id'
 import { Route as DashboardProductsNewRouteImport } from './routes/dashboard.products.new'
 import { Route as DashboardProductsIdRouteImport } from './routes/dashboard.products.$id'
+import { Route as DashboardOrdersIdRouteImport } from './routes/dashboard.orders.$id'
+import { Route as DashboardCustomersIdRouteImport } from './routes/dashboard.customers.$id'
 import { Route as AccountOrdersIdRouteImport } from './routes/account.orders.$id'
 
 const TermsOfServiceRoute = TermsOfServiceRouteImport.update({
@@ -140,9 +150,24 @@ const LibraryTokenRoute = LibraryTokenRouteImport.update({
   path: '/library/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardSettingsRoute = DashboardSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardMarketingRoute = DashboardMarketingRouteImport.update({
+  id: '/marketing',
+  path: '/marketing',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardLoginRoute = DashboardLoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardAnalyticsRoute = DashboardAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
   getParentRoute: () => DashboardRoute,
 } as any)
 const AccountSettingsRoute = AccountSettingsRouteImport.update({
@@ -165,15 +190,40 @@ const AccountLibraryRoute = AccountLibraryRouteImport.update({
   path: '/library',
   getParentRoute: () => AccountRoute,
 } as any)
+const DashboardSalesIndexRoute = DashboardSalesIndexRouteImport.update({
+  id: '/sales/',
+  path: '/sales/',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardProductsIndexRoute = DashboardProductsIndexRouteImport.update({
   id: '/products/',
   path: '/products/',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardOrdersIndexRoute = DashboardOrdersIndexRouteImport.update({
+  id: '/orders/',
+  path: '/orders/',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardCustomersIndexRoute = DashboardCustomersIndexRouteImport.update({
+  id: '/customers/',
+  path: '/customers/',
   getParentRoute: () => DashboardRoute,
 } as any)
 const ShopPSlugRoute = ShopPSlugRouteImport.update({
   id: '/shop/p/$slug',
   path: '/shop/p/$slug',
   getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardSalesNewRoute = DashboardSalesNewRouteImport.update({
+  id: '/sales/new',
+  path: '/sales/new',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardSalesIdRoute = DashboardSalesIdRouteImport.update({
+  id: '/sales/$id',
+  path: '/sales/$id',
+  getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardProductsNewRoute = DashboardProductsNewRouteImport.update({
   id: '/products/new',
@@ -183,6 +233,16 @@ const DashboardProductsNewRoute = DashboardProductsNewRouteImport.update({
 const DashboardProductsIdRoute = DashboardProductsIdRouteImport.update({
   id: '/products/$id',
   path: '/products/$id',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardOrdersIdRoute = DashboardOrdersIdRouteImport.update({
+  id: '/orders/$id',
+  path: '/orders/$id',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardCustomersIdRoute = DashboardCustomersIdRouteImport.update({
+  id: '/customers/$id',
+  path: '/customers/$id',
   getParentRoute: () => DashboardRoute,
 } as any)
 const AccountOrdersIdRoute = AccountOrdersIdRouteImport.update({
@@ -210,7 +270,10 @@ export interface FileRoutesByFullPath {
   '/account/orders': typeof AccountOrdersRouteWithChildren
   '/account/saved': typeof AccountSavedRoute
   '/account/settings': typeof AccountSettingsRoute
+  '/dashboard/analytics': typeof DashboardAnalyticsRoute
   '/dashboard/login': typeof DashboardLoginRoute
+  '/dashboard/marketing': typeof DashboardMarketingRoute
+  '/dashboard/settings': typeof DashboardSettingsRoute
   '/library/$token': typeof LibraryTokenRoute
   '/sale/$slug': typeof SaleSlugRoute
   '/shop/$category': typeof ShopCategoryRoute
@@ -218,10 +281,17 @@ export interface FileRoutesByFullPath {
   '/dashboard/': typeof DashboardIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/account/orders/$id': typeof AccountOrdersIdRoute
+  '/dashboard/customers/$id': typeof DashboardCustomersIdRoute
+  '/dashboard/orders/$id': typeof DashboardOrdersIdRoute
   '/dashboard/products/$id': typeof DashboardProductsIdRoute
   '/dashboard/products/new': typeof DashboardProductsNewRoute
+  '/dashboard/sales/$id': typeof DashboardSalesIdRoute
+  '/dashboard/sales/new': typeof DashboardSalesNewRoute
   '/shop/p/$slug': typeof ShopPSlugRoute
+  '/dashboard/customers/': typeof DashboardCustomersIndexRoute
+  '/dashboard/orders/': typeof DashboardOrdersIndexRoute
   '/dashboard/products/': typeof DashboardProductsIndexRoute
+  '/dashboard/sales/': typeof DashboardSalesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -240,7 +310,10 @@ export interface FileRoutesByTo {
   '/account/orders': typeof AccountOrdersRouteWithChildren
   '/account/saved': typeof AccountSavedRoute
   '/account/settings': typeof AccountSettingsRoute
+  '/dashboard/analytics': typeof DashboardAnalyticsRoute
   '/dashboard/login': typeof DashboardLoginRoute
+  '/dashboard/marketing': typeof DashboardMarketingRoute
+  '/dashboard/settings': typeof DashboardSettingsRoute
   '/library/$token': typeof LibraryTokenRoute
   '/sale/$slug': typeof SaleSlugRoute
   '/shop/$category': typeof ShopCategoryRoute
@@ -248,10 +321,17 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardIndexRoute
   '/shop': typeof ShopIndexRoute
   '/account/orders/$id': typeof AccountOrdersIdRoute
+  '/dashboard/customers/$id': typeof DashboardCustomersIdRoute
+  '/dashboard/orders/$id': typeof DashboardOrdersIdRoute
   '/dashboard/products/$id': typeof DashboardProductsIdRoute
   '/dashboard/products/new': typeof DashboardProductsNewRoute
+  '/dashboard/sales/$id': typeof DashboardSalesIdRoute
+  '/dashboard/sales/new': typeof DashboardSalesNewRoute
   '/shop/p/$slug': typeof ShopPSlugRoute
+  '/dashboard/customers': typeof DashboardCustomersIndexRoute
+  '/dashboard/orders': typeof DashboardOrdersIndexRoute
   '/dashboard/products': typeof DashboardProductsIndexRoute
+  '/dashboard/sales': typeof DashboardSalesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -273,7 +353,10 @@ export interface FileRoutesById {
   '/account/orders': typeof AccountOrdersRouteWithChildren
   '/account/saved': typeof AccountSavedRoute
   '/account/settings': typeof AccountSettingsRoute
+  '/dashboard/analytics': typeof DashboardAnalyticsRoute
   '/dashboard/login': typeof DashboardLoginRoute
+  '/dashboard/marketing': typeof DashboardMarketingRoute
+  '/dashboard/settings': typeof DashboardSettingsRoute
   '/library/$token': typeof LibraryTokenRoute
   '/sale/$slug': typeof SaleSlugRoute
   '/shop/$category': typeof ShopCategoryRoute
@@ -281,10 +364,17 @@ export interface FileRoutesById {
   '/dashboard/': typeof DashboardIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/account/orders/$id': typeof AccountOrdersIdRoute
+  '/dashboard/customers/$id': typeof DashboardCustomersIdRoute
+  '/dashboard/orders/$id': typeof DashboardOrdersIdRoute
   '/dashboard/products/$id': typeof DashboardProductsIdRoute
   '/dashboard/products/new': typeof DashboardProductsNewRoute
+  '/dashboard/sales/$id': typeof DashboardSalesIdRoute
+  '/dashboard/sales/new': typeof DashboardSalesNewRoute
   '/shop/p/$slug': typeof ShopPSlugRoute
+  '/dashboard/customers/': typeof DashboardCustomersIndexRoute
+  '/dashboard/orders/': typeof DashboardOrdersIndexRoute
   '/dashboard/products/': typeof DashboardProductsIndexRoute
+  '/dashboard/sales/': typeof DashboardSalesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -307,7 +397,10 @@ export interface FileRouteTypes {
     | '/account/orders'
     | '/account/saved'
     | '/account/settings'
+    | '/dashboard/analytics'
     | '/dashboard/login'
+    | '/dashboard/marketing'
+    | '/dashboard/settings'
     | '/library/$token'
     | '/sale/$slug'
     | '/shop/$category'
@@ -315,10 +408,17 @@ export interface FileRouteTypes {
     | '/dashboard/'
     | '/shop/'
     | '/account/orders/$id'
+    | '/dashboard/customers/$id'
+    | '/dashboard/orders/$id'
     | '/dashboard/products/$id'
     | '/dashboard/products/new'
+    | '/dashboard/sales/$id'
+    | '/dashboard/sales/new'
     | '/shop/p/$slug'
+    | '/dashboard/customers/'
+    | '/dashboard/orders/'
     | '/dashboard/products/'
+    | '/dashboard/sales/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -337,7 +437,10 @@ export interface FileRouteTypes {
     | '/account/orders'
     | '/account/saved'
     | '/account/settings'
+    | '/dashboard/analytics'
     | '/dashboard/login'
+    | '/dashboard/marketing'
+    | '/dashboard/settings'
     | '/library/$token'
     | '/sale/$slug'
     | '/shop/$category'
@@ -345,10 +448,17 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/shop'
     | '/account/orders/$id'
+    | '/dashboard/customers/$id'
+    | '/dashboard/orders/$id'
     | '/dashboard/products/$id'
     | '/dashboard/products/new'
+    | '/dashboard/sales/$id'
+    | '/dashboard/sales/new'
     | '/shop/p/$slug'
+    | '/dashboard/customers'
+    | '/dashboard/orders'
     | '/dashboard/products'
+    | '/dashboard/sales'
   id:
     | '__root__'
     | '/'
@@ -369,7 +479,10 @@ export interface FileRouteTypes {
     | '/account/orders'
     | '/account/saved'
     | '/account/settings'
+    | '/dashboard/analytics'
     | '/dashboard/login'
+    | '/dashboard/marketing'
+    | '/dashboard/settings'
     | '/library/$token'
     | '/sale/$slug'
     | '/shop/$category'
@@ -377,10 +490,17 @@ export interface FileRouteTypes {
     | '/dashboard/'
     | '/shop/'
     | '/account/orders/$id'
+    | '/dashboard/customers/$id'
+    | '/dashboard/orders/$id'
     | '/dashboard/products/$id'
     | '/dashboard/products/new'
+    | '/dashboard/sales/$id'
+    | '/dashboard/sales/new'
     | '/shop/p/$slug'
+    | '/dashboard/customers/'
+    | '/dashboard/orders/'
     | '/dashboard/products/'
+    | '/dashboard/sales/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -547,11 +667,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LibraryTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard/settings': {
+      id: '/dashboard/settings'
+      path: '/settings'
+      fullPath: '/dashboard/settings'
+      preLoaderRoute: typeof DashboardSettingsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/marketing': {
+      id: '/dashboard/marketing'
+      path: '/marketing'
+      fullPath: '/dashboard/marketing'
+      preLoaderRoute: typeof DashboardMarketingRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/login': {
       id: '/dashboard/login'
       path: '/login'
       fullPath: '/dashboard/login'
       preLoaderRoute: typeof DashboardLoginRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/analytics': {
+      id: '/dashboard/analytics'
+      path: '/analytics'
+      fullPath: '/dashboard/analytics'
+      preLoaderRoute: typeof DashboardAnalyticsRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/account/settings': {
@@ -582,11 +723,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountLibraryRouteImport
       parentRoute: typeof AccountRoute
     }
+    '/dashboard/sales/': {
+      id: '/dashboard/sales/'
+      path: '/sales'
+      fullPath: '/dashboard/sales/'
+      preLoaderRoute: typeof DashboardSalesIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/products/': {
       id: '/dashboard/products/'
       path: '/products'
       fullPath: '/dashboard/products/'
       preLoaderRoute: typeof DashboardProductsIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/orders/': {
+      id: '/dashboard/orders/'
+      path: '/orders'
+      fullPath: '/dashboard/orders/'
+      preLoaderRoute: typeof DashboardOrdersIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/customers/': {
+      id: '/dashboard/customers/'
+      path: '/customers'
+      fullPath: '/dashboard/customers/'
+      preLoaderRoute: typeof DashboardCustomersIndexRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/shop/p/$slug': {
@@ -595,6 +757,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/shop/p/$slug'
       preLoaderRoute: typeof ShopPSlugRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/dashboard/sales/new': {
+      id: '/dashboard/sales/new'
+      path: '/sales/new'
+      fullPath: '/dashboard/sales/new'
+      preLoaderRoute: typeof DashboardSalesNewRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/sales/$id': {
+      id: '/dashboard/sales/$id'
+      path: '/sales/$id'
+      fullPath: '/dashboard/sales/$id'
+      preLoaderRoute: typeof DashboardSalesIdRouteImport
+      parentRoute: typeof DashboardRoute
     }
     '/dashboard/products/new': {
       id: '/dashboard/products/new'
@@ -608,6 +784,20 @@ declare module '@tanstack/react-router' {
       path: '/products/$id'
       fullPath: '/dashboard/products/$id'
       preLoaderRoute: typeof DashboardProductsIdRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/orders/$id': {
+      id: '/dashboard/orders/$id'
+      path: '/orders/$id'
+      fullPath: '/dashboard/orders/$id'
+      preLoaderRoute: typeof DashboardOrdersIdRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/customers/$id': {
+      id: '/dashboard/customers/$id'
+      path: '/customers/$id'
+      fullPath: '/dashboard/customers/$id'
+      preLoaderRoute: typeof DashboardCustomersIdRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/account/orders/$id': {
@@ -652,19 +842,39 @@ const AccountRouteWithChildren =
   AccountRoute._addFileChildren(AccountRouteChildren)
 
 interface DashboardRouteChildren {
+  DashboardAnalyticsRoute: typeof DashboardAnalyticsRoute
   DashboardLoginRoute: typeof DashboardLoginRoute
+  DashboardMarketingRoute: typeof DashboardMarketingRoute
+  DashboardSettingsRoute: typeof DashboardSettingsRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
+  DashboardCustomersIdRoute: typeof DashboardCustomersIdRoute
+  DashboardOrdersIdRoute: typeof DashboardOrdersIdRoute
   DashboardProductsIdRoute: typeof DashboardProductsIdRoute
   DashboardProductsNewRoute: typeof DashboardProductsNewRoute
+  DashboardSalesIdRoute: typeof DashboardSalesIdRoute
+  DashboardSalesNewRoute: typeof DashboardSalesNewRoute
+  DashboardCustomersIndexRoute: typeof DashboardCustomersIndexRoute
+  DashboardOrdersIndexRoute: typeof DashboardOrdersIndexRoute
   DashboardProductsIndexRoute: typeof DashboardProductsIndexRoute
+  DashboardSalesIndexRoute: typeof DashboardSalesIndexRoute
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardAnalyticsRoute: DashboardAnalyticsRoute,
   DashboardLoginRoute: DashboardLoginRoute,
+  DashboardMarketingRoute: DashboardMarketingRoute,
+  DashboardSettingsRoute: DashboardSettingsRoute,
   DashboardIndexRoute: DashboardIndexRoute,
+  DashboardCustomersIdRoute: DashboardCustomersIdRoute,
+  DashboardOrdersIdRoute: DashboardOrdersIdRoute,
   DashboardProductsIdRoute: DashboardProductsIdRoute,
   DashboardProductsNewRoute: DashboardProductsNewRoute,
+  DashboardSalesIdRoute: DashboardSalesIdRoute,
+  DashboardSalesNewRoute: DashboardSalesNewRoute,
+  DashboardCustomersIndexRoute: DashboardCustomersIndexRoute,
+  DashboardOrdersIndexRoute: DashboardOrdersIndexRoute,
   DashboardProductsIndexRoute: DashboardProductsIndexRoute,
+  DashboardSalesIndexRoute: DashboardSalesIndexRoute,
 }
 
 const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
