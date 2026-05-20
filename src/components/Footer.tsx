@@ -39,7 +39,14 @@ export function Footer() {
             <div className="font-display text-xs md:text-sm uppercase tracking-[0.12em]">
               <span className="text-white">The same plugins.</span> <span className="text-red">Fraction of the price.</span>
             </div>
-            <div className="font-mono text-[10px] md:text-xs text-white/40">© 2026 <span className="text-red">Plugin Warehouse</span></div>
+            <div className="font-mono text-[10px] md:text-xs text-white/40 flex items-center gap-3">
+              <span>© 2026 <span className="text-red">Plugin Warehouse</span></span>
+              <Link to={"/dashboard/login" as any} aria-label="✦" className="text-white/25 hover:text-white/60 transition" title="">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M12 2l2.39 7.36H22l-6.18 4.49L18.21 22 12 17.5 5.79 22l2.39-8.15L2 9.36h7.61z" />
+                </svg>
+              </Link>
+            </div>
           </div>
         </div>
       </div>

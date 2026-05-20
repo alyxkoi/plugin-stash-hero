@@ -7,6 +7,12 @@ import { CartDrawer } from "./CartDrawer";
 export function Shell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const reduce = useReducedMotion();
+  const isDashboard = pathname === "/dashboard" || pathname.startsWith("/dashboard/");
+
+  if (isDashboard) {
+    // Dashboard manages its own chrome (sidebar + topbar).
+    return <Outlet />;
+  }
 
   return (
     <>
