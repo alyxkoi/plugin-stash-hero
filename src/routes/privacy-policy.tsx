@@ -5,7 +5,7 @@ export const Route = createFileRoute("/privacy-policy")({
   head: () => ({ meta: [{ title: "Privacy Policy — Plugin Warehouse" }] }),
   component: () => (
     <StaticPage
-      eyebrow="// LAST UPDATED: MAY 2026"
+      eyebrow="LAST UPDATED: MAY 2026"
       headline="PRIVACY POLICY."
       sections={[
         {

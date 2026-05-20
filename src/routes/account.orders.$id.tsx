@@ -27,13 +27,13 @@ function SingleOrder() {
         <ArrowLeft className="w-3 h-3" /> BACK TO ALL ORDERS
       </Link>
       <header>
-        <div className="font-mono text-xs tracking-[0.18em] text-[var(--accent-red-glow)] mb-2">// ORDER RECEIPT</div>
+        <div className="font-mono text-xs tracking-[0.18em] text-[var(--accent-red-glow)] mb-2">ORDER RECEIPT</div>
         <h1 className="font-black text-[clamp(2rem,4vw,3.5rem)] leading-tight tracking-tight chrome-text">#{order.id}</h1>
       </header>
       <OrderCard order={order} defaultOpen />
       <div className="glass-card p-5 md:p-6 print:hidden">
         <div className="chromatic-edge" /><div className="relative z-10">
-          <div className="font-mono text-[11px] tracking-[0.14em] text-white/55 mb-3">// EMAIL THIS RECEIPT</div>
+          <div className="font-mono text-[11px] tracking-[0.14em] text-white/55 mb-3">EMAIL THIS RECEIPT</div>
           <form className="flex flex-col sm:flex-row gap-3" onSubmit={(e) => e.preventDefault()}>
             <input type="email" placeholder="someone@email.com" className="input-glass !rounded-full flex-1" />
             <button className="btn-primary !text-xs sm:w-auto">SEND</button>

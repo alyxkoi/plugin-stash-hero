@@ -11,7 +11,7 @@ const EVENTS: Record<string, { name: string; headline: string; sub: string; eyeb
     name: "Summer Tropical Steals",
     headline: "SUMMER STEALS. 35% OFF.",
     sub: "Pro plugins at tropical prices. Until the sun sets on Sept 22.",
-    eyebrow: "// SUMMER TROPICAL STEALS — ACTIVE",
+    eyebrow: "SUMMER TROPICAL STEALS — ACTIVE",
     motif: "tropical",
   },
 };
@@ -62,7 +62,7 @@ function SaleEvent() {
                   <div className="chromatic-edge" /><div className="glass-noise" />
                   <div className="aspect-square rounded-xl flex items-center justify-center" style={{ background: p.coverGradient }}>
                     <div className="text-center">
-                      <div className="font-mono text-[10px] text-white/60">// {p.maker.toUpperCase()}</div>
+                      <div className="font-mono text-[10px] text-white/60">{p.maker.toUpperCase()}</div>
                       <div className="font-black text-2xl chrome-text">{p.name}</div>
                     </div>
                     <div className="absolute top-2 right-2 px-2 py-1 rounded-md font-mono text-[10px] font-bold bg-[var(--accent-red)] text-white">35% OFF</div>
@@ -75,7 +75,7 @@ function SaleEvent() {
       </section>
 
       <section className="px-4 md:px-12 mb-12">
-        <div className="font-mono text-xs tracking-[0.2em] text-[var(--accent-red-glow)] mb-3">// TODAY'S SPOTLIGHT</div>
+        <div className="font-mono text-xs tracking-[0.2em] text-[var(--accent-red-glow)] mb-3">TODAY'S SPOTLIGHT</div>
         <AuroraTitle>HAND-PICKED FOR THE STEALS.</AuroraTitle>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
           {spotlight.map((p) => <ProductCard key={p.slug} product={p} />)}

@@ -37,7 +37,7 @@ function SavedPage() {
   return (
     <div className="space-y-8">
       <header>
-        <div className="font-mono text-xs tracking-[0.18em] text-[var(--accent-red-glow)] mb-3">// YOUR SAVED PLUGINS</div>
+        <div className="font-mono text-xs tracking-[0.18em] text-[var(--accent-red-glow)] mb-3">YOUR SAVED PLUGINS</div>
         <h1 className="font-black text-[clamp(2.25rem,5vw,4rem)] leading-[0.95] tracking-tight chrome-text">SAVED FOR LATER</h1>
         <div className="mt-4 font-mono text-[11px] tracking-[0.14em] text-white/55 flex flex-wrap gap-3">
           <span>{items.length} SAVED</span><span className="text-white/25">·</span>
@@ -98,7 +98,7 @@ function SavedCard({ item, selected, onToggle, onRemove }: { item: SavedItem; se
         <div className="relative aspect-square rounded-2xl overflow-hidden mb-4" style={{ background: p.coverGradient }}>
           <div className="absolute inset-0 flex items-center justify-center p-4">
             <div className="text-center">
-              <div className="font-mono text-[10px] tracking-[0.2em] text-white/60 mb-1">// {p.maker.toUpperCase()}</div>
+              <div className="font-mono text-[10px] tracking-[0.2em] text-white/60 mb-1">{p.maker.toUpperCase()}</div>
               <div className="font-black text-2xl chrome-text">{p.name}</div>
             </div>
           </div>

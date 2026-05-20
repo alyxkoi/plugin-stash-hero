@@ -27,7 +27,7 @@ export function AccountLayout() {
               <div className="chromatic-edge" />
               <div className="glass-noise" />
               <div className="relative z-10">
-                <div className="font-mono text-[10px] tracking-[0.18em] text-white/50 mb-4 px-2">// YOUR ACCOUNT</div>
+                <div className="font-mono text-[10px] tracking-[0.18em] text-white/50 mb-4 px-2">YOUR ACCOUNT</div>
                 <nav className="flex flex-col gap-1.5">
                   {NAV.map((item) => {
                     const Icon = item.icon;

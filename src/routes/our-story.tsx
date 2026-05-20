@@ -5,7 +5,7 @@ export const Route = createFileRoute("/our-story")({
   head: () => ({ meta: [{ title: "Our Story — Plugin Warehouse" }] }),
   component: () => (
     <StaticPage
-      eyebrow="// THE WAREHOUSE STORY"
+      eyebrow="THE WAREHOUSE STORY"
       headline="WE FIXED PLUGIN PRICING."
       sub="Pro-tier plugins shouldn't cost a paycheck. So they don't."
       sections={[
