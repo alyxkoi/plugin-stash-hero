@@ -81,7 +81,7 @@ export function AccountLayout() {
                   to={item.to}
                   aria-current={active ? "page" : undefined}
                   data-active={active}
-                  className={`dash-pill flex items-center gap-2 px-4 h-11 rounded-full border whitespace-nowrap ${
+                  className={`dash-pill flex items-center gap-2 px-4 h-11 rounded-xl border whitespace-nowrap ${
                     active
                       ? "text-white"
                       : "bg-white/[0.03] border-white/10 text-white/70"
