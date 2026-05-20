@@ -32,7 +32,7 @@ function NewSale() {
             value={pct}
             onChange={e => setPct(Number(e.target.value))}
             className="glass-slider"
-            style={{ ["--val" as any]: `${((pct - 5) / 70) * 100}%` }}
+            style={{ "--val": `${((pct - 5) / 70) * 100}%` } as React.CSSProperties}
           />
           <div className="flex items-baseline justify-center gap-2 mt-4">
             <span className="font-display text-4xl text-[var(--accent-red-glow)]" style={{ textShadow: "0 0 18px rgba(255,0,60,0.55)" }}>{pct}%</span>
