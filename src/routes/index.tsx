@@ -1181,24 +1181,13 @@ function SoundsOfTheDecade() {
         Era-defining tools, presets, and plugins for modern producers.
       </p>
       <FadeIn>
-        <div className="flex flex-wrap justify-center gap-2 mb-10">
-          {SOUND_TAGS.map((t) => (
-            <span
-              key={t}
-              className="font-mono text-[10px] tracking-[0.15em] uppercase px-3 py-1.5 rounded-full border border-white/15 text-white/75 hover:border-[var(--accent-red-glow)] hover:text-white transition cursor-default"
-            >
-              {t}
-            </span>
-          ))}
-        </div>
-
-        <div className="grid lg:grid-cols-[1.4fr_1fr] gap-6 max-w-6xl mx-auto">
+        <div className="grid lg:grid-cols-[1.4fr_1fr] gap-6 max-w-6xl mx-auto mt-10">
           {/* Featured */}
-          <FeaturedSoundCard product={featured} tag="Analog Revival" />
+          <FeaturedSoundCard product={featured} />
           {/* Supporting */}
           <div className="grid gap-4">
-            {supporting.map((p, i) => (
-              <SoundRowCard key={p.slug} product={p} tag={SOUND_TAGS[(i + 1) % SOUND_TAGS.length]} />
+            {supporting.map((p) => (
+              <SoundRowCard key={p.slug} product={p} />
             ))}
           </div>
         </div>
