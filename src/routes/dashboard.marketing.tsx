@@ -52,21 +52,23 @@ function Marketing() {
 
       {tab === "carts" && (
         <DashCard>
+          <div className="overflow-x-auto -mx-2">
           <table className="w-full text-sm">
-            <thead className="text-[10px] uppercase tracking-wider text-white/40"><tr><th className="text-left py-2">Customer</th><th className="text-left py-2">Items</th><th className="text-right py-2">Value</th><th className="text-left py-2 px-3">Abandoned</th><th className="text-left py-2">Reminder</th><th className="text-right py-2"></th></tr></thead>
+            <thead className="text-[10px] uppercase tracking-wider text-white/40"><tr><th className="text-left py-2 px-2">Customer</th><th className="hidden md:table-cell text-left py-2 px-2">Items</th><th className="text-right py-2 px-2">Value</th><th className="text-left py-2 px-3">Abandoned</th><th className="hidden md:table-cell text-left py-2 px-2">Reminder</th><th className="hidden md:table-cell text-right py-2 px-2"></th></tr></thead>
             <tbody>
               {abandonedCarts.map(c => (
                 <tr key={c.id} className="border-t border-white/5">
-                  <td className="py-2 text-xs">{c.isGuest && <span className="text-[10px] text-white/40 mr-1">Guest</span>}{c.customerEmail}</td>
-                  <td className="py-2 text-xs text-white/70">{c.items} · {c.itemSummary}</td>
-                  <td className="py-2 text-right font-mono text-xs">{formatMoney(c.cartValue)}</td>
-                  <td className="py-2 px-3 text-[10px] font-mono text-white/50">{c.abandonedHoursAgo < 24 ? `${c.abandonedHoursAgo}h ago` : `${Math.round(c.abandonedHoursAgo/24)}d ago`}</td>
-                  <td className="py-2">{c.reminderSent ? <StatusBadge status="completed" /> : <span className="text-[10px] text-white/40 font-mono uppercase">Not sent</span>}</td>
-                  <td className="py-2 text-right"><button onClick={() => toast.success("Reminder queued")} className="text-xs text-white/60 hover:text-white">Send reminder</button></td>
+                  <td className="py-2 px-2 text-xs"><div className="min-w-0 max-w-[160px] md:max-w-none truncate">{c.isGuest && <span className="text-[10px] text-white/40 mr-1">Guest</span>}{c.customerEmail}</div></td>
+                  <td className="hidden md:table-cell py-2 px-2 text-xs text-white/70">{c.items} · {c.itemSummary}</td>
+                  <td className="py-2 px-2 text-right font-mono text-xs whitespace-nowrap">{formatMoney(c.cartValue)}</td>
+                  <td className="py-2 px-3 text-[10px] font-mono text-white/50 whitespace-nowrap">{c.abandonedHoursAgo < 24 ? `${c.abandonedHoursAgo}h ago` : `${Math.round(c.abandonedHoursAgo/24)}d ago`}</td>
+                  <td className="hidden md:table-cell py-2 px-2">{c.reminderSent ? <StatusBadge status="completed" /> : <span className="text-[10px] text-white/40 font-mono uppercase">Not sent</span>}</td>
+                  <td className="hidden md:table-cell py-2 px-2 text-right"><button onClick={() => toast.success("Reminder queued")} className="text-xs text-white/60 hover:text-white">Send reminder</button></td>
                 </tr>
               ))}
             </tbody>
           </table>
+          </div>
         </DashCard>
       )}
 
@@ -86,14 +88,16 @@ function Marketing() {
             </div>
           </div>
           <DashCard>
+            <div className="overflow-x-auto -mx-2">
             <table className="w-full text-sm">
-              <thead className="text-[10px] uppercase tracking-wider text-white/40"><tr><th className="text-left py-2">Name</th><th className="text-left py-2 px-3">Sent</th><th className="text-right py-2">Recipients</th><th className="text-right py-2">Open</th><th className="text-right py-2">Click</th><th className="text-right py-2">Revenue</th></tr></thead>
+              <thead className="text-[10px] uppercase tracking-wider text-white/40"><tr><th className="text-left py-2 px-2">Name</th><th className="hidden md:table-cell text-left py-2 px-3">Sent</th><th className="hidden md:table-cell text-right py-2 px-2">Recipients</th><th className="text-right py-2 px-2">Open</th><th className="hidden md:table-cell text-right py-2 px-2">Click</th><th className="text-right py-2 px-2">Revenue</th></tr></thead>
               <tbody>
                 {campaigns.map(c => (
-                  <tr key={c.id} className="border-t border-white/5"><td className="py-2 text-sm">{c.name}</td><td className="py-2 px-3 text-[10px] font-mono text-white/50">{new Date(c.sentAt).toLocaleDateString()}</td><td className="py-2 text-right font-mono text-xs">{c.recipients.toLocaleString()}</td><td className="py-2 text-right font-mono text-xs">{c.openRate}%</td><td className="py-2 text-right font-mono text-xs">{c.clickRate}%</td><td className="py-2 text-right font-mono text-xs">{formatMoney(c.revenue)}</td></tr>
+                  <tr key={c.id} className="border-t border-white/5"><td className="py-2 px-2 text-sm"><div className="max-w-[170px] md:max-w-none truncate">{c.name}</div></td><td className="hidden md:table-cell py-2 px-3 text-[10px] font-mono text-white/50">{new Date(c.sentAt).toLocaleDateString()}</td><td className="hidden md:table-cell py-2 px-2 text-right font-mono text-xs">{c.recipients.toLocaleString()}</td><td className="py-2 px-2 text-right font-mono text-xs">{c.openRate}%</td><td className="hidden md:table-cell py-2 px-2 text-right font-mono text-xs">{c.clickRate}%</td><td className="py-2 px-2 text-right font-mono text-xs whitespace-nowrap">{formatMoney(c.revenue)}</td></tr>
                 ))}
               </tbody>
             </table>
+            </div>
           </DashCard>
         </div>
       )}

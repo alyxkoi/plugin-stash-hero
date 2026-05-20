@@ -31,7 +31,7 @@ function SalesPage() {
           <tbody>
             {saleEvents.map(s => (
               <tr key={s.id} className="border-t border-white/5">
-                <td className="py-2 px-2"><Link to={"/dashboard/sales/$id" as any} params={{ id: s.id } as any} className="hover:text-[var(--accent-red-glow)]">{s.name}</Link></td>
+                <td className="py-2 px-2"><Link to={"/dashboard/sales/$id" as any} params={{ id: s.id } as any} className="hover:text-[var(--accent-red-glow)] block max-w-[140px] md:max-w-none truncate">{s.name}</Link></td>
                 <td className="py-2 px-2 text-right font-mono text-xs">{s.discountPct}%</td>
                 <td className="hidden md:table-cell py-2 px-3 text-[10px] text-white/50 font-mono">{new Date(s.startAt).toLocaleDateString()}</td>
                 <td className="hidden md:table-cell py-2 px-3 text-[10px] text-white/50 font-mono">{new Date(s.endAt).toLocaleDateString()}</td>
