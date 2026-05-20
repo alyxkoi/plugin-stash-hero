@@ -44,7 +44,9 @@ function DashboardChromeRoot({ initialTitle, initialAction, children }: { initia
   const [session, setSession] = useState<AdminSession | null>(null);
   const [menu, setMenu] = useState(false);
   const [page, setPageState] = useState<{ title: string; action?: ReactNode }>({ title: initialTitle, action: initialAction });
-  const bottomNavRef = useRef<HTMLElement | null>(null);
+  const trackRef = useRef<HTMLDivElement | null>(null);
+  const itemRefs = useRef<(HTMLAnchorElement | null)[]>([]);
+  const [glowRect, setGlowRect] = useState<{ left: number; width: number }>({ left: -200, width: 0 });
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
@@ -70,17 +72,26 @@ function DashboardChromeRoot({ initialTitle, initialAction, children }: { initia
   const displayTitle = page.title === initialTitle ? routeTitle : page.title;
   const ITEM_H = 40;
   const GAP = 4;
-  const MOBILE_ITEM_W = 82;
-  const TRACK_PAD = 6;
   const glowTop = activeIdx >= 0 ? activeIdx * (ITEM_H + GAP) : -100;
-  const glowLeft = activeIdx >= 0 ? TRACK_PAD + activeIdx * (MOBILE_ITEM_W + GAP) : -100;
 
-  useEffect(() => {
-    const nav = bottomNavRef.current;
-    if (!nav || activeIdx < 0) return;
-    const target = Math.max(0, activeIdx * (MOBILE_ITEM_W + GAP) - nav.clientWidth / 2 + MOBILE_ITEM_W / 2);
-    nav.scrollTo({ left: target, behavior: "smooth" });
-  }, [activeIdx]);
+  // Measure active item to position the mobile glow exactly under it (handles responsive sizes).
+  useBrowserLayoutEffect(() => {
+    const measure = () => {
+      const track = trackRef.current;
+      const el = activeIdx >= 0 ? itemRefs.current[activeIdx] : null;
+      if (!track || !el) return;
+      const tRect = track.getBoundingClientRect();
+      const eRect = el.getBoundingClientRect();
+      setGlowRect({ left: eRect.left - tRect.left + track.scrollLeft, width: eRect.width });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    if (trackRef.current) ro.observe(trackRef.current);
+    window.addEventListener("resize", measure);
+    return () => { ro.disconnect(); window.removeEventListener("resize", measure); };
+  }, [activeIdx, pathname]);
+
+
 
   return (
     <div className="dashboard-scope min-h-screen flex w-full" style={{ background: "var(--bg-base)" }}>
@@ -154,16 +165,21 @@ function DashboardChromeRoot({ initialTitle, initialAction, children }: { initia
         </main>
       </div>
 
-      <nav ref={bottomNavRef} className="dashboard-bottom-nav lg:hidden" aria-label="Dashboard navigation">
-        <div className="dashboard-bottom-track">
-          <span className="bottom-nav-glow" style={{ left: glowLeft, width: MOBILE_ITEM_W }} />
-          {NAV.map((n) => {
+      <nav className="dashboard-bottom-nav lg:hidden" aria-label="Dashboard navigation">
+        <div ref={trackRef} className="dashboard-bottom-track">
+          <span className="bottom-nav-glow" style={{ left: glowRect.left, width: glowRect.width }} />
+          {NAV.map((n, i) => {
             const active = n.exact ? pathname === n.to : pathname.startsWith(n.to);
             const Icon = n.icon;
             return (
-              <Link key={n.to} to={n.to as any} className={`bottom-nav-link ${active ? "is-active" : ""}`} style={{ width: MOBILE_ITEM_W }}>
-                <Icon size={18} />
-                <span>{n.label}</span>
+              <Link
+                key={n.to}
+                to={n.to as any}
+                ref={(el) => { itemRefs.current[i] = el; }}
+                className={`bottom-nav-link ${active ? "is-active" : ""}`}
+                aria-label={n.label}
+              >
+                <Icon size={20} />
               </Link>
             );
           })}
