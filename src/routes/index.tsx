@@ -118,7 +118,7 @@ function Hero() {
             </span>
           </h1>
           <p className="text-lg md:text-xl text-white/80 max-w-xl mb-4 leading-relaxed">
-            Pre-order plugins at a <span className="text-red">fraction of retail</span>. Build your
+            Get your plugins at a <span className="text-red">fraction of retail</span>. Build your
             sound before the drop.
           </p>
           <p className="label-mini mb-8">
