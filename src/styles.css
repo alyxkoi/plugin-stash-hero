@@ -382,6 +382,7 @@
   100% { transform: translateX(-50%); }
 }
 .marquee-track { animation: marquee 40s linear infinite; }
+.marquee-track--fast { animation-duration: 18s; }
 .marquee-pause:hover .marquee-track { animation-play-state: paused; }
 
 @keyframes pulse-dot {
@@ -1234,6 +1235,18 @@
 .console-tabs::-webkit-scrollbar { display: none; }
 @media (max-width: 699px) {
   .console-tabs { overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
+}
+@media (min-width: 700px) and (max-width: 1023px) {
+  .console-tabs { flex-wrap: nowrap; gap: 0.3rem; padding: 0.35rem; }
+  .console-tabs > .console-tab {
+    flex: 1 1 0;
+    min-width: 0;
+    justify-content: center;
+    padding: 0.55rem 0.4rem;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    gap: 0.35rem;
+  }
 }
 .console-tab {
   position: relative;

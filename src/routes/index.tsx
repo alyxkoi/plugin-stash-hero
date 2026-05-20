@@ -118,7 +118,7 @@ function Hero() {
             </span>
           </h1>
           <p className="text-lg md:text-xl text-white/80 max-w-xl mb-4 leading-relaxed">
-            Pre-order plugins at a <span className="text-red">fraction of retail</span>. Build your
+            Get your plugins at a <span className="text-red">fraction of retail</span>. Build your
             sound before the drop.
           </p>
           <p className="label-mini mb-8">
@@ -207,7 +207,7 @@ function Ticker() {
   ];
   const repeated = Array.from({ length: 8 }).flatMap(() => items);
   return (
-    <div className="relative overflow-hidden border-y border-white/10 marquee-pause">
+    <div className="relative overflow-hidden border-y border-white/10">
       <div
         className="h-px"
         style={{
@@ -216,7 +216,7 @@ function Ticker() {
         }}
       />
       <div className="py-4 overflow-hidden">
-        <div className="marquee-track flex gap-16 whitespace-nowrap text-base md:text-lg uppercase">
+        <div className="marquee-track marquee-track--fast flex gap-16 whitespace-nowrap text-base md:text-lg uppercase">
           {repeated.map((item, i) => (
             <span key={i} className="flex items-center gap-16 shrink-0">
               {item}
@@ -1160,14 +1160,7 @@ function ConsolePreviewCard({ product }: { product: Product }) {
 
 /* ============ SOUNDS OF THE DECADE ============ */
 
-const SOUND_TAGS = [
-  "Modern Trap",
-  "Bedroom Pop",
-  "2010s EDM",
-  "Analog Revival",
-  "Vocal Chain",
-  "808 Essentials",
-];
+
 
 function SoundsOfTheDecade() {
   // 1 featured + 3 supporting
@@ -1181,24 +1174,13 @@ function SoundsOfTheDecade() {
         Era-defining tools, presets, and plugins for modern producers.
       </p>
       <FadeIn>
-        <div className="flex flex-wrap justify-center gap-2 mb-10">
-          {SOUND_TAGS.map((t) => (
-            <span
-              key={t}
-              className="font-mono text-[10px] tracking-[0.15em] uppercase px-3 py-1.5 rounded-full border border-white/15 text-white/75 hover:border-[var(--accent-red-glow)] hover:text-white transition cursor-default"
-            >
-              {t}
-            </span>
-          ))}
-        </div>
-
-        <div className="grid lg:grid-cols-[1.4fr_1fr] gap-6 max-w-6xl mx-auto">
+        <div className="grid lg:grid-cols-[1.4fr_1fr] gap-6 max-w-6xl mx-auto mt-10">
           {/* Featured */}
-          <FeaturedSoundCard product={featured} tag="Analog Revival" />
+          <FeaturedSoundCard product={featured} />
           {/* Supporting */}
           <div className="grid gap-4">
-            {supporting.map((p, i) => (
-              <SoundRowCard key={p.slug} product={p} tag={SOUND_TAGS[(i + 1) % SOUND_TAGS.length]} />
+            {supporting.map((p) => (
+              <SoundRowCard key={p.slug} product={p} />
             ))}
           </div>
         </div>
@@ -1207,7 +1189,7 @@ function SoundsOfTheDecade() {
   );
 }
 
-function FeaturedSoundCard({ product, tag }: { product: Product; tag: string }) {
+function FeaturedSoundCard({ product }: { product: Product }) {
   const [added, setAdded] = useState(false);
   const onSale = product.compareAtPrice && product.compareAtPrice > product.price;
   return (
@@ -1228,9 +1210,6 @@ function FeaturedSoundCard({ product, tag }: { product: Product; tag: string }) 
       <div className="relative z-10 flex flex-col h-full p-6 md:p-8">
         <div className="flex items-center gap-2">
           <span className="label-mini !text-[var(--accent-red-glow)]">Featured</span>
-          <span className="font-mono text-[10px] tracking-[0.15em] uppercase px-2 py-0.5 rounded-full border border-white/20 text-white/80">
-            {tag}
-          </span>
         </div>
         <div className="mt-auto">
           <div className="label-mini mb-1">{product.maker}</div>
@@ -1271,7 +1250,7 @@ function FeaturedSoundCard({ product, tag }: { product: Product; tag: string }) 
   );
 }
 
-function SoundRowCard({ product, tag }: { product: Product; tag: string }) {
+function SoundRowCard({ product }: { product: Product }) {
   const [added, setAdded] = useState(false);
   const onSale = product.compareAtPrice && product.compareAtPrice > product.price;
   return (
@@ -1289,11 +1268,7 @@ function SoundRowCard({ product, tag }: { product: Product; tag: string }) {
           </div>
         </Link>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="font-mono text-[9px] tracking-[0.15em] uppercase text-[var(--accent-red-glow)]">
-              {tag}
-            </span>
-          </div>
+          <div className="label-mini mb-1">{product.maker}</div>
           <Link
             to="/shop/p/$slug"
             params={{ slug: product.slug }}
