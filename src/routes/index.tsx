@@ -647,7 +647,7 @@ type VaultTab = {
   chips: string[];
   ctaLabel: string;
   bg: string;
-  Icon: typeof Piano;
+  Icon: LucideIcon;
 };
 
 const VAULT_TABS: VaultTab[] = [
