@@ -1,5 +1,5 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { getAdminSession } from "@/lib/dashboard-mock";
 
 // Layout wrapper for ALL /dashboard/* routes.
@@ -9,26 +9,17 @@ export const Route = createFileRoute("/dashboard")({
 });
 
 function DashboardLayout() {
-  const [checked, setChecked] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const isLogin = location.pathname === "/dashboard/login";
 
   useEffect(() => {
-    const path = window.location.pathname;
-    if (path === "/dashboard/login") {
-      setChecked(true);
-      return;
+    if (isLogin) return;
+    if (typeof window === "undefined") return;
+    if (!getAdminSession()) {
+      navigate({ to: "/dashboard/login" as any, replace: true });
     }
-    const sess = getAdminSession();
-    if (!sess) {
-      // Silently bounce non-admins back to storefront — no panel exposure.
-      // TODO: backend — replace with Supabase session check + users.is_admin = true.
-      window.location.replace("/dashboard/login");
-      return;
-    }
-    setChecked(true);
-  }, []);
+  }, [isLogin, navigate]);
 
-  if (!checked) {
-    return <div className="min-h-screen flex items-center justify-center text-white/40 text-xs font-mono">…</div>;
-  }
   return <Outlet />;
 }
