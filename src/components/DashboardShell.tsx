@@ -7,7 +7,7 @@ import {
 import logo from "@/assets/logo.png";
 import { clearAdminSession, getAdminSession, type AdminSession } from "@/lib/dashboard-mock";
 
-const NAV = [
+const NAV: { to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean }[] = [
   { to: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
   { to: "/dashboard/products", label: "Products", icon: Package },
   { to: "/dashboard/orders", label: "Orders", icon: ShoppingBag },
@@ -16,7 +16,7 @@ const NAV = [
   { to: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/dashboard/marketing", label: "Marketing", icon: Megaphone },
   { to: "/dashboard/settings", label: "Settings", icon: Settings },
-] as const;
+];
 
 interface Props {
   title: string;
