@@ -94,8 +94,8 @@ export function Nav() {
                   </div>
                 )}
               </div>
-              <Link to="/sale/$slug" params={{ slug: "summer-steals" }} className="px-3 py-2 rounded-full text-red hover:bg-white/5 transition font-display tracking-wider">DEALS</Link>
               <Link to="/shop" className="px-3 py-2 rounded-full hover:bg-white/5 transition font-display tracking-wider">SHOP ALL</Link>
+              <Link to="/sale/$slug" params={{ slug: "summer-steals" }} className="px-3 py-2 rounded-full text-red hover:bg-white/5 transition font-display tracking-wider">DEALS</Link>
             </nav>
 
             <div className="flex-1" />
