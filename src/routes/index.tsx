@@ -192,19 +192,14 @@ function Hero() {
 
 function Ticker() {
   const items = [
-    <>
-      🌴 <span className="text-red">Summer Steals</span> active
-    </>,
-    <>
-      <span className="text-red">35% OFF</span> store-wide
-    </>,
-    <>
-      Ends <span className="text-red">{SALE.endsLabel}</span>
-    </>,
-    <>Curated for producers</>,
-    <>Instant access · Yours forever</>,
+    <span key="a" className="font-display font-black tracking-[0.18em]">
+      FOR PRODUCERS, BY PRODUCERS
+    </span>,
+    <span key="b" className="font-display font-black tracking-[0.18em]">
+      <span className="rainbow-glass-text">35% OFF</span> STOREWIDE
+    </span>,
   ];
-  const repeated = [...items, ...items, ...items, ...items];
+  const repeated = Array.from({ length: 8 }).flatMap(() => items);
   return (
     <div className="relative overflow-hidden border-y border-white/10 marquee-pause">
       <div
@@ -214,12 +209,12 @@ function Ticker() {
             "linear-gradient(90deg, transparent, #FF1F5C, #2B28FF, #FF1F5C, transparent)",
         }}
       />
-      <div className="py-3 overflow-hidden">
-        <div className="marquee-track flex gap-12 whitespace-nowrap font-display text-sm tracking-[0.12em] text-white/80 uppercase">
+      <div className="py-4 overflow-hidden">
+        <div className="marquee-track flex gap-16 whitespace-nowrap text-base md:text-lg uppercase">
           {repeated.map((item, i) => (
-            <span key={i} className="flex items-center gap-12 shrink-0">
+            <span key={i} className="flex items-center gap-16 shrink-0">
               {item}
-              <span className="w-1 h-1 rounded-full bg-[var(--accent-red-glow)]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-red-glow)]" />
             </span>
           ))}
         </div>
@@ -228,86 +223,77 @@ function Ticker() {
   );
 }
 
-/* ============ ON ROTATION (carousel) ============ */
+/* ============ ON ROTATION (auto-marquee + progress) ============ */
+
+const ROTATION_DURATION_MS = 38000;
 
 function OnRotation() {
   const list = (bestsellerProducts.length >= 5 ? bestsellerProducts : recentProducts).slice(0, 8);
-  const trackRef = useRef<HTMLDivElement>(null);
-  const [canPrev, setCanPrev] = useState(false);
-  const [canNext, setCanNext] = useState(true);
   const [progress, setProgress] = useState(0);
+  const wrapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const el = trackRef.current;
-    if (!el) return;
-    const update = () => {
-      const max = el.scrollWidth - el.clientWidth;
-      setCanPrev(el.scrollLeft > 4);
-      setCanNext(el.scrollLeft < max - 4);
-      setProgress(max > 0 ? el.scrollLeft / max : 0);
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) {
+      setProgress(0);
+      return;
+    }
+    let raf = 0;
+    let start = performance.now();
+    let pausedAt: number | null = null;
+    const wrap = wrapRef.current;
+
+    const onEnter = () => { pausedAt = performance.now(); };
+    const onLeave = () => {
+      if (pausedAt != null) {
+        start += performance.now() - pausedAt;
+        pausedAt = null;
+      }
     };
-    update();
-    el.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
+    wrap?.addEventListener("mouseenter", onEnter);
+    wrap?.addEventListener("mouseleave", onLeave);
+
+    const loop = (t: number) => {
+      const ref = pausedAt ?? t;
+      const elapsed = (ref - start) % ROTATION_DURATION_MS;
+      setProgress(elapsed / ROTATION_DURATION_MS);
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
     return () => {
-      el.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
+      cancelAnimationFrame(raf);
+      wrap?.removeEventListener("mouseenter", onEnter);
+      wrap?.removeEventListener("mouseleave", onLeave);
     };
   }, []);
 
-  const scrollBy = (dir: 1 | -1) => {
-    const el = trackRef.current;
-    if (!el) return;
-    const card = el.querySelector<HTMLElement>(".rotation-card");
-    const step = card ? card.offsetWidth + 20 : el.clientWidth * 0.8;
-    el.scrollBy({ left: dir * step * 2, behavior: "smooth" });
-  };
-
   return (
     <section className="px-4 md:px-12 py-16 md:py-24">
-      <div className="flex items-end justify-between gap-4 mb-2">
-        <div className="flex-1">
-          <AuroraTitle className="!mb-2">ON ROTATION</AuroraTitle>
-        </div>
-        <div className="hidden md:flex gap-2 mb-10">
-          <button
-            className="carousel-ctrl"
-            onClick={() => scrollBy(-1)}
-            disabled={!canPrev}
-            aria-label="Previous"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <button
-            className="carousel-ctrl"
-            onClick={() => scrollBy(1)}
-            disabled={!canNext}
-            aria-label="Next"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
-        </div>
+      <div className="mb-6">
+        <AuroraTitle className="!mb-2">ON ROTATION</AuroraTitle>
       </div>
       <FadeIn>
-        <div ref={trackRef} className="rotation-track no-scrollbar">
-          {list.map((p) => (
-            <RotationCard key={p.slug} product={p} />
-          ))}
-        </div>
-        <div className="mt-2 h-[3px] rounded-full bg-white/8 overflow-hidden max-w-md mx-auto">
+        <div ref={wrapRef} className="rotation-marquee-wrap">
           <div
-            className="h-full rounded-full"
-            style={{
-              width: `${Math.max(12, progress * 100)}%`,
-              background: "linear-gradient(90deg, var(--accent-red), var(--accent-blue-glow))",
-              transition: "width 200ms ease",
-            }}
+            className="rotation-marquee-track"
+            style={{ animationDuration: `${ROTATION_DURATION_MS}ms` }}
+          >
+            {[...list, ...list].map((p, i) => (
+              <RotationCard key={`${p.slug}-${i}`} product={p} />
+            ))}
+          </div>
+        </div>
+        <div className="rotation-progress mt-2">
+          <div
+            className="rotation-progress-fill"
+            style={{ width: `${progress * 100}%` }}
           />
         </div>
       </FadeIn>
     </section>
   );
 }
+
 
 function RotationCard({ product }: { product: Product }) {
   const wished = useStore((s) => s.wishlist.includes(product.slug));
@@ -468,6 +454,18 @@ const RECIPES: Recipe[] = [
 ];
 
 function PluginRecipes() {
+  const [index, setIndex] = useState(0);
+  const len = RECIPES.length;
+
+  const slotFor = (i: number) => {
+    let d = i - index;
+    if (d > len / 2) d -= len;
+    if (d < -len / 2) d += len;
+    return d; // -1, 0, 1
+  };
+
+  const go = (dir: 1 | -1) => setIndex((i) => (i + dir + len) % len);
+
   return (
     <section className="px-4 md:px-12 py-16 md:py-24">
       <AuroraTitle className="!mb-2">PLUGIN RECIPES</AuroraTitle>
@@ -475,17 +473,56 @@ function PluginRecipes() {
         Stack the right tools and get straight to the sound.
       </p>
       <FadeIn>
-        <div className="grid gap-6 md:gap-8 max-w-5xl mx-auto">
-          {RECIPES.map((r) => (
-            <RecipeCard key={r.a + r.b} recipe={r} />
-          ))}
+        <div className="recipe-carousel">
+          <button
+            className="carousel-ctrl recipe-arrow-prev"
+            onClick={() => go(-1)}
+            aria-label="Previous recipe"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <button
+            className="carousel-ctrl recipe-arrow-next"
+            onClick={() => go(1)}
+            aria-label="Next recipe"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+          <div className="recipe-stage">
+            {RECIPES.map((r, i) => {
+              const slot = slotFor(i);
+              const onSideClick = slot === 0 ? undefined : () => setIndex(i);
+              return (
+                <div
+                  key={r.a + r.b}
+                  className="recipe-slide"
+                  data-slot={slot}
+                  aria-hidden={slot !== 0}
+                  onClick={onSideClick}
+                >
+                  <RecipeSlideCard recipe={r} active={slot === 0} />
+                </div>
+              );
+            })}
+          </div>
+          <div className="recipe-dots">
+            {RECIPES.map((r, i) => (
+              <button
+                key={r.a + r.b}
+                className="recipe-dot"
+                data-active={i === index}
+                onClick={() => setIndex(i)}
+                aria-label={`Go to recipe ${i + 1}`}
+              />
+            ))}
+          </div>
         </div>
       </FadeIn>
     </section>
   );
 }
 
-function RecipeCard({ recipe }: { recipe: Recipe }) {
+function RecipeSlideCard({ recipe, active }: { recipe: Recipe; active: boolean }) {
   const a = getProductBySlug(recipe.a);
   const b = getProductBySlug(recipe.b);
   const [added, setAdded] = useState(false);
@@ -494,7 +531,8 @@ function RecipeCard({ recipe }: { recipe: Recipe }) {
   const total = a.price + b.price;
   const compareTotal = (a.compareAtPrice ?? a.price) + (b.compareAtPrice ?? b.price);
 
-  const addBoth = () => {
+  const addBoth = (e: React.MouseEvent) => {
+    e.stopPropagation();
     actions.addToCart(a);
     actions.addToCart(b);
     setAdded(true);
@@ -502,57 +540,61 @@ function RecipeCard({ recipe }: { recipe: Recipe }) {
   };
 
   return (
-    <article className="recipe-card group">
-      <div className="grid md:grid-cols-[1fr_auto_1fr_auto_1.4fr] gap-3 md:gap-4 items-stretch">
-        <RecipeTile product={a} className="recipe-tile-a" />
-        <div className="recipe-symbol md:px-1"><Plus className="w-7 h-7" /></div>
-        <RecipeTile product={b} className="recipe-tile-b" />
-        <div className="recipe-symbol md:px-1 font-display text-3xl">=</div>
-        <div className="recipe-outcome">
-          <h3 className="font-display text-2xl md:text-3xl leading-tight mb-2">{recipe.outcome}</h3>
-          <p className="text-white/75 text-sm leading-relaxed mb-3">{recipe.description}</p>
-          <div className="label-mini mb-3">
-            Use for: <span className="text-white/65 normal-case tracking-normal font-normal">{recipe.useFor}</span>
+    <article className="recipe-slide-card">
+      <div className="recipe-tiles-row mb-4">
+        <RecipeTile product={a} />
+        <div className="recipe-symbol"><Plus className="w-6 h-6" /></div>
+        <RecipeTile product={b} />
+      </div>
+      <div className="recipe-symbol font-display text-2xl mb-3">=</div>
+      <div className="recipe-outcome">
+        <h3 className="font-display text-2xl leading-tight mb-2">{recipe.outcome}</h3>
+        <p className="text-white/75 text-sm leading-relaxed mb-3">{recipe.description}</p>
+        <div className="label-mini mb-3">
+          Use for:{" "}
+          <span className="text-white/65 normal-case tracking-normal font-normal">
+            {recipe.useFor}
+          </span>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={addBoth}
+            disabled={!active}
+            className={`btn-primary !text-sm relative ${added ? "!bg-[var(--accent-blue)]" : ""}`}
+            style={
+              added
+                ? {
+                    background: "linear-gradient(180deg,#2B28FF 0%,#0E0BD1 100%)",
+                    boxShadow: "0 8px 24px rgba(14,11,209,0.45)",
+                  }
+                : undefined
+            }
+          >
+            {added ? (
+              <>
+                <Check className="w-4 h-4" /> ADDED
+              </>
+            ) : (
+              <>
+                ADD BOTH
+                <span className="ml-2 inline-flex items-center justify-center min-w-[22px] h-[22px] rounded-full bg-black/30 border border-white/25 font-mono text-[11px]">
+                  2
+                </span>
+              </>
+            )}
+          </button>
+          <div className="font-mono text-sm">
+            <span className="font-bold text-white">${total}</span>
+            {compareTotal > total && (
+              <span className="ml-2 text-white/40 line-through">${compareTotal}</span>
+            )}
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              onClick={addBoth}
-              className={`btn-primary !text-sm relative ${added ? "!bg-[var(--accent-blue)]" : ""}`}
-              style={
-                added
-                  ? {
-                      background: "linear-gradient(180deg,#2B28FF 0%,#0E0BD1 100%)",
-                      boxShadow: "0 8px 24px rgba(14,11,209,0.45)",
-                    }
-                  : undefined
-              }
-            >
-              {added ? (
-                <>
-                  <Check className="w-4 h-4" /> ADDED
-                </>
-              ) : (
-                <>
-                  ADD BOTH TO CART
-                  <span className="ml-2 inline-flex items-center justify-center min-w-[22px] h-[22px] rounded-full bg-black/30 border border-white/25 font-mono text-[11px]">
-                    2
-                  </span>
-                </>
-              )}
-            </button>
-            <div className="font-mono text-sm">
-              <span className="font-bold text-white">${total}</span>
-              {compareTotal > total && (
-                <span className="ml-2 text-white/40 line-through">${compareTotal}</span>
-              )}
-            </div>
-          </div>
-          <p className="label-mini mt-2 !text-[0.65rem]">Adds both plugins to your cart.</p>
         </div>
       </div>
     </article>
   );
 }
+
 
 function RecipeTile({ product, className = "" }: { product: Product; className?: string }) {
   const navigate = useNavigate();
