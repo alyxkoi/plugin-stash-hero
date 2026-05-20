@@ -203,7 +203,7 @@ export function Nav() {
                       >
                         <Icon className="drawer-item-icon" strokeWidth={1.4} />
                         <span className="drawer-item-label">{c.name}</span>
-                        <span className="drawer-item-count">{c.count}</span>
+                        
                       </Link>
                     );
                   })}
