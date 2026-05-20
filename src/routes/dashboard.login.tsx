@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import logo from "@/assets/logo.png";
+import logo from "@/assets/logo-dashboard.webp";
 import { setAdminSession } from "@/lib/dashboard-mock";
 
 export const Route = createFileRoute("/dashboard/login")({
@@ -40,7 +40,7 @@ function DashboardLogin() {
         <div className="chromatic-edge" />
         <div className="relative z-10">
           <div className="flex flex-col items-center mb-6">
-            <img src={logo} alt="Plugin Warehouse" className="h-12 w-auto object-contain mb-3" style={{ filter: "drop-shadow(0 2px 12px rgba(255,0,60,0.35))" }} />
+            <img src={logo} alt="Plugin Warehouse" width={420} height={120} className="h-12 w-auto object-contain mb-3" style={{ filter: "drop-shadow(0 2px 12px rgba(255,0,60,0.35))" }} />
             <div className="label-mini opacity-60 text-[10px]">Dashboard access</div>
           </div>
 
