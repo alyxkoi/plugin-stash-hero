@@ -2037,8 +2037,10 @@
   min-width: 0;
   height: 44px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 2px;
   color: rgba(255,255,255,0.62);
   border-radius: 14px;
   transition: color 0.28s ease-out;
@@ -2046,6 +2048,30 @@
 
 .bottom-nav-link svg {
   display: block;
+}
+
+.bottom-nav-label {
+  display: none;
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  font-weight: 500;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .dashboard-bottom-track {
+    max-width: 720px;
+  }
+  .bottom-nav-link {
+    height: 52px;
+  }
+  .bottom-nav-label {
+    display: block;
+  }
 }
 
 .bottom-nav-link.is-active {
