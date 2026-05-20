@@ -382,6 +382,7 @@
   100% { transform: translateX(-50%); }
 }
 .marquee-track { animation: marquee 40s linear infinite; }
+.marquee-track--fast { animation-duration: 18s; }
 .marquee-pause:hover .marquee-track { animation-play-state: paused; }
 
 @keyframes pulse-dot {
