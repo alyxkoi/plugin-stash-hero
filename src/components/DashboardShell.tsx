@@ -32,7 +32,7 @@ export function DashboardShell({ title, action, children }: Props) {
   const actionSig = useMemo(() => getActionSignature(action), [action]);
   useEffect(() => {
     nestedChrome?.setPage(title, action);
-  }, [nestedChrome, title, actionSig]);
+  }, [nestedChrome, title, action, actionSig]);
 
   if (nestedChrome) return <>{children}</>;
 
