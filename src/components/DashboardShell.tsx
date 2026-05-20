@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useRouterState, Outlet } from "@tanstack/react-router";
 import {
   LayoutDashboard, Package, ShoppingBag, Tag, Users, BarChart3,
@@ -27,6 +27,7 @@ interface Props {
 export function DashboardShell({ title, action, children }: Props) {
   const [session, setSession] = useState<AdminSession | null>(null);
   const [menu, setMenu] = useState(false);
+  const bottomNavRef = useRef<HTMLElement | null>(null);
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
@@ -43,6 +44,13 @@ export function DashboardShell({ title, action, children }: Props) {
   const MOBILE_ITEM_W = 82;
   const glowTop = activeIdx >= 0 ? activeIdx * (ITEM_H + GAP) : -100;
   const glowLeft = activeIdx >= 0 ? activeIdx * (MOBILE_ITEM_W + GAP) : -100;
+
+  useEffect(() => {
+    const nav = bottomNavRef.current;
+    if (!nav || activeIdx < 0) return;
+    const target = Math.max(0, activeIdx * (MOBILE_ITEM_W + GAP) - nav.clientWidth / 2 + MOBILE_ITEM_W / 2);
+    nav.scrollTo({ left: target, behavior: "smooth" });
+  }, [activeIdx]);
 
   return (
     <div className="dashboard-scope min-h-screen flex w-full" style={{ background: "var(--bg-base)" }}>
@@ -114,7 +122,7 @@ export function DashboardShell({ title, action, children }: Props) {
         </main>
       </div>
 
-      <nav className="dashboard-bottom-nav lg:hidden" aria-label="Dashboard navigation">
+      <nav ref={bottomNavRef} className="dashboard-bottom-nav lg:hidden" aria-label="Dashboard navigation">
         <div className="dashboard-bottom-track">
           <span className="bottom-nav-glow" style={{ left: glowLeft, width: MOBILE_ITEM_W }} />
           {NAV.map((n) => {
