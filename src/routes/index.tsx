@@ -1257,7 +1257,7 @@ function FeaturedSoundCard({ product }: { product: Product }) {
   );
 }
 
-function SoundRowCard({ product, tag }: { product: Product; tag: string }) {
+function SoundRowCard({ product }: { product: Product }) {
   const [added, setAdded] = useState(false);
   const onSale = product.compareAtPrice && product.compareAtPrice > product.price;
   return (
@@ -1275,11 +1275,7 @@ function SoundRowCard({ product, tag }: { product: Product; tag: string }) {
           </div>
         </Link>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="font-mono text-[9px] tracking-[0.15em] uppercase text-[var(--accent-red-glow)]">
-              {tag}
-            </span>
-          </div>
+          <div className="label-mini mb-1">{product.maker}</div>
           <Link
             to="/shop/p/$slug"
             params={{ slug: product.slug }}
