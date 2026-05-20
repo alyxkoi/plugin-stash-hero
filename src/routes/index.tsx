@@ -20,6 +20,7 @@ import {
   AudioWaveform,
   AppWindow,
   Gift,
+  type LucideIcon,
 } from "lucide-react";
 import {
   bestsellerProducts,
@@ -646,7 +647,7 @@ type VaultTab = {
   chips: string[];
   ctaLabel: string;
   bg: string;
-  Icon: typeof Piano;
+  Icon: LucideIcon;
 };
 
 const VAULT_TABS: VaultTab[] = [
