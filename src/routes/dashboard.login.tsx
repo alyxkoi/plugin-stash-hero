@@ -39,8 +39,10 @@ function DashboardLogin() {
       <div className="glass-card p-8 w-full max-w-[420px] relative z-10">
         <div className="chromatic-edge" />
         <div className="relative z-10">
-          <img src={logo} alt="Plugin Warehouse" className="h-10 w-auto object-contain mb-3" style={{ filter: "drop-shadow(0 2px 12px rgba(255,0,60,0.35))" }} />
-          <div className="label-mini opacity-60 text-[10px] mb-6">Dashboard access</div>
+          <div className="flex flex-col items-center mb-6">
+            <img src={logo} alt="Plugin Warehouse" className="h-12 w-auto object-contain mb-3" style={{ filter: "drop-shadow(0 2px 12px rgba(255,0,60,0.35))" }} />
+            <div className="label-mini opacity-60 text-[10px]">Dashboard access</div>
+          </div>
 
           <form onSubmit={onSubmit} className="space-y-3">
             <Input label="Email" type="email" value={email} onChange={setEmail} />
@@ -56,14 +58,15 @@ function DashboardLogin() {
             {recover && (
               <div className="mt-3">
                 <Input label="Recovery email" type="email" value="" onChange={() => {}} />
-                <button className="btn-ghost w-full mt-2 !text-xs">Send recovery link</button>
+                <button type="button" onClick={() => alert("If that email matches an admin account, a reset link is on its way.")} className="btn-ghost w-full mt-2 !text-xs">Send recovery link</button>
                 <p className="text-[10px] text-white/40 mt-2">A reset link will arrive shortly.</p>
               </div>
             )}
           </div>
 
-          <div className="mt-6 text-center text-[11px] text-white/50">
-            Not an admin? <Link to="/" className="text-[var(--accent-red-glow)] hover:underline">Return to storefront</Link>
+          <div className="mt-6 text-center text-[11px] text-white/50 space-y-1">
+            <div><Link to="/" className="text-[var(--accent-red-glow)] hover:underline">← Return to storefront</Link></div>
+            <div><Link to="/contact-us" className="hover:text-white/80 underline">Contact support</Link></div>
           </div>
         </div>
       </div>

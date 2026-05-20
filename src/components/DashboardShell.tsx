@@ -39,8 +39,13 @@ export function DashboardShell({ title, action, children }: Props) {
     navigate({ to: "/dashboard/login" as any });
   };
 
+  const activeIdx = NAV.findIndex(n => n.exact ? pathname === n.to : pathname.startsWith(n.to));
+  const ITEM_H = 40;
+  const GAP = 4;
+  const glowTop = activeIdx >= 0 ? activeIdx * (ITEM_H + GAP) : -100;
+
   return (
-    <div className="min-h-screen flex w-full" style={{ background: "var(--bg-base)" }}>
+    <div className="dashboard-scope min-h-screen flex w-full" style={{ background: "var(--bg-base)" }}>
       {/* Sidebar */}
       <aside className={`fixed md:sticky top-0 left-0 h-screen w-[220px] z-40 transform transition-transform md:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="glass-card h-full !rounded-none md:!rounded-r-2xl p-4 flex flex-col">
@@ -51,13 +56,14 @@ export function DashboardShell({ title, action, children }: Props) {
             </Link>
             <div className="label-mini opacity-50 text-[9px] mb-6 pl-1">Dashboard</div>
 
-            <nav className="flex flex-col gap-1 flex-1">
+            <nav className="relative flex flex-col gap-1 flex-1">
+              <span className="nav-glow-blob" style={{ top: glowTop, height: ITEM_H }} />
+              <span className="nav-glow" style={{ top: glowTop + 8, height: ITEM_H - 16 }} />
               {NAV.map((n) => {
                 const active = n.exact ? pathname === n.to : pathname.startsWith(n.to);
                 const Icon = n.icon;
                 return (
-                  <Link key={n.to} to={n.to as any} className={`group relative flex items-center gap-3 px-3 py-2 rounded-lg transition ${active ? "text-[var(--accent-red)]" : "text-white/70 hover:text-white"}`}>
-                    {active && <span className="absolute left-0 top-1.5 bottom-1.5 w-[2px] bg-[var(--accent-red)] rounded-full" style={{ boxShadow: "0 0 12px var(--accent-red)" }} />}
+                  <Link key={n.to} to={n.to as any} className={`group relative flex items-center gap-3 px-3 rounded-lg transition-colors duration-300 ${active ? "text-[var(--accent-red)]" : "text-white/70 hover:text-white"}`} style={{ height: ITEM_H }}>
                     <Icon size={18} style={active ? { filter: "drop-shadow(0 0 6px var(--accent-red))" } : undefined} />
                     <span className="text-sm">{n.label}</span>
                   </Link>
@@ -82,15 +88,14 @@ export function DashboardShell({ title, action, children }: Props) {
 
       {/* Main column */}
       <div className="flex-1 flex flex-col min-w-0 md:ml-0">
-        {/* Top bar */}
         <header className="sticky top-0 z-20">
-          <div className="glass-card !rounded-none border-b border-white/10 px-4 md:px-6 py-3 flex items-center gap-3">
+          <div className="dash-header-floating px-4 md:px-6 py-3 flex items-center gap-3">
             <button className="md:hidden text-white/80" onClick={() => setOpen(true)} aria-label="Open menu"><Menu size={22} /></button>
-            <h1 className="font-display text-xl md:text-2xl text-white tracking-wide">{title}</h1>
+            <h1 className="font-display text-xl md:text-2xl text-white">{title}</h1>
             <div className="ml-auto flex items-center gap-3">
               {action}
               <div className="relative">
-                <button onClick={() => setMenu(!menu)} className="flex items-center gap-2 px-2 py-1.5 rounded-lg border border-white/15 hover:border-white/30 transition">
+                <button onClick={() => setMenu(!menu)} className="flex items-center gap-2 px-2 py-1.5 rounded-lg border border-white/15 hover:border-white/30 transition h-9">
                   <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[var(--accent-red)] to-[var(--accent-blue)] flex items-center justify-center text-xs font-bold">
                     {session?.initials ?? "AD"}
                   </div>
@@ -98,9 +103,9 @@ export function DashboardShell({ title, action, children }: Props) {
                   <ChevronDown size={14} className="text-white/60" />
                 </button>
                 {menu && (
-                  <div className="absolute right-0 mt-2 w-44 glass-card !rounded-xl p-2 border border-white/10 z-30">
-                    <Link to="/dashboard/settings" onClick={() => setMenu(false)} className="block px-3 py-2 text-xs text-white/80 hover:text-white hover:bg-white/5 rounded">Settings</Link>
-                    <button onClick={logout} className="w-full text-left px-3 py-2 text-xs text-white/80 hover:text-white hover:bg-white/5 rounded">Log out</button>
+                  <div className="absolute right-0 top-full mt-2 w-44 smoked-menu z-50">
+                    <Link to="/dashboard/settings" onClick={() => setMenu(false)} className="smoked-item !text-xs !py-2">Settings</Link>
+                    <button onClick={logout} className="smoked-item !text-xs !py-2 w-full text-left">Log out</button>
                   </div>
                 )}
               </div>
@@ -108,7 +113,7 @@ export function DashboardShell({ title, action, children }: Props) {
           </div>
         </header>
 
-        <main className="flex-1 p-4 md:p-8 overflow-x-hidden">
+        <main key={pathname} className="dash-page flex-1 p-4 md:p-8 overflow-x-hidden">
           {children}
         </main>
       </div>

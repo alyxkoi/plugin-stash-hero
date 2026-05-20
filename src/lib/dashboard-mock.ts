@@ -486,3 +486,130 @@ export function relativeTime(iso: string) {
 export function formatMoney(n: number) {
   return `$${n.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
 }
+
+// ---------- Analytics range helpers ----------
+export type AnalyticsRange = "wtd" | "mtd" | "last-month" | "30d" | "12mo" | "all";
+
+export const RANGE_LABEL: Record<AnalyticsRange, string> = {
+  "wtd": "Week to date",
+  "mtd": "Month to date",
+  "last-month": "Last month",
+  "30d": "Last 30 days",
+  "12mo": "Last 12 months",
+  "all": "All time",
+};
+
+export function rangeBounds(r: AnalyticsRange): { start: Date; end: Date } {
+  const end = new Date();
+  const start = new Date();
+  if (r === "wtd") {
+    const day = (end.getDay() + 6) % 7; // Mon=0
+    start.setDate(end.getDate() - day); start.setHours(0,0,0,0);
+  } else if (r === "mtd") {
+    start.setDate(1); start.setHours(0,0,0,0);
+  } else if (r === "last-month") {
+    start.setMonth(end.getMonth() - 1, 1); start.setHours(0,0,0,0);
+    end.setDate(0); end.setHours(23,59,59,999);
+  } else if (r === "30d") {
+    start.setDate(end.getDate() - 30);
+  } else if (r === "12mo") {
+    start.setMonth(end.getMonth() - 12);
+  } else {
+    start.setFullYear(2000);
+  }
+  return { start, end };
+}
+
+function ordersIn(r: AnalyticsRange) {
+  const { start, end } = rangeBounds(r);
+  return orders.filter(o => {
+    const d = new Date(o.createdAt);
+    return d >= start && d <= end && o.status !== "refunded";
+  });
+}
+
+export function revenueInRange(r: AnalyticsRange) {
+  return ordersIn(r).reduce((s, o) => s + o.total, 0);
+}
+
+export function aovInRange(r: AnalyticsRange) {
+  const o = ordersIn(r);
+  return o.length ? Math.round(o.reduce((s, x) => s + x.total, 0) / o.length) : 0;
+}
+
+export function refundRateInRange(r: AnalyticsRange) {
+  const { start, end } = rangeBounds(r);
+  const all = orders.filter(o => { const d = new Date(o.createdAt); return d >= start && d <= end; });
+  if (!all.length) return 0;
+  const refunded = all.filter(o => o.status !== "completed").length;
+  return Math.round((refunded / all.length) * 1000) / 10;
+}
+
+export function revenueSeriesRange(r: AnalyticsRange) {
+  const { start, end } = rangeBounds(r);
+  const days = Math.max(1, Math.round((end.getTime() - start.getTime()) / 86400000));
+  // pick grouping
+  let bucketDays = 1;
+  let bucketCount = days;
+  let labelFmt: "day" | "week" | "month" = "day";
+  if (days > 60 && days <= 200) { bucketDays = 7; bucketCount = Math.ceil(days / 7); labelFmt = "week"; }
+  else if (days > 200) { bucketDays = 30; bucketCount = Math.ceil(days / 30); labelFmt = "month"; }
+  const out: { label: string; value: number }[] = [];
+  for (let i = 0; i < bucketCount; i++) {
+    const bStart = new Date(start); bStart.setDate(start.getDate() + i * bucketDays);
+    const bEnd = new Date(start); bEnd.setDate(start.getDate() + (i + 1) * bucketDays);
+    const total = orders
+      .filter(o => { const d = new Date(o.createdAt); return d >= bStart && d < bEnd && o.status !== "refunded"; })
+      .reduce((s, o) => s + o.total, 0);
+    const label = labelFmt === "day" ? `${bStart.getMonth() + 1}/${bStart.getDate()}`
+      : labelFmt === "week" ? `W${i + 1}`
+      : bStart.toLocaleString("en", { month: "short" });
+    out.push({ label, value: total });
+  }
+  return out;
+}
+
+export function topProductsInRange(r: AnalyticsRange, limit = 5) {
+  const tally = new Map<string, { units: number; revenue: number }>();
+  for (const o of ordersIn(r)) {
+    for (const it of o.items) {
+      const t = tally.get(it.productId) ?? { units: 0, revenue: 0 };
+      t.units += 1; t.revenue += it.price;
+      tally.set(it.productId, t);
+    }
+  }
+  return Array.from(tally.entries())
+    .map(([id, v]) => ({ product: products.find(p => p.id === id)!, ...v }))
+    .filter(x => x.product)
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, limit);
+}
+
+export function sourceBreakdownInRange(r: AnalyticsRange) {
+  const map = new Map<string, { customers: Set<string>; revenue: number }>();
+  for (const o of ordersIn(r)) {
+    if (!o.utmSource) continue;
+    const m = map.get(o.utmSource) ?? { customers: new Set<string>(), revenue: 0 };
+    m.customers.add(o.customerId); m.revenue += o.total;
+    map.set(o.utmSource, m);
+  }
+  return Array.from(map.entries()).map(([source, v]) => ({
+    source, customers: v.customers.size, revenue: v.revenue,
+  })).sort((a, b) => b.revenue - a.revenue);
+}
+
+export function customerSplitInRange(r: AnalyticsRange) {
+  const o = ordersIn(r);
+  const seenBefore = new Set<string>();
+  for (const ord of orders) {
+    if (new Date(ord.createdAt) < rangeBounds(r).start) seenBefore.add(ord.customerId);
+  }
+  let newC = 0, ret = 0;
+  const inRange = new Set<string>();
+  for (const ord of o) {
+    if (inRange.has(ord.customerId)) continue;
+    inRange.add(ord.customerId);
+    if (seenBefore.has(ord.customerId)) ret++; else newC++;
+  }
+  return [{ name: "New", value: newC }, { name: "Returning", value: ret }];
+}

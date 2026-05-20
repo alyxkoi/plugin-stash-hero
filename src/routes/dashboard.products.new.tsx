@@ -5,7 +5,7 @@ import { productCategories, saleEvents, formatMoney } from "@/lib/dashboard-mock
 import { Upload, Sparkles, CheckCircle2, X } from "lucide-react";
 import { toast } from "sonner";
 
-const DAWS = ["Ableton Live","FL Studio","Logic Pro","Pro Tools","Cubase","Reaper","Studio One","Bitwig"];
+const FORMATS = ["VST", "VST3", "AU", "AAX"];
 
 export const Route = createFileRoute("/dashboard/products/new")({
   head: () => ({ meta: [{ title: "New product — Plugin Warehouse" }] }),
@@ -24,13 +24,17 @@ function NewProduct() {
   const [category, setCategory] = useState(productCategories[0]);
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
-  const [daws, setDaws] = useState<Set<string>>(new Set());
+  const [formats, setFormats] = useState<Set<string>>(new Set(["VST3", "AU"]));
   const [price, setPrice] = useState("");
+  const [compareAt, setCompareAt] = useState("");
   const [includeSale, setIncludeSale] = useState(false);
   const [publishStatus, setPublishStatus] = useState<"publish" | "draft">("publish");
 
   const activeSale = saleEvents.find(s => s.status === "active");
-  const salePrice = price && activeSale && includeSale ? Math.round(Number(price) * (1 - activeSale.discountPct / 100)) : null;
+  const priceNum = Number(price) || 0;
+  const compareNum = Number(compareAt) || 0;
+  const baseDiscountPct = compareNum > priceNum && compareNum > 0 ? Math.round((1 - priceNum / compareNum) * 100) : 0;
+  const salePrice = priceNum && activeSale && includeSale ? Math.round(priceNum * (1 - activeSale.discountPct / 100)) : null;
 
   const onFile = (f: File) => {
     setFile({ name: f.name, size: f.size });
@@ -105,14 +109,17 @@ function NewProduct() {
               </div>
               <input value={tagInput} onChange={e => setTagInput(e.target.value)} onKeyDown={e => e.key === "Enter" && (e.preventDefault(), addTag())} placeholder="Type and press enter" className="ipt" />
             </Field>
-            <Field label="Compatible DAWs">
+            <Field label="Compatible formats">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {DAWS.map(d => (
-                  <label key={d} className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs cursor-pointer hover:border-white/25">
-                    <input type="checkbox" checked={daws.has(d)} onChange={() => { const n = new Set(daws); n.has(d) ? n.delete(d) : n.add(d); setDaws(n); }} className="accent-[var(--accent-red)]" />
-                    {d}
-                  </label>
-                ))}
+                {FORMATS.map(d => {
+                  const checked = formats.has(d);
+                  return (
+                    <label key={d} className={`flex items-center gap-2 rounded-lg px-3 py-2.5 text-xs cursor-pointer transition border ${checked ? "bg-[var(--accent-red)]/15 border-[var(--accent-red)]/60 text-white" : "bg-white/5 border-white/10 text-white/70 hover:border-white/25"}`}>
+                      <input type="checkbox" checked={checked} onChange={() => { const n = new Set(formats); n.has(d) ? n.delete(d) : n.add(d); setFormats(n); }} className="accent-[var(--accent-red)]" />
+                      <span className="font-mono tracking-wider">{d}</span>
+                    </label>
+                  );
+                })}
               </div>
             </Field>
           </div>
@@ -121,19 +128,32 @@ function NewProduct() {
         {/* Pricing */}
         <DashCard title="Pricing">
           <div className="space-y-4">
-            <Field label="Regular price *">
-              <div className="relative max-w-[200px]">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 font-mono">$</span>
-                <input type="number" value={price} onChange={e => setPrice(e.target.value)} className="ipt !pl-7" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Field label="Price *">
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 font-mono">$</span>
+                  <input type="number" value={price} onChange={e => setPrice(e.target.value)} className="ipt !pl-7" placeholder="49" />
+                </div>
+              </Field>
+              <Field label={<span>Compare-at price <span className="text-white/40 normal-case font-mono">(optional, struck-through original)</span></span>}>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 font-mono">$</span>
+                  <input type="number" value={compareAt} onChange={e => setCompareAt(e.target.value)} className="ipt !pl-7" placeholder="99" />
+                </div>
+              </Field>
+            </div>
+            {baseDiscountPct > 0 && (
+              <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs font-mono text-emerald-300">
+                Base discount: <strong className="text-emerald-200">{baseDiscountPct}% off</strong> ({`$${compareNum} → $${priceNum}`})
               </div>
-            </Field>
+            )}
             <div>
               <label className="flex items-center gap-2 text-sm cursor-pointer">
                 <input type="checkbox" disabled={!activeSale} checked={includeSale} onChange={e => setIncludeSale(e.target.checked)} className="accent-[var(--accent-red)]" />
-                Include in current sale event{activeSale ? ` (${activeSale.name}, ${activeSale.discountPct}% off)` : ""}
+                <span>Stack <strong>extra</strong> discount from current sale event{activeSale ? ` (${activeSale.name}, ${activeSale.discountPct}% off)` : ""}</span>
               </label>
               {!activeSale && <p className="text-[10px] text-white/40 mt-1">No active sale to apply.</p>}
-              {salePrice && <p className="text-xs text-[var(--accent-red-glow)] mt-2 font-mono">Sale price: {formatMoney(salePrice)}</p>}
+              {salePrice && <p className="text-xs text-[var(--accent-red-glow)] mt-2 font-mono">Final sale price after stack: {formatMoney(salePrice)}</p>}
             </div>
             <Field label="Publish status">
               <div className="flex gap-3">

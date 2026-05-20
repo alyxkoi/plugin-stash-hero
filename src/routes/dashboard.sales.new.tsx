@@ -3,11 +3,6 @@ import { useState } from "react";
 import { DashboardShell, DashCard } from "@/components/DashboardShell";
 import { toast } from "sonner";
 
-const THEMES = [
-  { name: "Summer", color: "#FF6B6B" }, { name: "Halloween", color: "#FF7A1A" },
-  { name: "Plugmas", color: "#E11D2E" }, { name: "BFCM", color: "#D4AF37" },
-];
-
 export const Route = createFileRoute("/dashboard/sales/new")({
   head: () => ({ meta: [{ title: "New sale — Plugin Warehouse" }] }),
   component: NewSale,
@@ -18,7 +13,6 @@ function NewSale() {
   const [slug, setSlug] = useState("");
   const [pct, setPct] = useState(25);
   const [scope, setScope] = useState<"all" | "selected">("all");
-  const [theme, setTheme] = useState(THEMES[0].color);
 
   return (
     <DashboardShell title="New sale">
@@ -30,8 +24,20 @@ function NewSale() {
           <Field label="Subheadline"><input className="ipt" placeholder="Sun's out. Prices down." /></Field>
         </DashCard>
         <DashCard title="Discount">
-          <input type="range" min={5} max={75} step={5} value={pct} onChange={e => setPct(Number(e.target.value))} className="w-full accent-[var(--accent-red)]" />
-          <div className="text-center font-mono text-2xl mt-2 text-[var(--accent-red-glow)]">{pct}% off</div>
+          <input
+            type="range"
+            min={5}
+            max={75}
+            step={5}
+            value={pct}
+            onChange={e => setPct(Number(e.target.value))}
+            className="glass-slider"
+            style={{ ["--val" as any]: `${((pct - 5) / 70) * 100}%` }}
+          />
+          <div className="flex items-baseline justify-center gap-2 mt-4">
+            <span className="font-display text-4xl text-[var(--accent-red-glow)]" style={{ textShadow: "0 0 18px rgba(255,0,60,0.55)" }}>{pct}%</span>
+            <span className="text-xs text-white/60 font-mono uppercase tracking-wider">off everything</span>
+          </div>
           <div className="text-center text-xs text-white/60 mt-1">Save ${Math.round(99 * pct / 100)} on a $99 plugin</div>
         </DashCard>
         <DashCard title="Schedule">
@@ -48,16 +54,6 @@ function NewSale() {
             ))}
           </div>
           {scope === "selected" && <input className="ipt mt-3" placeholder="Search products to include..." />}
-        </DashCard>
-        <DashCard title="Theme">
-          <div className="flex gap-2 mb-3">
-            {THEMES.map(t => <button key={t.name} onClick={() => setTheme(t.color)} className={`px-3 py-2 rounded-lg text-xs border ${theme === t.color ? "border-white" : "border-white/15"}`} style={{ background: t.color + "22", color: t.color }}>{t.name}</button>)}
-          </div>
-          <input type="color" value={theme} onChange={e => setTheme(e.target.value)} className="w-16 h-10 rounded border border-white/15 bg-transparent" />
-          <div className="mt-4 rounded-xl p-6 text-center" style={{ background: `linear-gradient(135deg, ${theme}33, ${theme}11)`, border: `1px solid ${theme}55` }}>
-            <div className="font-display text-3xl" style={{ color: theme }}>{pct}% OFF. EVERYTHING.</div>
-            <div className="text-xs mt-1 text-white/60">Banner preview</div>
-          </div>
         </DashCard>
         <DashCard title="Preview"><button className="btn-ghost !text-xs !py-2 !px-4">Preview landing page →</button></DashCard>
       </div>
