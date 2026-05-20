@@ -1991,34 +1991,36 @@
 
 .dashboard-bottom-nav {
   position: fixed;
-  left: 10px;
-  right: 10px;
-  bottom: 0;
+  left: 0;
+  right: 0;
+  bottom: max(14px, env(safe-area-inset-bottom));
   z-index: 45;
-  padding: 10px 0 max(10px, env(safe-area-inset-bottom));
-  background: linear-gradient(180deg, transparent, rgba(10,0,24,0.88) 30%, rgba(10,0,24,0.96));
+  padding: 0 14px;
+  display: flex;
+  justify-content: center;
   overflow-x: auto;
   overscroll-behavior-x: contain;
+  pointer-events: none;
 }
 
 .dashboard-bottom-nav::before,
 .dashboard-bottom-nav::after {
   content: "";
   position: fixed;
-  bottom: max(10px, env(safe-area-inset-bottom));
-  width: 28px;
-  height: 70px;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  width: 24px;
+  height: 64px;
   z-index: 3;
   pointer-events: none;
 }
 .dashboard-bottom-nav::before {
-  left: 10px;
-  background: linear-gradient(90deg, rgba(15,0,34,0.95), rgba(15,0,34,0));
+  left: 14px;
+  background: linear-gradient(90deg, rgba(15,0,34,0.85), rgba(15,0,34,0));
   border-radius: 18px 0 0 18px;
 }
 .dashboard-bottom-nav::after {
-  right: 10px;
-  background: linear-gradient(270deg, rgba(15,0,34,0.95), rgba(15,0,34,0));
+  right: 14px;
+  background: linear-gradient(270deg, rgba(15,0,34,0.85), rgba(15,0,34,0));
   border-radius: 0 18px 18px 0;
 }
 
@@ -2027,12 +2029,15 @@
   display: flex;
   gap: 4px;
   width: max-content;
-  min-width: calc(100vw - 20px);
+  max-width: 100%;
   padding: 6px;
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 18px;
-  background: linear-gradient(180deg, rgba(42,10,72,0.94), rgba(18,2,42,0.96));
-  box-shadow: 0 16px 38px -18px rgba(0,0,0,0.82), inset 0 1px 0 rgba(255,255,255,0.16);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(42,10,72,0.92), rgba(18,2,42,0.94));
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 20px 44px -18px rgba(0,0,0,0.78), 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.14);
+  pointer-events: auto;
 }
 
 .bottom-nav-glow {

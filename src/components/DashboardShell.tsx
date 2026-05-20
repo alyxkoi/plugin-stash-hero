@@ -71,8 +71,9 @@ function DashboardChromeRoot({ initialTitle, initialAction, children }: { initia
   const ITEM_H = 40;
   const GAP = 4;
   const MOBILE_ITEM_W = 82;
+  const TRACK_PAD = 6;
   const glowTop = activeIdx >= 0 ? activeIdx * (ITEM_H + GAP) : -100;
-  const glowLeft = activeIdx >= 0 ? activeIdx * (MOBILE_ITEM_W + GAP) : -100;
+  const glowLeft = activeIdx >= 0 ? TRACK_PAD + activeIdx * (MOBILE_ITEM_W + GAP) : -100;
 
   useEffect(() => {
     const nav = bottomNavRef.current;
