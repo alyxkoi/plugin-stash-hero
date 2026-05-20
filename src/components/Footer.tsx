@@ -13,7 +13,7 @@ export function Footer() {
               <p className="text-xs text-white/60 max-w-xs">Pro-tier creative software at a fraction of the price. Yours forever.</p>
             </div>
 
-            <div className="grid grid-cols-3 gap-6 md:gap-10 flex-1">
+            <div className="grid grid-cols-3 gap-6 md:gap-10 flex-1 md:justify-items-end md:text-right">
               <FooterCol title="SHOP" links={[
                 { to: "/shop", label: "All Plugins" },
                 { to: "/shop/instruments", label: "Instruments" },
