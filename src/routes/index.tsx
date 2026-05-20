@@ -637,14 +637,6 @@ function RecipeTile({ product, className = "" }: { product: Product; className?:
 
 /* ============ BROWSE THE VAULT — SOUND CONSOLE TABS ============ */
 
-import {
-  Piano,
-  Sliders,
-  Library,
-  AudioWaveform,
-  AppWindow,
-  Gift,
-} from "lucide-react";
 
 type VaultTab = {
   slug: "instruments" | "effects" | "libraries" | "daws" | "software" | "freebies";
