@@ -25,7 +25,6 @@ import {
 import {
   bestsellerProducts,
   recentProducts,
-  categories,
   SALE,
   products,
   getProductBySlug,
