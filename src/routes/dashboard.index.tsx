@@ -75,7 +75,7 @@ function Overview() {
                     const cust = customers.find(c => c.id === o.customerId)!;
                     return (
                       <tr key={o.id} className="border-t border-white/5 hover:bg-white/[0.03] cursor-pointer">
-                        <td className="px-2 py-3 font-mono text-xs"><Link to={"/dashboard/orders/$id" as any} params={{ id: o.id }} className="hover:text-[var(--accent-red-glow)]">{o.number}</Link></td>
+                        <td className="px-2 py-3 font-mono text-xs"><Link to={"/dashboard/orders/$id" as any} params={{ id: o.id } as any} className="hover:text-[var(--accent-red-glow)]">{o.number}</Link></td>
                         <td className="px-2 py-3">
                           <div className="flex items-center gap-2">
                             <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[var(--accent-red)] to-[var(--accent-blue)] flex items-center justify-center text-[9px] font-bold">{cust.initials}</div>

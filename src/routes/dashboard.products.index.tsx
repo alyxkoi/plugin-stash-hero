@@ -81,7 +81,7 @@ function ProductsPage() {
                 <tr key={p.id} className="border-t border-white/5 hover:bg-white/[0.03]">
                   <td className="px-2 py-2"><input type="checkbox" checked={selected.has(p.id)} onChange={() => toggle(p.id)} className="accent-[var(--accent-red)]" /></td>
                   <td className="px-2 py-2"><div className="w-10 h-10 rounded-md" style={{ background: p.coverGradient }} /></td>
-                  <td className="px-2 py-2"><Link to={"/dashboard/products/$id" as any} params={{ id: p.id }} className="text-sm hover:text-[var(--accent-red-glow)]">{p.name}</Link><div className="text-[10px] text-white/40">{p.maker}</div></td>
+                  <td className="px-2 py-2"><Link to={"/dashboard/products/$id" as any} params={{ id: p.id } as any} className="text-sm hover:text-[var(--accent-red-glow)]">{p.name}</Link><div className="text-[10px] text-white/40">{p.maker}</div></td>
                   <td className="px-2 py-2"><span className="inline-block text-[10px] uppercase tracking-wider font-mono px-2 py-0.5 rounded bg-white/5 border border-white/10">{p.category}</span></td>
                   <td className="px-2 py-2 text-right font-mono text-xs">
                     {p.salePrice ? (<><span className="text-[var(--accent-red-glow)]">{formatMoney(p.salePrice)}</span> <span className="line-through text-white/30 ml-1">{formatMoney(p.price)}</span></>) : formatMoney(p.price)}
@@ -91,7 +91,7 @@ function ProductsPage() {
                   <td className="px-2 py-2 text-right font-mono text-[10px] text-white/50">{relativeTime(p.updatedAt)}</td>
                   <td className="px-2 py-2 text-right">
                     <div className="inline-flex gap-1">
-                      <Link to={"/dashboard/products/$id" as any} params={{ id: p.id }} className="p-1.5 rounded hover:bg-white/10 text-white/60 hover:text-white"><Edit3 size={13} /></Link>
+                      <Link to={"/dashboard/products/$id" as any} params={{ id: p.id } as any} className="p-1.5 rounded hover:bg-white/10 text-white/60 hover:text-white"><Edit3 size={13} /></Link>
                       <button className="p-1.5 rounded hover:bg-white/10 text-white/60 hover:text-white"><Archive size={13} /></button>
                       <button className="p-1.5 rounded hover:bg-white/10 text-white/60 hover:text-[var(--accent-red-glow)]"><Trash2 size={13} /></button>
                     </div>
