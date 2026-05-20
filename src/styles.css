@@ -1926,10 +1926,14 @@
 
 /* Smoothed page transition between dashboard tabs */
 @keyframes dash-fade-in {
-  from { opacity: 0; transform: translateY(6px); filter: blur(6px); }
-  to   { opacity: 1; transform: translateY(0); filter: blur(0); }
+  from { opacity: 0; transform: translate3d(0, 8px, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
 }
-.dash-page { animation: dash-fade-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.dash-page {
+  animation: dash-fade-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform: translateZ(0);
+  contain: layout paint;
+}
 
 /* Smooth flowy chart redraw */
 .recharts-wrapper, .recharts-surface { transition: opacity 0.35s ease-out; }
@@ -1941,7 +1945,7 @@
   width: 3px;
   border-radius: 999px;
   background: linear-gradient(180deg, var(--accent-red-glow), var(--accent-red));
-  box-shadow: 0 0 14px var(--accent-red), 0 0 28px rgba(255,0,60,0.45);
+  box-shadow: 0 0 12px var(--accent-red), 0 0 22px rgba(255,0,60,0.34);
   transition: top 0.55s cubic-bezier(0.22, 1, 0.36, 1), height 0.4s ease-out;
   pointer-events: none;
 }
@@ -1951,7 +1955,7 @@
   right: 8px;
   border-radius: 10px;
   background: linear-gradient(90deg, rgba(255,0,60,0.18), rgba(255,0,60,0));
-  filter: blur(0.5px);
+  will-change: top;
   transition: top 0.55s cubic-bezier(0.22, 1, 0.36, 1), height 0.4s ease-out;
   pointer-events: none;
 }
