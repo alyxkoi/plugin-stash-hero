@@ -20,6 +20,7 @@ import {
   AudioWaveform,
   AppWindow,
   Gift,
+  type LucideIcon,
 } from "lucide-react";
 import {
   bestsellerProducts,
