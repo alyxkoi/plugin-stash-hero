@@ -904,6 +904,216 @@ function DawVisual() {
   );
 }
 
+function CategoryVisual({ slug }: { slug: VaultTab["slug"] }) {
+  switch (slug) {
+    case "instruments": return <InstrumentsVisual />;
+    case "effects": return <EffectsVisual />;
+    case "libraries": return <LibrariesVisual />;
+    case "daws": return <DawVisual />;
+    case "software": return <SoftwareVisual />;
+    case "freebies": return <FreebiesVisual />;
+  }
+}
+
+function InstrumentsVisual() {
+  const keys = Array.from({ length: 14 });
+  const blackAfter = new Set([0, 1, 3, 4, 5, 7, 8, 10, 11, 12]);
+  return (
+    <div className="cat-visual inst-visual" aria-hidden="true">
+      <div className="cat-top">
+        <span className="cat-chip">OSC 1</span>
+        <span className="cat-chip">FILTER</span>
+        <span className="cat-chip">ENV</span>
+        <span className="cat-chip cat-chip--accent">POLY</span>
+      </div>
+      <div className="inst-screen">
+        <svg viewBox="0 0 200 60" preserveAspectRatio="none" className="inst-wave">
+          <defs>
+            <linearGradient id="instGrad" x1="0" x2="1">
+              <stop offset="0" stopColor="#FF1F5C" />
+              <stop offset="1" stopColor="#2B28FF" />
+            </linearGradient>
+          </defs>
+          <path d="M0,30 C10,5 20,55 30,30 C40,5 50,55 60,30 C70,5 80,55 90,30 C100,5 110,55 120,30 C130,5 140,55 150,30 C160,5 170,55 180,30 C190,15 195,45 200,30"
+            fill="none" stroke="url(#instGrad)" strokeWidth="1.6" />
+        </svg>
+        <div className="inst-grid" />
+      </div>
+      <div className="inst-knobs">
+        {["CUTOFF", "RES", "ATK", "REL", "DRIVE"].map((l, i) => (
+          <div key={l} className="inst-knob-wrap">
+            <div className="inst-knob"><span style={{ transform: `rotate(${-120 + i * 55}deg)` }} /></div>
+            <div className="cat-label">{l}</div>
+          </div>
+        ))}
+      </div>
+      <div className="inst-keys">
+        {keys.map((_, i) => (
+          <div key={i} className="inst-key">
+            {blackAfter.has(i) && <span className="inst-key-black" />}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function EffectsVisual() {
+  const meters = [0.85, 0.62, 0.74, 0.5, 0.78, 0.66];
+  return (
+    <div className="cat-visual fx-visual" aria-hidden="true">
+      <div className="cat-top">
+        <span className="cat-chip">EQ</span>
+        <span className="cat-chip">COMP</span>
+        <span className="cat-chip">REVERB</span>
+        <span className="cat-chip cat-chip--accent">+9.2 dB</span>
+      </div>
+      <div className="fx-eq">
+        <div className="fx-eq-grid" />
+        <svg viewBox="0 0 300 100" preserveAspectRatio="none" className="fx-eq-svg">
+          <defs>
+            <linearGradient id="fxFill" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0" stopColor="rgba(255,31,92,0.45)" />
+              <stop offset="1" stopColor="rgba(43,40,255,0.05)" />
+            </linearGradient>
+            <linearGradient id="fxStroke" x1="0" x2="1">
+              <stop offset="0" stopColor="#FF1F5C" />
+              <stop offset="0.5" stopColor="#FFB400" />
+              <stop offset="1" stopColor="#2B28FF" />
+            </linearGradient>
+          </defs>
+          <path d="M0,70 C40,68 60,60 90,40 C120,20 150,15 180,35 C210,55 240,80 300,72 L300,100 L0,100 Z" fill="url(#fxFill)" />
+          <path d="M0,70 C40,68 60,60 90,40 C120,20 150,15 180,35 C210,55 240,80 300,72" fill="none" stroke="url(#fxStroke)" strokeWidth="2" />
+          <circle cx="90" cy="40" r="3.5" fill="#fff" stroke="rgba(255,31,92,0.9)" strokeWidth="1.5" />
+          <circle cx="180" cy="35" r="3.5" fill="#fff" stroke="rgba(255,31,92,0.9)" strokeWidth="1.5" />
+          <circle cx="240" cy="68" r="3.5" fill="#fff" stroke="rgba(43,40,255,0.9)" strokeWidth="1.5" />
+        </svg>
+      </div>
+      <div className="fx-meters">
+        {meters.map((v, i) => (
+          <div key={i} className="fx-meter"><span style={{ height: `${v * 100}%` }} /></div>
+        ))}
+        <div className="fx-gain">
+          <div className="cat-label">GR</div>
+          <div className="fx-gain-val">-3.4 dB</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LibrariesVisual() {
+  const packs = [
+    { name: "LO-FI ESSENTIALS", count: "142", g: "linear-gradient(135deg,#FF1F5C,#2B28FF)" },
+    { name: "TRAP HEAT VOL 3", count: "98", g: "linear-gradient(135deg,#FF003C,#FFB400)" },
+    { name: "CINEMATIC STRINGS", count: "76", g: "linear-gradient(135deg,#2B28FF,#13002C)" },
+    { name: "HOUSE LOOPS", count: "210", g: "linear-gradient(135deg,#0E0BD1,#FF1F5C)" },
+  ];
+  return (
+    <div className="cat-visual lib-visual" aria-hidden="true">
+      <div className="cat-top">
+        <span className="cat-chip">PACKS</span>
+        <span className="cat-chip">LOOPS</span>
+        <span className="cat-chip">ONE-SHOTS</span>
+        <span className="cat-chip cat-chip--accent">5,420 FILES</span>
+      </div>
+      <div className="lib-grid">
+        {packs.map((p) => (
+          <div key={p.name} className="lib-pack">
+            <div className="lib-pack-art" style={{ background: p.g }}>
+              <svg viewBox="0 0 80 24" preserveAspectRatio="none" className="lib-pack-wave">
+                <path d="M0,12 Q5,2 10,12 T20,12 T30,12 T40,12 T50,12 T60,12 T70,12 T80,12" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="1.2" />
+              </svg>
+            </div>
+            <div className="lib-pack-meta">
+              <div className="lib-pack-name">{p.name}</div>
+              <div className="cat-label">{p.count} FILES</div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="lib-bar">
+        <span className="cat-label">/ SAMPLE BROWSER</span>
+        <div className="lib-bar-dots"><span /><span /><span /></div>
+      </div>
+    </div>
+  );
+}
+
+function SoftwareVisual() {
+  const plugins = [
+    { name: "Ozone 12", status: "ACTIVE", c: "m" },
+    { name: "RX 11", status: "READY", c: "b" },
+    { name: "Premiere Pro", status: "RUNNING", c: "m" },
+    { name: "Resolve", status: "IDLE", c: "b" },
+  ];
+  return (
+    <div className="cat-visual sw-visual" aria-hidden="true">
+      <div className="cat-top">
+        <span className="cat-chip">SYSTEM</span>
+        <span className="cat-chip">PLUGINS</span>
+        <span className="cat-chip cat-chip--accent">v 2026.4</span>
+      </div>
+      <div className="sw-stats">
+        {[
+          { l: "CPU", v: "62%", w: "62%" },
+          { l: "RAM", v: "7.6 GB", w: "48%" },
+          { l: "DISK", v: "812 GB", w: "81%" },
+        ].map((s) => (
+          <div key={s.l} className="sw-stat">
+            <div className="cat-label">{s.l}</div>
+            <div className="sw-stat-bar"><span style={{ width: s.w }} /></div>
+            <div className="sw-stat-val">{s.v}</div>
+          </div>
+        ))}
+      </div>
+      <div className="sw-list">
+        {plugins.map((p) => (
+          <div key={p.name} className="sw-row">
+            <span className={`sw-dot sw-dot-${p.c}`} />
+            <span className="sw-name">{p.name}</span>
+            <span className="sw-status">{p.status}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FreebiesVisual() {
+  const items = [
+    { name: "VITAL", tag: "SYNTH", g: "linear-gradient(135deg,#0E0BD1,#FF003C)" },
+    { name: "TDR NOVA", tag: "EQ", g: "linear-gradient(135deg,#FF003C,#2B28FF)" },
+    { name: "STARTER KIT", tag: "PACK", g: "linear-gradient(135deg,#2B28FF,#FF1F5C)" },
+  ];
+  return (
+    <div className="cat-visual free-visual" aria-hidden="true">
+      <div className="cat-top">
+        <span className="cat-chip">FREE</span>
+        <span className="cat-chip">NO CATCH</span>
+        <span className="cat-chip cat-chip--accent">$0.00</span>
+      </div>
+      <div className="free-hero">
+        <div className="free-hero-glow" />
+        <div className="free-hero-tag">FEATURED FREEBIE</div>
+        <div className="free-hero-title">VITAL</div>
+        <div className="free-hero-sub">Spectral wavetable synth · Free forever</div>
+      </div>
+      <div className="free-grid">
+        {items.map((i) => (
+          <div key={i.name} className="free-card">
+            <div className="free-card-art" style={{ background: i.g }} />
+            <div className="free-card-name">{i.name}</div>
+            <div className="cat-label">{i.tag}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
+
 function ConsolePreviewCard({ product }: { product: Product }) {
   const navigate = useNavigate();
   const [added, setAdded] = useState(false);
