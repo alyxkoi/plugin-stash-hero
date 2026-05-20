@@ -454,6 +454,18 @@ const RECIPES: Recipe[] = [
 ];
 
 function PluginRecipes() {
+  const [index, setIndex] = useState(0);
+  const len = RECIPES.length;
+
+  const slotFor = (i: number) => {
+    let d = i - index;
+    if (d > len / 2) d -= len;
+    if (d < -len / 2) d += len;
+    return d; // -1, 0, 1
+  };
+
+  const go = (dir: 1 | -1) => setIndex((i) => (i + dir + len) % len);
+
   return (
     <section className="px-4 md:px-12 py-16 md:py-24">
       <AuroraTitle className="!mb-2">PLUGIN RECIPES</AuroraTitle>
@@ -461,17 +473,56 @@ function PluginRecipes() {
         Stack the right tools and get straight to the sound.
       </p>
       <FadeIn>
-        <div className="grid gap-6 md:gap-8 max-w-5xl mx-auto">
-          {RECIPES.map((r) => (
-            <RecipeCard key={r.a + r.b} recipe={r} />
-          ))}
+        <div className="recipe-carousel">
+          <button
+            className="carousel-ctrl recipe-arrow-prev"
+            onClick={() => go(-1)}
+            aria-label="Previous recipe"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <button
+            className="carousel-ctrl recipe-arrow-next"
+            onClick={() => go(1)}
+            aria-label="Next recipe"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+          <div className="recipe-stage">
+            {RECIPES.map((r, i) => {
+              const slot = slotFor(i);
+              const onSideClick = slot === 0 ? undefined : () => setIndex(i);
+              return (
+                <div
+                  key={r.a + r.b}
+                  className="recipe-slide"
+                  data-slot={slot}
+                  aria-hidden={slot !== 0}
+                  onClick={onSideClick}
+                >
+                  <RecipeSlideCard recipe={r} active={slot === 0} />
+                </div>
+              );
+            })}
+          </div>
+          <div className="recipe-dots">
+            {RECIPES.map((r, i) => (
+              <button
+                key={r.a + r.b}
+                className="recipe-dot"
+                data-active={i === index}
+                onClick={() => setIndex(i)}
+                aria-label={`Go to recipe ${i + 1}`}
+              />
+            ))}
+          </div>
         </div>
       </FadeIn>
     </section>
   );
 }
 
-function RecipeCard({ recipe }: { recipe: Recipe }) {
+function RecipeSlideCard({ recipe, active }: { recipe: Recipe; active: boolean }) {
   const a = getProductBySlug(recipe.a);
   const b = getProductBySlug(recipe.b);
   const [added, setAdded] = useState(false);
@@ -480,7 +531,8 @@ function RecipeCard({ recipe }: { recipe: Recipe }) {
   const total = a.price + b.price;
   const compareTotal = (a.compareAtPrice ?? a.price) + (b.compareAtPrice ?? b.price);
 
-  const addBoth = () => {
+  const addBoth = (e: React.MouseEvent) => {
+    e.stopPropagation();
     actions.addToCart(a);
     actions.addToCart(b);
     setAdded(true);
@@ -488,57 +540,61 @@ function RecipeCard({ recipe }: { recipe: Recipe }) {
   };
 
   return (
-    <article className="recipe-card group">
-      <div className="grid md:grid-cols-[1fr_auto_1fr_auto_1.4fr] gap-3 md:gap-4 items-stretch">
-        <RecipeTile product={a} className="recipe-tile-a" />
-        <div className="recipe-symbol md:px-1"><Plus className="w-7 h-7" /></div>
-        <RecipeTile product={b} className="recipe-tile-b" />
-        <div className="recipe-symbol md:px-1 font-display text-3xl">=</div>
-        <div className="recipe-outcome">
-          <h3 className="font-display text-2xl md:text-3xl leading-tight mb-2">{recipe.outcome}</h3>
-          <p className="text-white/75 text-sm leading-relaxed mb-3">{recipe.description}</p>
-          <div className="label-mini mb-3">
-            Use for: <span className="text-white/65 normal-case tracking-normal font-normal">{recipe.useFor}</span>
+    <article className="recipe-slide-card">
+      <div className="recipe-tiles-row mb-4">
+        <RecipeTile product={a} />
+        <div className="recipe-symbol"><Plus className="w-6 h-6" /></div>
+        <RecipeTile product={b} />
+      </div>
+      <div className="recipe-symbol font-display text-2xl mb-3">=</div>
+      <div className="recipe-outcome">
+        <h3 className="font-display text-2xl leading-tight mb-2">{recipe.outcome}</h3>
+        <p className="text-white/75 text-sm leading-relaxed mb-3">{recipe.description}</p>
+        <div className="label-mini mb-3">
+          Use for:{" "}
+          <span className="text-white/65 normal-case tracking-normal font-normal">
+            {recipe.useFor}
+          </span>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={addBoth}
+            disabled={!active}
+            className={`btn-primary !text-sm relative ${added ? "!bg-[var(--accent-blue)]" : ""}`}
+            style={
+              added
+                ? {
+                    background: "linear-gradient(180deg,#2B28FF 0%,#0E0BD1 100%)",
+                    boxShadow: "0 8px 24px rgba(14,11,209,0.45)",
+                  }
+                : undefined
+            }
+          >
+            {added ? (
+              <>
+                <Check className="w-4 h-4" /> ADDED
+              </>
+            ) : (
+              <>
+                ADD BOTH
+                <span className="ml-2 inline-flex items-center justify-center min-w-[22px] h-[22px] rounded-full bg-black/30 border border-white/25 font-mono text-[11px]">
+                  2
+                </span>
+              </>
+            )}
+          </button>
+          <div className="font-mono text-sm">
+            <span className="font-bold text-white">${total}</span>
+            {compareTotal > total && (
+              <span className="ml-2 text-white/40 line-through">${compareTotal}</span>
+            )}
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              onClick={addBoth}
-              className={`btn-primary !text-sm relative ${added ? "!bg-[var(--accent-blue)]" : ""}`}
-              style={
-                added
-                  ? {
-                      background: "linear-gradient(180deg,#2B28FF 0%,#0E0BD1 100%)",
-                      boxShadow: "0 8px 24px rgba(14,11,209,0.45)",
-                    }
-                  : undefined
-              }
-            >
-              {added ? (
-                <>
-                  <Check className="w-4 h-4" /> ADDED
-                </>
-              ) : (
-                <>
-                  ADD BOTH TO CART
-                  <span className="ml-2 inline-flex items-center justify-center min-w-[22px] h-[22px] rounded-full bg-black/30 border border-white/25 font-mono text-[11px]">
-                    2
-                  </span>
-                </>
-              )}
-            </button>
-            <div className="font-mono text-sm">
-              <span className="font-bold text-white">${total}</span>
-              {compareTotal > total && (
-                <span className="ml-2 text-white/40 line-through">${compareTotal}</span>
-              )}
-            </div>
-          </div>
-          <p className="label-mini mt-2 !text-[0.65rem]">Adds both plugins to your cart.</p>
         </div>
       </div>
     </article>
   );
 }
+
 
 function RecipeTile({ product, className = "" }: { product: Product; className?: string }) {
   const navigate = useNavigate();
