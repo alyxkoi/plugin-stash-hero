@@ -76,11 +76,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "Plugin Warehouse — Pro plugins at a fraction of the price" },
       { name: "description", content: "Synths, effects, libraries, DAWs, and creative software at a fraction of the price. Yours forever." },
       { name: "author", content: "Plugin Warehouse" },
-      { property: "og:title", content: "Plugin Warehouse" },
-      { property: "og:description", content: "Pro-tier plugins at a fraction of the price." },
+      { property: "og:title", content: "Plugin Warehouse — Pro plugins at a fraction of the price" },
+      { property: "og:description", content: "Synths, effects, libraries, DAWs, and creative software at a fraction of the price. Yours forever." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Plugin Warehouse — Pro plugins at a fraction of the price" },
+      { name: "twitter:description", content: "Synths, effects, libraries, DAWs, and creative software at a fraction of the price. Yours forever." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/46a077d4-a522-4367-8e3a-507a7af765a1/id-preview-609f2464--1c3aacdf-c483-411a-9418-1c5560433f38.lovable.app-1779152808201.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/46a077d4-a522-4367-8e3a-507a7af765a1/id-preview-609f2464--1c3aacdf-c483-411a-9418-1c5560433f38.lovable.app-1779152808201.png" },
     ],
     links: [
       {
