@@ -1160,14 +1160,7 @@ function ConsolePreviewCard({ product }: { product: Product }) {
 
 /* ============ SOUNDS OF THE DECADE ============ */
 
-const SOUND_TAGS = [
-  "Modern Trap",
-  "Bedroom Pop",
-  "2010s EDM",
-  "Analog Revival",
-  "Vocal Chain",
-  "808 Essentials",
-];
+
 
 function SoundsOfTheDecade() {
   // 1 featured + 3 supporting
