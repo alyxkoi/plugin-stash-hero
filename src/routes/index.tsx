@@ -14,6 +14,12 @@ import {
   Check,
   ArrowUpRight,
   Plus,
+  Piano,
+  Sliders,
+  Library,
+  AudioWaveform,
+  AppWindow,
+  Gift,
 } from "lucide-react";
 import {
   bestsellerProducts,
