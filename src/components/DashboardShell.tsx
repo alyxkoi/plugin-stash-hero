@@ -124,29 +124,31 @@ function DashboardChromeRoot({ initialTitle, initialAction, children }: { initia
       <div className="flex-1 flex flex-col min-w-0 md:ml-0">
         <header className="sticky top-0 z-20">
           <div className="dash-header-floating px-4 md:px-6 py-3 flex items-center gap-3">
-            <h1 className="font-display text-xl md:text-2xl text-white">{displayTitle}</h1>
-            <div className="dash-header-right ml-auto flex items-center gap-3 min-w-0">
-              {page.action && <div className="dash-header-actions min-w-0 overflow-x-auto">{page.action}</div>}
-              <div className="relative">
-                <button onClick={() => setMenu(!menu)} className="flex items-center gap-2 px-2 py-1.5 rounded-lg border border-white/15 hover:border-white/30 transition h-9">
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[var(--accent-red)] to-[var(--accent-blue)] flex items-center justify-center text-xs font-bold">
-                    {session?.initials ?? "AD"}
-                  </div>
-                  <span className="hidden md:inline text-xs text-white/80">{session?.name ?? "Admin"}</span>
-                  <ChevronDown size={14} className="text-white/60" />
-                </button>
-                {menu && (
-                  <div className="absolute right-0 top-full mt-2 w-44 smoked-menu z-50">
-                    <Link to="/dashboard/settings" onClick={() => setMenu(false)} className="smoked-item !text-xs !py-2">Settings</Link>
-                    <button onClick={logout} className="smoked-item !text-xs !py-2 w-full text-left">Log out</button>
-                  </div>
-                )}
-              </div>
+            <h1 className="font-display text-xl md:text-2xl text-white truncate">{displayTitle}</h1>
+            <div className="ml-auto relative shrink-0">
+              <button onClick={() => setMenu(!menu)} className="flex items-center gap-2 px-2 py-1.5 rounded-lg border border-white/15 hover:border-white/30 transition h-9">
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[var(--accent-red)] to-[var(--accent-blue)] flex items-center justify-center text-xs font-bold">
+                  {session?.initials ?? "AD"}
+                </div>
+                <span className="hidden md:inline text-xs text-white/80">{session?.name ?? "Admin"}</span>
+                <ChevronDown size={14} className="text-white/60" />
+              </button>
+              {menu && (
+                <div className="absolute right-0 top-full mt-2 w-44 smoked-menu z-50">
+                  <Link to="/dashboard/settings" onClick={() => setMenu(false)} className="smoked-item !text-xs !py-2">Settings</Link>
+                  <button onClick={logout} className="smoked-item !text-xs !py-2 w-full text-left">Log out</button>
+                </div>
+              )}
             </div>
           </div>
         </header>
 
         <main key={pathname} className="dash-page flex-1 p-4 md:p-8 pb-28 lg:pb-8 overflow-x-hidden">
+          {page.action && (
+            <div className="dash-page-toolbar mb-4 flex flex-wrap items-center justify-end gap-2">
+              {page.action}
+            </div>
+          )}
           <DashboardChromeContext.Provider value={chrome}>{children}</DashboardChromeContext.Provider>
         </main>
       </div>
