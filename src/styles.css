@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Anton&family=Dosis:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;900&family=Dosis:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
@@ -7,8 +7,8 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-sans: "Dosis", system-ui, sans-serif;
-  --font-display: "Anton", "Dosis", system-ui, sans-serif;
+  --font-sans: "Outfit", system-ui, sans-serif;
+  --font-display: "Outfit", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
   --color-bg-base: #13002C;
@@ -65,7 +65,7 @@
   html, body {
     background: var(--bg-base);
     color: var(--text-primary);
-    font-family: "Dosis", system-ui, sans-serif;
+    font-family: "Outfit", system-ui, sans-serif;
     font-weight: 400;
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
@@ -80,11 +80,9 @@
   }
   ::selection { background: var(--accent-red); color: white; }
   h1, h2, h3, h4, .font-display {
-    font-family: "Anton", system-ui, sans-serif;
-    font-weight: 400;
-    letter-spacing: 0.01em;
-    -webkit-text-stroke: 0.07em currentColor;
-    paint-order: stroke fill;
+    font-family: "Outfit", system-ui, sans-serif;
+    font-weight: 900;
+    letter-spacing: -0.01em;
   }
   .font-mono, code, pre { font-family: "JetBrains Mono", ui-monospace, monospace; }
 }
@@ -94,17 +92,13 @@
 .text-red-glow { color: var(--accent-red-glow); }
 
 /* Anton replacement for previous font-black usage — Anton is single-weight */
-.font-black, .font-extrabold, .font-bold {
-  font-family: "Anton", system-ui, sans-serif;
-  font-weight: 400;
-  letter-spacing: 0.01em;
-  -webkit-text-stroke: 0.07em currentColor;
-  paint-order: stroke fill;
-}
+.font-black { font-family: "Outfit", system-ui, sans-serif; font-weight: 900; }
+.font-extrabold { font-family: "Outfit", system-ui, sans-serif; font-weight: 800; }
+.font-bold { font-family: "Outfit", system-ui, sans-serif; font-weight: 700; }
 
 /* Dosis small-caps structural label */
 .label-mini {
-  font-family: "Dosis", sans-serif;
+  font-family: "Outfit", sans-serif;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.18em;
@@ -223,8 +217,8 @@
   min-height: 44px;
   background: linear-gradient(180deg, #FF1F5C 0%, #FF003C 100%);
   color: white;
-  font-family: "Anton", sans-serif;
-  font-weight: 400;
+  font-family: "Outfit", sans-serif;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   border-radius: 0.65rem;
@@ -247,8 +241,8 @@
   background: rgba(255,255,255,0.04);
   backdrop-filter: blur(20px);
   color: white;
-  font-family: "Anton", sans-serif;
-  font-weight: 400;
+  font-family: "Outfit", sans-serif;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   border-radius: 0.65rem;
@@ -263,8 +257,8 @@
   padding: 0.625rem 1.25rem;
   background: rgba(255,255,255,0.03);
   color: white;
-  font-family: "Anton", sans-serif;
-  font-weight: 400;
+  font-family: "Outfit", sans-serif;
+  font-weight: 700;
   border-radius: 0.55rem;
   border: 1px solid rgba(255,255,255,0.2);
   cursor: pointer;
@@ -280,8 +274,8 @@
   color: white;
   padding: 0.875rem 1.125rem;
   border-radius: 14px;
-  font-family: "Dosis", sans-serif;
-  font-weight: 400;
+  font-family: "Outfit", sans-serif;
+  font-weight: 700;
   font-size: 0.95rem;
   transition: border-color 0.2s, box-shadow 0.2s;
   outline: none;
@@ -293,8 +287,8 @@
 .section-header {
   display: block;
   text-align: center;
-  font-family: "Anton", sans-serif;
-  font-weight: 400;
+  font-family: "Outfit", sans-serif;
+  font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 0.02em;
   font-size: clamp(2rem, 4vw, 3.5rem);
@@ -328,7 +322,7 @@
 }
 
 .eyebrow {
-  font-family: "Dosis", sans-serif;
+  font-family: "Outfit", sans-serif;
   font-weight: 500;
   font-size: 0.75rem;
   text-transform: uppercase;
@@ -356,7 +350,7 @@
   padding: 0.625rem 0.875rem;
   border-radius: 10px;
   color: #fff;
-  font-family: "Dosis", sans-serif;
+  font-family: "Outfit", sans-serif;
   font-weight: 500;
   font-size: 0.95rem;
   transition: background 0.15s, color 0.15s;
@@ -528,7 +522,7 @@
 .drawer-stagger-5 { animation-delay: 0.48s; }
 
 .drawer-section-label {
-  font-family: "Dosis", system-ui, sans-serif;
+  font-family: "Outfit", system-ui, sans-serif;
   font-weight: 500;
   font-size: 0.7rem;
   letter-spacing: 0.28em;
@@ -546,7 +540,7 @@
   padding: 0.95rem 0.85rem;
   border-radius: 0.85rem;
   color: #ffffff;
-  font-family: "Anton", system-ui, sans-serif;
+  font-family: "Outfit", system-ui, sans-serif;
   letter-spacing: 0.04em;
   transition: color 0.2s ease, background 0.25s ease;
   overflow: hidden;
@@ -680,17 +674,14 @@
   position: relative;
   z-index: 2;
   display: inline-block;
-  font-family: "Anton", system-ui, sans-serif;
-  font-weight: 400;
+  font-family: "Outfit", system-ui, sans-serif;
+  font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 0.015em;
   font-size: clamp(2.25rem, 4.4vw, 4rem);
   text-align: center;
   margin: 0;
-  /* slight slant + bolder via stroke */
   transform: skewX(-6deg);
-  -webkit-text-stroke: 0.045em currentColor;
-  paint-order: stroke fill;
   color: #ffffff;
   /* aurora gradient INSIDE the letters */
   background: linear-gradient(110deg,
@@ -965,7 +956,7 @@
 }
 .recipe-tile:hover { border-color: rgba(255,255,255,0.32); background: rgba(255,255,255,0.07); transform: translateY(-2px); }
 .recipe-symbol {
-  font-family: "Anton", sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: 1.75rem;
   color: rgba(255,255,255,0.55);
   display: flex; align-items: center; justify-content: center;
