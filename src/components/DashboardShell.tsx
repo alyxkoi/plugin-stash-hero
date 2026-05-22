@@ -6,7 +6,7 @@ import {
   Megaphone, Settings, LogOut, ExternalLink, ChevronDown
 } from "lucide-react";
 import logo from "@/assets/logo-dashboard.webp";
-import { clearAdminSession, getAdminSession, type AdminSession } from "@/lib/dashboard-mock";
+import { useAuth, signOut } from "@/hooks/useAuth";
 
 const NAV: { to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean }[] = [
   { to: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
@@ -42,7 +42,12 @@ export function DashboardShell({ title, action, children }: Props) {
 }
 
 function DashboardChromeRoot({ initialTitle, initialAction, children }: { initialTitle: string; initialAction?: ReactNode; children: ReactNode }) {
-  const [session, setSession] = useState<AdminSession | null>(null);
+  const { user } = useAuth();
+  const email = user?.email ?? "";
+  const namePart = email.split("@")[0] || "Admin";
+  const name = namePart.split(/[._-]/).map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(" ");
+  const initials = name.split(" ").map(p => p.charAt(0)).slice(0, 2).join("").toUpperCase() || "AD";
+  const session = user ? { email, name, initials } : null;
   const [menu, setMenu] = useState(false);
   const [page, setPageState] = useState<{ title: string; action?: ReactNode }>({ title: initialTitle, action: initialAction });
   const trackRef = useRef<HTMLDivElement | null>(null);
@@ -62,10 +67,8 @@ function DashboardChromeRoot({ initialTitle, initialAction, children }: { initia
 
   const chrome = useMemo(() => ({ setPage }), [setPage]);
 
-  useEffect(() => { setSession(getAdminSession()); }, []);
-
-  const logout = () => {
-    clearAdminSession();
+  const logout = async () => {
+    await signOut();
     navigate({ to: "/dashboard/login" as any });
   };
 
