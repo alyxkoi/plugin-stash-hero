@@ -2014,13 +2014,12 @@
   letter-spacing: 0.02em;
 }
 
-/* Smoothed page transition between dashboard tabs */
+/* Dashboard route transitions are handled by Framer Motion in DashboardShell.tsx */
 @keyframes dash-fade-in {
   from { opacity: 0; transform: translate3d(0, 8px, 0); }
   to   { opacity: 1; transform: translate3d(0, 0, 0); }
 }
 .dash-page {
-  animation: dash-fade-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
   transform: translateZ(0);
   contain: layout paint;
 }
