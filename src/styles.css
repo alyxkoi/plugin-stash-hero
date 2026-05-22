@@ -487,7 +487,11 @@
   from { transform: translateX(100%); }
   to { transform: translateX(0); }
 }
-.slide-in-right { animation: slide-in-right 0.3s ease-out; }
+@keyframes slide-out-right {
+  from { transform: translateX(0); }
+  to { transform: translateX(100%); }
+}
+.slide-in-right { animation: slide-in-right 0.3s var(--motion-premium); }
 
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(8px); }
