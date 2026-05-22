@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { GlassCard } from "@/components/GlassCard";
 import { FadeIn } from "@/components/SectionTitle";
 import { AuroraTitle } from "@/components/AuroraTitle";
