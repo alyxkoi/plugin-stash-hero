@@ -270,7 +270,8 @@ function Ticker() {
 const ROTATION_DURATION_MS = 38000;
 
 function OnRotation() {
-  const list = (bestsellerProducts.length >= 5 ? bestsellerProducts : recentProducts).slice(0, 8);
+  const source = (bestsellerProducts.length >= 5 ? bestsellerProducts : recentProducts).slice(0, 8);
+  const list = source.length > 0 ? source : placeholderList(8);
   const [progress, setProgress] = useState(0);
   const wrapRef = useRef<HTMLDivElement>(null);
 
