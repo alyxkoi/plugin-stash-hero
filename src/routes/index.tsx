@@ -1173,7 +1173,9 @@ function ConsolePreviewCard({ product }: { product: Product }) {
 function SoundsOfTheDecade() {
   // 1 featured + 3 supporting
   const featured = getProductBySlug("omnisphere") || recentProducts[0];
+  if (!featured) return null;
   const supporting = recentProducts.filter((p) => p.slug !== featured.slug).slice(0, 3);
+
 
   return (
     <section className="px-4 md:px-12 py-16 md:py-24">
@@ -1320,8 +1322,10 @@ function SoundRowCard({ product }: { product: Product }) {
 function PluginOfTheWeek() {
   const featured = getProductBySlug("omnisphere") || products[0];
   const [added, setAdded] = useState(false);
+  if (!featured) return null;
   const onSale = featured.compareAtPrice && featured.compareAtPrice > featured.price;
   const savings = onSale ? featured.compareAtPrice! - featured.price : 0;
+
 
   return (
     <section className="px-4 md:px-12 py-16 md:py-24">

@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import logo from "@/assets/logo-dashboard.webp";
-import { setAdminSession } from "@/lib/dashboard-mock";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/dashboard/login")({
   head: () => ({ meta: [{ title: "Dashboard access — Plugin Warehouse" }] }),
@@ -13,22 +13,46 @@ function DashboardLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const [recover, setRecover] = useState(false);
+  const [recoverEmail, setRecoverEmail] = useState("");
 
-  const ADMIN_EMAIL = "pluginwh@gmail.com";
-  const ADMIN_PASSWORD = "Pluginwh1237!";
-
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     if (!email || !password) { setError("Enter email and password."); return; }
-    // TODO: backend — replace with supabase.auth.signInWithPassword + users.is_admin check.
-    if (email.trim().toLowerCase() !== ADMIN_EMAIL || password !== ADMIN_PASSWORD) {
-      setError("Invalid admin credentials.");
+    setBusy(true);
+    const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+    if (error || !data.user) {
+      setBusy(false);
+      setError(error?.message ?? "Sign-in failed.");
       return;
     }
-    setAdminSession(email.trim().toLowerCase());
+    // Verify admin role
+    const { data: roleRow } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", data.user.id)
+      .eq("role", "admin")
+      .maybeSingle();
+    if (!roleRow) {
+      await supabase.auth.signOut();
+      setBusy(false);
+      setError("This account is not an admin. Contact support if you think that's wrong.");
+      return;
+    }
+    setBusy(false);
     navigate({ to: "/dashboard" as any });
+  };
+
+  const onRecover = async () => {
+    setError(null);
+    if (!recoverEmail) { setError("Enter a recovery email."); return; }
+    const { error } = await supabase.auth.resetPasswordForEmail(recoverEmail.trim(), {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) setError(error.message);
+    else alert("If that email matches an admin account, a reset link is on its way.");
   };
 
   return (
@@ -48,7 +72,7 @@ function DashboardLogin() {
             <Input label="Email" type="email" value={email} onChange={setEmail} />
             <Input label="Password" type="password" value={password} onChange={setPassword} />
             {error && <div className="text-xs text-[var(--accent-red-glow)] font-mono">{error}</div>}
-            <button type="submit" className="btn-primary w-full !text-sm !py-3">Log in</button>
+            <button type="submit" disabled={busy} className="btn-primary w-full !text-sm !py-3 disabled:opacity-60">{busy ? "Signing in…" : "Log in"}</button>
           </form>
 
           <div className="mt-4 text-center">
@@ -57,8 +81,8 @@ function DashboardLogin() {
             </button>
             {recover && (
               <div className="mt-3">
-                <Input label="Recovery email" type="email" value="" onChange={() => {}} />
-                <button type="button" onClick={() => alert("If that email matches an admin account, a reset link is on its way.")} className="btn-ghost w-full mt-2 !text-xs">Send recovery link</button>
+                <Input label="Recovery email" type="email" value={recoverEmail} onChange={setRecoverEmail} />
+                <button type="button" onClick={onRecover} className="btn-ghost w-full mt-2 !text-xs">Send recovery link</button>
                 <p className="text-[10px] text-white/40 mt-2">A reset link will arrive shortly.</p>
               </div>
             )}
