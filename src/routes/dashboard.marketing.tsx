@@ -29,7 +29,7 @@ function Marketing() {
         ))}
       </div>
 
-      <AnimatePresence mode="wait" initial={false}>
+      <AnimatePresence mode="sync" initial={false}>
         <motion.div
           key={tab}
           className="motion-tab-window"
