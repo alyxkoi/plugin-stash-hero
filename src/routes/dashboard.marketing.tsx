@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { DashboardShell, DashCard, StatusBadge } from "@/components/DashboardShell";
 import { discountCodes, abandonedCarts, campaigns, formatMoney } from "@/lib/dashboard-mock";
 import { Copy, Plus, X } from "lucide-react";
@@ -14,6 +15,7 @@ function Marketing() {
   const [tab, setTab] = useState<"codes"|"carts"|"campaigns">("codes");
   const [genOpen, setGenOpen] = useState(false);
   const [composeOpen, setComposeOpen] = useState(false);
+  const reduce = useReducedMotion();
 
   return (
     <DashboardShell title="Marketing" action={
@@ -27,6 +29,15 @@ function Marketing() {
         ))}
       </div>
 
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={tab}
+          className="motion-tab-window"
+          initial={reduce ? false : { opacity: 0, x: 16 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={reduce ? undefined : { opacity: 0, x: -16 }}
+          transition={{ duration: reduce ? 0 : 0.24, ease: [0.19, 1, 0.22, 1] }}
+        >
       {tab === "codes" && (
         <DashCard>
           <div className="overflow-x-auto -mx-2">
@@ -101,31 +112,35 @@ function Marketing() {
           </DashCard>
         </div>
       )}
+        </motion.div>
+      </AnimatePresence>
 
-      {genOpen && (
-        <Modal onClose={() => setGenOpen(false)} title="Generate discount code">
-          <div className="space-y-3">
-            <label className="block"><span className="label-mini text-[10px] opacity-70 mb-1.5 block">Code</span><div className="flex gap-2"><input className="ipt flex-1" placeholder="WELCOME10" /><button onClick={() => toast.success("Generated")} className="btn-ghost !text-xs !py-2 !px-3">Auto-generate</button></div></label>
-            <label className="block"><span className="label-mini text-[10px] opacity-70 mb-1.5 block">Type</span><div className="flex gap-3 text-sm"><label className="flex items-center gap-2"><input type="radio" name="dt" defaultChecked className="accent-[var(--accent-red)]" />Percentage</label><label className="flex items-center gap-2"><input type="radio" name="dt" className="accent-[var(--accent-red)]" />Flat amount</label></div></label>
-            <label className="block"><span className="label-mini text-[10px] opacity-70 mb-1.5 block">Value</span><input type="number" className="ipt" /></label>
-            <label className="block"><span className="label-mini text-[10px] opacity-70 mb-1.5 block">Usage limit (optional)</span><input type="number" className="ipt" /></label>
-            <label className="block"><span className="label-mini text-[10px] opacity-70 mb-1.5 block">Expiry (optional)</span><input type="date" className="ipt" /></label>
-            <label className="flex items-center gap-2 text-sm"><input type="checkbox" className="accent-[var(--accent-red)]" /> One-time per customer</label>
-            <div className="flex gap-2 justify-end pt-3"><button onClick={() => setGenOpen(false)} className="btn-ghost !text-xs !py-2 !px-4">Cancel</button><button onClick={() => { toast.success("Code created"); setGenOpen(false); }} className="btn-primary !text-xs !py-2 !px-4">Create</button></div>
-          </div>
-        </Modal>
-      )}
-      {composeOpen && (
-        <Modal onClose={() => setComposeOpen(false)} title="New campaign">
-          <div className="space-y-3">
-            <label className="block"><span className="label-mini text-[10px] opacity-70 mb-1.5 block">Name</span><input className="ipt" /></label>
-            <label className="block"><span className="label-mini text-[10px] opacity-70 mb-1.5 block">Segment</span><select className="ipt"><option className="bg-[#1F0540]">All customers</option><option className="bg-[#1F0540]">Recent buyers (30d)</option><option className="bg-[#1F0540]">Repeat customers</option><option className="bg-[#1F0540]">Abandoned cart recovery</option></select></label>
-            <label className="block"><span className="label-mini text-[10px] opacity-70 mb-1.5 block">Subject</span><input className="ipt" /></label>
-            <label className="block"><span className="label-mini text-[10px] opacity-70 mb-1.5 block">Body</span><textarea rows={5} className="ipt resize-none" /></label>
-            <div className="flex gap-2 justify-end pt-3"><button onClick={() => setComposeOpen(false)} className="btn-ghost !text-xs !py-2 !px-4">Cancel</button><button onClick={() => { toast.success("Scheduled"); setComposeOpen(false); }} className="btn-ghost !text-xs !py-2 !px-4">Schedule</button><button onClick={() => { toast.success("Sent"); setComposeOpen(false); }} className="btn-primary !text-xs !py-2 !px-4">Send now</button></div>
-          </div>
-        </Modal>
-      )}
+      <AnimatePresence>
+        {genOpen && (
+          <Modal onClose={() => setGenOpen(false)} title="Generate discount code">
+            <div className="space-y-3">
+              <label className="block"><span className="label-mini text-[10px] opacity-70 mb-1.5 block">Code</span><div className="flex gap-2"><input className="ipt flex-1" placeholder="WELCOME10" /><button onClick={() => toast.success("Generated")} className="btn-ghost !text-xs !py-2 !px-3">Auto-generate</button></div></label>
+              <label className="block"><span className="label-mini text-[10px] opacity-70 mb-1.5 block">Type</span><div className="flex gap-3 text-sm"><label className="flex items-center gap-2"><input type="radio" name="dt" defaultChecked className="accent-[var(--accent-red)]" />Percentage</label><label className="flex items-center gap-2"><input type="radio" name="dt" className="accent-[var(--accent-red)]" />Flat amount</label></div></label>
+              <label className="block"><span className="label-mini text-[10px] opacity-70 mb-1.5 block">Value</span><input type="number" className="ipt" /></label>
+              <label className="block"><span className="label-mini text-[10px] opacity-70 mb-1.5 block">Usage limit (optional)</span><input type="number" className="ipt" /></label>
+              <label className="block"><span className="label-mini text-[10px] opacity-70 mb-1.5 block">Expiry (optional)</span><input type="date" className="ipt" /></label>
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" className="accent-[var(--accent-red)]" /> One-time per customer</label>
+              <div className="flex gap-2 justify-end pt-3"><button onClick={() => setGenOpen(false)} className="btn-ghost !text-xs !py-2 !px-4">Cancel</button><button onClick={() => { toast.success("Code created"); setGenOpen(false); }} className="btn-primary !text-xs !py-2 !px-4">Create</button></div>
+            </div>
+          </Modal>
+        )}
+        {composeOpen && (
+          <Modal onClose={() => setComposeOpen(false)} title="New campaign">
+            <div className="space-y-3">
+              <label className="block"><span className="label-mini text-[10px] opacity-70 mb-1.5 block">Name</span><input className="ipt" /></label>
+              <label className="block"><span className="label-mini text-[10px] opacity-70 mb-1.5 block">Segment</span><select className="ipt"><option className="bg-[#1F0540]">All customers</option><option className="bg-[#1F0540]">Recent buyers (30d)</option><option className="bg-[#1F0540]">Repeat customers</option><option className="bg-[#1F0540]">Abandoned cart recovery</option></select></label>
+              <label className="block"><span className="label-mini text-[10px] opacity-70 mb-1.5 block">Subject</span><input className="ipt" /></label>
+              <label className="block"><span className="label-mini text-[10px] opacity-70 mb-1.5 block">Body</span><textarea rows={5} className="ipt resize-none" /></label>
+              <div className="flex gap-2 justify-end pt-3"><button onClick={() => setComposeOpen(false)} className="btn-ghost !text-xs !py-2 !px-4">Cancel</button><button onClick={() => { toast.success("Scheduled"); setComposeOpen(false); }} className="btn-ghost !text-xs !py-2 !px-4">Schedule</button><button onClick={() => { toast.success("Sent"); setComposeOpen(false); }} className="btn-primary !text-xs !py-2 !px-4">Send now</button></div>
+            </div>
+          </Modal>
+        )}
+      </AnimatePresence>
       <style>{`.ipt{width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:0.55rem 0.75rem;font-size:13px;color:#fff;outline:none}.ipt:focus{border-color:var(--accent-red)}`}</style>
     </DashboardShell>
   );
