@@ -566,10 +566,9 @@ function PluginRecipes() {
 }
 
 function RecipeSlideCard({ recipe, active }: { recipe: Recipe; active: boolean }) {
-  const a = getProductBySlug(recipe.a);
-  const b = getProductBySlug(recipe.b);
+  const a = getProductBySlug(recipe.a) ?? placeholder(0, { slug: recipe.a, name: recipe.a.toUpperCase().replace(/-/g, " ") });
+  const b = getProductBySlug(recipe.b) ?? placeholder(1, { slug: recipe.b, name: recipe.b.toUpperCase().replace(/-/g, " ") });
   const [added, setAdded] = useState(false);
-  if (!a || !b) return null;
 
   const total = a.price + b.price;
   const compareTotal = (a.compareAtPrice ?? a.price) + (b.compareAtPrice ?? b.price);
