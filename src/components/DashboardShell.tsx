@@ -57,8 +57,8 @@ function DashboardChromeRoot({ initialTitle, initialAction, children }: { initia
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const reduce = useReducedMotion();
 
-  useBrowserLayoutEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [pathname]);
 
   const setPage = useCallback((nextTitle: string, nextAction?: ReactNode) => {
@@ -161,10 +161,11 @@ function DashboardChromeRoot({ initialTitle, initialAction, children }: { initia
         </header>
 
         <main className="flex-1 p-4 md:p-8 pb-28 lg:pb-8 overflow-x-hidden">
-          <AnimatePresence mode="wait" initial={false}>
+          <div className="route-transition-stack dashboard-route-stack">
+          <AnimatePresence mode="sync" initial={false}>
             <motion.div
               key={pathname}
-              className="dash-page"
+              className="dash-page route-transition-page"
               initial={reduce ? false : { opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
               exit={reduce ? undefined : { opacity: 0, y: -14 }}
@@ -179,6 +180,7 @@ function DashboardChromeRoot({ initialTitle, initialAction, children }: { initia
               <DashboardChromeContext.Provider value={chrome}>{children}</DashboardChromeContext.Provider>
             </motion.div>
           </AnimatePresence>
+          </div>
         </main>
       </div>
 
@@ -250,6 +252,32 @@ export function StatCard({ label, value, delta, deltaPositive }: { label: string
         </div>
       )}
     </DashCard>
+  );
+}
+
+export function DashboardSkeleton({ cards = 4 }: { cards?: number }) {
+  return (
+    <div className="space-y-6" aria-label="Loading dashboard layout">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {Array.from({ length: cards }).map((_, i) => (
+          <div key={i} className="glass-card p-5 md:p-6">
+            <div className="chromatic-edge" />
+            <div className="relative z-10 space-y-3">
+              <div className="skeleton-line w-24 h-3" />
+              <div className="skeleton-line w-28 h-7" />
+              <div className="skeleton-line w-20 h-3" />
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="glass-card p-5 md:p-6">
+        <div className="chromatic-edge" />
+        <div className="relative z-10 space-y-4">
+          <div className="skeleton-line w-36 h-4" />
+          <div className="skeleton-block h-64" />
+        </div>
+      </div>
+    </div>
   );
 }
 
