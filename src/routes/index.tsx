@@ -33,6 +33,41 @@ import {
 } from "@/lib/mock-data";
 import { actions, useStore } from "@/lib/store";
 
+/* ============ PLACEHOLDER PRODUCTS ============
+ * Used so every section keeps its layout, titles, and body copy even before
+ * real products exist in the catalog. Replaced automatically once products
+ * are added through the dashboard. */
+const PLACEHOLDER_GRADIENTS = [
+  "radial-gradient(ellipse at 30% 30%, #FF003C 0%, #1F0540 55%, #0a0018 100%)",
+  "radial-gradient(ellipse at 70% 40%, #2B28FF 0%, #0E0BD1 45%, #0a0018 100%)",
+  "linear-gradient(120deg, #13002C 0%, #FF1F5C 55%, #13002C 100%)",
+  "radial-gradient(ellipse at 50% 60%, #FF1F5C 0%, #1F0540 55%, #0a0018 100%)",
+  "linear-gradient(60deg, #0E0BD1 0%, #2B28FF 35%, #FF003C 100%)",
+  "radial-gradient(ellipse at 20% 70%, #FF003C 0%, #2B28FF 60%, #0a0018 100%)",
+  "radial-gradient(ellipse at 80% 20%, #FF1F5C 0%, #0E0BD1 55%, #0a0018 100%)",
+  "linear-gradient(135deg, #1F0540 0%, #FF003C 50%, #0a0018 100%)",
+];
+
+const placeholder = (i = 0, overrides: Partial<Product> = {}): Product => ({
+  slug: `placeholder-${i}`,
+  name: "COMING SOON",
+  maker: "YOUR LABEL",
+  category: "instruments",
+  daws: ["Standalone"],
+  formats: ["VST", "VST3", "AU"],
+  version: "1.0",
+  fileSize: "—",
+  updated: "—",
+  price: 0,
+  tagline: "Add your first product from the dashboard to populate this slot.",
+  description: "Placeholder product. Visible only while the catalog is empty.",
+  coverGradient: PLACEHOLDER_GRADIENTS[i % PLACEHOLDER_GRADIENTS.length],
+  ...overrides,
+});
+
+const placeholderList = (n: number): Product[] =>
+  Array.from({ length: n }, (_, i) => placeholder(i));
+
 /* ============ ROUTE ============ */
 
 export const Route = createFileRoute("/")({
