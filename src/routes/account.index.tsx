@@ -99,10 +99,20 @@ function RecentlyLoaded() {
 
 function LastOrder() {
   const order = orders[0];
+  void mockUser;
+  if (!order) {
+    return (
+      <GlassCard variant="blue" className="p-6 flex flex-col">
+        <div className="label-mini">Last order</div>
+        <div className="font-mono text-[11px] tracking-wider text-white/55 mb-5">—</div>
+        <p className="text-white/60 text-sm mb-6">No orders yet. Your most recent purchase will appear here.</p>
+        <Link to="/shop" className="btn-ghost !text-xs !px-3 mt-auto">BROWSE THE SHOP →</Link>
+      </GlassCard>
+    );
+  }
   const itemNames = order.items.map(i => getLibProduct(i.slug)?.name).filter(Boolean) as string[];
   const shown = itemNames.slice(0, 3);
   const extra = itemNames.length - shown.length;
-  void mockUser;
   return (
     <GlassCard variant="blue" className="p-6 flex flex-col">
       <div className="label-mini">Last order · {formatDate(order.date)}</div>
