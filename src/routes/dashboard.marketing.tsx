@@ -147,15 +147,31 @@ function Marketing() {
 }
 
 function Modal({ children, onClose, title }: { children: React.ReactNode; onClose: () => void; title: string }) {
+  const reduce = useReducedMotion();
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="glass-card p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+    <motion.div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      onClick={onClose}
+      initial={reduce ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: reduce ? 0 : 0.26, ease: [0.19, 1, 0.22, 1] }}
+    >
+      <motion.div className="absolute inset-0 bg-black/70" />
+      <motion.div
+        className="glass-card p-6 w-full max-w-md"
+        onClick={e => e.stopPropagation()}
+        initial={reduce ? false : { opacity: 0, scale: 0.96, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.97, y: 8 }}
+        transition={{ duration: reduce ? 0 : 0.2, ease: [0.19, 1, 0.22, 1] }}
+      >
         <div className="chromatic-edge" />
         <div className="relative z-10">
           <div className="flex justify-between items-center mb-4"><h3 className="font-display text-lg">{title}</h3><button onClick={onClose}><X size={16} /></button></div>
           {children}
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
