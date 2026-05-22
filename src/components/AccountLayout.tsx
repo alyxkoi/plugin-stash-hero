@@ -1,6 +1,7 @@
-import { Link, Outlet, useLocation } from "@tanstack/react-router";
+import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { Home, Library, Receipt, Heart, Settings, LogOut } from "lucide-react";
-import { mockUser } from "@/lib/account-data";
+import { useEffect } from "react";
+import { useAuth, signOut } from "@/hooks/useAuth";
 
 const NAV: { to: string; label: string; icon: typeof Home; exact?: boolean }[] = [
   { to: "/account", label: "DASHBOARD", icon: Home, exact: true },
@@ -12,10 +13,32 @@ const NAV: { to: string; label: string; icon: typeof Home; exact?: boolean }[] =
 
 export function AccountLayout() {
   const loc = useLocation();
+  const navigate = useNavigate();
+  const { user, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading && !user) navigate({ to: "/login", replace: true });
+  }, [loading, user, navigate]);
+
   const isActive = (to: string, exact?: boolean) =>
     exact ? loc.pathname === to : loc.pathname === to || loc.pathname.startsWith(to + "/");
 
-  const initial = (mockUser.displayName || mockUser.email)[0].toUpperCase();
+  const email = user?.email ?? "";
+  const display = (user?.user_metadata as { display_name?: string } | undefined)?.display_name || email;
+  const initial = (display || "U")[0]?.toUpperCase() || "U";
+
+  const onSignOut = async () => {
+    await signOut();
+    navigate({ to: "/" });
+  };
+
+  if (loading || !user) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="font-mono text-xs text-white/40">Loading…</div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-[1480px] mx-auto px-4 md:px-8 py-6 md:py-10">
@@ -57,10 +80,10 @@ export function AccountLayout() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="font-mono text-[10px] text-white/45 tracking-wider">SIGNED IN</div>
-                      <div className="text-[12px] text-white/85 truncate">{mockUser.email}</div>
+                      <div className="text-[12px] text-white/85 truncate">{email}</div>
                     </div>
                   </div>
-                  <button className="mt-3 ml-2 flex items-center gap-1.5 text-[11px] text-white/50 hover:text-white font-mono tracking-wider">
+                  <button onClick={onSignOut} className="mt-3 ml-2 flex items-center gap-1.5 text-[11px] text-white/50 hover:text-white font-mono tracking-wider">
                     <LogOut className="w-3 h-3" /> SIGN OUT
                   </button>
                 </div>
