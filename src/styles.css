@@ -689,11 +689,12 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .glow-breathe, .glow-breathe-2, .marquee-track, .pulse-dot, .skeleton, .slide-in-right, .fade-in, .spin-glow {
+  html { scroll-behavior: auto; }
+  .glow-breathe, .glow-breathe-2, .marquee-track, .pulse-dot, .skeleton, .slide-in-right, .fade-in, .spin-glow, .motion-tab-panel, .motion-dialog-content, .motion-dialog-overlay, .motion-drawer-content {
     animation: none !important;
   }
   .glass-card { transition: none !important; }
-  .title-fade, .content-fade { opacity: 1 !important; filter: none !important; transform: none !important; }
+  .title-fade, .content-fade, .motion-observed { opacity: 1 !important; filter: none !important; transform: none !important; transition: none !important; }
   .drawer-panel { animation: drawer-fade-in 0.2s ease-out both; }
   .drawer-stagger { animation: none !important; opacity: 1 !important; transform: none !important; }
   .drawer-item::before { transition: none !important; }
