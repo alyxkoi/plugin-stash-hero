@@ -41,7 +41,7 @@ function OrdersPage() {
         <div className="mt-4 label-mini flex flex-wrap gap-3">
           <span>{orders.length} ORDERS</span><span className="text-white/25">·</span>
           <span>${totalSpent} TOTAL</span><span className="text-white/25">·</span>
-          <span>LAST ORDER {formatDate(orders[0].date)}</span>
+          {orders[0] && <><span className="text-white/25">·</span><span>LAST ORDER {formatDate(orders[0].date)}</span></>}
         </div>
       </header>
 
