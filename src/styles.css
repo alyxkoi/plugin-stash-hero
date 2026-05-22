@@ -121,6 +121,14 @@
   from { opacity: 1; }
   to { opacity: 0; }
 }
+@keyframes motion-drawer-up {
+  from { opacity: 0.92; transform: translate3d(0, 100%, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+@keyframes motion-drawer-down {
+  from { opacity: 1; transform: translate3d(0, 0, 0); }
+  to { opacity: 0.92; transform: translate3d(0, 100%, 0); }
+}
 
 .motion-observed {
   opacity: 0;
@@ -162,10 +170,10 @@
   animation: motion-fade-only-out 220ms var(--motion-premium) both;
 }
 .motion-drawer-content[data-state="open"] {
-  animation: slide-in-right 300ms var(--motion-premium) both;
+  animation: motion-drawer-up 300ms var(--motion-premium) both;
 }
 .motion-drawer-content[data-state="closed"] {
-  animation: slide-out-right 240ms var(--motion-premium) both;
+  animation: motion-drawer-down 240ms var(--motion-premium) both;
 }
 
 :where(button, [role="button"], a, .glass-card, .product-card, .smoked-item, .drawer-item, .bottom-nav-link) {
