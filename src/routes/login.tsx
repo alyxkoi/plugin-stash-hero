@@ -1,18 +1,53 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 import { AuthLayout, Field } from "@/components/AuthLayout";
+import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable";
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "Sign In — Plugin Warehouse" }] }),
-  component: () => (
-    <AuthLayout eyebrow="PULL UP" headline="WELCOME BACK." sub="Sign in to your stash." footer={<>New here? <Link to="/signup" className="text-[var(--accent-red-glow)] font-bold">CREATE ACCOUNT →</Link></>}>
-      <form onSubmit={(e) => e.preventDefault()}>
-        <Field label="EMAIL" type="email" required />
-        <Field label="PASSWORD" type="password" required />
+  component: LoginPage,
+});
+
+function LoginPage() {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setBusy(true);
+    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+    setBusy(false);
+    if (error) { setError(error.message); return; }
+    navigate({ to: "/account" });
+  };
+
+  const onGoogle = async () => {
+    setError(null);
+    const res = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + "/account" });
+    if (res.error) setError(res.error.message);
+  };
+
+  return (
+    <AuthLayout
+      eyebrow="PULL UP"
+      headline="WELCOME BACK."
+      sub="Sign in to your stash."
+      footer={<>New here? <Link to="/signup" className="text-[var(--accent-red-glow)] font-bold">CREATE ACCOUNT →</Link></>}
+    >
+      <form onSubmit={onSubmit}>
+        <Field label="EMAIL" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+        <Field label="PASSWORD" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
         <div className="text-right -mt-3 mb-4"><Link to="/forgot-password" className="text-xs text-white/60 hover:text-white">Forgot it?</Link></div>
-        <button className="btn-primary w-full !text-base !py-4">SIGN IN →</button>
+        {error && <div className="text-xs text-[var(--accent-red-glow)] font-mono mb-3">{error}</div>}
+        <button disabled={busy} className="btn-primary w-full !text-base !py-4 disabled:opacity-60">{busy ? "SIGNING IN…" : "SIGN IN →"}</button>
         <div className="flex items-center gap-3 my-6"><div className="flex-1 h-px bg-white/15" /><span className="font-mono text-xs text-white/40">OR</span><div className="flex-1 h-px bg-white/15" /></div>
-        <button type="button" className="btn-ghost w-full">CONTINUE WITH GOOGLE</button>
+        <button type="button" onClick={onGoogle} className="btn-ghost w-full">CONTINUE WITH GOOGLE</button>
       </form>
     </AuthLayout>
-  ),
-});
+  );
+}
