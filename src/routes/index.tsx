@@ -176,16 +176,16 @@ function Hero() {
 
         <div className="relative h-[420px] md:h-[520px] hidden lg:block">
           {[
-            { p: products.find((p) => p.slug === "serum")!, pos: "top-0 left-8", rot: "-6deg", ref: cover1, z: 1 },
+            { p: products.find((p) => p.slug === "serum") ?? placeholder(0), pos: "top-0 left-8", rot: "-6deg", ref: cover1, z: 1 },
             {
-              p: products.find((p) => p.slug === "ozone-12")!,
+              p: products.find((p) => p.slug === "ozone-12") ?? placeholder(1),
               pos: "top-20 left-1/3",
               rot: "4deg",
               ref: cover2,
               z: 3,
             },
             {
-              p: products.find((p) => p.slug === "omnisphere")!,
+              p: products.find((p) => p.slug === "omnisphere") ?? placeholder(2),
               pos: "top-8 right-0",
               rot: "-2deg",
               ref: cover3,
