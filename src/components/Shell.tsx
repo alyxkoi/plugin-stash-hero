@@ -50,34 +50,41 @@ export function Shell() {
 function useScrollReveal(pathname: string, disabled = false) {
   useEffect(() => {
     if (disabled) return;
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const candidates = Array.from(
-      document.querySelectorAll<HTMLElement>("main section, main .glass-card, main .product-card"),
-    ).filter((el) => !el.closest("[data-no-reveal]") && !el.classList.contains("motion-observed"));
+    let observer: IntersectionObserver | undefined;
+    // Defer past hydration so we don't mutate DOM React is still committing.
+    const id = window.setTimeout(() => {
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const candidates = Array.from(
+        document.querySelectorAll<HTMLElement>("main section, main .glass-card, main .product-card"),
+      ).filter((el) => !el.closest("[data-no-reveal]") && !el.classList.contains("motion-observed"));
 
-    if (reduce || !("IntersectionObserver" in window)) {
-      candidates.forEach((el) => el.classList.add("motion-observed", "motion-visible"));
-      return;
-    }
+      if (reduce || !("IntersectionObserver" in window)) {
+        candidates.forEach((el) => el.classList.add("motion-observed", "motion-visible"));
+        return;
+      }
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (!entry.isIntersecting) return;
-          const el = entry.target as HTMLElement;
-          el.classList.add("motion-visible");
-          observer.unobserve(el);
-        });
-      },
-      { threshold: 0.08, rootMargin: "0px 0px -8% 0px" },
-    );
+      observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            const el = entry.target as HTMLElement;
+            el.classList.add("motion-visible");
+            observer?.unobserve(el);
+          });
+        },
+        { threshold: 0.08, rootMargin: "0px 0px -8% 0px" },
+      );
 
-    candidates.forEach((el, index) => {
-      el.classList.add("motion-observed");
-      el.style.setProperty("--reveal-delay", `${Math.min(index * 28, 180)}ms`);
-      observer.observe(el);
-    });
+      candidates.forEach((el, index) => {
+        el.classList.add("motion-observed");
+        el.style.setProperty("--reveal-delay", `${Math.min(index * 28, 180)}ms`);
+        observer!.observe(el);
+      });
+    }, 80);
 
-    return () => observer.disconnect();
+    return () => {
+      window.clearTimeout(id);
+      observer?.disconnect();
+    };
   }, [pathname, disabled]);
 }
