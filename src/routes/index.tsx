@@ -1207,9 +1207,9 @@ function ConsolePreviewCard({ product }: { product: Product }) {
 
 function SoundsOfTheDecade() {
   // 1 featured + 3 supporting
-  const featured = getProductBySlug("omnisphere") || recentProducts[0];
-  if (!featured) return null;
-  const supporting = recentProducts.filter((p) => p.slug !== featured.slug).slice(0, 3);
+  const featured = getProductBySlug("omnisphere") || recentProducts[0] || placeholder(0, { name: "FEATURED SOUND" });
+  const supportingReal = recentProducts.filter((p) => p.slug !== featured.slug).slice(0, 3);
+  const supporting = supportingReal.length > 0 ? supportingReal : [placeholder(1), placeholder(2), placeholder(3)];
 
 
   return (
