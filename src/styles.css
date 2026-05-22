@@ -177,6 +177,7 @@
 }
 
 :where(button, [role="button"], a, .glass-card, .product-card, .smoked-item, .drawer-item, .bottom-nav-link) {
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity, filter;
   transition-duration: var(--motion-hover);
   transition-timing-function: var(--motion-premium);
 }
