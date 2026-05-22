@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ProductCard } from "./ProductCard";
 import { GlassCard } from "./GlassCard";
 import { products as ALL, categories, type Category, type Product, SALE } from "@/lib/mock-data";
@@ -18,6 +19,7 @@ export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageP
   const [selectedFormats, setSelectedFormats] = useState<string[]>([]);
   const [saleStatus, setSaleStatus] = useState<"all" | "sale" | "free">(initialOnSale ? "sale" : "all");
   const [priceSort, setPriceSort] = useState<"none" | "low" | "high">("none");
+  const reduce = useReducedMotion();
 
   const allFormats = ["VST", "VST3", "AU", "AAX", "Standalone"];
 
@@ -48,6 +50,7 @@ export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageP
     set(list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
 
   const showFormat = !initialOnSale && !["software", "freebies"].includes(category || "");
+  const resultMotionKey = `${query}|${selectedCats.join(",")}|${selectedFormats.join(",")}|${saleStatus}|${priceSort}`;
 
   return (
     <div>
@@ -124,17 +127,27 @@ export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageP
             <div className="font-mono text-sm text-white/60">{filtered.length} {filtered.length === 1 ? "PLUGIN" : "PLUGINS"}</div>
           </div>
 
-          {filtered.length === 0 ? (
-            <GlassCard className="p-12 text-center">
-              <h3 className="font-black text-3xl mb-2">NOTHING IN THIS COMBO.</h3>
-              <p className="text-white/60 mb-6">Loosen up the filters.</p>
-              <button onClick={() => { setSelectedFormats([]); setSaleStatus("all"); setQuery(""); setPriceSort("none"); }} className="btn-ghost">CLEAR FILTERS</button>
-            </GlassCard>
-          ) : (
-            <div className="grid grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
-              {filtered.map((p) => <ProductCard key={p.slug} product={p} />)}
-            </div>
-          )}
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={resultMotionKey}
+              initial={reduce ? false : { opacity: 0, x: 16 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={reduce ? undefined : { opacity: 0, x: -16 }}
+              transition={{ duration: reduce ? 0 : 0.22, ease: [0.19, 1, 0.22, 1] }}
+            >
+              {filtered.length === 0 ? (
+                <GlassCard className="p-12 text-center">
+                  <h3 className="font-black text-3xl mb-2">NOTHING IN THIS COMBO.</h3>
+                  <p className="text-white/60 mb-6">Loosen up the filters.</p>
+                  <button onClick={() => { setSelectedFormats([]); setSaleStatus("all"); setQuery(""); setPriceSort("none"); }} className="btn-ghost">CLEAR FILTERS</button>
+                </GlassCard>
+              ) : (
+                <div className="grid grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+                  {filtered.map((p) => <ProductCard key={p.slug} product={p} />)}
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
         </div>
       </div>
     </div>
