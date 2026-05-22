@@ -33,6 +33,41 @@ import {
 } from "@/lib/mock-data";
 import { actions, useStore } from "@/lib/store";
 
+/* ============ PLACEHOLDER PRODUCTS ============
+ * Used so every section keeps its layout, titles, and body copy even before
+ * real products exist in the catalog. Replaced automatically once products
+ * are added through the dashboard. */
+const PLACEHOLDER_GRADIENTS = [
+  "radial-gradient(ellipse at 30% 30%, #FF003C 0%, #1F0540 55%, #0a0018 100%)",
+  "radial-gradient(ellipse at 70% 40%, #2B28FF 0%, #0E0BD1 45%, #0a0018 100%)",
+  "linear-gradient(120deg, #13002C 0%, #FF1F5C 55%, #13002C 100%)",
+  "radial-gradient(ellipse at 50% 60%, #FF1F5C 0%, #1F0540 55%, #0a0018 100%)",
+  "linear-gradient(60deg, #0E0BD1 0%, #2B28FF 35%, #FF003C 100%)",
+  "radial-gradient(ellipse at 20% 70%, #FF003C 0%, #2B28FF 60%, #0a0018 100%)",
+  "radial-gradient(ellipse at 80% 20%, #FF1F5C 0%, #0E0BD1 55%, #0a0018 100%)",
+  "linear-gradient(135deg, #1F0540 0%, #FF003C 50%, #0a0018 100%)",
+];
+
+const placeholder = (i = 0, overrides: Partial<Product> = {}): Product => ({
+  slug: `placeholder-${i}`,
+  name: "COMING SOON",
+  maker: "YOUR LABEL",
+  category: "instruments",
+  daws: ["Standalone"],
+  formats: ["VST", "VST3", "AU"],
+  version: "1.0",
+  fileSize: "—",
+  updated: "—",
+  price: 0,
+  tagline: "Add your first product from the dashboard to populate this slot.",
+  description: "Placeholder product. Visible only while the catalog is empty.",
+  coverGradient: PLACEHOLDER_GRADIENTS[i % PLACEHOLDER_GRADIENTS.length],
+  ...overrides,
+});
+
+const placeholderList = (n: number): Product[] =>
+  Array.from({ length: n }, (_, i) => placeholder(i));
+
 /* ============ ROUTE ============ */
 
 export const Route = createFileRoute("/")({
@@ -141,16 +176,16 @@ function Hero() {
 
         <div className="relative h-[420px] md:h-[520px] hidden lg:block">
           {[
-            { p: products.find((p) => p.slug === "serum")!, pos: "top-0 left-8", rot: "-6deg", ref: cover1, z: 1 },
+            { p: products.find((p) => p.slug === "serum") ?? placeholder(0), pos: "top-0 left-8", rot: "-6deg", ref: cover1, z: 1 },
             {
-              p: products.find((p) => p.slug === "ozone-12")!,
+              p: products.find((p) => p.slug === "ozone-12") ?? placeholder(1),
               pos: "top-20 left-1/3",
               rot: "4deg",
               ref: cover2,
               z: 3,
             },
             {
-              p: products.find((p) => p.slug === "omnisphere")!,
+              p: products.find((p) => p.slug === "omnisphere") ?? placeholder(2),
               pos: "top-8 right-0",
               rot: "-2deg",
               ref: cover3,
@@ -235,7 +270,8 @@ function Ticker() {
 const ROTATION_DURATION_MS = 38000;
 
 function OnRotation() {
-  const list = (bestsellerProducts.length >= 5 ? bestsellerProducts : recentProducts).slice(0, 8);
+  const source = (bestsellerProducts.length >= 5 ? bestsellerProducts : recentProducts).slice(0, 8);
+  const list = source.length > 0 ? source : placeholderList(8);
   const [progress, setProgress] = useState(0);
   const wrapRef = useRef<HTMLDivElement>(null);
 
@@ -530,10 +566,9 @@ function PluginRecipes() {
 }
 
 function RecipeSlideCard({ recipe, active }: { recipe: Recipe; active: boolean }) {
-  const a = getProductBySlug(recipe.a);
-  const b = getProductBySlug(recipe.b);
+  const a = getProductBySlug(recipe.a) ?? placeholder(0, { slug: recipe.a, name: recipe.a.toUpperCase().replace(/-/g, " ") });
+  const b = getProductBySlug(recipe.b) ?? placeholder(1, { slug: recipe.b, name: recipe.b.toUpperCase().replace(/-/g, " ") });
   const [added, setAdded] = useState(false);
-  if (!a || !b) return null;
 
   const total = a.price + b.price;
   const compareTotal = (a.compareAtPrice ?? a.price) + (b.compareAtPrice ?? b.price);
@@ -1172,9 +1207,9 @@ function ConsolePreviewCard({ product }: { product: Product }) {
 
 function SoundsOfTheDecade() {
   // 1 featured + 3 supporting
-  const featured = getProductBySlug("omnisphere") || recentProducts[0];
-  if (!featured) return null;
-  const supporting = recentProducts.filter((p) => p.slug !== featured.slug).slice(0, 3);
+  const featured = getProductBySlug("omnisphere") || recentProducts[0] || placeholder(0, { name: "FEATURED SOUND" });
+  const supportingReal = recentProducts.filter((p) => p.slug !== featured.slug).slice(0, 3);
+  const supporting = supportingReal.length > 0 ? supportingReal : [placeholder(1), placeholder(2), placeholder(3)];
 
 
   return (
@@ -1320,9 +1355,8 @@ function SoundRowCard({ product }: { product: Product }) {
 /* ============ PLUGIN OF THE WEEK (wide spotlight) ============ */
 
 function PluginOfTheWeek() {
-  const featured = getProductBySlug("omnisphere") || products[0];
+  const featured = getProductBySlug("omnisphere") || products[0] || placeholder(0, { name: "PLUGIN OF THE WEEK" });
   const [added, setAdded] = useState(false);
-  if (!featured) return null;
   const onSale = featured.compareAtPrice && featured.compareAtPrice > featured.price;
   const savings = onSale ? featured.compareAtPrice! - featured.price : 0;
 
