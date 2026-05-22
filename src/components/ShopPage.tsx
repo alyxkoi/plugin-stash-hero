@@ -127,7 +127,7 @@ export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageP
             <div className="font-mono text-sm text-white/60">{filtered.length} {filtered.length === 1 ? "PLUGIN" : "PLUGINS"}</div>
           </div>
 
-          <AnimatePresence mode="wait" initial={false}>
+          <AnimatePresence mode="sync" initial={false}>
             <motion.div
               key={resultMotionKey}
               initial={reduce ? false : { opacity: 0, x: 16 }}

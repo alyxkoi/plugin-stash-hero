@@ -802,7 +802,7 @@ function BrowseTheVault() {
             })}
           </div>
 
-          <AnimatePresence mode="wait" initial={false}>
+          <AnimatePresence mode="sync" initial={false}>
           <motion.div
             key={active.slug}
             id={`vault-panel-${active.slug}`}

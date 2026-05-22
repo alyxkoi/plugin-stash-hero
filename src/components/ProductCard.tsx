@@ -1,41 +1,15 @@
 import { Link } from "@tanstack/react-router";
-import { useRef, useEffect } from "react";
 import { Heart, ShoppingCart } from "lucide-react";
 import type { Product } from "@/lib/mock-data";
 import { useStore, actions } from "@/lib/store";
 
 export function ProductCard({ product, variant = "default", rank }: { product: Product; variant?: "default" | "blue"; rank?: number }) {
-  const cardRef = useRef<HTMLDivElement>(null);
   const wished = useStore((s) => s.wishlist.includes(product.slug));
-
-  useEffect(() => {
-    const card = cardRef.current;
-    if (!card) return;
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduce) return;
-    const move = (e: MouseEvent) => {
-      const rect = card.getBoundingClientRect();
-      const x = (e.clientX - rect.left) / rect.width;
-      const y = (e.clientY - rect.top) / rect.height;
-      card.style.transform = `perspective(1200px) rotateX(${(y - 0.5) * 5}deg) rotateY(${(x - 0.5) * -5}deg) translateY(-4px)`;
-      card.style.setProperty("--glare-peak", `${x * 100}%`);
-    };
-    const leave = () => {
-      card.style.transform = "";
-      card.style.removeProperty("--glare-peak");
-    };
-    card.addEventListener("mousemove", move);
-    card.addEventListener("mouseleave", leave);
-    return () => {
-      card.removeEventListener("mousemove", move);
-      card.removeEventListener("mouseleave", leave);
-    };
-  }, []);
 
   const onSale = product.compareAtPrice && product.compareAtPrice > product.price;
 
   return (
-    <div ref={cardRef} className={`glass-card product-card group ${variant === "blue" ? "glass-card--blue" : ""} h-full flex flex-col`}>
+    <div className={`glass-card product-card group ${variant === "blue" ? "glass-card--blue" : ""} h-full flex flex-col`}>
       <div className="chromatic-edge" />
       <div className="glass-noise" />
       <div className="relative z-10 p-4 flex flex-col h-full">

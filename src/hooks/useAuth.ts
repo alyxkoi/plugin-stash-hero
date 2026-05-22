@@ -6,17 +6,20 @@ export interface AuthState {
   user: User | null;
   session: Session | null;
   isAdmin: boolean;
+  adminReady: boolean;
   loading: boolean;
 }
 
 export function useAuth(): AuthState {
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [adminReady, setAdminReady] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const checkAdmin = (uid: string | undefined) => {
-      if (!uid) { setIsAdmin(false); return; }
+      setAdminReady(false);
+      if (!uid) { setIsAdmin(false); setAdminReady(true); return; }
       // defer to avoid auth callback deadlock
       setTimeout(async () => {
         const { data } = await supabase
@@ -26,6 +29,7 @@ export function useAuth(): AuthState {
           .eq("role", "admin")
           .maybeSingle();
         setIsAdmin(!!data);
+        setAdminReady(true);
       }, 0);
     };
 
@@ -43,7 +47,7 @@ export function useAuth(): AuthState {
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  return { user: session?.user ?? null, session, isAdmin, loading };
+  return { user: session?.user ?? null, session, isAdmin, adminReady, loading };
 }
 
 export async function signOut() {
