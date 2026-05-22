@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { GlassCard } from "@/components/GlassCard";
 import { FadeIn } from "@/components/SectionTitle";
 import { AuroraTitle } from "@/components/AuroraTitle";
@@ -716,6 +717,7 @@ function BrowseTheVault() {
   // Default active: DAWs
   const [activeSlug, setActiveSlug] = useState<VaultTab["slug"]>("daws");
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const reduce = useReducedMotion();
   const active = VAULT_TABS.find((t) => t.slug === activeSlug) ?? VAULT_TABS[3];
   const previews = products.filter((p) => p.category === active.slug).slice(0, 3);
 
@@ -765,11 +767,16 @@ function BrowseTheVault() {
             })}
           </div>
 
-          <div
+          <AnimatePresence mode="wait" initial={false}>
+          <motion.div
             key={active.slug}
             id={`vault-panel-${active.slug}`}
             role="tabpanel"
             className="console-panel console-fade-in"
+            initial={reduce ? false : { opacity: 0, x: 18 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={reduce ? undefined : { opacity: 0, x: -18 }}
+            transition={{ duration: reduce ? 0 : 0.24, ease: [0.19, 1, 0.22, 1] }}
           >
             <div className="console-panel-bg" style={{ background: active.bg }} />
             <div className="console-panel-scrim" />
@@ -816,7 +823,8 @@ function BrowseTheVault() {
             >
               View All {active.label} <span className="console-cta-arrow">→</span>
             </Link>
-          </div>
+          </motion.div>
+          </AnimatePresence>
         </div>
       </FadeIn>
     </section>

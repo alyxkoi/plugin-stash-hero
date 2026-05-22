@@ -1,12 +1,14 @@
 import { Link } from "@tanstack/react-router";
 import { X, ShoppingCart } from "lucide-react";
 import { useEffect } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useStore, actions } from "@/lib/store";
 import { SALE } from "@/lib/mock-data";
 
 export function CartDrawer() {
   const open = useStore((s) => s.cartOpen);
   const cart = useStore((s) => s.cart);
+  const reduce = useReducedMotion();
 
   useEffect(() => {
     if (!open) return;
@@ -17,19 +19,29 @@ export function CartDrawer() {
     return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = prev; };
   }, [open]);
 
-  if (!open) return null;
-
   const subtotal = cart.reduce((n, i) => n + i.product.price * i.qty, 0);
   const itemCount = cart.reduce((n, i) => n + i.qty, 0);
 
   return (
-    <div className="fixed inset-0 z-[100]" role="dialog" aria-modal="true" aria-label="Cart">
-      <div
+    <AnimatePresence>
+      {open && (
+    <motion.div className="fixed inset-0 z-[100]" role="dialog" aria-modal="true" aria-label="Cart">
+      <motion.div
         className="absolute inset-0 bg-black/55"
         style={{ backdropFilter: "blur(8px)" }}
         onClick={() => actions.closeCart()}
+        initial={reduce ? false : { opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: reduce ? 0 : 0.28, ease: [0.19, 1, 0.22, 1] }}
       />
-      <div className="absolute top-0 right-0 h-full w-[92%] md:w-[440px] slide-in-right">
+      <motion.div
+        className="absolute top-0 right-0 h-full w-[92%] md:w-[440px]"
+        initial={reduce ? false : { x: "100%", opacity: 0.7 }}
+        animate={{ x: 0, opacity: 1 }}
+        exit={{ x: "100%", opacity: 0.8 }}
+        transition={{ duration: reduce ? 0 : 0.32, ease: [0.19, 1, 0.22, 1] }}
+      >
         <div className="h-full glass-card !rounded-none md:!rounded-l-3xl md:!rounded-r-none flex flex-col"
           style={{ background: "rgba(20,5,40,0.85)", backdropFilter: "blur(40px) saturate(180%)" }}>
           <div className="chromatic-edge" /><div className="glass-noise" />
@@ -104,8 +116,10 @@ export function CartDrawer() {
             )}
           </div>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 

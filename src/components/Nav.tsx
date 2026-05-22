@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Search, ShoppingCart, User, Heart, ChevronDown, Menu, X, Piano, Waves, BookOpen, AudioLines, AppWindow, Gift } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useStore, actions } from "@/lib/store";
 import { categories } from "@/lib/mock-data";
 import logo from "@/assets/logo.png";
@@ -20,6 +21,7 @@ export function Nav() {
   const [catOpen, setCatOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerClosing, setDrawerClosing] = useState(false);
+  const reduce = useReducedMotion();
   const closeDrawer = () => {
     setDrawerClosing(true);
     window.setTimeout(() => { setDrawerOpen(false); setDrawerClosing(false); }, 360);
@@ -136,10 +138,25 @@ export function Nav() {
       </div>
 
       {/* Search overlay */}
+      <AnimatePresence>
       {searchOpen && (
-        <div className="fixed inset-0 z-[60] fade-in" onClick={() => setSearchOpen(false)}>
+        <motion.div
+          className="fixed inset-0 z-[60]"
+          onClick={() => setSearchOpen(false)}
+          initial={reduce ? false : { opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: reduce ? 0 : 0.28, ease: [0.19, 1, 0.22, 1] }}
+        >
           <div className="absolute inset-0 bg-black/55 backdrop-blur-sm" />
-          <div className="relative mx-3 md:mx-6 mt-3 md:mt-5 smoked-menu p-4 md:p-6" onClick={(e) => e.stopPropagation()}>
+          <motion.div
+            className="relative mx-3 md:mx-6 mt-3 md:mt-5 smoked-menu p-4 md:p-6"
+            onClick={(e) => e.stopPropagation()}
+            initial={reduce ? false : { opacity: 0, scale: 0.98, y: -8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.98, y: -8 }}
+            transition={{ duration: reduce ? 0 : 0.22, ease: [0.19, 1, 0.22, 1] }}
+          >
             <div className="flex items-center gap-3">
               <Search className="w-5 h-5 text-white/55" />
               <input
@@ -159,9 +176,10 @@ export function Nav() {
                 ))}
               </div>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
+      </AnimatePresence>
 
       {/* Mobile + tablet slide-in drawer */}
       {drawerOpen && (

@@ -58,10 +58,16 @@
   --text-primary: #FFFFFF;
   --text-secondary: rgba(255, 255, 255, 0.75);
   --text-tertiary: rgba(255, 255, 255, 0.55);
+  --motion-premium: cubic-bezier(0.19, 1, 0.22, 1);
+  --motion-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-page: 340ms;
+  --motion-panel: 240ms;
+  --motion-hover: 220ms;
 }
 
 @layer base {
   * { border-color: var(--color-border); }
+  html { scroll-behavior: smooth; }
   html, body {
     background: var(--bg-base);
     color: var(--text-primary);
@@ -90,6 +96,94 @@
 /* ===== UTILITIES ===== */
 .text-red { color: var(--accent-red); }
 .text-red-glow { color: var(--accent-red-glow); }
+
+@keyframes motion-fade-rise {
+  from { opacity: 0; transform: translate3d(0, 18px, 0); filter: blur(3px); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); filter: blur(0); }
+}
+@keyframes motion-tab-in {
+  from { opacity: 0; transform: translate3d(16px, 0, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+@keyframes motion-dialog-in {
+  from { opacity: 0; transform: translate(-50%, -48%) scale(0.96); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes motion-dialog-out {
+  from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  to { opacity: 0; transform: translate(-50%, -48%) scale(0.97); }
+}
+@keyframes motion-fade-only-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes motion-fade-only-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes motion-drawer-up {
+  from { opacity: 0.92; transform: translate3d(0, 100%, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+@keyframes motion-drawer-down {
+  from { opacity: 1; transform: translate3d(0, 0, 0); }
+  to { opacity: 0.92; transform: translate3d(0, 100%, 0); }
+}
+
+.motion-observed {
+  opacity: 0;
+  transform: translate3d(0, 18px, 0);
+  filter: blur(3px);
+  transition:
+    opacity 620ms var(--motion-premium) var(--reveal-delay, 0ms),
+    transform 620ms var(--motion-premium) var(--reveal-delay, 0ms),
+    filter 620ms var(--motion-premium) var(--reveal-delay, 0ms);
+  will-change: opacity, transform, filter;
+}
+.motion-observed.motion-visible {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+  filter: blur(0);
+}
+.motion-tab-panel,
+.motion-tab-window {
+  will-change: opacity, transform;
+}
+.motion-tab-panel[data-state="active"] {
+  animation: motion-tab-in var(--motion-panel) var(--motion-premium) both;
+}
+.motion-dialog-content {
+  transform: translate(-50%, -50%) scale(1);
+  transform-origin: center;
+  will-change: opacity, transform;
+}
+.motion-dialog-content[data-state="open"] {
+  animation: motion-dialog-in 220ms var(--motion-premium) both;
+}
+.motion-dialog-content[data-state="closed"] {
+  animation: motion-dialog-out 180ms var(--motion-premium) both;
+}
+.motion-dialog-overlay[data-state="open"] {
+  animation: motion-fade-only-in 280ms var(--motion-premium) both;
+}
+.motion-dialog-overlay[data-state="closed"] {
+  animation: motion-fade-only-out 220ms var(--motion-premium) both;
+}
+.motion-drawer-content[data-state="open"] {
+  animation: motion-drawer-up 300ms var(--motion-premium) both;
+}
+.motion-drawer-content[data-state="closed"] {
+  animation: motion-drawer-down 240ms var(--motion-premium) both;
+}
+
+:where(button, [role="button"], a, .glass-card, .product-card, .smoked-item, .drawer-item, .bottom-nav-link) {
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity, filter;
+  transition-duration: var(--motion-hover);
+  transition-timing-function: var(--motion-premium);
+}
+:where(.btn-primary, .btn-ghost, button:not(:disabled), [role="button"], .smoked-item, .drawer-item, .bottom-nav-link):active {
+  transform: translateY(1px) scale(0.985);
+}
 
 /* Anton replacement for previous font-black usage — Anton is single-weight */
 .font-black { font-family: "Outfit", system-ui, sans-serif; font-weight: 900; }
@@ -123,7 +217,7 @@
     inset 0 -1px 0 rgba(255, 255, 255, 0.4),
     inset 1px 0 0 rgba(255, 255, 255, 0.05),
     inset -1px 0 0 rgba(255, 255, 255, 0.05);
-  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+  transition: transform 260ms var(--motion-premium), box-shadow 300ms var(--motion-premium), filter 260ms var(--motion-premium);
   will-change: transform;
 }
 
@@ -147,7 +241,7 @@
   );
   pointer-events: none;
   z-index: 3;
-  transition: background 0.15s ease-out;
+  transition: background 220ms var(--motion-premium);
 }
 .glass-card::before {
   content: "";
@@ -227,7 +321,7 @@
     inset 0 -1px 0 rgba(0,0,0,0.3),
     0 8px 24px rgba(255,0,60,0.45),
     0 2px 8px rgba(255,0,60,0.3);
-  transition: transform 0.15s ease-out, box-shadow 0.2s ease-out, filter 0.2s ease-out;
+  transition: transform 220ms var(--motion-premium), box-shadow 260ms var(--motion-premium), filter 240ms var(--motion-premium);
   cursor: pointer;
   border: none;
 }
@@ -402,7 +496,11 @@
   from { transform: translateX(100%); }
   to { transform: translateX(0); }
 }
-.slide-in-right { animation: slide-in-right 0.3s ease-out; }
+@keyframes slide-out-right {
+  from { transform: translateX(0); }
+  to { transform: translateX(100%); }
+}
+.slide-in-right { animation: slide-in-right 0.3s var(--motion-premium); }
 
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(8px); }
@@ -600,11 +698,12 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .glow-breathe, .glow-breathe-2, .marquee-track, .pulse-dot, .skeleton, .slide-in-right, .fade-in, .spin-glow {
+  html { scroll-behavior: auto; }
+  .glow-breathe, .glow-breathe-2, .marquee-track, .pulse-dot, .skeleton, .slide-in-right, .fade-in, .spin-glow, .motion-tab-panel, .motion-dialog-content, .motion-dialog-overlay, .motion-drawer-content {
     animation: none !important;
   }
   .glass-card { transition: none !important; }
-  .title-fade, .content-fade { opacity: 1 !important; filter: none !important; transform: none !important; }
+  .title-fade, .content-fade, .motion-observed { opacity: 1 !important; filter: none !important; transform: none !important; transition: none !important; }
   .drawer-panel { animation: drawer-fade-in 0.2s ease-out both; }
   .drawer-stagger { animation: none !important; opacity: 1 !important; transform: none !important; }
   .drawer-item::before { transition: none !important; }
@@ -1915,13 +2014,12 @@
   letter-spacing: 0.02em;
 }
 
-/* Smoothed page transition between dashboard tabs */
+/* Dashboard route transitions are handled by Framer Motion in DashboardShell.tsx */
 @keyframes dash-fade-in {
   from { opacity: 0; transform: translate3d(0, 8px, 0); }
   to   { opacity: 1; transform: translate3d(0, 0, 0); }
 }
 .dash-page {
-  animation: dash-fade-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
   transform: translateZ(0);
   contain: layout paint;
 }
