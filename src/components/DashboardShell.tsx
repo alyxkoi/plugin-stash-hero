@@ -166,11 +166,11 @@ function DashboardChromeRoot({ initialTitle, initialAction, children }: { initia
             <motion.div
               key={pathname}
               className="dash-page route-transition-page"
-              initial={reduce ? false : { opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={reduce ? undefined : { opacity: 0, y: -14 }}
-              transition={{ duration: reduce ? 0 : 0.34, ease: [0.19, 1, 0.22, 1] }}
-              style={{ willChange: "opacity, transform" }}
+              initial={reduce ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={reduce ? undefined : { opacity: 0 }}
+              transition={{ duration: reduce ? 0 : 0.28, ease: "easeOut" }}
+              style={{ willChange: "opacity" }}
             >
               {page.action && (
                 <div className="dash-page-toolbar mb-4 flex flex-wrap items-center justify-end gap-2">

@@ -28,14 +28,14 @@ export function Shell() {
           <motion.div
             key={pathname}
             className="route-transition-page"
-            initial={reduce ? false : { opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={reduce ? undefined : { opacity: 0, y: -14 }}
+            initial={reduce ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={reduce ? undefined : { opacity: 0 }}
             transition={{
-              duration: reduce ? 0 : 0.34,
-              ease: [0.19, 1, 0.22, 1],
+              duration: reduce ? 0 : 0.28,
+              ease: "easeOut",
             }}
-            style={{ willChange: "opacity, transform" }}
+            style={{ willChange: "opacity" }}
           >
             <Outlet />
           </motion.div>
