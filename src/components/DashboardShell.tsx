@@ -1,5 +1,6 @@
 import { ReactNode, createContext, isValidElement, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useRouterState, Outlet } from "@tanstack/react-router";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   LayoutDashboard, Package, ShoppingBag, Tag, Users, BarChart3,
   Megaphone, Settings, LogOut, ExternalLink, ChevronDown
@@ -49,9 +50,10 @@ function DashboardChromeRoot({ initialTitle, initialAction, children }: { initia
   const [glowRect, setGlowRect] = useState<{ left: number; width: number }>({ left: -200, width: 0 });
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const reduce = useReducedMotion();
 
   useBrowserLayoutEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
+    window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
   }, [pathname]);
 
   const setPage = useCallback((nextTitle: string, nextAction?: ReactNode) => {
@@ -155,13 +157,25 @@ function DashboardChromeRoot({ initialTitle, initialAction, children }: { initia
           </div>
         </header>
 
-        <main key={pathname} className="dash-page flex-1 p-4 md:p-8 pb-28 lg:pb-8 overflow-x-hidden">
-          {page.action && (
-            <div className="dash-page-toolbar mb-4 flex flex-wrap items-center justify-end gap-2">
-              {page.action}
-            </div>
-          )}
-          <DashboardChromeContext.Provider value={chrome}>{children}</DashboardChromeContext.Provider>
+        <main className="flex-1 p-4 md:p-8 pb-28 lg:pb-8 overflow-x-hidden">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={pathname}
+              className="dash-page"
+              initial={reduce ? false : { opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={reduce ? undefined : { opacity: 0, y: -14 }}
+              transition={{ duration: reduce ? 0 : 0.34, ease: [0.19, 1, 0.22, 1] }}
+              style={{ willChange: "opacity, transform" }}
+            >
+              {page.action && (
+                <div className="dash-page-toolbar mb-4 flex flex-wrap items-center justify-end gap-2">
+                  {page.action}
+                </div>
+              )}
+              <DashboardChromeContext.Provider value={chrome}>{children}</DashboardChromeContext.Provider>
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
 
