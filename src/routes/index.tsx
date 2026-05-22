@@ -1355,9 +1355,8 @@ function SoundRowCard({ product }: { product: Product }) {
 /* ============ PLUGIN OF THE WEEK (wide spotlight) ============ */
 
 function PluginOfTheWeek() {
-  const featured = getProductBySlug("omnisphere") || products[0];
+  const featured = getProductBySlug("omnisphere") || products[0] || placeholder(0, { name: "PLUGIN OF THE WEEK" });
   const [added, setAdded] = useState(false);
-  if (!featured) return null;
   const onSale = featured.compareAtPrice && featured.compareAtPrice > featured.price;
   const savings = onSale ? featured.compareAtPrice! - featured.price : 0;
 
