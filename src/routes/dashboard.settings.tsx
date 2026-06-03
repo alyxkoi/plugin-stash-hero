@@ -1,6 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DashboardShell, DashCard } from "@/components/DashboardShell";
 import { toast } from "sonner";
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+
 
 export const Route = createFileRoute("/dashboard/settings")({
   head: () => ({ meta: [{ title: "Settings — Plugin Warehouse" }] }),
@@ -8,6 +11,36 @@ export const Route = createFileRoute("/dashboard/settings")({
 });
 
 function Settings() {
+  const [corsBusy, setCorsBusy] = useState(false);
+  const [corsResult, setCorsResult] = useState<string | null>(null);
+
+  async function applyCors() {
+    setCorsBusy(true); setCorsResult(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/set-r2-cors`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.access_token ?? ""}`,
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+      });
+      const body = await res.json();
+      setCorsResult(JSON.stringify(body, null, 2));
+      if (body.ok) toast.success("CORS applied to R2 bucket");
+      else if (body.hint) toast.error("Access denied — token needs Admin permissions");
+      else toast.error(`Failed: ${body.error ?? body.step ?? res.status}`);
+    } catch (e) {
+      const msg = (e as Error).message;
+      setCorsResult(msg);
+      toast.error(msg);
+    } finally {
+      setCorsBusy(false);
+    }
+  }
+
+
   return (
     <DashboardShell title="Settings">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -36,6 +69,16 @@ function Settings() {
             <Stat label="Avg" v="510 MB" />
           </div>
           <button className="btn-ghost !text-xs !py-2 !px-4 mt-3">View all files</button>
+          <div className="mt-4 pt-4 border-t border-white/10">
+            <div className="label-mini text-[10px] opacity-70 mb-2">Bucket CORS (one-time admin)</div>
+            <button onClick={applyCors} disabled={corsBusy} className="btn-ghost !text-xs !py-2 !px-4">
+              {corsBusy ? "Applying…" : "Apply CORS to R2 bucket"}
+            </button>
+            {corsResult && (
+              <pre className="mt-3 max-h-64 overflow-auto text-[10px] font-mono bg-black/40 border border-white/10 rounded p-2 whitespace-pre-wrap break-all">{corsResult}</pre>
+            )}
+          </div>
+
         </DashCard>
 
         <DashCard title="OpenAI">
