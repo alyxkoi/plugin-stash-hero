@@ -284,10 +284,23 @@ function NewProduct() {
 
         {/* File upload */}
         <DashCard title={<>Plugin file {req(missing.file)}</>}>
-          <label className="block border-2 border-dashed border-[var(--accent-red)]/40 rounded-xl p-8 text-center cursor-pointer hover:border-[var(--accent-red)] transition">
+          <label
+            onDragOver={e => { e.preventDefault(); setZipDragOver(true); }}
+            onDragEnter={e => { e.preventDefault(); setZipDragOver(true); }}
+            onDragLeave={() => setZipDragOver(false)}
+            onDrop={e => {
+              e.preventDefault();
+              setZipDragOver(false);
+              const f = e.dataTransfer.files?.[0];
+              if (!f) return;
+              if (!/\.zip$/i.test(f.name)) { toast.error("Plugin file must be a .zip"); return; }
+              uploadFile(f);
+            }}
+            className={`block border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition ${zipDragOver ? "border-[var(--accent-red)] bg-[var(--accent-red)]/10" : "border-[var(--accent-red)]/40 hover:border-[var(--accent-red)]"}`}
+          >
             <input type="file" accept=".zip" hidden onChange={e => e.target.files?.[0] && uploadFile(e.target.files[0])} />
             <Upload size={28} className="mx-auto mb-2 text-[var(--accent-red-glow)]" />
-            <div className="text-sm">Drop your ZIP here or click to browse</div>
+            <div className="text-sm">{zipDragOver ? "Drop to upload" : "Drop your ZIP here or click to browse"}</div>
             <div className="text-[11px] text-white/40 mt-1">Max 5GB · uploads directly to private R2 staging</div>
             {fileName && (
               <div className="mt-4 max-w-sm mx-auto text-left bg-white/5 rounded-lg p-3">
