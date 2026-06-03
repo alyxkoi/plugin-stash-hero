@@ -11,6 +11,36 @@ export const Route = createFileRoute("/dashboard/settings")({
 });
 
 function Settings() {
+  const [corsBusy, setCorsBusy] = useState(false);
+  const [corsResult, setCorsResult] = useState<string | null>(null);
+
+  async function applyCors() {
+    setCorsBusy(true); setCorsResult(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/set-r2-cors`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.access_token ?? ""}`,
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+      });
+      const body = await res.json();
+      setCorsResult(JSON.stringify(body, null, 2));
+      if (body.ok) toast.success("CORS applied to R2 bucket");
+      else if (body.hint) toast.error("Access denied — token needs Admin permissions");
+      else toast.error(`Failed: ${body.error ?? body.step ?? res.status}`);
+    } catch (e) {
+      const msg = (e as Error).message;
+      setCorsResult(msg);
+      toast.error(msg);
+    } finally {
+      setCorsBusy(false);
+    }
+  }
+
+
   return (
     <DashboardShell title="Settings">
       <div className="max-w-4xl mx-auto space-y-6">
