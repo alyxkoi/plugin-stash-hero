@@ -1,7 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { DashboardShell, DashCard, StatusBadge } from "@/components/DashboardShell";
-import { products, productCategories, formatMoney, relativeTime, type ProductStatus } from "@/lib/dashboard-mock";
+import { productCategories, formatMoney, relativeTime, type ProductStatus } from "@/lib/dashboard-mock";
+import { supabase } from "@/integrations/supabase/client";
 import { Plus, Search, Edit3, Archive, Trash2, X } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard/products/")({
@@ -9,7 +11,29 @@ export const Route = createFileRoute("/dashboard/products/")({
   component: ProductsPage,
 });
 
+type Row = {
+  id: string; slug: string; name: string; maker: string; category: string;
+  price: number; compare_at_price: number | null; status: ProductStatus;
+  cover_url: string | null; cover_gradient: string | null; updated_at: string;
+};
+
+async function fetchProducts(): Promise<Row[]> {
+  const { data, error } = await supabase
+    .from("products")
+    .select("id,slug,name,maker,category,price,compare_at_price,status,cover_url,cover_gradient,updated_at")
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as Row[];
+}
+
 function ProductsPage() {
+  const { data: products = [], isLoading, error, refetch } = useQuery({
+    queryKey: ["dashboard-products"],
+    queryFn: fetchProducts,
+    staleTime: 0,
+    refetchOnMount: "always",
+  });
+
   const [q, setQ] = useState("");
   const [cat, setCat] = useState<string>("all");
   const [status, setStatus] = useState<"all" | ProductStatus>("all");
@@ -17,28 +41,22 @@ function ProductsPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [showCats, setShowCats] = useState(false);
 
-  const filtered = useMemo(() => {
-    return products.filter(p => {
-      if (q && !p.name.toLowerCase().includes(q.toLowerCase())) return false;
-      if (cat !== "all" && p.category !== cat) return false;
-      if (status !== "all" && p.status !== status) return false;
-      return true;
-    });
-  }, [q, cat, status]);
+  const filtered = useMemo(() => products.filter(p => {
+    if (q && !p.name.toLowerCase().includes(q.toLowerCase())) return false;
+    if (cat !== "all" && p.category !== cat) return false;
+    if (status !== "all" && p.status !== status) return false;
+    return true;
+  }), [products, q, cat, status]);
 
   const pageSize = 20;
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const paged = filtered.slice((page-1)*pageSize, page*pageSize);
-
-  const toggle = (id: string) => {
-    setSelected(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
-  };
+  const toggle = (id: string) => setSelected(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
   return (
     <DashboardShell title="Products" action={
       <Link to="/dashboard/products/new" className="btn-primary !text-xs !py-2 !px-4 inline-flex items-center gap-1.5"><Plus size={14} /> Add product</Link>
     }>
-      {/* Filters */}
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <div className="relative flex-1 min-w-[240px] max-w-[360px]">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
@@ -48,6 +66,7 @@ function ProductsPage() {
         <Select value={status} onChange={(v) => { setStatus(v as any); setPage(1); }} options={[
           { value: "all", label: "All status" }, { value: "published", label: "Published" }, { value: "draft", label: "Draft" }, { value: "archived", label: "Archived" },
         ]} />
+        <button onClick={() => refetch()} className="btn-ghost !text-xs !py-2 !px-3">Refresh</button>
         <button onClick={() => setShowCats(true)} className="btn-ghost !text-xs !py-2 !px-3 ml-auto">Manage categories</button>
       </div>
 
@@ -57,7 +76,6 @@ function ProductsPage() {
           <div className="relative z-10 flex items-center gap-3 w-full">
             <span className="text-xs font-mono text-white/70">{selected.size} selected</span>
             <button className="btn-ghost !text-xs !py-1.5 !px-3">Archive selected</button>
-            <button className="btn-ghost !text-xs !py-1.5 !px-3">Add to sale event</button>
             <button className="btn-ghost !text-xs !py-1.5 !px-3 !border-[var(--accent-red)]/40 !text-[var(--accent-red-glow)]">Delete selected</button>
             <button onClick={() => setSelected(new Set())} className="ml-auto text-white/40 hover:text-white"><X size={14} /></button>
           </div>
@@ -65,52 +83,75 @@ function ProductsPage() {
       )}
 
       <DashCard>
-        <div className="overflow-x-auto -mx-2">
-          <table className="w-full text-sm">
-            <thead className="text-[10px] uppercase tracking-wider text-white/40">
-              <tr>
-                <th className="px-2 py-2 w-8"></th><th className="px-2 py-2 w-12"></th>
-                <th className="text-left px-2 py-2">Name</th><th className="text-left px-2 py-2">Category</th>
-                <th className="text-right px-2 py-2">Price</th><th className="text-left px-2 py-2">Status</th>
-                <th className="text-right px-2 py-2">Units</th><th className="text-right px-2 py-2">Updated</th>
-                <th className="text-right px-2 py-2">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paged.map(p => (
-                <tr key={p.id} className="border-t border-white/5 hover:bg-white/[0.03]">
-                  <td className="px-2 py-2"><input type="checkbox" checked={selected.has(p.id)} onChange={() => toggle(p.id)} className="accent-[var(--accent-red)]" /></td>
-                  <td className="px-2 py-2"><div className="w-10 h-10 rounded-md" style={{ background: p.coverGradient }} /></td>
-                  <td className="px-2 py-2"><Link to={"/dashboard/products/$id" as any} params={{ id: p.id } as any} className="text-sm hover:text-[var(--accent-red-glow)]">{p.name}</Link><div className="text-[10px] text-white/40">{p.maker}</div></td>
-                  <td className="px-2 py-2"><span className="inline-block text-[10px] uppercase tracking-wider font-mono px-2 py-0.5 rounded bg-white/5 border border-white/10">{p.category}</span></td>
-                  <td className="px-2 py-2 text-right font-mono text-xs">
-                    {p.salePrice ? (<><span className="text-[var(--accent-red-glow)]">{formatMoney(p.salePrice)}</span> <span className="line-through text-white/30 ml-1">{formatMoney(p.price)}</span></>) : formatMoney(p.price)}
-                  </td>
-                  <td className="px-2 py-2"><StatusBadge status={p.status} /></td>
-                  <td className="px-2 py-2 text-right font-mono text-xs">{p.unitsSold}</td>
-                  <td className="px-2 py-2 text-right font-mono text-[10px] text-white/50">{relativeTime(p.updatedAt)}</td>
-                  <td className="px-2 py-2 text-right">
-                    <div className="inline-flex gap-1">
-                      <Link to={"/dashboard/products/$id" as any} params={{ id: p.id } as any} className="p-1.5 rounded hover:bg-white/10 text-white/60 hover:text-white"><Edit3 size={13} /></Link>
-                      <button className="p-1.5 rounded hover:bg-white/10 text-white/60 hover:text-white"><Archive size={13} /></button>
-                      <button className="p-1.5 rounded hover:bg-white/10 text-white/60 hover:text-[var(--accent-red-glow)]"><Trash2 size={13} /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/5 text-xs font-mono text-white/50">
-          <span>{filtered.length} products</span>
-          <div className="flex items-center gap-2">
-            <button disabled={page<=1} onClick={() => setPage(p=>p-1)} className="px-2 py-1 rounded hover:bg-white/5 disabled:opacity-30">Prev</button>
-            <span>{page} / {totalPages}</span>
-            <button disabled={page>=totalPages} onClick={() => setPage(p=>p+1)} className="px-2 py-1 rounded hover:bg-white/5 disabled:opacity-30">Next</button>
+        {error && (
+          <div className="text-sm text-[var(--accent-red-glow)] py-6 text-center">
+            Couldn't load products: {(error as Error).message}
           </div>
-        </div>
+        )}
+        {isLoading && !products.length && (
+          <div className="text-sm text-white/50 py-10 text-center font-mono">Loading…</div>
+        )}
+        {!isLoading && !products.length && !error && (
+          <div className="text-sm text-white/50 py-10 text-center">
+            No products yet. <Link to="/dashboard/products/new" className="text-[var(--accent-red-glow)] hover:underline">Add your first plugin →</Link>
+          </div>
+        )}
+        {products.length > 0 && (
+          <div className="overflow-x-auto -mx-2">
+            <table className="w-full text-sm">
+              <thead className="text-[10px] uppercase tracking-wider text-white/40">
+                <tr>
+                  <th className="px-2 py-2 w-8"></th><th className="px-2 py-2 w-12"></th>
+                  <th className="text-left px-2 py-2">Name</th><th className="text-left px-2 py-2">Category</th>
+                  <th className="text-right px-2 py-2">Price</th><th className="text-left px-2 py-2">Status</th>
+                  <th className="text-right px-2 py-2">Updated</th><th className="text-right px-2 py-2">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paged.map(p => (
+                  <tr key={p.id} className="border-t border-white/5 hover:bg-white/[0.03]">
+                    <td className="px-2 py-2"><input type="checkbox" checked={selected.has(p.id)} onChange={() => toggle(p.id)} className="accent-[var(--accent-red)]" /></td>
+                    <td className="px-2 py-2">
+                      {p.cover_url
+                        ? <img src={p.cover_url} alt="" className="w-10 h-10 rounded-md object-cover" />
+                        : <div className="w-10 h-10 rounded-md" style={{ background: p.cover_gradient || "linear-gradient(135deg,#3a0a4a,#7b0a5a)" }} />}
+                    </td>
+                    <td className="px-2 py-2">
+                      <Link to={"/dashboard/products/$id" as any} params={{ id: p.id } as any} className="text-sm hover:text-[var(--accent-red-glow)]">{p.name}</Link>
+                      <div className="text-[10px] text-white/40">{p.maker}</div>
+                    </td>
+                    <td className="px-2 py-2"><span className="inline-block text-[10px] uppercase tracking-wider font-mono px-2 py-0.5 rounded bg-white/5 border border-white/10">{p.category}</span></td>
+                    <td className="px-2 py-2 text-right font-mono text-xs">
+                      {p.compare_at_price && p.compare_at_price > p.price
+                        ? <><span className="text-[var(--accent-red-glow)]">{formatMoney(p.price)}</span> <span className="line-through text-white/30 ml-1">{formatMoney(p.compare_at_price)}</span></>
+                        : formatMoney(p.price)}
+                    </td>
+                    <td className="px-2 py-2"><StatusBadge status={p.status} /></td>
+                    <td className="px-2 py-2 text-right font-mono text-[10px] text-white/50">{relativeTime(p.updated_at)}</td>
+                    <td className="px-2 py-2 text-right">
+                      <div className="inline-flex gap-1">
+                        <Link to={"/dashboard/products/$id" as any} params={{ id: p.id } as any} className="p-1.5 rounded hover:bg-white/10 text-white/60 hover:text-white"><Edit3 size={13} /></Link>
+                        <button className="p-1.5 rounded hover:bg-white/10 text-white/60 hover:text-white"><Archive size={13} /></button>
+                        <button className="p-1.5 rounded hover:bg-white/10 text-white/60 hover:text-[var(--accent-red-glow)]"><Trash2 size={13} /></button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {filtered.length > 0 && (
+          <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/5 text-xs font-mono text-white/50">
+            <span>{filtered.length} products</span>
+            <div className="flex items-center gap-2">
+              <button disabled={page<=1} onClick={() => setPage(p=>p-1)} className="px-2 py-1 rounded hover:bg-white/5 disabled:opacity-30">Prev</button>
+              <span>{page} / {totalPages}</span>
+              <button disabled={page>=totalPages} onClick={() => setPage(p=>p+1)} className="px-2 py-1 rounded hover:bg-white/5 disabled:opacity-30">Next</button>
+            </div>
+          </div>
+        )}
       </DashCard>
 
       {showCats && <CategoriesModal onClose={() => setShowCats(false)} />}

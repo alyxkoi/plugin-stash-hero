@@ -1,1 +1,4 @@
 project_id = "ovhpoysgvuupqydprsjx"
+
+[functions.r2-cleanup-staging]
+verify_jwt = false
