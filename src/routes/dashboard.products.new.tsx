@@ -88,6 +88,8 @@ function NewProduct() {
   const [resumed, setResumed] = useState(initial.resumed);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [zipDragOver, setZipDragOver] = useState(false);
+  const [coverDragOver, setCoverDragOver] = useState(false);
 
   // Persist draft (no File objects)
   useEffect(() => {
