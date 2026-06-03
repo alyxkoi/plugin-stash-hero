@@ -1,22 +1,19 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { DashboardShell, DashCard } from "@/components/DashboardShell";
 import { productCategories, saleEvents, formatMoney } from "@/lib/dashboard-mock";
-import { Upload, Sparkles, CheckCircle2, X, RotateCcw } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Upload, Sparkles, CheckCircle2, X, RotateCcw, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
 const FORMATS = ["VST", "VST3", "AU", "AAX"];
-const DRAFT_KEY = "pw:new-product-draft:v1";
+const DRAFT_KEY = "pw:new-product-draft:v2";
+
+const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 
 export const Route = createFileRoute("/dashboard/products/new")({
   head: () => ({ meta: [{ title: "New product — Plugin Warehouse" }] }),
@@ -24,33 +21,29 @@ export const Route = createFileRoute("/dashboard/products/new")({
 });
 
 type DraftShape = {
-  file: { name: string; size: number } | null;
-  uploaded: boolean;
+  fileName: string | null;
+  fileSize: number;
+  stagingKey: string | null;
   name: string;
+  maker: string;
   desc: string;
-  cover: string | null;
+  coverUrl: string | null;
   category: string;
   tags: string[];
   formats: string[];
   price: string;
   compareAt: string;
+  version: string;
   includeSale: boolean;
   publishStatus: "publish" | "draft";
 };
 
 const emptyDraft = (): DraftShape => ({
-  file: null,
-  uploaded: false,
-  name: "",
-  desc: "",
-  cover: null,
-  category: productCategories[0],
-  tags: [],
-  formats: ["VST3", "AU"],
-  price: "",
-  compareAt: "",
-  includeSale: false,
-  publishStatus: "publish",
+  fileName: null, fileSize: 0, stagingKey: null,
+  name: "", maker: "Plugin Warehouse", desc: "", coverUrl: null,
+  category: productCategories[0], tags: [], formats: ["VST3", "AU"],
+  price: "", compareAt: "", version: "1.0",
+  includeSale: false, publishStatus: "publish",
 });
 
 const loadDraft = (): { draft: DraftShape; resumed: boolean } => {
@@ -58,45 +51,54 @@ const loadDraft = (): { draft: DraftShape; resumed: boolean } => {
   try {
     const raw = localStorage.getItem(DRAFT_KEY);
     if (!raw) return { draft: emptyDraft(), resumed: false };
-    const parsed = JSON.parse(raw) as Partial<DraftShape>;
-    return { draft: { ...emptyDraft(), ...parsed }, resumed: true };
-  } catch {
-    return { draft: emptyDraft(), resumed: false };
-  }
+    return { draft: { ...emptyDraft(), ...JSON.parse(raw) }, resumed: true };
+  } catch { return { draft: emptyDraft(), resumed: false }; }
 };
 
 function NewProduct() {
   const navigate = useNavigate();
   const initial = useRef(loadDraft()).current;
 
-  const [file, setFile] = useState(initial.draft.file);
+  const [fileName, setFileName] = useState(initial.draft.fileName);
+  const [fileSize, setFileSize] = useState(initial.draft.fileSize);
+  const [stagingKey, setStagingKey] = useState<string | null>(initial.draft.stagingKey);
+  const [uploadPct, setUploadPct] = useState(initial.draft.stagingKey ? 100 : 0);
+  const [uploadErr, setUploadErr] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [uploaded, setUploaded] = useState(initial.draft.uploaded);
+  const xhrRef = useRef<XMLHttpRequest | null>(null);
+
   const [name, setName] = useState(initial.draft.name);
+  const [maker, setMaker] = useState(initial.draft.maker);
   const [desc, setDesc] = useState(initial.draft.desc);
   const [generating, setGenerating] = useState(false);
-  const [cover, setCover] = useState<string | null>(initial.draft.cover);
+
+  const [coverUrl, setCoverUrl] = useState<string | null>(initial.draft.coverUrl);
+  const [coverUploading, setCoverUploading] = useState(false);
+
   const [category, setCategory] = useState(initial.draft.category);
   const [tags, setTags] = useState<string[]>(initial.draft.tags);
   const [tagInput, setTagInput] = useState("");
   const [formats, setFormats] = useState<Set<string>>(new Set(initial.draft.formats));
   const [price, setPrice] = useState(initial.draft.price);
   const [compareAt, setCompareAt] = useState(initial.draft.compareAt);
+  const [version, setVersion] = useState(initial.draft.version);
   const [includeSale, setIncludeSale] = useState(initial.draft.includeSale);
   const [publishStatus, setPublishStatus] = useState<"publish" | "draft">(initial.draft.publishStatus);
+
   const [resumed, setResumed] = useState(initial.resumed);
   const [cancelOpen, setCancelOpen] = useState(false);
-  const savedRef = useRef(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  // Persist on any change (debounced via microtask batching).
+  // Persist draft (no File objects)
   useEffect(() => {
     if (typeof window === "undefined") return;
     const snap: DraftShape = {
-      file, uploaded, name, desc, cover, category, tags,
-      formats: Array.from(formats), price, compareAt, includeSale, publishStatus,
+      fileName, fileSize, stagingKey, name, maker, desc, coverUrl,
+      category, tags, formats: Array.from(formats), price, compareAt, version,
+      includeSale, publishStatus,
     };
     try { localStorage.setItem(DRAFT_KEY, JSON.stringify(snap)); } catch { /* quota */ }
-  }, [file, uploaded, name, desc, cover, category, tags, formats, price, compareAt, includeSale, publishStatus]);
+  }, [fileName, fileSize, stagingKey, name, maker, desc, coverUrl, category, tags, formats, price, compareAt, version, includeSale, publishStatus]);
 
   const activeSale = saleEvents.find(s => s.status === "active");
   const priceNum = Number(price) || 0;
@@ -105,68 +107,167 @@ function NewProduct() {
   const salePrice = priceNum && activeSale && includeSale ? Math.round(priceNum * (1 - activeSale.discountPct / 100)) : null;
 
   const missing = useMemo(() => ({
-    file: !(file && uploaded),
+    file: !stagingKey,
     name: !name.trim(),
+    maker: !maker.trim(),
     desc: !desc.trim(),
-    cover: !cover,
+    cover: !coverUrl,
     category: !category,
     formats: formats.size === 0,
     price: !(priceNum > 0),
-  }), [file, uploaded, name, desc, cover, category, formats, priceNum]);
+  }), [stagingKey, name, maker, desc, coverUrl, category, formats, priceNum]);
 
   const canPublish = !Object.values(missing).some(Boolean);
-  const isDirty =
-    !!file || !!name || !!desc || !!cover || tags.length > 0 ||
-    !!price || !!compareAt || includeSale ||
+  const isDirty = !!fileName || !!name || !!desc || !!coverUrl || tags.length > 0 ||
+    !!price || !!compareAt || includeSale || maker !== "Plugin Warehouse" ||
     formats.size !== 2 || !Array.from(formats).every(f => ["VST3", "AU"].includes(f)) ||
     category !== productCategories[0] || publishStatus !== "publish";
 
-  const clearDraft = () => {
-    try { localStorage.removeItem(DRAFT_KEY); } catch { /* */ }
-  };
+  const clearDraft = () => { try { localStorage.removeItem(DRAFT_KEY); } catch { /* */ } };
 
   const resetForm = () => {
     const e = emptyDraft();
-    setFile(e.file); setUploaded(e.uploaded); setName(e.name); setDesc(e.desc);
-    setCover(e.cover); setCategory(e.category); setTags(e.tags);
-    setFormats(new Set(e.formats)); setPrice(e.price); setCompareAt(e.compareAt);
+    setFileName(e.fileName); setFileSize(e.fileSize); setStagingKey(e.stagingKey); setUploadPct(0); setUploadErr(null);
+    setName(e.name); setMaker(e.maker); setDesc(e.desc); setCoverUrl(e.coverUrl);
+    setCategory(e.category); setTags(e.tags); setFormats(new Set(e.formats));
+    setPrice(e.price); setCompareAt(e.compareAt); setVersion(e.version);
     setIncludeSale(e.includeSale); setPublishStatus(e.publishStatus);
-    setResumed(false);
-    clearDraft();
+    setResumed(false); clearDraft();
   };
 
-  const onFile = (f: File) => {
-    setFile({ name: f.name, size: f.size });
-    setUploading(true);
-    setUploaded(false);
-    setTimeout(() => { setUploading(false); setUploaded(true); toast.success("Uploaded to R2"); }, 1400);
+  // ---- File upload (zip) ----
+  const uploadFile = async (f: File) => {
+    setUploadErr(null);
+    setFileName(f.name); setFileSize(f.size);
+    setStagingKey(null); setUploadPct(0); setUploading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("r2-upload-url", {
+        body: { kind: "zip", filename: f.name, size: f.size, contentType: f.type || "application/zip" },
+      });
+      if (error || !data?.uploadUrl) throw new Error(data?.error || error?.message || "Failed to get upload URL");
+
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhrRef.current = xhr;
+        xhr.open("PUT", data.uploadUrl);
+        xhr.setRequestHeader("Content-Type", f.type || "application/zip");
+        xhr.upload.onprogress = (e) => { if (e.lengthComputable) setUploadPct(Math.round((e.loaded / e.total) * 100)); };
+        xhr.onload = () => (xhr.status >= 200 && xhr.status < 300) ? resolve() : reject(new Error(`Upload failed (${xhr.status})`));
+        xhr.onerror = () => reject(new Error("Network error during upload"));
+        xhr.onabort = () => reject(new Error("Upload cancelled"));
+        xhr.send(f);
+      });
+      setStagingKey(data.objectKey);
+      setUploadPct(100);
+      toast.success("Plugin uploaded.");
+    } catch (e: any) {
+      setUploadErr(e.message || "Upload failed");
+      toast.error(e.message || "Upload failed");
+    } finally {
+      setUploading(false);
+      xhrRef.current = null;
+    }
   };
 
-  const generateDesc = () => {
-    if (!name) { toast.error("Enter a plugin name first."); return; }
+  // ---- Cover upload (image) ----
+  const uploadCover = async (f: File) => {
+    setCoverUploading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("r2-upload-url", {
+        body: { kind: "cover", filename: f.name, size: f.size, contentType: f.type || "image/jpeg" },
+      });
+      if (error || !data?.uploadUrl) throw new Error(data?.error || error?.message || "Failed to get upload URL");
+      const put = await fetch(data.uploadUrl, { method: "PUT", body: f, headers: { "Content-Type": f.type || "image/jpeg" } });
+      if (!put.ok) throw new Error(`Cover upload failed (${put.status})`);
+      // Cover is public — derive its URL from project public R2 base.
+      const publicBase = (import.meta.env.VITE_R2_PUBLIC_URL as string | undefined)?.replace(/\/+$/, "");
+      const url = publicBase ? `${publicBase}/${data.objectKey}` : data.objectKey;
+      setCoverUrl(url);
+      toast.success("Cover uploaded.");
+    } catch (e: any) {
+      toast.error(e.message || "Cover upload failed");
+    } finally {
+      setCoverUploading(false);
+    }
+  };
+
+  // ---- AI description ----
+  const generateDesc = async () => {
+    if (!name.trim()) { toast.error("Enter a plugin name first."); return; }
     setGenerating(true);
-    setTimeout(() => {
-      setDesc(`${name} is a bold, direct tool built for producers who want results without the fluff. Designed to slot into modern workflows, it brings character and clarity wherever you drop it. Yours forever.`);
-      setGenerating(false);
-    }, 1200);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-product-description", {
+        body: { name, category, tags, daws: Array.from(formats) },
+      });
+      if (error || !data?.description) throw new Error(data?.error || error?.message || "AI request failed");
+      setDesc(data.description);
+    } catch (e: any) {
+      toast.error(e.message || "Couldn't generate description");
+    } finally { setGenerating(false); }
   };
 
   const addTag = () => { if (tagInput && !tags.includes(tagInput)) { setTags([...tags, tagInput]); setTagInput(""); } };
 
-  const save = (status: "publish" | "draft") => {
+  // ---- Save / publish ----
+  const save = async (status: "publish" | "draft") => {
     if (status === "publish" && !canPublish) { toast.error("Fill in all required fields."); return; }
     if (status === "draft" && !name.trim()) { toast.error("Add a plugin name to save a draft."); return; }
-    toast.success(status === "publish" ? "Product published." : "Draft saved.");
-    savedRef.current = true;
-    clearDraft();
-    setTimeout(() => navigate({ to: "/dashboard/products" as any }), 600);
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      const productSlug = `${slugify(name)}-${Date.now().toString(36).slice(-5)}`;
+
+      // 1. Finalize R2 (copy staging → final category folder). Only required if file uploaded.
+      let finalKey: string | null = null;
+      if (stagingKey) {
+        const { data: fin, error: finErr } = await supabase.functions.invoke("r2-finalize-upload", {
+          body: { stagingKey, category, productSlug, version },
+        });
+        if (finErr || !fin?.objectKey) throw new Error(fin?.error || finErr?.message || "Failed to finalize file");
+        finalKey = fin.objectKey;
+      }
+
+      // 2. Insert product
+      const { data: product, error: insErr } = await supabase.from("products").insert({
+        slug: productSlug,
+        name: name.trim(),
+        maker: maker.trim(),
+        category,
+        sub_type: null,
+        tags,
+        daws: [],
+        formats: Array.from(formats),
+        version,
+        price: priceNum,
+        compare_at_price: compareNum > 0 ? compareNum : null,
+        description: desc,
+        cover_url: coverUrl,
+        status: status === "publish" ? "published" : "draft",
+        published_at: status === "publish" ? new Date().toISOString() : null,
+        is_free: priceNum === 0,
+      }).select("id").single();
+
+      if (insErr || !product) throw new Error(insErr?.message || "Couldn't save product");
+
+      // 3. Insert private file pointer
+      if (finalKey) {
+        const { error: fErr } = await supabase.from("product_files").insert({
+          product_id: product.id,
+          zip_url: finalKey,                // PRIVATE R2 object key — not a URL
+          zip_file_name: fileName,
+        });
+        if (fErr) throw new Error(`Product saved but file link failed: ${fErr.message}`);
+      }
+
+      clearDraft();
+      toast.success(status === "publish" ? "Plugin published successfully" : "Draft saved.");
+      setTimeout(() => navigate({ to: "/dashboard/products" as any }), 250);
+    } catch (e: any) {
+      toast.error(e.message || "Couldn't save product");
+    } finally { setSubmitting(false); }
   };
 
-  const onCancel = () => {
-    if (isDirty) setCancelOpen(true);
-    else navigate({ to: "/dashboard/products" as any });
-  };
-
+  const onCancel = () => isDirty ? setCancelOpen(true) : navigate({ to: "/dashboard/products" as any });
   const req = (m: boolean) => m ? <span className="text-[var(--accent-red)] ml-0.5" title="Required">*</span> : null;
 
   return (
@@ -176,10 +277,7 @@ function NewProduct() {
           <div className="flex items-center gap-3 rounded-lg border border-white/15 bg-white/5 px-4 py-2.5 text-xs">
             <RotateCcw size={13} className="text-[var(--accent-red-glow)]" />
             <span className="text-white/80">Resumed from your last session.</span>
-            <button
-              onClick={() => { resetForm(); toast.success("Draft discarded."); }}
-              className="ml-auto text-[var(--accent-red-glow)] hover:underline"
-            >
+            <button onClick={() => { resetForm(); toast.success("Draft discarded."); }} className="ml-auto text-[var(--accent-red-glow)] hover:underline">
               Discard and start fresh
             </button>
           </div>
@@ -188,15 +286,32 @@ function NewProduct() {
         {/* File upload */}
         <DashCard title={<>Plugin file {req(missing.file)}</>}>
           <label className="block border-2 border-dashed border-[var(--accent-red)]/40 rounded-xl p-8 text-center cursor-pointer hover:border-[var(--accent-red)] transition">
-            <input type="file" accept=".zip" hidden onChange={e => e.target.files?.[0] && onFile(e.target.files[0])} />
+            <input type="file" accept=".zip" hidden onChange={e => e.target.files?.[0] && uploadFile(e.target.files[0])} />
             <Upload size={28} className="mx-auto mb-2 text-[var(--accent-red-glow)]" />
             <div className="text-sm">Drop your ZIP here or click to browse</div>
-            <div className="text-[11px] text-white/40 mt-1">Max 5GB</div>
-            {file && (
+            <div className="text-[11px] text-white/40 mt-1">Max 5GB · uploads directly to private R2 staging</div>
+            {fileName && (
               <div className="mt-4 max-w-sm mx-auto text-left bg-white/5 rounded-lg p-3">
-                <div className="flex justify-between items-center"><span className="text-xs font-mono truncate">{file.name}</span><span className="text-[10px] text-white/40 font-mono">{(file.size/1024/1024).toFixed(1)} MB</span></div>
-                {uploading && <div className="mt-2 h-1.5 bg-white/10 rounded overflow-hidden"><div className="h-full bg-[var(--accent-red)] animate-pulse" style={{ width: "70%" }} /></div>}
-                {uploaded && <div className="mt-2 flex items-center gap-1.5 text-xs text-emerald-400"><CheckCircle2 size={12} /> Uploaded to R2</div>}
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-mono truncate">{fileName}</span>
+                  <span className="text-[10px] text-white/40 font-mono">{(fileSize/1024/1024).toFixed(1)} MB</span>
+                </div>
+                {uploading && (
+                  <div className="mt-2 h-1.5 bg-white/10 rounded overflow-hidden">
+                    <div className="h-full bg-[var(--accent-red)] transition-all" style={{ width: `${uploadPct}%` }} />
+                  </div>
+                )}
+                {uploading && <div className="mt-1 text-[10px] text-white/50 font-mono">{uploadPct}%</div>}
+                {stagingKey && !uploading && (
+                  <div className="mt-2 flex items-center gap-1.5 text-xs text-emerald-400">
+                    <CheckCircle2 size={12} /> Uploaded to R2 staging
+                  </div>
+                )}
+                {uploadErr && (
+                  <div className="mt-2 flex items-center gap-1.5 text-xs text-[var(--accent-red-glow)]">
+                    <AlertCircle size={12} /> {uploadErr}
+                  </div>
+                )}
               </div>
             )}
           </label>
@@ -206,24 +321,31 @@ function NewProduct() {
         <DashCard title="Details">
           <div className="space-y-4">
             <Field label={<>Plugin name {req(missing.name)}</>}><input value={name} onChange={e => setName(e.target.value)} className="ipt" /></Field>
-            <Field label={<>Description {req(missing.desc)} <button onClick={generateDesc} disabled={generating} className="ml-2 inline-flex items-center gap-1 text-[10px] text-[var(--accent-red-glow)] hover:underline"><Sparkles size={11} /> {generating ? "Generating…" : "Generate description"}</button></>}>
+            <Field label={<>Maker {req(missing.maker)} <span className="text-white/40 normal-case font-mono ml-1">(who built this plugin)</span></>}>
+              <input value={maker} onChange={e => setMaker(e.target.value)} className="ipt" placeholder="Plugin Warehouse" />
+            </Field>
+            <Field label={<>Description {req(missing.desc)} <button onClick={generateDesc} disabled={generating} className="ml-2 inline-flex items-center gap-1 text-[10px] text-[var(--accent-red-glow)] hover:underline disabled:opacity-50"><Sparkles size={11} /> {generating ? "Thinking…" : "Generate description"}</button></>}>
               <textarea value={desc} onChange={e => setDesc(e.target.value)} rows={6} className="ipt resize-none" />
               <div className="text-[10px] text-white/40 mt-1 text-right font-mono">{desc.length} chars</div>
             </Field>
             <Field label={<>Cover art (JPG or PNG, 1:1, max 5MB) {req(missing.cover)}</>}>
               <label className="block border border-dashed border-white/20 rounded-lg p-4 text-center cursor-pointer hover:border-white/40 transition">
-                <input type="file" accept="image/*" hidden onChange={e => {
-                  const f = e.target.files?.[0];
-                  if (f) { const r = new FileReader(); r.onload = () => setCover(r.result as string); r.readAsDataURL(f); }
-                }} />
-                {cover ? <img src={cover} alt="cover" className="w-32 h-32 object-cover mx-auto rounded" /> : <div className="text-xs text-white/60">Drop image or click</div>}
+                <input type="file" accept="image/*" hidden onChange={e => { const f = e.target.files?.[0]; if (f) uploadCover(f); }} />
+                {coverUrl
+                  ? <img src={coverUrl} alt="cover" className="w-32 h-32 object-cover mx-auto rounded" />
+                  : <div className="text-xs text-white/60">{coverUploading ? "Uploading…" : "Drop image or click"}</div>}
               </label>
             </Field>
-            <Field label={<>Category {req(missing.category)}</>}>
-              <select value={category} onChange={e => setCategory(e.target.value)} className="ipt">
-                {productCategories.map(c => <option key={c} value={c} className="bg-[#1F0540]">{c.charAt(0).toUpperCase()+c.slice(1)}</option>)}
-              </select>
-            </Field>
+            <div className="grid grid-cols-2 gap-4">
+              <Field label={<>Category {req(missing.category)}</>}>
+                <select value={category} onChange={e => setCategory(e.target.value)} className="ipt">
+                  {productCategories.map(c => <option key={c} value={c} className="bg-[#1F0540]">{c.charAt(0).toUpperCase()+c.slice(1)}</option>)}
+                </select>
+              </Field>
+              <Field label="Version">
+                <input value={version} onChange={e => setVersion(e.target.value)} className="ipt" placeholder="1.0" />
+              </Field>
+            </div>
             <Field label="Tags">
               <div className="flex flex-wrap gap-2 mb-2">
                 {tags.map(t => <span key={t} className="inline-flex items-center gap-1 bg-white/5 border border-white/15 rounded-full px-3 py-1 text-xs">{t}<button onClick={() => setTags(tags.filter(x => x !== t))}><X size={11} /></button></span>)}
@@ -291,16 +413,16 @@ function NewProduct() {
 
       {/* Sticky footer */}
       <div className="fixed bottom-0 left-0 md:left-[220px] right-0 z-30 border-t border-white/10 bg-[#13002C]/95 backdrop-blur-md px-6 py-3 flex items-center gap-3">
-        <button onClick={onCancel} className="btn-ghost !text-xs !py-2 !px-4">Cancel</button>
-        <button onClick={() => save("draft")} className="btn-ghost !text-xs !py-2 !px-4 ml-auto">Save draft</button>
+        <button onClick={onCancel} disabled={submitting} className="btn-ghost !text-xs !py-2 !px-4">Cancel</button>
+        <button onClick={() => save("draft")} disabled={submitting} className="btn-ghost !text-xs !py-2 !px-4 ml-auto">{submitting ? "Saving…" : "Save draft"}</button>
         <button
           onClick={() => save("publish")}
-          disabled={!canPublish}
-          aria-disabled={!canPublish}
+          disabled={!canPublish || submitting}
+          aria-disabled={!canPublish || submitting}
           title={canPublish ? "Publish product" : "Complete required fields to publish"}
-          className={`btn-primary !text-xs !py-2 !px-6 transition-all duration-200 ${canPublish ? "" : "opacity-40 grayscale pointer-events-none"}`}
+          className={`btn-primary !text-xs !py-2 !px-6 transition-all duration-200 ${(canPublish && !submitting) ? "" : "opacity-40 grayscale pointer-events-none"}`}
         >
-          Publish
+          {submitting ? "Publishing…" : "Publish"}
         </button>
       </div>
 
@@ -314,10 +436,7 @@ function NewProduct() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="bg-transparent border-white/20 text-white hover:bg-white/10">Keep editing</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => { clearDraft(); navigate({ to: "/dashboard/products" as any }); }}
-              className="bg-[var(--accent-red)] hover:bg-[var(--accent-red)]/90"
-            >
+            <AlertDialogAction onClick={() => { clearDraft(); navigate({ to: "/dashboard/products" as any }); }} className="bg-[var(--accent-red)] hover:bg-[var(--accent-red)]/90">
               Discard
             </AlertDialogAction>
           </AlertDialogFooter>
