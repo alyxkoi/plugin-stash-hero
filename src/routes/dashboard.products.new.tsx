@@ -341,11 +341,24 @@ function NewProduct() {
               <div className="text-[10px] text-white/40 mt-1 text-right font-mono">{desc.length} chars</div>
             </Field>
             <Field label={<>Cover art (JPG or PNG, 1:1, max 5MB) {req(missing.cover)}</>}>
-              <label className="block border border-dashed border-white/20 rounded-lg p-4 text-center cursor-pointer hover:border-white/40 transition">
+              <label
+                onDragOver={e => { e.preventDefault(); setCoverDragOver(true); }}
+                onDragEnter={e => { e.preventDefault(); setCoverDragOver(true); }}
+                onDragLeave={() => setCoverDragOver(false)}
+                onDrop={e => {
+                  e.preventDefault();
+                  setCoverDragOver(false);
+                  const f = e.dataTransfer.files?.[0];
+                  if (!f) return;
+                  if (!f.type.startsWith("image/")) { toast.error("Cover must be an image"); return; }
+                  uploadCover(f);
+                }}
+                className={`block border border-dashed rounded-lg p-4 text-center cursor-pointer transition ${coverDragOver ? "border-[var(--accent-red)] bg-[var(--accent-red)]/10" : "border-white/20 hover:border-white/40"}`}
+              >
                 <input type="file" accept="image/*" hidden onChange={e => { const f = e.target.files?.[0]; if (f) uploadCover(f); }} />
                 {coverUrl
                   ? <img src={coverUrl} alt="cover" className="w-32 h-32 object-cover mx-auto rounded" />
-                  : <div className="text-xs text-white/60">{coverUploading ? "Uploading…" : "Drop image or click"}</div>}
+                  : <div className="text-xs text-white/60">{coverUploading ? "Uploading…" : coverDragOver ? "Drop to upload" : "Drop image or click"}</div>}
               </label>
             </Field>
             <div className="grid grid-cols-2 gap-4">
