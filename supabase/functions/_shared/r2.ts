@@ -57,7 +57,7 @@ export async function presign(opts: {
   method: "PUT" | "GET";
   key: string;
   expiresIn?: number;        // seconds, default 900
-  contentType?: string;      // signed as header if PUT
+  contentType?: string;      // accepted for backwards compatibility; not signed
 }) {
   const expiresIn = opts.expiresIn ?? 900;
   const now = new Date();
@@ -68,7 +68,6 @@ export async function presign(opts: {
 
   // Signed headers
   const headers: Record<string, string> = { host };
-  if (opts.method === "PUT" && opts.contentType) headers["content-type"] = opts.contentType;
   const signedHeadersList = Object.keys(headers).sort();
   const signedHeaders = signedHeadersList.join(";");
   const canonicalHeaders = signedHeadersList.map(h => `${h}:${headers[h]}\n`).join("");
