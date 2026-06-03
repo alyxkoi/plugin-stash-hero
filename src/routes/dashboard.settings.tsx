@@ -69,6 +69,16 @@ function Settings() {
             <Stat label="Avg" v="510 MB" />
           </div>
           <button className="btn-ghost !text-xs !py-2 !px-4 mt-3">View all files</button>
+          <div className="mt-4 pt-4 border-t border-white/10">
+            <div className="label-mini text-[10px] opacity-70 mb-2">Bucket CORS (one-time admin)</div>
+            <button onClick={applyCors} disabled={corsBusy} className="btn-ghost !text-xs !py-2 !px-4">
+              {corsBusy ? "Applying…" : "Apply CORS to R2 bucket"}
+            </button>
+            {corsResult && (
+              <pre className="mt-3 max-h-64 overflow-auto text-[10px] font-mono bg-black/40 border border-white/10 rounded p-2 whitespace-pre-wrap break-all">{corsResult}</pre>
+            )}
+          </div>
+
         </DashCard>
 
         <DashCard title="OpenAI">
