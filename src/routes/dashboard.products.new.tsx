@@ -179,10 +179,7 @@ function NewProduct() {
       if (error || !data?.uploadUrl) throw new Error(data?.error || error?.message || "Failed to get upload URL");
       const put = await fetch(data.uploadUrl, { method: "PUT", body: f, headers: { "Content-Type": f.type || "image/jpeg" } });
       if (!put.ok) throw new Error(`Cover upload failed (${put.status})`);
-      // Cover is public — derive its URL from project public R2 base.
-      const publicBase = (import.meta.env.VITE_R2_PUBLIC_URL as string | undefined)?.replace(/\/+$/, "");
-      const url = publicBase ? `${publicBase}/${data.objectKey}` : data.objectKey;
-      setCoverUrl(url);
+      setCoverUrl(data.publicUrl || data.objectKey);
       toast.success("Cover uploaded.");
     } catch (e: any) {
       toast.error(e.message || "Cover upload failed");

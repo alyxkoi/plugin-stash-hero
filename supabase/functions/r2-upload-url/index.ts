@@ -1,7 +1,7 @@
 // Generates a 15-min presigned PUT URL for either a staging plugin zip
 // or a public cover image. Admin-only.
 import { corsHeaders, requireAdmin, json } from "../_shared/auth.ts";
-import { presign, sanitizeFilename, slugify } from "../_shared/r2.ts";
+import { presign, sanitizeFilename, slugify, r2PublicUrl } from "../_shared/r2.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -23,7 +23,8 @@ Deno.serve(async (req) => {
       : `covers/${ts}-${slugify(filename.replace(/\.[^.]+$/, ""))}-${filename.split(".").pop()}`;
 
     const uploadUrl = await presign({ method: "PUT", key, contentType, expiresIn: 900 });
-    return json({ uploadUrl, objectKey: key });
+    const publicUrl = kind === "cover" ? r2PublicUrl(key) : null;
+    return json({ uploadUrl, objectKey: key, publicUrl });
   } catch (e) {
     if (e instanceof Response) return e;
     console.error("r2-upload-url error", e);
