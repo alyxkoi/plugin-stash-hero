@@ -152,7 +152,6 @@ function NewProduct() {
         const xhr = new XMLHttpRequest();
         xhrRef.current = xhr;
         xhr.open("PUT", data.uploadUrl);
-        xhr.setRequestHeader("Content-Type", f.type || "application/zip");
         xhr.upload.onprogress = (e) => { if (e.lengthComputable) setUploadPct(Math.round((e.loaded / e.total) * 100)); };
         xhr.onload = () => (xhr.status >= 200 && xhr.status < 300) ? resolve() : reject(new Error(`Upload failed (${xhr.status})`));
         xhr.onerror = () => reject(new Error("Network error during upload"));
@@ -179,7 +178,7 @@ function NewProduct() {
         body: { kind: "cover", filename: f.name, size: f.size, contentType: f.type || "image/jpeg" },
       });
       if (error || !data?.uploadUrl) throw new Error(data?.error || error?.message || "Failed to get upload URL");
-      const put = await fetch(data.uploadUrl, { method: "PUT", body: f, headers: { "Content-Type": f.type || "image/jpeg" } });
+      const put = await fetch(data.uploadUrl, { method: "PUT", body: f });
       if (!put.ok) throw new Error(`Cover upload failed (${put.status})`);
       setCoverUrl(data.publicUrl || data.objectKey);
       toast.success("Cover uploaded.");
