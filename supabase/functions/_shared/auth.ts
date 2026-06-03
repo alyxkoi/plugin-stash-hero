@@ -18,9 +18,10 @@ export async function requireUser(req: Request) {
   const auth = req.headers.get("Authorization");
   if (!auth?.startsWith("Bearer ")) throw new Response("Unauthorized", { status: 401, headers: corsHeaders });
   const token = auth.slice(7);
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? Deno.env.get("SUPABASE_PUBLISHABLE_KEY")!;
   const sb = createClient(
     Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_PUBLISHABLE_KEY")!,
+    anonKey,
     { global: { headers: { Authorization: auth } }, auth: { persistSession: false } },
   );
   const { data, error } = await sb.auth.getUser(token);
