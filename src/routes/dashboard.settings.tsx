@@ -1,6 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DashboardShell, DashCard } from "@/components/DashboardShell";
 import { toast } from "sonner";
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+
 
 export const Route = createFileRoute("/dashboard/settings")({
   head: () => ({ meta: [{ title: "Settings — Plugin Warehouse" }] }),
