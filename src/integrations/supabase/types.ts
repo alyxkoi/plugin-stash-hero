@@ -318,6 +318,38 @@ export type Database = {
           },
         ]
       }
+      product_files: {
+        Row: {
+          created_at: string
+          product_id: string
+          updated_at: string
+          zip_file_name: string | null
+          zip_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          product_id: string
+          updated_at?: string
+          zip_file_name?: string | null
+          zip_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          product_id?: string
+          updated_at?: string
+          zip_file_name?: string | null
+          zip_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_files_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           category: string
@@ -344,8 +376,6 @@ export type Database = {
           tags: string[]
           updated_at: string
           version: string | null
-          zip_file_name: string | null
-          zip_url: string | null
         }
         Insert: {
           category: string
@@ -372,8 +402,6 @@ export type Database = {
           tags?: string[]
           updated_at?: string
           version?: string | null
-          zip_file_name?: string | null
-          zip_url?: string | null
         }
         Update: {
           category?: string
@@ -400,8 +428,6 @@ export type Database = {
           tags?: string[]
           updated_at?: string
           version?: string | null
-          zip_file_name?: string | null
-          zip_url?: string | null
         }
         Relationships: []
       }
@@ -468,6 +494,35 @@ export type Database = {
           },
         ]
       }
+      sale_event_stats: {
+        Row: {
+          created_at: string
+          revenue: number
+          sale_event_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          revenue?: number
+          sale_event_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          revenue?: number
+          sale_event_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_event_stats_sale_event_id_fkey"
+            columns: ["sale_event_id"]
+            isOneToOne: true
+            referencedRelation: "sale_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sale_events: {
         Row: {
           created_at: string
@@ -476,7 +531,6 @@ export type Database = {
           headline: string | null
           id: string
           name: string
-          revenue: number
           scope: Database["public"]["Enums"]["sale_scope"]
           slug: string
           start_at: string
@@ -492,7 +546,6 @@ export type Database = {
           headline?: string | null
           id?: string
           name: string
-          revenue?: number
           scope?: Database["public"]["Enums"]["sale_scope"]
           slug: string
           start_at: string
@@ -508,7 +561,6 @@ export type Database = {
           headline?: string | null
           id?: string
           name?: string
-          revenue?: number
           scope?: Database["public"]["Enums"]["sale_scope"]
           slug?: string
           start_at?: string
