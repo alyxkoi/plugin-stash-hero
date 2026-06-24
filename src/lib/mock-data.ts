@@ -20,6 +20,7 @@ export interface Product {
   tagline: string;
   description: string;
   coverGradient: string;
+  coverUrl?: string | null;
   isNew?: boolean;
   isBestseller?: boolean;
   isFeatured?: boolean;

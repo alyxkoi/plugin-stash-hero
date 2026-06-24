@@ -15,12 +15,16 @@ export function ProductCard({ product, variant = "default", rank }: { product: P
       <div className="relative z-10 p-4 flex flex-col h-full">
         <Link to="/shop/p/$slug" params={{ slug: product.slug }} className="block">
           <div className="relative aspect-square rounded-2xl overflow-hidden mb-4" style={{ background: product.coverGradient }}>
-            <div className="absolute inset-0 flex items-center justify-center p-4">
-              <div className="text-center">
-                <div className="font-mono text-[10px] tracking-[0.2em] text-white/60 mb-1">{product.maker.toUpperCase()}</div>
-                <div className="font-black text-2xl leading-tight chrome-text">{product.name}</div>
+            {product.coverUrl ? (
+              <img src={product.coverUrl} alt={product.name} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center p-4">
+                <div className="text-center">
+                  <div className="font-mono text-[10px] tracking-[0.2em] text-white/60 mb-1">{product.maker.toUpperCase()}</div>
+                  <div className="font-black text-2xl leading-tight chrome-text">{product.name}</div>
+                </div>
               </div>
-            </div>
+            )}
             {/* breathing red glow inner */}
             <div className="absolute inset-0 pointer-events-none">
               <div className="absolute inset-0 glow-breathe" style={{ background: "radial-gradient(ellipse at center, rgba(255,0,60,0.35), transparent 65%)" }} />

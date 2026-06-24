@@ -18,9 +18,11 @@ Deno.serve(async (req) => {
     if (kind === "cover" && size > 5 * 1024 * 1024) return json({ error: "Cover max 5MB" }, 400);
 
     const ts = Date.now();
+    const ext = (filename.split(".").pop() || "bin").toLowerCase();
+    const base = slugify(filename.replace(/\.[^.]+$/, "")) || "cover";
     const key = kind === "zip"
       ? `staging/${user.id}/${ts}-${filename}`
-      : `covers/${ts}-${slugify(filename.replace(/\.[^.]+$/, ""))}-${filename.split(".").pop()}`;
+      : `covers/${ts}-${base}.${ext}`;
 
     const uploadUrl = await presign({ method: "PUT", key, contentType, expiresIn: 900 });
     const publicUrl = kind === "cover" ? r2PublicUrl(key) : null;
