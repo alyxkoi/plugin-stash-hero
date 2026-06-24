@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DashboardShell, DashCard } from "@/components/DashboardShell";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 
@@ -10,25 +10,57 @@ export const Route = createFileRoute("/dashboard/settings")({
   component: Settings,
 });
 
+type IntegrationStatus = {
+  r2: { bucket: string; connected: boolean; fileCount: number; totalBytes: number; avgBytes: number; error?: string };
+  stripe: { connected: boolean; mode: "live" | "test" | null };
+  openai: { connected: boolean };
+  mailchimp: { connected: boolean };
+};
+
+function fmtBytes(n: number) {
+  if (!n) return "0 B";
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  let i = 0; let v = n;
+  while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
+  return `${v < 10 ? v.toFixed(1) : Math.round(v)} ${units[i]}`;
+}
+
+async function callFn(path: string, init?: RequestInit) {
+  const { data: { session } } = await supabase.auth.getSession();
+  return fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${path}`, {
+    ...init,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${session?.access_token ?? ""}`,
+      apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      ...(init?.headers ?? {}),
+    },
+  });
+}
+
 function Settings() {
   const [corsBusy, setCorsBusy] = useState(false);
   const [corsResult, setCorsResult] = useState<string | null>(null);
+  const [status, setStatus] = useState<IntegrationStatus | null>(null);
+  const [statusErr, setStatusErr] = useState<string | null>(null);
+
+  async function loadStatus() {
+    try {
+      const res = await callFn("admin-integrations-status", { method: "POST" });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? `HTTP ${res.status}`);
+      setStatus(body); setStatusErr(null);
+    } catch (e) { setStatusErr((e as Error).message); }
+  }
+  useEffect(() => { loadStatus(); }, []);
 
   async function applyCors() {
     setCorsBusy(true); setCorsResult(null);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/set-r2-cors`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session?.access_token ?? ""}`,
-          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-        },
-      });
+      const res = await callFn("set-r2-cors", { method: "POST" });
       const body = await res.json();
       setCorsResult(JSON.stringify(body, null, 2));
-      if (body.ok) toast.success("CORS applied to R2 bucket");
+      if (body.ok) { toast.success("CORS applied to R2 bucket"); loadStatus(); }
       else if (body.hint) toast.error("Access denied — token needs Admin permissions");
       else toast.error(`Failed: ${body.error ?? body.step ?? res.status}`);
     } catch (e) {
