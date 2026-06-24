@@ -84,23 +84,34 @@ function Settings() {
         </DashCard>
 
         <DashCard title="Stripe">
-          <div className="flex items-center justify-between mb-3"><Badge color="emerald">Connected to live mode</Badge></div>
-          <div className="text-xs font-mono text-white/60">acct_••••8h9F2D</div>
-          <a href="#" className="text-xs text-[var(--accent-red-glow)] hover:underline mt-2 inline-block">Open Stripe dashboard →</a>
-          <div className="mt-3 text-[11px] text-white/50">Webhook: <Badge color="emerald">healthy</Badge></div>
+          <div className="flex items-center justify-between mb-3">
+            {status?.stripe.connected ? (
+              <Badge color={status.stripe.mode === "live" ? "emerald" : "amber"}>
+                {status.stripe.mode === "live" ? "Connected — live mode" : "Connected — test mode"}
+              </Badge>
+            ) : (
+              <Badge color="red">Not connected</Badge>
+            )}
+          </div>
+          <div className="text-[11px] text-white/50">
+            Mode reflects which Stripe gateway key is configured in your secrets.
+            {status?.stripe.mode === "test" && " Add a live key to switch to live mode."}
+          </div>
         </DashCard>
 
         <DashCard title="Cloudflare R2">
-          <div className="mb-3"><Badge color="emerald">Connected</Badge></div>
-          <div className="text-xs font-mono text-white/60 mb-3">bucket: plugin-warehouse-prod</div>
-          <div className="mb-2 flex items-center justify-between text-xs"><span>Storage used</span><span className="font-mono">142 GB / 500 GB</span></div>
-          <div className="h-2 bg-white/10 rounded overflow-hidden mb-3"><div className="h-full bg-gradient-to-r from-[var(--accent-red)] to-[var(--accent-blue)]" style={{ width: "28%" }} /></div>
-          <div className="grid grid-cols-3 gap-3 text-xs">
-            <Stat label="Files" v="284" />
-            <Stat label="Total" v="142 GB" />
-            <Stat label="Avg" v="510 MB" />
+          <div className="mb-3">
+            {status?.r2.connected ? <Badge color="emerald">Connected</Badge> : <Badge color={status?.r2.error ? "red" : "amber"}>{status?.r2.error ? "Connection failed" : "Checking…"}</Badge>}
           </div>
-          <button className="btn-ghost !text-xs !py-2 !px-4 mt-3">View all files</button>
+          <div className="text-xs font-mono text-white/60 mb-3">bucket: {status?.r2.bucket ?? "—"}</div>
+          <div className="grid grid-cols-3 gap-3 text-xs">
+            <Stat label="Files" v={status ? String(status.r2.fileCount) : "—"} />
+            <Stat label="Total" v={status ? fmtBytes(status.r2.totalBytes) : "—"} />
+            <Stat label="Avg" v={status ? fmtBytes(status.r2.avgBytes) : "—"} />
+          </div>
+          {status?.r2.error && (
+            <div className="text-[10px] font-mono text-[var(--accent-red-glow)] mt-2 break-all">{status.r2.error}</div>
+          )}
           <div className="mt-4 pt-4 border-t border-white/10">
             <div className="label-mini text-[10px] opacity-70 mb-2">Bucket CORS (one-time admin)</div>
             <button onClick={applyCors} disabled={corsBusy} className="btn-ghost !text-xs !py-2 !px-4">
@@ -110,18 +121,18 @@ function Settings() {
               <pre className="mt-3 max-h-64 overflow-auto text-[10px] font-mono bg-black/40 border border-white/10 rounded p-2 whitespace-pre-wrap break-all">{corsResult}</pre>
             )}
           </div>
-
         </DashCard>
 
         <DashCard title="OpenAI">
-          <Badge color="emerald">Connected</Badge>
+          {status?.openai.connected ? <Badge color="emerald">Connected</Badge> : <Badge color="red">Not connected</Badge>}
           <button onClick={() => toast.success("Test ran successfully")} className="btn-ghost !text-xs !py-2 !px-4 ml-3">Test description generation</button>
         </DashCard>
 
         <DashCard title="Mailchimp">
-          <Badge color="emerald">Connected</Badge>
-          <div className="text-xs font-mono text-white/60 mt-2">Audience: aud_5f3a82</div>
-          <button className="btn-ghost !text-xs !py-2 !px-4 mt-3">Disconnect</button>
+          {status?.mailchimp.connected ? <Badge color="emerald">Connected</Badge> : <Badge color="amber">Not configured</Badge>}
+          {!status?.mailchimp.connected && (
+            <div className="text-[11px] text-white/50 mt-2">Add <code className="font-mono">MAILCHIMP_API_KEY</code> and <code className="font-mono">MAILCHIMP_AUDIENCE_ID</code> secrets to enable.</div>
+          )}
         </DashCard>
 
         <DashCard title="Admin account">
@@ -129,17 +140,11 @@ function Settings() {
           <Field label="Change password"><input type="password" className="ipt" /></Field>
           <label className="flex items-center gap-2 text-sm mt-3"><input type="checkbox" className="accent-[var(--accent-red)]" /> Two-factor authentication</label>
           <div className="mt-4 pt-4 border-t border-white/10">
-            <div className="text-xs text-white/60 mb-2">Active sessions</div>
-            <ul className="space-y-2 text-xs">
-              <li className="flex justify-between bg-white/5 rounded px-3 py-2"><span>MacBook Pro · Brooklyn, NY · current</span><button className="text-white/40 hover:text-white">Sign out</button></li>
-              <li className="flex justify-between bg-white/5 rounded px-3 py-2"><span>iPhone · 2d ago</span><button className="text-white/40 hover:text-white">Sign out</button></li>
-            </ul>
-          </div>
-          <div className="mt-4 pt-4 border-t border-white/10">
             <div className="text-xs text-white/60 mb-2">Add another admin</div>
             <div className="flex gap-2"><input placeholder="email@example.com" className="ipt" /><button className="btn-ghost !text-xs !py-2 !px-4">Invite</button></div>
           </div>
         </DashCard>
+
 
         <div className="glass-card p-5 border !border-[var(--accent-red)]/40">
           <div className="chromatic-edge" />
