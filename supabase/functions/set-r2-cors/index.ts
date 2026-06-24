@@ -10,7 +10,16 @@ const SERVICE = "s3";
 const ACCOUNT_ID = () => Deno.env.get("CLOUDFLARE_R2_ACCOUNT_ID")!;
 const ACCESS_KEY = () => Deno.env.get("CLOUDFLARE_R2_ACCESS_KEY_ID")!;
 const SECRET_KEY = () => Deno.env.get("CLOUDFLARE_R2_SECRET_ACCESS_KEY")!;
-const BUCKET     = () => Deno.env.get("CLOUDFLARE_R2_BUCKET")!;
+const BUCKET     = () => {
+  const raw = Deno.env.get("CLOUDFLARE_R2_BUCKET") ?? "";
+  // Strip whitespace, surrounding quotes, leading/trailing slashes, accidental URL prefix.
+  let name = raw.trim().replace(/^["']|["']$/g, "");
+  if (/^https?:\/\//i.test(name)) {
+    try { name = new URL(name).pathname.replace(/^\/+|\/+$/g, ""); } catch { /* ignore */ }
+  }
+  name = name.replace(/^\/+|\/+$/g, "");
+  return name;
+};
 
 async function sha256Hex(data: string | Uint8Array) {
   const buf = typeof data === "string" ? enc.encode(data) : data;
@@ -111,15 +120,27 @@ Deno.serve(async (req) => {
     });
     const putText = await putRes.text();
 
+    const bucketDebug = {
+      bucket: BUCKET(),
+      bucketLength: BUCKET().length,
+      host: `${ACCOUNT_ID()}.r2.cloudflarestorage.com`,
+      url: `https://${ACCOUNT_ID()}.r2.cloudflarestorage.com/${BUCKET()}?cors=`,
+    };
+
     if (!putRes.ok) {
       const accessDenied = putRes.status === 403 || /AccessDenied|Forbidden/i.test(putText);
+      const invalidName  = /InvalidBucketName/i.test(putText);
       return json({
         ok: false,
         step: "PutBucketCors",
         status: putRes.status,
         response: putText,
+        debug: bucketDebug,
         ...(accessDenied ? {
-          hint: "Your R2 API token only has Object-level permissions. PutBucketCors requires bucket-level Admin. Go to Cloudflare dashboard → R2 → Manage R2 API Tokens → create a new token with permission 'Admin Read & Write' (scoped to the PLUGINWAREHOUSE bucket), then update CLOUDFLARE_R2_ACCESS_KEY_ID and CLOUDFLARE_R2_SECRET_ACCESS_KEY in Supabase secrets and re-run.",
+          hint: "Your R2 API token only has Object-level permissions. PutBucketCors requires bucket-level Admin. Cloudflare dashboard → R2 → Manage R2 API Tokens → create a token with 'Admin Read & Write' scoped to the bucket, then update CLOUDFLARE_R2_ACCESS_KEY_ID and CLOUDFLARE_R2_SECRET_ACCESS_KEY.",
+        } : {}),
+        ...(invalidName ? {
+          hint: `R2 rejected the bucket name '${bucketDebug.bucket}' (length ${bucketDebug.bucketLength}). Update the CLOUDFLARE_R2_BUCKET secret to exactly the bucket name (no URL, no slashes, no quotes). Note: R2 bucket names are lowercase — if your bucket really is 'PLUGINWAREHOUSE' in the dashboard, R2 stores it as 'pluginwarehouse'.`,
         } : {}),
       }, 500);
     }
@@ -129,6 +150,7 @@ Deno.serve(async (req) => {
 
     return json({
       ok: true,
+      debug: bucketDebug,
       put: { status: putRes.status },
       get: { status: getRes.status, body: getText },
     });
