@@ -58,6 +58,12 @@ export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageP
   const [priceSort, setPriceSort] = useState<"none" | "low" | "high">("none");
   const reduce = useReducedMotion();
 
+  const { data: ALL = [], isLoading } = useQuery({
+    queryKey: ["storefront-products"],
+    queryFn: fetchPublished,
+    staleTime: 30_000,
+  });
+
   const allFormats = ["VST", "VST3", "AU", "AAX", "Standalone"];
 
   const filtered = useMemo(() => {
