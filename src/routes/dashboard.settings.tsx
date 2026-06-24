@@ -76,6 +76,7 @@ function Settings() {
   return (
     <DashboardShell title="Settings">
       <div className="max-w-4xl mx-auto space-y-6">
+        {statusErr && <div className="text-[11px] font-mono text-[var(--accent-red-glow)] border border-[var(--accent-red)]/30 bg-[var(--accent-red)]/5 rounded px-3 py-2">Status check failed: {statusErr}</div>}
         <DashCard title="Store info">
           <Field label="Store name"><input defaultValue="Plugin Warehouse" className="ipt" /></Field>
           <Field label="Contact email"><input defaultValue="hello@pluginwarehouse.com" className="ipt" /></Field>
