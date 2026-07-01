@@ -1,5 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { getRequest } from "@tanstack/react-start/server";
+import { createClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 import { type StripeEnv, createStripeClient, getStripeErrorMessage } from "@/lib/stripe.server";
 
 type DiscountResult =
@@ -12,11 +14,24 @@ type CheckoutResult =
 
 type ItemInput = { productId: string; qty: number };
 
-function generateOrderNumber(): string {
-  // Not used server-side for uniqueness anymore (webhook uses stripe_session_id),
-  // but exported for possible future use.
-  const n = Math.floor(100000 + Math.random() * 900000);
-  return `PW-${n}`;
+// Optionally resolve the caller's userId from the Authorization header (guest checkout supported).
+async function optionalUserId(): Promise<string | null> {
+  try {
+    const req = getRequest();
+    const authHeader = req?.headers?.get("authorization");
+    if (!authHeader?.startsWith("Bearer ")) return null;
+    const token = authHeader.slice(7);
+    if (!token) return null;
+    const sb = createClient<Database>(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_PUBLISHABLE_KEY!,
+      { auth: { storage: undefined, persistSession: false, autoRefreshToken: false } },
+    );
+    const { data } = await sb.auth.getClaims(token);
+    return (data?.claims?.sub as string | undefined) ?? null;
+  } catch {
+    return null;
+  }
 }
 
 // -------------------- Discount validation --------------------
@@ -54,11 +69,11 @@ export const validateDiscount = createServerFn({ method: "POST" })
 // -------------------- Create checkout session --------------------
 
 export const createCheckoutSession = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((data: {
     items: ItemInput[];
     discountCode?: string | null;
     utmSource?: string | null;
+    email?: string | null;
     returnUrl: string;
     environment: StripeEnv;
   }) => {
@@ -67,19 +82,19 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
       if (typeof it.productId !== "string" || !/^[0-9a-f-]{36}$/i.test(it.productId)) throw new Error("Invalid productId");
       if (!Number.isInteger(it.qty) || it.qty < 1 || it.qty > 20) throw new Error("Invalid qty");
     }
+    if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) throw new Error("Invalid email");
     return data;
   })
-  .handler(async ({ data, context }): Promise<CheckoutResult> => {
+  .handler(async ({ data }): Promise<CheckoutResult> => {
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const userId = context.userId;
-      const email = context.claims?.email as string | undefined;
+      const userId = await optionalUserId();
 
       // Load product rows
       const productIds = data.items.map((i) => i.productId);
       const { data: prodRows, error: prodErr } = await supabaseAdmin
         .from("products")
-        .select("id,slug,name,price,cover_gradient,status")
+        .select("id,slug,name,price,cover_gradient,cover_url,status")
         .in("id", productIds);
       if (prodErr) return { error: prodErr.message };
       const products = (prodRows ?? []).filter((p) => p.status === "published");
@@ -128,13 +143,14 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
 
       const line_items = items.map((i) => {
         const originalUnit = Math.round(Number(i.product.price) * 100);
-        // Apply proportional discount so subtotal * ratio ≈ total
         const discountedUnit = Math.max(1, Math.round(originalUnit * discountRatio));
+        const images = i.product.cover_url ? [i.product.cover_url as string] : undefined;
         return {
           price_data: {
             currency: "usd",
             product_data: {
               name: i.product.name as string,
+              ...(images && { images }),
               metadata: { product_id: i.product.id as string, slug: i.product.slug as string },
             },
             unit_amount: discountedUnit,
@@ -143,11 +159,15 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
         };
       });
 
+      const email = data.email ?? null;
+
       const session = await stripe.checkout.sessions.create({
         line_items,
         mode: "payment",
         ui_mode: "embedded_page",
         return_url: `${data.returnUrl}?session_id={CHECKOUT_SESSION_ID}`,
+        // Force card only; disables Link and any wallet auto-connect that was causing the CVV loop
+        payment_method_types: ["card"],
         ...(email && { customer_email: email }),
         payment_intent_data: {
           description: items.length === 1
@@ -155,7 +175,8 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
             : `Plugin Warehouse — ${items.length} items`,
         },
         metadata: {
-          userId,
+          userId: userId ?? "",
+          guest_email: userId ? "" : (email ?? ""),
           discount_code: discountCode ?? "",
           utm_source: data.utmSource ?? "",
           subtotal_cents: String(subtotalCents),
@@ -163,7 +184,8 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
           total_cents: String(totalCents),
           items_json: JSON.stringify(items.map((i) => ({
             product_id: i.product.id, slug: i.product.slug, name: i.product.name,
-            price: Number(i.product.price), cover_gradient: i.product.cover_gradient, qty: i.qty,
+            price: Number(i.product.price), cover_gradient: i.product.cover_gradient,
+            cover_url: i.product.cover_url, qty: i.qty,
           }))),
         },
       });
@@ -175,29 +197,65 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
   });
 
 // -------------------- Fetch order after checkout return --------------------
+// Public: session_id is an unguessable Stripe token. Guests need it to see their order.
 
 export const getOrderBySession = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((data: { sessionId: string }) => {
     if (!data.sessionId || typeof data.sessionId !== "string") throw new Error("sessionId required");
     return data;
   })
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: order } = await supabaseAdmin
       .from("orders")
-      .select("id, number, subtotal, discount, total, discount_code, status, created_at, stripe_session_id, user_id")
+      .select("id, number, subtotal, discount, total, discount_code, status, created_at, stripe_session_id, user_id, guest_email")
       .eq("stripe_session_id", data.sessionId)
       .maybeSingle();
 
-    if (!order || order.user_id !== context.userId) return { order: null, items: [] as any[] };
+    if (!order) return { order: null, items: [] as any[] };
 
     const { data: items } = await supabaseAdmin
       .from("order_items")
-      .select("id, product_id, product_slug, name, price, cover_gradient")
+      .select("id, product_id, product_slug, name, price, cover_gradient, cover_url")
       .eq("order_id", order.id as string);
 
     return { order, items: items ?? [] };
   });
 
-export { generateOrderNumber };
+// -------------------- Guest download URL --------------------
+// Guests download using the Stripe session_id + productId. Verifies the order paid for that product.
+
+export const guestDownloadUrl = createServerFn({ method: "POST" })
+  .inputValidator((data: { sessionId: string; productId: string }) => {
+    if (!data.sessionId || typeof data.sessionId !== "string") throw new Error("sessionId required");
+    if (!/^[0-9a-f-]{36}$/i.test(data.productId)) throw new Error("Invalid productId");
+    return data;
+  })
+  .handler(async ({ data }): Promise<{ url?: string; filename?: string; error?: string }> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: order } = await supabaseAdmin
+      .from("orders")
+      .select("id, status")
+      .eq("stripe_session_id", data.sessionId)
+      .maybeSingle();
+    if (!order) return { error: "Order not found." };
+    if (!["paid", "completed", "fulfilled"].includes(order.status as string)) {
+      return { error: "Order not paid yet." };
+    }
+
+    // Delegate signing to the r2-download-url edge function (session_id path).
+    const signRes = await fetch(`${process.env.SUPABASE_URL}/functions/v1/r2-download-url`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: process.env.SUPABASE_PUBLISHABLE_KEY ?? "",
+      },
+      body: JSON.stringify({ productId: data.productId, sessionId: data.sessionId }),
+    }).catch(() => null);
+
+    if (!signRes) return { error: "Download service unavailable." };
+    const j = await signRes.json().catch(() => null);
+    if (!signRes.ok || !j?.url) return { error: (j?.error as string) ?? "Could not generate download link." };
+    return { url: j.url as string, filename: (j.filename as string) ?? undefined };
+  });

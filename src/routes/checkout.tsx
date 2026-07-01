@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from "@stripe/react-stripe-js";
 import { getStripe, getStripeEnvironment } from "@/lib/stripe";
@@ -25,44 +25,60 @@ function CheckoutPage() {
 
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [guestEmail, setGuestEmail] = useState("");
+  const [emailConfirmed, setEmailConfirmed] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const startedRef = useRef(false);
 
-  useEffect(() => {
-    if (loading) return;
-    if (!user) {
-      const next = encodeURIComponent("/checkout");
-      navigate({ to: "/login", search: { next } as any });
+  const needsEmail = !loading && !user && !emailConfirmed;
+
+  async function startSession(email?: string | null) {
+    if (startedRef.current) return;
+    startedRef.current = true;
+    setCreating(true);
+    setError(null);
+    const items = cart
+      .filter((i) => i.product.id)
+      .map((i) => ({ productId: i.product.id!, qty: i.qty }));
+    if (items.length === 0) {
+      setError("Your cart items are missing product IDs. Try re-adding them.");
+      setCreating(false);
+      startedRef.current = false;
       return;
     }
-    if (cart.length === 0) return;
-
-    let cancelled = false;
-    (async () => {
-      const items = cart
-        .filter((i) => i.product.id)
-        .map((i) => ({ productId: i.product.id!, qty: i.qty }));
-      if (items.length === 0) {
-        setError("Your cart items are missing product IDs. Try re-adding them.");
-        return;
-      }
+    try {
       const result = await createCheckoutSession({
         data: {
           items,
           discountCode: discount?.code ?? null,
           utmSource,
+          email: email ?? (user?.email ?? null),
           returnUrl: `${window.location.origin}/checkout/return`,
           environment: getStripeEnvironment(),
         },
       });
-      if (cancelled) return;
-      if ("error" in result) setError(result.error);
-      else setClientSecret(result.clientSecret);
-    })().catch((e) => !cancelled && setError(e?.message ?? "Failed to start checkout."));
+      if ("error" in result) {
+        setError(result.error);
+        startedRef.current = false;
+      } else {
+        setClientSecret(result.clientSecret);
+      }
+    } catch (e: any) {
+      setError(e?.message ?? "Failed to start checkout.");
+      startedRef.current = false;
+    } finally {
+      setCreating(false);
+    }
+  }
 
-    return () => { cancelled = true; };
-  }, [user, loading, cart, discount, navigate, utmSource]);
+  // Auto-start for logged-in users
+  useEffect(() => {
+    if (loading || cart.length === 0) return;
+    if (user && !clientSecret && !startedRef.current) startSession(user.email ?? null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, loading, cart.length]);
 
   if (loading) return <CheckoutFrame><p className="text-white/60">Loading…</p></CheckoutFrame>;
-  if (!user) return <CheckoutFrame><p className="text-white/60">Redirecting to sign in…</p></CheckoutFrame>;
 
   if (cart.length === 0) {
     return (
@@ -74,17 +90,66 @@ function CheckoutPage() {
     );
   }
 
+  // Guest email gate — no sign-up required
+  if (needsEmail) {
+    return (
+      <CheckoutFrame>
+        <h1 className="font-display text-4xl mb-2">Checkout as guest</h1>
+        <p className="text-white/60 mb-6">We'll send your receipt and download links here. No account needed.</p>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail)) {
+              setError("Enter a valid email.");
+              return;
+            }
+            setEmailConfirmed(true);
+            startSession(guestEmail);
+          }}
+          className="space-y-3 text-left"
+        >
+          <input
+            type="email"
+            required
+            autoFocus
+            value={guestEmail}
+            onChange={(e) => { setGuestEmail(e.target.value); setError(null); }}
+            placeholder="you@email.com"
+            className="w-full bg-white/5 border border-white/15 rounded-lg px-4 py-3 text-base outline-none focus:border-white/40"
+          />
+          {error && <div className="text-sm text-[var(--accent-red-glow)]">{error}</div>}
+          <button type="submit" className="btn-primary w-full !py-3">Continue to payment →</button>
+        </form>
+        <div className="text-xs text-white/50 mt-6">
+          Have an account?{" "}
+          <Link to="/login" search={{ next: "/checkout" } as any} className="underline hover:text-white">Sign in</Link>{" "}
+          to save orders to your library.
+        </div>
+      </CheckoutFrame>
+    );
+  }
+
   if (error) {
     return (
       <CheckoutFrame>
         <h1 className="font-display text-3xl mb-3">Checkout hit a snag</h1>
         <p className="text-[var(--accent-red-glow)] mb-6">{error}</p>
+        <button onClick={() => { startedRef.current = false; startSession(guestEmail || user?.email); }} className="btn-primary mr-2">Try again</button>
         <Link to="/shop" className="btn-ghost">Back to shop</Link>
       </CheckoutFrame>
     );
   }
 
-  if (!clientSecret) return <CheckoutFrame><p className="text-white/60">Preparing secure checkout…</p></CheckoutFrame>;
+  if (!clientSecret) {
+    return (
+      <CheckoutFrame>
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 rounded-full border-2 border-white/20 border-t-white animate-spin" />
+          <p className="text-white/70">{creating ? "Preparing secure checkout…" : "Loading…"}</p>
+        </div>
+      </CheckoutFrame>
+    );
+  }
 
   return (
     <>
@@ -107,7 +172,7 @@ function CheckoutPage() {
 function CheckoutFrame({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-[var(--bg,#0b0316)] pt-24 pb-16">
-      <div className="max-w-xl mx-auto px-4 text-center">{children}</div>
+      <div className="max-w-md mx-auto px-4 text-center">{children}</div>
     </div>
   );
 }

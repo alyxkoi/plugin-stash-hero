@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { CheckCircle2, Download } from "lucide-react";
-import { getOrderBySession } from "@/lib/checkout.functions";
+import { getOrderBySession, guestDownloadUrl } from "@/lib/checkout.functions";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { actions } from "@/lib/store";
 
@@ -16,14 +17,15 @@ export const Route = createFileRoute("/checkout/return")({
 
 type OrderView = {
   id: string; number: string; subtotal: number; discount: number; total: number;
-  discount_code: string | null; created_at: string;
+  discount_code: string | null; created_at: string; user_id: string | null; guest_email: string | null;
 };
 type ItemView = {
-  id: string; product_id: string | null; product_slug: string | null; name: string; price: number; cover_gradient: string | null;
+  id: string; product_id: string | null; product_slug: string | null; name: string; price: number; cover_gradient: string | null; cover_url: string | null;
 };
 
 function CheckoutReturn() {
   const { session_id } = Route.useSearch();
+  const { user } = useAuth();
   const [order, setOrder] = useState<OrderView | null>(null);
   const [items, setItems] = useState<ItemView[]>([]);
   const [status, setStatus] = useState<"loading" | "ok" | "missing" | "invalid">("loading");
@@ -57,11 +59,24 @@ function CheckoutReturn() {
 
   async function download(productId: string | null, name: string) {
     if (!productId) { toast.error("Missing product id"); return; }
-    const { data, error } = await supabase.functions.invoke("r2-download-url", { body: { productId } });
-    if (error || !data?.url) { toast.error(data?.error ?? error?.message ?? "Download failed"); return; }
+    // Logged-in path: use edge fn with auth
+    if (user) {
+      const { data, error } = await supabase.functions.invoke("r2-download-url", { body: { productId } });
+      if (error || !data?.url) { toast.error(data?.error ?? error?.message ?? "Download failed"); return; }
+      triggerDownload(data.url, data.filename ?? `${name}.zip`);
+      return;
+    }
+    // Guest path: verify via session_id
+    if (!session_id) { toast.error("Missing session id"); return; }
+    const res = await guestDownloadUrl({ data: { sessionId: session_id, productId } });
+    if (res.error || !res.url) { toast.error(res.error ?? "Download failed"); return; }
+    triggerDownload(res.url, res.filename ?? `${name}.zip`);
+  }
+
+  function triggerDownload(url: string, filename: string) {
     const a = document.createElement("a");
-    a.href = data.url;
-    a.download = data.filename ?? `${name}.zip`;
+    a.href = url;
+    a.download = filename;
     document.body.appendChild(a); a.click(); a.remove();
   }
 
@@ -91,7 +106,9 @@ function CheckoutReturn() {
         <div className="space-y-3 mb-8">
           {items.map((it) => (
             <div key={it.id} className="flex gap-3 p-3 rounded-xl border border-white/10 bg-white/[0.03] items-center">
-              <div className="w-14 h-14 rounded-lg shrink-0" style={{ background: it.cover_gradient ?? "#333" }} />
+              <div className="w-14 h-14 rounded-lg shrink-0 overflow-hidden relative" style={{ background: it.cover_gradient ?? "#333" }}>
+                {it.cover_url && <img src={it.cover_url} alt={it.name} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />}
+              </div>
               <div className="flex-1 min-w-0">
                 <div className="font-bold truncate">{it.name}</div>
                 <div className="font-mono text-xs text-white/40">${Number(it.price).toFixed(2)}</div>

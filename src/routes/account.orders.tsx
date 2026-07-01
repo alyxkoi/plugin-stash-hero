@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
-type Item = { id: string; product_id: string | null; product_slug: string | null; name: string; price: number; cover_gradient: string | null };
+type Item = { id: string; product_id: string | null; product_slug: string | null; name: string; price: number; cover_gradient: string | null; cover_url: string | null };
 type Order = {
   id: string; number: string; subtotal: number; discount: number; total: number;
   discount_code: string | null; status: string; created_at: string;
@@ -30,7 +30,7 @@ function OrdersPage() {
     (async () => {
       const { data } = await supabase
         .from("orders")
-        .select("id, number, subtotal, discount, total, discount_code, status, created_at, order_items(id, product_id, product_slug, name, price, cover_gradient)")
+        .select("id, number, subtotal, discount, total, discount_code, status, created_at, order_items(id, product_id, product_slug, name, price, cover_gradient, cover_url)")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
       setOrders((data ?? []) as any);
@@ -110,7 +110,9 @@ function OrderCard({ order }: { order: Order }) {
             <div className="label-mini mb-2">Order {order.number}</div>
             <div className="flex items-center mb-2">
               {items.slice(0, 4).map((it, i) => (
-                <div key={it.id} className="w-9 h-9 rounded-lg border border-white/20 -ml-3 first:ml-0 shadow-md" style={{ background: it.cover_gradient ?? "#333", zIndex: 10 - i }} />
+                <div key={it.id} className="w-9 h-9 rounded-lg border border-white/20 -ml-3 first:ml-0 shadow-md overflow-hidden relative" style={{ background: it.cover_gradient ?? "#333", zIndex: 10 - i }}>
+                  {it.cover_url && <img src={it.cover_url} alt="" className="absolute inset-0 w-full h-full object-cover" />}
+                </div>
               ))}
               {items.length > 4 && <div className="ml-2 px-2 py-0.5 rounded-full text-[10px] font-mono border border-white/20 bg-white/[0.04]">+{items.length - 4}</div>}
             </div>
@@ -128,7 +130,9 @@ function OrderCard({ order }: { order: Order }) {
             <ul className="divide-y divide-white/8">
               {items.map(it => (
                 <li key={it.id} className="py-4 flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-xl border border-white/15 shrink-0" style={{ background: it.cover_gradient ?? "#333" }} />
+                  <div className="w-14 h-14 rounded-xl border border-white/15 shrink-0 overflow-hidden relative" style={{ background: it.cover_gradient ?? "#333" }}>
+                    {it.cover_url && <img src={it.cover_url} alt={it.name} className="absolute inset-0 w-full h-full object-cover" />}
+                  </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-bold truncate">{it.name}</div>
                     <div className="font-mono text-[10px] text-white/55 mt-1">${Number(it.price).toFixed(2)}</div>
