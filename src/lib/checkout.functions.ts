@@ -244,42 +244,18 @@ export const guestDownloadUrl = createServerFn({ method: "POST" })
       return { error: "Order not paid yet." };
     }
 
-    const { data: match } = await supabaseAdmin
-      .from("order_items")
-      .select("id")
-      .eq("order_id", order.id as string)
-      .eq("product_id", data.productId)
-      .maybeSingle();
-    if (!match) return { error: "This product isn't part of that order." };
-
-    // Delegate to the R2 signing edge function with service role to avoid duplicating signing logic.
-    const url = `${process.env.SUPABASE_URL}/functions/v1/r2-download-url-internal`;
-    // Fallback: call presign directly is complex; instead we hit the edge with a service token.
-    // Simplest: fetch signed URL via the standard function using a service-scoped shim.
-    // Here we just look up product_files and return the raw R2 public path signed via a helper edge fn.
-    const { data: file } = await supabaseAdmin
-      .from("product_files")
-      .select("zip_url, zip_file_name")
-      .eq("product_id", data.productId)
-      .maybeSingle();
-    if (!file?.zip_url) return { error: "Plugin file not found." };
-
-    // Call the signing edge function using the service role key so it can bypass its own auth check.
+    // Delegate signing to the r2-download-url edge function (session_id path).
     const signRes = await fetch(`${process.env.SUPABASE_URL}/functions/v1/r2-download-url`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-        apikey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
+        apikey: process.env.SUPABASE_PUBLISHABLE_KEY ?? "",
       },
-      body: JSON.stringify({ productId: data.productId, __trusted: true, __sessionId: data.sessionId }),
+      body: JSON.stringify({ productId: data.productId, sessionId: data.sessionId }),
     }).catch(() => null);
 
-    if (signRes && signRes.ok) {
-      const j = await signRes.json().catch(() => null);
-      if (j?.url) return { url: j.url as string, filename: (j.filename as string) ?? file.zip_file_name ?? undefined };
-    }
-    // If the internal call didn't succeed, at least surface the filename
-    return { error: "Could not generate download link. Sign in with your purchase email to download from your library." };
-    void url;
+    if (!signRes) return { error: "Download service unavailable." };
+    const j = await signRes.json().catch(() => null);
+    if (!signRes.ok || !j?.url) return { error: (j?.error as string) ?? "Could not generate download link." };
+    return { url: j.url as string, filename: (j.filename as string) ?? undefined };
   });
