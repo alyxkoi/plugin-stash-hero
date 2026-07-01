@@ -174,19 +174,19 @@ function Hero() {
           </div>
         </div>
 
-        <div className="relative h-[420px] md:h-[520px] hidden lg:block">
+        <div className="relative h-[420px] md:h-[520px] lg:h-[640px] hidden lg:block lg:-translate-x-24 xl:-translate-x-32">
           {[
-            { p: products.find((p) => p.slug === "serum") ?? placeholder(0), pos: "top-0 left-8", rot: "-6deg", ref: cover1, z: 1 },
+            { p: products.find((p) => p.slug === "serum") ?? placeholder(0), pos: "top-0 left-0", rot: "-6deg", ref: cover1, z: 1 },
             {
               p: products.find((p) => p.slug === "ozone-12") ?? placeholder(1),
-              pos: "top-20 left-1/3",
+              pos: "top-24 left-1/3",
               rot: "4deg",
               ref: cover2,
               z: 3,
             },
             {
               p: products.find((p) => p.slug === "omnisphere") ?? placeholder(2),
-              pos: "top-8 right-0",
+              pos: "top-10 right-0",
               rot: "-2deg",
               ref: cover3,
               z: 2,
@@ -195,7 +195,7 @@ function Hero() {
             <div
               key={i}
               ref={c.ref}
-              className={`absolute ${c.pos} w-64`}
+              className={`absolute ${c.pos} w-80 xl:w-96`}
               style={{ zIndex: c.z, transform: `rotate(${c.rot})` }}
             >
               <div className="glass-card glass-card--heavy p-3 relative">
