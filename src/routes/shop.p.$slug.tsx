@@ -7,6 +7,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { ProductCard } from "@/components/ProductCard";
 import { actions } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
+import { useSavedIds, useToggleSaved } from "@/hooks/useSaved";
 
 export const Route = createFileRoute("/shop/p/$slug")({
   head: ({ params }) => ({ meta: [{ title: `${params.slug} — Plugin Warehouse` }] }),
@@ -14,6 +15,7 @@ export const Route = createFileRoute("/shop/p/$slug")({
 });
 
 type Row = {
+  id: string;
   slug: string; name: string; maker: string; category: string;
   formats: string[] | null; daws: string[] | null; version: string | null;
   price: number; compare_at_price: number | null; description: string | null;
@@ -24,6 +26,7 @@ type Row = {
 
 function toProduct(r: Row): Product {
   return {
+    id: r.id,
     slug: r.slug,
     name: r.name,
     maker: r.maker || "",
@@ -44,9 +47,10 @@ function toProduct(r: Row): Product {
 }
 
 async function fetchBySlug(slug: string): Promise<{ product: Product | null; related: Product[] }> {
+  const cols = "id,slug,name,maker,category,formats,daws,version,price,compare_at_price,description,tagline,cover_url,cover_gradient,is_free,updated_at";
   const { data, error } = await supabase
     .from("products")
-    .select("slug,name,maker,category,formats,daws,version,price,compare_at_price,description,tagline,cover_url,cover_gradient,is_free,updated_at")
+    .select(cols)
     .eq("slug", slug)
     .eq("status", "published")
     .maybeSingle();
@@ -55,7 +59,7 @@ async function fetchBySlug(slug: string): Promise<{ product: Product | null; rel
   const product = toProduct(data as Row);
   const { data: rel } = await supabase
     .from("products")
-    .select("slug,name,maker,category,formats,daws,version,price,compare_at_price,description,tagline,cover_url,cover_gradient,is_free,updated_at")
+    .select(cols)
     .eq("status", "published")
     .eq("category", product.category)
     .neq("slug", product.slug)
@@ -69,6 +73,8 @@ function ProductDetail() {
     queryKey: ["storefront-product", slug],
     queryFn: () => fetchBySlug(slug),
   });
+  const { data: savedIds } = useSavedIds();
+  const toggleSaved = useToggleSaved();
 
   if (isLoading) return <div className="px-6 py-24 text-center font-mono text-white/50">Loading…</div>;
   if (!data?.product) return <div className="px-6 py-24 text-center"><h1 className="font-black text-3xl mb-2">NOT FOUND</h1><Link to="/shop" className="text-[var(--accent-red-glow)]">Back to the warehouse →</Link></div>;
@@ -121,7 +127,10 @@ function ProductDetail() {
 
           <button onClick={() => actions.addToCart(p)} className="btn-primary w-full !py-4 !text-base mb-3">LOAD UP →</button>
           <div className="grid grid-cols-2 gap-3 mb-6">
-            <button onClick={() => actions.toggleWishlist(p.slug)} className="btn-ghost"><Heart className="w-4 h-4" /> SAVE</button>
+            <button onClick={() => toggleSaved.mutate(p)} className="btn-ghost">
+              <Heart className={`w-4 h-4 ${p.id && savedIds?.has(p.id) ? "fill-[var(--accent-red)] text-[var(--accent-red)]" : ""}`} />
+              {p.id && savedIds?.has(p.id) ? "SAVED" : "SAVE"}
+            </button>
             <button className="btn-ghost"><Share2 className="w-4 h-4" /> SHARE</button>
           </div>
 

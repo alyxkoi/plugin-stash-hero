@@ -1,10 +1,13 @@
 import { Link } from "@tanstack/react-router";
 import { Heart, ShoppingCart } from "lucide-react";
 import type { Product } from "@/lib/mock-data";
-import { useStore, actions } from "@/lib/store";
+import { actions } from "@/lib/store";
+import { useSavedIds, useToggleSaved } from "@/hooks/useSaved";
 
 export function ProductCard({ product, variant = "default", rank }: { product: Product; variant?: "default" | "blue"; rank?: number }) {
-  const wished = useStore((s) => s.wishlist.includes(product.slug));
+  const { data: savedIds } = useSavedIds();
+  const toggleSaved = useToggleSaved();
+  const saved = !!(product.id && savedIds?.has(product.id));
 
   const onSale = product.compareAtPrice && product.compareAtPrice > product.price;
 
@@ -58,11 +61,11 @@ export function ProductCard({ product, variant = "default", rank }: { product: P
           </div>
           <div className="flex gap-2 items-center">
             <button
-              onClick={(e) => { e.preventDefault(); actions.toggleWishlist(product.slug); }}
+              onClick={(e) => { e.preventDefault(); toggleSaved.mutate(product); }}
               className="p-2 rounded-full hover:bg-white/5 transition"
-              aria-label="Save"
+              aria-label={saved ? "Remove from saved" : "Save"}
             >
-              <Heart className={`w-5 h-5 ${wished ? "fill-[var(--accent-red)] text-[var(--accent-red)]" : "text-white/80"}`} />
+              <Heart className={`w-5 h-5 ${saved ? "fill-[var(--accent-red)] text-[var(--accent-red)]" : "text-white/80"}`} />
             </button>
             <button
               onClick={() => actions.addToCart(product)}

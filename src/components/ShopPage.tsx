@@ -8,6 +8,7 @@ import { categories, type Category, type Product, SALE } from "@/lib/mock-data";
 import { supabase } from "@/integrations/supabase/client";
 
 type Row = {
+  id: string;
   slug: string; name: string; maker: string; category: string;
   formats: string[] | null; daws: string[] | null; version: string | null;
   price: number; compare_at_price: number | null; description: string | null;
@@ -18,11 +19,12 @@ type Row = {
 async function fetchPublished(): Promise<Product[]> {
   const { data, error } = await supabase
     .from("products")
-    .select("slug,name,maker,category,formats,daws,version,price,compare_at_price,description,cover_url,cover_gradient,is_free,updated_at")
+    .select("id,slug,name,maker,category,formats,daws,version,price,compare_at_price,description,cover_url,cover_gradient,is_free,updated_at")
     .eq("status", "published")
     .order("published_at", { ascending: false });
   if (error) throw new Error(error.message);
   return (data as Row[] ?? []).map(r => ({
+    id: r.id,
     slug: r.slug,
     name: r.name,
     maker: r.maker || "",
