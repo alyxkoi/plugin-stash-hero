@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
-type Item = { id: string; product_id: string | null; product_slug: string | null; name: string; price: number; cover_gradient: string | null };
+type Item = { id: string; product_id: string | null; product_slug: string | null; name: string; price: number; cover_gradient: string | null; cover_url: string | null };
 type Order = {
   id: string; number: string; subtotal: number; discount: number; total: number;
   discount_code: string | null; status: string; created_at: string;
