@@ -5,6 +5,7 @@
 export type Category = "instruments" | "effects" | "libraries" | "daws" | "software" | "freebies";
 
 export interface Product {
+  id?: string;
   slug: string;
   name: string;
   maker: string;
