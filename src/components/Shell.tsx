@@ -4,6 +4,12 @@ import { useEffect } from "react";
 import { Nav } from "./Nav";
 import { Footer } from "./Footer";
 import { CartDrawer } from "./CartDrawer";
+import { useCartSync } from "@/hooks/useCartSync";
+
+function CartSync() {
+  useCartSync();
+  return null;
+}
 
 export function Shell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -44,6 +50,7 @@ export function Shell() {
       </main>
       <Footer />
       <CartDrawer />
+      <CartSync />
     </>
   );
 }
