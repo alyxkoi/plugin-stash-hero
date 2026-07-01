@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useStore, actions } from "@/lib/store";
 import { validateDiscount } from "@/lib/checkout.functions";
-import { useAuth } from "@/hooks/useAuth";
 
 export function CartDrawer() {
   const open = useStore((s) => s.cartOpen);
