@@ -108,8 +108,15 @@ export function CartDrawer() {
               ) : (
                 cart.map((item) => (
                   <div key={item.product.slug} className="flex gap-3 p-3 rounded-xl border border-white/8 bg-white/3">
-                    <div className="w-16 h-16 rounded-lg shrink-0 flex items-center justify-center" style={{ background: item.product.coverGradient }}>
-                      <span className="font-mono text-[8px] text-white/70 px-1 text-center leading-tight">{item.product.name}</span>
+                    <div
+                      className="w-16 h-16 rounded-lg shrink-0 overflow-hidden relative flex items-center justify-center"
+                      style={{ background: item.product.coverGradient }}
+                    >
+                      {item.product.coverUrl ? (
+                        <img src={item.product.coverUrl} alt={item.product.name} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+                      ) : (
+                        <span className="font-mono text-[8px] text-white/70 px-1 text-center leading-tight">{item.product.name}</span>
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="font-mono text-[9px] text-white/40 tracking-wider">{item.product.maker.toUpperCase()}</div>
