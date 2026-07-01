@@ -20,6 +20,7 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ContactUsRouteImport } from './routes/contact-us'
+import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as R404RouteImport } from './routes/404'
 import { Route as IndexRouteImport } from './routes/index'
@@ -33,6 +34,7 @@ import { Route as DashboardSettingsRouteImport } from './routes/dashboard.settin
 import { Route as DashboardMarketingRouteImport } from './routes/dashboard.marketing'
 import { Route as DashboardLoginRouteImport } from './routes/dashboard.login'
 import { Route as DashboardAnalyticsRouteImport } from './routes/dashboard.analytics'
+import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
 import { Route as AccountSettingsRouteImport } from './routes/account.settings'
 import { Route as AccountSavedRouteImport } from './routes/account.saved'
 import { Route as AccountOrdersRouteImport } from './routes/account.orders'
@@ -49,6 +51,7 @@ import { Route as DashboardProductsIdRouteImport } from './routes/dashboard.prod
 import { Route as DashboardOrdersIdRouteImport } from './routes/dashboard.orders.$id'
 import { Route as DashboardCustomersIdRouteImport } from './routes/dashboard.customers.$id'
 import { Route as AccountOrdersIdRouteImport } from './routes/account.orders.$id'
+import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 
 const TermsOfServiceRoute = TermsOfServiceRouteImport.update({
   id: '/terms-of-service',
@@ -103,6 +106,11 @@ const DashboardRoute = DashboardRouteImport.update({
 const ContactUsRoute = ContactUsRouteImport.update({
   id: '/contact-us',
   path: '/contact-us',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckoutRoute = CheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AccountRoute = AccountRouteImport.update({
@@ -169,6 +177,11 @@ const DashboardAnalyticsRoute = DashboardAnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
   getParentRoute: () => DashboardRoute,
+} as any)
+const CheckoutReturnRoute = CheckoutReturnRouteImport.update({
+  id: '/return',
+  path: '/return',
+  getParentRoute: () => CheckoutRoute,
 } as any)
 const AccountSettingsRoute = AccountSettingsRouteImport.update({
   id: '/settings',
@@ -250,11 +263,18 @@ const AccountOrdersIdRoute = AccountOrdersIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AccountOrdersRoute,
 } as any)
+const ApiPublicPaymentsWebhookRoute =
+  ApiPublicPaymentsWebhookRouteImport.update({
+    id: '/api/public/payments/webhook',
+    path: '/api/public/payments/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/404': typeof R404Route
   '/account': typeof AccountRouteWithChildren
+  '/checkout': typeof CheckoutRouteWithChildren
   '/contact-us': typeof ContactUsRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/faq': typeof FaqRoute
@@ -270,6 +290,7 @@ export interface FileRoutesByFullPath {
   '/account/orders': typeof AccountOrdersRouteWithChildren
   '/account/saved': typeof AccountSavedRoute
   '/account/settings': typeof AccountSettingsRoute
+  '/checkout/return': typeof CheckoutReturnRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
   '/dashboard/login': typeof DashboardLoginRoute
   '/dashboard/marketing': typeof DashboardMarketingRoute
@@ -292,10 +313,12 @@ export interface FileRoutesByFullPath {
   '/dashboard/orders/': typeof DashboardOrdersIndexRoute
   '/dashboard/products/': typeof DashboardProductsIndexRoute
   '/dashboard/sales/': typeof DashboardSalesIndexRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/404': typeof R404Route
+  '/checkout': typeof CheckoutRouteWithChildren
   '/contact-us': typeof ContactUsRoute
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -310,6 +333,7 @@ export interface FileRoutesByTo {
   '/account/orders': typeof AccountOrdersRouteWithChildren
   '/account/saved': typeof AccountSavedRoute
   '/account/settings': typeof AccountSettingsRoute
+  '/checkout/return': typeof CheckoutReturnRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
   '/dashboard/login': typeof DashboardLoginRoute
   '/dashboard/marketing': typeof DashboardMarketingRoute
@@ -332,12 +356,14 @@ export interface FileRoutesByTo {
   '/dashboard/orders': typeof DashboardOrdersIndexRoute
   '/dashboard/products': typeof DashboardProductsIndexRoute
   '/dashboard/sales': typeof DashboardSalesIndexRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/404': typeof R404Route
   '/account': typeof AccountRouteWithChildren
+  '/checkout': typeof CheckoutRouteWithChildren
   '/contact-us': typeof ContactUsRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/faq': typeof FaqRoute
@@ -353,6 +379,7 @@ export interface FileRoutesById {
   '/account/orders': typeof AccountOrdersRouteWithChildren
   '/account/saved': typeof AccountSavedRoute
   '/account/settings': typeof AccountSettingsRoute
+  '/checkout/return': typeof CheckoutReturnRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
   '/dashboard/login': typeof DashboardLoginRoute
   '/dashboard/marketing': typeof DashboardMarketingRoute
@@ -375,6 +402,7 @@ export interface FileRoutesById {
   '/dashboard/orders/': typeof DashboardOrdersIndexRoute
   '/dashboard/products/': typeof DashboardProductsIndexRoute
   '/dashboard/sales/': typeof DashboardSalesIndexRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -382,6 +410,7 @@ export interface FileRouteTypes {
     | '/'
     | '/404'
     | '/account'
+    | '/checkout'
     | '/contact-us'
     | '/dashboard'
     | '/faq'
@@ -397,6 +426,7 @@ export interface FileRouteTypes {
     | '/account/orders'
     | '/account/saved'
     | '/account/settings'
+    | '/checkout/return'
     | '/dashboard/analytics'
     | '/dashboard/login'
     | '/dashboard/marketing'
@@ -419,10 +449,12 @@ export interface FileRouteTypes {
     | '/dashboard/orders/'
     | '/dashboard/products/'
     | '/dashboard/sales/'
+    | '/api/public/payments/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/404'
+    | '/checkout'
     | '/contact-us'
     | '/faq'
     | '/forgot-password'
@@ -437,6 +469,7 @@ export interface FileRouteTypes {
     | '/account/orders'
     | '/account/saved'
     | '/account/settings'
+    | '/checkout/return'
     | '/dashboard/analytics'
     | '/dashboard/login'
     | '/dashboard/marketing'
@@ -459,11 +492,13 @@ export interface FileRouteTypes {
     | '/dashboard/orders'
     | '/dashboard/products'
     | '/dashboard/sales'
+    | '/api/public/payments/webhook'
   id:
     | '__root__'
     | '/'
     | '/404'
     | '/account'
+    | '/checkout'
     | '/contact-us'
     | '/dashboard'
     | '/faq'
@@ -479,6 +514,7 @@ export interface FileRouteTypes {
     | '/account/orders'
     | '/account/saved'
     | '/account/settings'
+    | '/checkout/return'
     | '/dashboard/analytics'
     | '/dashboard/login'
     | '/dashboard/marketing'
@@ -501,12 +537,14 @@ export interface FileRouteTypes {
     | '/dashboard/orders/'
     | '/dashboard/products/'
     | '/dashboard/sales/'
+    | '/api/public/payments/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   R404Route: typeof R404Route
   AccountRoute: typeof AccountRouteWithChildren
+  CheckoutRoute: typeof CheckoutRouteWithChildren
   ContactUsRoute: typeof ContactUsRoute
   DashboardRoute: typeof DashboardRouteWithChildren
   FaqRoute: typeof FaqRoute
@@ -523,6 +561,7 @@ export interface RootRouteChildren {
   ShopCategoryRoute: typeof ShopCategoryRoute
   ShopIndexRoute: typeof ShopIndexRoute
   ShopPSlugRoute: typeof ShopPSlugRoute
+  ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -602,6 +641,13 @@ declare module '@tanstack/react-router' {
       path: '/contact-us'
       fullPath: '/contact-us'
       preLoaderRoute: typeof ContactUsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/checkout': {
+      id: '/checkout'
+      path: '/checkout'
+      fullPath: '/checkout'
+      preLoaderRoute: typeof CheckoutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/account': {
@@ -694,6 +740,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/dashboard/analytics'
       preLoaderRoute: typeof DashboardAnalyticsRouteImport
       parentRoute: typeof DashboardRoute
+    }
+    '/checkout/return': {
+      id: '/checkout/return'
+      path: '/return'
+      fullPath: '/checkout/return'
+      preLoaderRoute: typeof CheckoutReturnRouteImport
+      parentRoute: typeof CheckoutRoute
     }
     '/account/settings': {
       id: '/account/settings'
@@ -807,6 +860,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountOrdersIdRouteImport
       parentRoute: typeof AccountOrdersRoute
     }
+    '/api/public/payments/webhook': {
+      id: '/api/public/payments/webhook'
+      path: '/api/public/payments/webhook'
+      fullPath: '/api/public/payments/webhook'
+      preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -840,6 +900,18 @@ const AccountRouteChildren: AccountRouteChildren = {
 
 const AccountRouteWithChildren =
   AccountRoute._addFileChildren(AccountRouteChildren)
+
+interface CheckoutRouteChildren {
+  CheckoutReturnRoute: typeof CheckoutReturnRoute
+}
+
+const CheckoutRouteChildren: CheckoutRouteChildren = {
+  CheckoutReturnRoute: CheckoutReturnRoute,
+}
+
+const CheckoutRouteWithChildren = CheckoutRoute._addFileChildren(
+  CheckoutRouteChildren,
+)
 
 interface DashboardRouteChildren {
   DashboardAnalyticsRoute: typeof DashboardAnalyticsRoute
@@ -885,6 +957,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   R404Route: R404Route,
   AccountRoute: AccountRouteWithChildren,
+  CheckoutRoute: CheckoutRouteWithChildren,
   ContactUsRoute: ContactUsRoute,
   DashboardRoute: DashboardRouteWithChildren,
   FaqRoute: FaqRoute,
@@ -901,6 +974,7 @@ const rootRouteChildren: RootRouteChildren = {
   ShopCategoryRoute: ShopCategoryRoute,
   ShopIndexRoute: ShopIndexRoute,
   ShopPSlugRoute: ShopPSlugRoute,
+  ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
