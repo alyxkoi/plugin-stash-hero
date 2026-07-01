@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { CheckCircle2, Download } from "lucide-react";
-import { getOrderBySession } from "@/lib/checkout.functions";
+import { getOrderBySession, guestDownloadUrl } from "@/lib/checkout.functions";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { actions } from "@/lib/store";
 
@@ -16,10 +17,10 @@ export const Route = createFileRoute("/checkout/return")({
 
 type OrderView = {
   id: string; number: string; subtotal: number; discount: number; total: number;
-  discount_code: string | null; created_at: string;
+  discount_code: string | null; created_at: string; user_id: string | null; guest_email: string | null;
 };
 type ItemView = {
-  id: string; product_id: string | null; product_slug: string | null; name: string; price: number; cover_gradient: string | null;
+  id: string; product_id: string | null; product_slug: string | null; name: string; price: number; cover_gradient: string | null; cover_url: string | null;
 };
 
 function CheckoutReturn() {
