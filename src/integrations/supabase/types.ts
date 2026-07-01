@@ -91,6 +91,7 @@ export type Database = {
       }
       cart_items: {
         Row: {
+          cover_url: string | null
           created_at: string
           id: string
           product_id: string
@@ -99,6 +100,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          cover_url?: string | null
           created_at?: string
           id?: string
           product_id: string
@@ -107,6 +109,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          cover_url?: string | null
           created_at?: string
           id?: string
           product_id?: string
@@ -246,6 +249,7 @@ export type Database = {
       order_items: {
         Row: {
           cover_gradient: string | null
+          cover_url: string | null
           created_at: string
           id: string
           name: string
@@ -256,6 +260,7 @@ export type Database = {
         }
         Insert: {
           cover_gradient?: string | null
+          cover_url?: string | null
           created_at?: string
           id?: string
           name: string
@@ -266,6 +271,7 @@ export type Database = {
         }
         Update: {
           cover_gradient?: string | null
+          cover_url?: string | null
           created_at?: string
           id?: string
           name?: string
@@ -298,6 +304,7 @@ export type Database = {
           discount: number
           discount_code: string | null
           download_count: number
+          guest_email: string | null
           id: string
           number: string
           refund_reason: string | null
@@ -316,6 +323,7 @@ export type Database = {
           discount?: number
           discount_code?: string | null
           download_count?: number
+          guest_email?: string | null
           id?: string
           number: string
           refund_reason?: string | null
@@ -334,6 +342,7 @@ export type Database = {
           discount?: number
           discount_code?: string | null
           download_count?: number
+          guest_email?: string | null
           id?: string
           number?: string
           refund_reason?: string | null
