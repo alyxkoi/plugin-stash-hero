@@ -11,11 +11,11 @@ export function CartDrawer() {
   const discount = useStore((s) => s.discount);
   const reduce = useReducedMotion();
   const navigate = useNavigate();
-  const { user } = useAuth();
 
   const [code, setCode] = useState("");
   const [codeError, setCodeError] = useState<string | null>(null);
   const [applying, setApplying] = useState(false);
+  const [goingToCheckout, setGoingToCheckout] = useState(false);
 
   useEffect(() => {
     if (!open) return;
