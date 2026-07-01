@@ -106,7 +106,9 @@ function CheckoutReturn() {
         <div className="space-y-3 mb-8">
           {items.map((it) => (
             <div key={it.id} className="flex gap-3 p-3 rounded-xl border border-white/10 bg-white/[0.03] items-center">
-              <div className="w-14 h-14 rounded-lg shrink-0" style={{ background: it.cover_gradient ?? "#333" }} />
+              <div className="w-14 h-14 rounded-lg shrink-0 overflow-hidden relative" style={{ background: it.cover_gradient ?? "#333" }}>
+                {it.cover_url && <img src={it.cover_url} alt={it.name} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />}
+              </div>
               <div className="flex-1 min-w-0">
                 <div className="font-bold truncate">{it.name}</div>
                 <div className="font-mono text-xs text-white/40">${Number(it.price).toFixed(2)}</div>
