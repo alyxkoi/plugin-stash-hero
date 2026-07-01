@@ -130,7 +130,9 @@ function OrderCard({ order }: { order: Order }) {
             <ul className="divide-y divide-white/8">
               {items.map(it => (
                 <li key={it.id} className="py-4 flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-xl border border-white/15 shrink-0" style={{ background: it.cover_gradient ?? "#333" }} />
+                  <div className="w-14 h-14 rounded-xl border border-white/15 shrink-0 overflow-hidden relative" style={{ background: it.cover_gradient ?? "#333" }}>
+                    {it.cover_url && <img src={it.cover_url} alt={it.name} className="absolute inset-0 w-full h-full object-cover" />}
+                  </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-bold truncate">{it.name}</div>
                     <div className="font-mono text-[10px] text-white/55 mt-1">${Number(it.price).toFixed(2)}</div>
