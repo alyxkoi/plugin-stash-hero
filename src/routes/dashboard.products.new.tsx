@@ -243,7 +243,9 @@ function NewProduct() {
         status: status === "publish" ? "published" : "draft",
         published_at: status === "publish" ? new Date().toISOString() : null,
         is_free: priceNum === 0,
+        file_size: fileSize > 0 ? formatBytes(fileSize) : null,
       }).select("id").single();
+
 
       if (insErr || !product) throw new Error(insErr?.message || "Couldn't save product");
 
