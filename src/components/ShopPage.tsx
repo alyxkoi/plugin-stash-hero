@@ -26,7 +26,7 @@ async function fetchPublished(): Promise<Product[]> {
     slug: r.slug,
     name: r.name,
     maker: r.maker || "",
-    category: (r.category as Category),
+    category: ((r.category ?? "").toString().trim().toLowerCase() as Category),
     daws: r.daws ?? [],
     formats: r.formats ?? [],
     version: r.version ?? "1.0",
