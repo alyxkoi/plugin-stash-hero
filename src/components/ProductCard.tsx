@@ -25,10 +25,6 @@ export function ProductCard({ product, variant = "default", rank }: { product: P
                 </div>
               </div>
             )}
-            {/* breathing red glow inner */}
-            <div className="absolute inset-0 pointer-events-none">
-              <div className="absolute inset-0 glow-breathe" style={{ background: "radial-gradient(ellipse at center, rgba(255,0,60,0.35), transparent 65%)" }} />
-            </div>
             {onSale && (
               <div className="absolute top-2 right-2 px-2 py-1 rounded-md font-mono text-[10px] font-bold bg-[var(--accent-red)] text-white shadow-lg">
                 35% OFF
