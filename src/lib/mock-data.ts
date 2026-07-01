@@ -14,7 +14,7 @@ export interface Product {
   daws: string[];
   formats: string[];
   version: string;
-  fileSize: string;
+  fileSize?: string;
   updated: string;
   price: number;
   compareAtPrice?: number;

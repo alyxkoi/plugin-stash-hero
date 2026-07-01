@@ -15,6 +15,15 @@ const DRAFT_KEY = "pw:new-product-draft:v2";
 
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 
+const formatBytes = (n: number): string => {
+  if (!n || n <= 0) return "";
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  const i = Math.min(units.length - 1, Math.floor(Math.log(n) / Math.log(1024)));
+  const v = n / Math.pow(1024, i);
+  return `${v >= 10 || i === 0 ? Math.round(v) : v.toFixed(1)} ${units[i]}`;
+};
+
+
 export const Route = createFileRoute("/dashboard/products/new")({
   head: () => ({ meta: [{ title: "New product — Plugin Warehouse" }] }),
   component: NewProduct,
@@ -243,7 +252,9 @@ function NewProduct() {
         status: status === "publish" ? "published" : "draft",
         published_at: status === "publish" ? new Date().toISOString() : null,
         is_free: priceNum === 0,
+        file_size: fileSize > 0 ? formatBytes(fileSize) : null,
       }).select("id").single();
+
 
       if (insErr || !product) throw new Error(insErr?.message || "Couldn't save product");
 

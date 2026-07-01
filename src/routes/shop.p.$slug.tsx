@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Heart, Share2 } from "lucide-react";
+import { Heart, Share2, ShoppingCart } from "lucide-react";
+
 import { useQuery } from "@tanstack/react-query";
 import type { Category, Product } from "@/lib/mock-data";
 import { SALE } from "@/lib/mock-data";
@@ -22,6 +23,7 @@ type Row = {
   tagline?: string | null;
   cover_url: string | null; cover_gradient: string | null;
   is_free: boolean | null; updated_at: string;
+  file_size: string | null;
 };
 
 function toProduct(r: Row): Product {
@@ -34,7 +36,7 @@ function toProduct(r: Row): Product {
     daws: r.daws ?? [],
     formats: r.formats ?? [],
     version: r.version ?? "1.0",
-    fileSize: "—",
+    fileSize: r.file_size?.trim() || undefined,
     updated: new Date(r.updated_at).toLocaleDateString(undefined, { month: "short", year: "numeric" }),
     price: Number(r.price) || 0,
     compareAtPrice: r.compare_at_price ? Number(r.compare_at_price) : undefined,
@@ -47,7 +49,8 @@ function toProduct(r: Row): Product {
 }
 
 async function fetchBySlug(slug: string): Promise<{ product: Product | null; related: Product[] }> {
-  const cols = "id,slug,name,maker,category,formats,daws,version,price,compare_at_price,description,tagline,cover_url,cover_gradient,is_free,updated_at";
+  const cols = "id,slug,name,maker,category,formats,daws,version,price,compare_at_price,description,tagline,cover_url,cover_gradient,is_free,updated_at,file_size";
+
   const { data, error } = await supabase
     .from("products")
     .select(cols)
@@ -125,7 +128,7 @@ function ProductDetail() {
             <div className="font-mono font-black" style={{ fontSize: "clamp(3rem, 5vw, 4.5rem)", lineHeight: 1 }}>{p.isFree ? "FREE" : `$${p.price}`}</div>
           </div>
 
-          <button onClick={() => actions.addToCart(p)} className="btn-primary w-full !py-4 !text-base mb-3">LOAD UP →</button>
+          <button onClick={() => actions.addToCart(p)} className="btn-primary w-full !py-4 !text-base mb-3 inline-flex items-center justify-center gap-2"><ShoppingCart className="w-5 h-5" /> Add to cart</button>
           <div className="grid grid-cols-2 gap-3 mb-6">
             <button onClick={() => toggleSaved.mutate(p)} className="btn-ghost">
               <Heart className={`w-4 h-4 ${p.id && savedIds?.has(p.id) ? "fill-[var(--accent-red)] text-[var(--accent-red)]" : ""}`} />
@@ -134,12 +137,13 @@ function ProductDetail() {
             <button className="btn-ghost"><Share2 className="w-4 h-4" /> SHARE</button>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+          <div className={`grid grid-cols-2 ${p.fileSize ? "md:grid-cols-4" : "md:grid-cols-3"} gap-3 mb-6`}>
             <Meta label="VERSION" value={p.version} />
-            <Meta label="FILE SIZE" value={p.fileSize} />
+            {p.fileSize && <Meta label="FILE SIZE" value={p.fileSize} />}
             <Meta label="FORMATS" value={p.formats.slice(0, 2).join(" / ") || "—"} />
             <Meta label="UPDATED" value={p.updated} />
           </div>
+
 
           {showDawLine && <div className="font-mono text-xs text-white/50">Your DAW's been waiting for this.</div>}
         </div>
