@@ -19,31 +19,42 @@ function DashboardLogin() {
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (busy) return;
     setError(null);
-    if (!email || !password) { setError("Enter email and password."); return; }
+    if (!email.trim() || !password) { setError("Enter email and password."); return; }
     setBusy(true);
-    const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-    if (error || !data.user) {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+      if (error || !data.user || !data.session) {
+        const msg = error && /invalid login credentials/i.test(error.message)
+          ? "Incorrect email or password."
+          : error?.message ?? "Sign-in didn't complete. Try again.";
+        setError(msg);
+        return;
+      }
+      const { data: roleRow, error: roleErr } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", data.user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+      if (roleErr) {
+        setError("Couldn't verify admin access. Try again.");
+        return;
+      }
+      if (!roleRow) {
+        await supabase.auth.signOut();
+        setError("This account is not an admin. Contact support if you think that's wrong.");
+        return;
+      }
+      navigate({ to: "/dashboard" as any });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong. Try again.");
+    } finally {
       setBusy(false);
-      setError(error?.message ?? "Sign-in failed.");
-      return;
     }
-    // Verify admin role
-    const { data: roleRow } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", data.user.id)
-      .eq("role", "admin")
-      .maybeSingle();
-    if (!roleRow) {
-      await supabase.auth.signOut();
-      setBusy(false);
-      setError("This account is not an admin. Contact support if you think that's wrong.");
-      return;
-    }
-    setBusy(false);
-    navigate({ to: "/dashboard" as any });
   };
+
 
   const onRecover = async () => {
     setError(null);
