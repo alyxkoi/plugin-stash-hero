@@ -1,10 +1,13 @@
 import { Link } from "@tanstack/react-router";
 import { Heart, ShoppingCart } from "lucide-react";
 import type { Product } from "@/lib/mock-data";
-import { useStore, actions } from "@/lib/store";
+import { actions } from "@/lib/store";
+import { useSavedIds, useToggleSaved } from "@/hooks/useSaved";
 
 export function ProductCard({ product, variant = "default", rank }: { product: Product; variant?: "default" | "blue"; rank?: number }) {
-  const wished = useStore((s) => s.wishlist.includes(product.slug));
+  const { data: savedIds } = useSavedIds();
+  const toggleSaved = useToggleSaved();
+  const saved = !!(product.id && savedIds?.has(product.id));
 
   const onSale = product.compareAtPrice && product.compareAtPrice > product.price;
 
