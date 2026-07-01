@@ -10,6 +10,7 @@ import {
 
 import appCss from "../styles.css?url";
 import { Shell } from "@/components/Shell";
+import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
   return (
