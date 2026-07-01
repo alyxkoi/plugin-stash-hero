@@ -5,12 +5,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 
 export const Route = createFileRoute("/login")({
+  validateSearch: (s: Record<string, unknown>): { next?: string } => ({
+    next: typeof s.next === "string" && s.next.startsWith("/") ? s.next : undefined,
+  }),
   head: () => ({ meta: [{ title: "Sign In — Plugin Warehouse" }] }),
   component: LoginPage,
 });
 
 function LoginPage() {
   const navigate = useNavigate();
+  const { next } = Route.useSearch();
+  const dest = next ?? "/account";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +37,7 @@ function LoginPage() {
         return;
       }
       if (!data.session) { setError("Sign-in didn't complete. Try again."); return; }
-      navigate({ to: "/account" });
+      navigate({ to: dest });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong. Try again.");
     } finally {
@@ -43,7 +48,7 @@ function LoginPage() {
 
   const onGoogle = async () => {
     setError(null);
-    const res = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + "/account" });
+    const res = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + dest });
     if (res.error) setError(res.error.message);
   };
 

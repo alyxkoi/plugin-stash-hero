@@ -1,14 +1,22 @@
-import { Link } from "@tanstack/react-router";
-import { X, ShoppingCart } from "lucide-react";
-import { useEffect } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { X, ShoppingCart, Tag } from "lucide-react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useStore, actions } from "@/lib/store";
-import { SALE } from "@/lib/mock-data";
+import { validateDiscount } from "@/lib/checkout.functions";
+import { useAuth } from "@/hooks/useAuth";
 
 export function CartDrawer() {
   const open = useStore((s) => s.cartOpen);
   const cart = useStore((s) => s.cart);
+  const discount = useStore((s) => s.discount);
   const reduce = useReducedMotion();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const [code, setCode] = useState("");
+  const [codeError, setCodeError] = useState<string | null>(null);
+  const [applying, setApplying] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -20,7 +28,39 @@ export function CartDrawer() {
   }, [open]);
 
   const subtotal = cart.reduce((n, i) => n + i.product.price * i.qty, 0);
+  const discountAmount = !discount
+    ? 0
+    : discount.type === "percent"
+      ? Math.min(subtotal, (subtotal * discount.value) / 100)
+      : Math.min(subtotal, discount.value);
+  const total = Math.max(0, subtotal - discountAmount);
   const itemCount = cart.reduce((n, i) => n + i.qty, 0);
+
+  async function applyCode(e: React.FormEvent) {
+    e.preventDefault();
+    if (!code.trim() || applying) return;
+    setApplying(true); setCodeError(null);
+    try {
+      const res = await validateDiscount({ data: { code: code.trim(), subtotal } });
+      if ("ok" in res && res.ok) {
+        actions.setDiscount({ code: res.code, type: res.type, value: res.value });
+        setCode("");
+      } else {
+        setCodeError((res as any).error ?? "That code isn't valid.");
+      }
+    } catch (err) {
+      setCodeError(err instanceof Error ? err.message : "Couldn't validate that code.");
+    } finally { setApplying(false); }
+  }
+
+  function goCheckout() {
+    actions.closeCart();
+    if (!user) {
+      navigate({ to: "/login", search: { next: "/checkout" } as any });
+      return;
+    }
+    navigate({ to: "/checkout" });
+  }
 
   return (
     <AnimatePresence>
@@ -46,7 +86,6 @@ export function CartDrawer() {
           style={{ background: "rgba(20,5,40,0.85)", backdropFilter: "blur(40px) saturate(180%)" }}>
           <div className="chromatic-edge" /><div className="glass-noise" />
           <div className="relative z-10 flex flex-col h-full">
-            {/* Header */}
             <div className="p-5 border-b border-white/10 flex items-center justify-between">
               <div>
                 <h2 className="font-black text-2xl">LOADED UP</h2>
@@ -57,15 +96,6 @@ export function CartDrawer() {
               </button>
             </div>
 
-            {/* Sale banner */}
-            {SALE.active && cart.length > 0 && (
-              <div className="mx-5 mt-4 px-4 py-3 rounded-xl border border-[var(--accent-red)]/40 bg-[var(--accent-red)]/10 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[var(--accent-red)] pulse-dot" />
-                <div className="font-mono text-xs">🌴 SUMMER STEALS — 35% OFF APPLIED AT CHECKOUT</div>
-              </div>
-            )}
-
-            {/* Items */}
             <div className="flex-1 overflow-y-auto p-5 space-y-3">
               {cart.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center px-6">
@@ -91,26 +121,54 @@ export function CartDrawer() {
                         Remove
                       </button>
                     </div>
-                    <div className="font-mono font-bold">${item.product.price}</div>
+                    <div className="font-mono font-bold">${(item.product.price * item.qty).toFixed(2)}</div>
                   </div>
                 ))
               )}
             </div>
 
-            {/* Totals + CTA */}
             {cart.length > 0 && (
               <div className="border-t border-white/10 p-5 space-y-4 safe-bottom">
+                {/* Discount */}
+                {discount ? (
+                  <div className="flex items-center justify-between p-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Tag className="w-4 h-4 text-emerald-400" />
+                      <span className="font-mono">{discount.code}</span>
+                      <span className="text-white/50">
+                        {discount.type === "percent" ? `${discount.value}% off` : `$${discount.value} off`}
+                      </span>
+                    </div>
+                    <button onClick={() => actions.setDiscount(null)} className="text-xs text-white/50 hover:text-white">Remove</button>
+                  </div>
+                ) : (
+                  <form onSubmit={applyCode} className="space-y-2">
+                    <div className="flex gap-2">
+                      <input
+                        value={code}
+                        onChange={(e) => { setCode(e.target.value); setCodeError(null); }}
+                        placeholder="Discount code"
+                        className="flex-1 bg-white/5 border border-white/15 rounded-lg px-3 py-2 text-sm outline-none focus:border-white/40 font-mono"
+                      />
+                      <button type="submit" disabled={applying || !code.trim()} className="btn-ghost !text-xs !py-2 !px-4 disabled:opacity-50">
+                        {applying ? "…" : "APPLY"}
+                      </button>
+                    </div>
+                    {codeError && <div className="text-xs text-[var(--accent-red-glow)] font-mono">{codeError}</div>}
+                  </form>
+                )}
+
                 <div className="p-4 rounded-xl bg-white/3 border border-white/8 space-y-2 text-sm">
-                  <Row label="Subtotal" value={`$${subtotal}`} />
-                  {SALE.active && <Row label="Summer Steals 35%" value="applied at checkout" highlight />}
+                  <Row label="Subtotal" value={`$${subtotal.toFixed(2)}`} />
+                  {discountAmount > 0 && <Row label="Discount" value={`-$${discountAmount.toFixed(2)}`} highlight />}
                   <div className="h-px bg-white/10 my-2" />
                   <div className="flex justify-between items-center">
                     <span className="font-bold">Total</span>
-                    <span className="font-mono font-black text-2xl">${subtotal}</span>
+                    <span className="font-mono font-black text-2xl">${total.toFixed(2)}</span>
                   </div>
                 </div>
                 <div className="font-mono text-[10px] text-white/50 text-center">🔒 Secure checkout · Instant delivery to your library</div>
-                <button className="btn-primary w-full !text-base !py-4">CHECKOUT →</button>
+                <button onClick={goCheckout} className="btn-primary w-full !text-base !py-4">CHECKOUT →</button>
                 <div className="font-mono text-[10px] text-white/40 text-center">→ Powered by Stripe</div>
               </div>
             )}
@@ -127,7 +185,7 @@ function Row({ label, value, highlight }: { label: string; value: string; highli
   return (
     <div className="flex justify-between">
       <span className="text-white/60">{label}</span>
-      <span className={`font-mono ${highlight ? "text-[var(--accent-red-glow)]" : ""}`}>{value}</span>
+      <span className={`font-mono ${highlight ? "text-emerald-400" : ""}`}>{value}</span>
     </div>
   );
 }
