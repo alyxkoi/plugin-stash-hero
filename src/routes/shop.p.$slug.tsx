@@ -73,6 +73,8 @@ function ProductDetail() {
     queryKey: ["storefront-product", slug],
     queryFn: () => fetchBySlug(slug),
   });
+  const { data: savedIds } = useSavedIds();
+  const toggleSaved = useToggleSaved();
 
   if (isLoading) return <div className="px-6 py-24 text-center font-mono text-white/50">Loading…</div>;
   if (!data?.product) return <div className="px-6 py-24 text-center"><h1 className="font-black text-3xl mb-2">NOT FOUND</h1><Link to="/shop" className="text-[var(--accent-red-glow)]">Back to the warehouse →</Link></div>;
