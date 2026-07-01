@@ -127,7 +127,10 @@ function ProductDetail() {
 
           <button onClick={() => actions.addToCart(p)} className="btn-primary w-full !py-4 !text-base mb-3">LOAD UP →</button>
           <div className="grid grid-cols-2 gap-3 mb-6">
-            <button onClick={() => actions.toggleWishlist(p.slug)} className="btn-ghost"><Heart className="w-4 h-4" /> SAVE</button>
+            <button onClick={() => toggleSaved.mutate(p)} className="btn-ghost">
+              <Heart className={`w-4 h-4 ${p.id && savedIds?.has(p.id) ? "fill-[var(--accent-red)] text-[var(--accent-red)]" : ""}`} />
+              {p.id && savedIds?.has(p.id) ? "SAVED" : "SAVE"}
+            </button>
             <button className="btn-ghost"><Share2 className="w-4 h-4" /> SHARE</button>
           </div>
 
