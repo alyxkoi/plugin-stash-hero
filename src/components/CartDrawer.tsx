@@ -53,11 +53,9 @@ export function CartDrawer() {
   }
 
   function goCheckout() {
+    if (goingToCheckout) return;
+    setGoingToCheckout(true);
     actions.closeCart();
-    if (!user) {
-      navigate({ to: "/login", search: { next: "/checkout" } as any });
-      return;
-    }
     navigate({ to: "/checkout" });
   }
 
