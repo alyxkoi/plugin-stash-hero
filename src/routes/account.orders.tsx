@@ -110,7 +110,9 @@ function OrderCard({ order }: { order: Order }) {
             <div className="label-mini mb-2">Order {order.number}</div>
             <div className="flex items-center mb-2">
               {items.slice(0, 4).map((it, i) => (
-                <div key={it.id} className="w-9 h-9 rounded-lg border border-white/20 -ml-3 first:ml-0 shadow-md" style={{ background: it.cover_gradient ?? "#333", zIndex: 10 - i }} />
+                <div key={it.id} className="w-9 h-9 rounded-lg border border-white/20 -ml-3 first:ml-0 shadow-md overflow-hidden relative" style={{ background: it.cover_gradient ?? "#333", zIndex: 10 - i }}>
+                  {it.cover_url && <img src={it.cover_url} alt="" className="absolute inset-0 w-full h-full object-cover" />}
+                </div>
               ))}
               {items.length > 4 && <div className="ml-2 px-2 py-0.5 rounded-full text-[10px] font-mono border border-white/20 bg-white/[0.04]">+{items.length - 4}</div>}
             </div>
