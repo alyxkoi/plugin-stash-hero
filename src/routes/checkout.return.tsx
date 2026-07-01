@@ -59,11 +59,24 @@ function CheckoutReturn() {
 
   async function download(productId: string | null, name: string) {
     if (!productId) { toast.error("Missing product id"); return; }
-    const { data, error } = await supabase.functions.invoke("r2-download-url", { body: { productId } });
-    if (error || !data?.url) { toast.error(data?.error ?? error?.message ?? "Download failed"); return; }
+    // Logged-in path: use edge fn with auth
+    if (user) {
+      const { data, error } = await supabase.functions.invoke("r2-download-url", { body: { productId } });
+      if (error || !data?.url) { toast.error(data?.error ?? error?.message ?? "Download failed"); return; }
+      triggerDownload(data.url, data.filename ?? `${name}.zip`);
+      return;
+    }
+    // Guest path: verify via session_id
+    if (!session_id) { toast.error("Missing session id"); return; }
+    const res = await guestDownloadUrl({ data: { sessionId: session_id, productId } });
+    if (res.error || !res.url) { toast.error(res.error ?? "Download failed"); return; }
+    triggerDownload(res.url, res.filename ?? `${name}.zip`);
+  }
+
+  function triggerDownload(url: string, filename: string) {
     const a = document.createElement("a");
-    a.href = data.url;
-    a.download = data.filename ?? `${name}.zip`;
+    a.href = url;
+    a.download = filename;
     document.body.appendChild(a); a.click(); a.remove();
   }
 
