@@ -172,7 +172,9 @@ export function CartDrawer() {
                   </div>
                 </div>
                 <div className="font-mono text-[10px] text-white/50 text-center">🔒 Secure checkout · Instant delivery to your library</div>
-                <button onClick={goCheckout} className="btn-primary w-full !text-base !py-4">CHECKOUT →</button>
+                <button onClick={goCheckout} disabled={goingToCheckout} className="btn-primary w-full !text-base !py-4 disabled:opacity-70">
+                  {goingToCheckout ? "OPENING CHECKOUT…" : "CHECKOUT →"}
+                </button>
                 <div className="font-mono text-[10px] text-white/40 text-center">→ Powered by Stripe</div>
               </div>
             )}
