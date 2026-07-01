@@ -64,11 +64,19 @@ export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageP
     staleTime: 30_000,
   });
 
+  // Sync category filter when navigating between category pages (component doesn't remount on param change).
+  useEffect(() => {
+    setSelectedCats(category ? [category] : []);
+  }, [category]);
+
   const allFormats = ["VST", "VST3", "AU", "AAX", "Standalone"];
 
   const filtered = useMemo(() => {
     let r: Product[] = [...ALL];
-    if (selectedCats.length) r = r.filter((p) => selectedCats.includes(p.category));
+    if (selectedCats.length) {
+      const wanted = new Set(selectedCats.map((c) => c.toLowerCase()));
+      r = r.filter((p) => wanted.has((p.category ?? "").toString().toLowerCase()));
+    }
     if (query) r = r.filter((p) => p.name.toLowerCase().includes(query.toLowerCase()) || p.maker.toLowerCase().includes(query.toLowerCase()));
     if (selectedFormats.length) r = r.filter((p) => p.formats.some((f) => selectedFormats.includes(f)));
     if (saleStatus === "sale") r = r.filter((p) => p.compareAtPrice && p.compareAtPrice > p.price);
@@ -87,7 +95,7 @@ export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageP
       });
     }
     return r;
-  }, [query, selectedCats, selectedFormats, saleStatus, priceSort]);
+  }, [ALL, query, selectedCats, selectedFormats, saleStatus, priceSort]);
 
   const togglePill = <T,>(list: T[], v: T, set: (l: T[]) => void) =>
     set(list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
