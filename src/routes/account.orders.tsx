@@ -30,7 +30,7 @@ function OrdersPage() {
     (async () => {
       const { data } = await supabase
         .from("orders")
-        .select("id, number, subtotal, discount, total, discount_code, status, created_at, order_items(id, product_id, product_slug, name, price, cover_gradient)")
+        .select("id, number, subtotal, discount, total, discount_code, status, created_at, order_items(id, product_id, product_slug, name, price, cover_gradient, cover_url)")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
       setOrders((data ?? []) as any);
