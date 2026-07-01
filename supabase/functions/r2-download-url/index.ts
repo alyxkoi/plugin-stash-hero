@@ -1,31 +1,73 @@
 // Generates a short-lived signed GET URL for a purchased plugin zip.
-// Verifies the requesting user owns a paid order containing the product.
-import { corsHeaders, requireUser, adminClient, json } from "../_shared/auth.ts";
+// Verifies the requesting user owns a paid order containing the product,
+// OR a guest presents a valid Stripe session_id from a paid order that
+// includes the product.
+import { corsHeaders, adminClient, json } from "../_shared/auth.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { presign } from "../_shared/r2.ts";
+
+async function resolveUser(req: Request) {
+  const auth = req.headers.get("Authorization");
+  if (!auth?.startsWith("Bearer ")) return null;
+  const token = auth.slice(7);
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? Deno.env.get("SUPABASE_PUBLISHABLE_KEY")!;
+  const sb = createClient(Deno.env.get("SUPABASE_URL")!, anonKey, { auth: { persistSession: false } });
+  const { data } = await sb.auth.getUser(token);
+  return data?.user ?? null;
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
-    const { user } = await requireUser(req);
-    const { productId } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const productId = body?.productId;
+    const sessionId: string | undefined = body?.sessionId;
     if (typeof productId !== "string") return json({ error: "productId required" }, 400);
 
     const admin = adminClient();
+    let allowed = false;
+    let downloadUserId: string | null = null;
 
-    // Verify purchase: user has a paid/refunded-okay order containing this product
-    const { data: items, error: itemErr } = await admin
-      .from("order_items")
-      .select("id, order_id, product_id, orders!inner(user_id, status)")
-      .eq("product_id", productId)
-      .eq("orders.user_id", user.id);
-
-    if (itemErr) return json({ error: itemErr.message }, 500);
-    const owns = (items ?? []).some((i: any) => ["paid", "completed", "fulfilled"].includes(i.orders?.status));
-    if (!owns) {
-      // Allow admins to download anything
-      const { data: roleRow } = await admin.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle();
-      if (!roleRow) return json({ error: "You don't own this plugin." }, 403);
+    // Path A: authenticated user with a matching paid order
+    const user = await resolveUser(req);
+    if (user) {
+      const { data: items } = await admin
+        .from("order_items")
+        .select("id, orders!inner(user_id, status)")
+        .eq("product_id", productId)
+        .eq("orders.user_id", user.id);
+      if ((items ?? []).some((i: any) => ["paid", "completed", "fulfilled"].includes(i.orders?.status))) {
+        allowed = true;
+        downloadUserId = user.id;
+      } else {
+        // Admins can download anything
+        const { data: roleRow } = await admin.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle();
+        if (roleRow) { allowed = true; downloadUserId = user.id; }
+      }
     }
+
+    // Path B: guest checkout — verify by Stripe session_id
+    if (!allowed && typeof sessionId === "string" && sessionId.length > 8) {
+      const { data: order } = await admin
+        .from("orders")
+        .select("id, status, user_id")
+        .eq("stripe_session_id", sessionId)
+        .maybeSingle();
+      if (order && ["paid", "completed", "fulfilled"].includes(order.status as string)) {
+        const { data: match } = await admin
+          .from("order_items")
+          .select("id")
+          .eq("order_id", order.id as string)
+          .eq("product_id", productId)
+          .maybeSingle();
+        if (match) {
+          allowed = true;
+          downloadUserId = (order.user_id as string | null) ?? null;
+        }
+      }
+    }
+
+    if (!allowed) return json({ error: "You don't own this plugin." }, 403);
 
     const { data: fileRow, error: fileErr } = await admin
       .from("product_files")
@@ -36,8 +78,9 @@ Deno.serve(async (req) => {
 
     const url = await presign({ method: "GET", key: fileRow.zip_url, expiresIn: 600 });
 
-    // Record download
-    await admin.from("library_downloads").insert({ user_id: user.id, product_id: productId }).select().maybeSingle();
+    if (downloadUserId) {
+      await admin.from("library_downloads").insert({ user_id: downloadUserId, product_id: productId }).select().maybeSingle();
+    }
 
     return json({ url, filename: fileRow.zip_file_name });
   } catch (e) {
