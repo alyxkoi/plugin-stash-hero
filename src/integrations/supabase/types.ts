@@ -89,6 +89,41 @@ export type Database = {
         }
         Relationships: []
       }
+      cart_items: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          qty: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          qty?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          qty?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cart_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           created_at: string
@@ -268,6 +303,7 @@ export type Database = {
           refund_reason: string | null
           status: Database["public"]["Enums"]["order_status"]
           stripe_id: string | null
+          stripe_session_id: string | null
           subtotal: number
           total: number
           updated_at: string
@@ -285,6 +321,7 @@ export type Database = {
           refund_reason?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           stripe_id?: string | null
+          stripe_session_id?: string | null
           subtotal?: number
           total?: number
           updated_at?: string
@@ -302,6 +339,7 @@ export type Database = {
           refund_reason?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           stripe_id?: string | null
+          stripe_session_id?: string | null
           subtotal?: number
           total?: number
           updated_at?: string
