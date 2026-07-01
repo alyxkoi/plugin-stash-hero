@@ -25,6 +25,7 @@ type ItemView = {
 
 function CheckoutReturn() {
   const { session_id } = Route.useSearch();
+  const { user } = useAuth();
   const [order, setOrder] = useState<OrderView | null>(null);
   const [items, setItems] = useState<ItemView[]>([]);
   const [status, setStatus] = useState<"loading" | "ok" | "missing" | "invalid">("loading");
