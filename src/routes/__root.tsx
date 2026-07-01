@@ -123,6 +123,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <Shell />
+      <Toaster theme="dark" position="bottom-right" />
     </QueryClientProvider>
   );
 }
