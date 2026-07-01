@@ -45,6 +45,7 @@ async function handleCheckoutCompleted(session: any) {
     .insert({
       number,
       user_id: userId ?? null,
+      guest_email: guestEmail,
       subtotal: subtotalCents / 100,
       discount: discountCents / 100,
       total: totalCents / 100,
@@ -71,6 +72,7 @@ async function handleCheckoutCompleted(session: any) {
         name: it.name,
         price: it.price,
         cover_gradient: it.cover_gradient,
+        cover_url: it.cover_url ?? null,
       })),
     );
     const { error: itemsErr } = await supabaseAdmin.from("order_items").insert(rows);
