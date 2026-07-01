@@ -18,13 +18,28 @@ function LoginPage() {
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (busy) return;
     setError(null);
+    if (!email.trim() || !password) { setError("Enter your email and password."); return; }
     setBusy(true);
-    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-    setBusy(false);
-    if (error) { setError(error.message); return; }
-    navigate({ to: "/account" });
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+      if (error) {
+        const msg = /invalid login credentials/i.test(error.message)
+          ? "Incorrect email or password."
+          : error.message || "Sign-in failed. Try again.";
+        setError(msg);
+        return;
+      }
+      if (!data.session) { setError("Sign-in didn't complete. Try again."); return; }
+      navigate({ to: "/account" });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong. Try again.");
+    } finally {
+      setBusy(false);
+    }
   };
+
 
   const onGoogle = async () => {
     setError(null);
