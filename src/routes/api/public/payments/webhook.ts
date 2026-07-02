@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { type StripeEnv, verifyWebhook } from "@/lib/stripe.server";
+import { sendEmail, FROM_ORDERS } from "@/lib/resend.server";
+import { renderOrderConfirmation } from "@/lib/email-templates.server";
 
-// TODO: order confirmation email — will be wired to Lovable Emails once
-// the email domain is configured (in-progress).
 
 
 
@@ -104,8 +104,35 @@ async function handleCheckoutCompleted(session: any) {
     await supabaseAdmin.from("cart_items").delete().eq("user_id", userId);
   }
 
-  // Order confirmation email will be sent here once Lovable Emails is configured.
-  void guestEmail;
+  // Order confirmation email — sent to logged-in buyers and guest checkouts.
+  const recipient = guestEmail;
+  if (recipient && items.length > 0) {
+    const origin =
+      process.env.PUBLIC_SITE_URL ||
+      process.env.SITE_URL ||
+      "https://plugin-stash-hero.lovable.app";
+    const emailItems = items.map((it) => ({
+      name: it.name,
+      price: it.price,
+      downloadUrl: `${origin}/api/public/download?session_id=${encodeURIComponent(sessionId)}&product_id=${encodeURIComponent(it.product_id)}`,
+    }));
+    const rendered = renderOrderConfirmation({
+      orderNumber: number,
+      customerEmail: recipient,
+      items: emailItems,
+      total: totalCents / 100,
+      orderUrl: `${origin}/checkout/return?session_id=${encodeURIComponent(sessionId)}`,
+    });
+    const send = await sendEmail({
+      from: FROM_ORDERS,
+      to: recipient,
+      subject: rendered.subject,
+      html: rendered.html,
+      text: rendered.text,
+    });
+    if (send.error) console.error("[webhook] order email send failed:", send.error);
+  }
+
 
 }
 
