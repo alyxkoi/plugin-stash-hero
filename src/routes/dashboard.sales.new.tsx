@@ -80,6 +80,7 @@ function NewSale() {
         status,
       });
       if (error) throw error;
+      clearDraft();
       toast.success(status === "scheduled" ? "Sale scheduled." : "Draft saved.");
       navigate({ to: "/dashboard/sales" });
     } catch (e: any) {
