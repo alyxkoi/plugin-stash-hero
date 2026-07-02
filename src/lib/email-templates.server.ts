@@ -56,8 +56,8 @@ export function renderOrderConfirmation(opts: {
         <tr><td style="padding:22px 32px;border-bottom:1px solid ${BORDER};background:${BG_DEEP};">
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
             <tr>
-              <td style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:15px;font-weight:900;letter-spacing:0.02em;color:${TEXT};">
-                <span style="color:${ACCENT};">▲</span>&nbsp;PLUGIN&nbsp;WAREHOUSE
+              <td>
+                <img src="https://plugin-stash-hero.lovable.app/__l5e/assets-v1/fa4d9bc4-3fe5-40bc-9957-596235a7d11e/logo.png" alt="Plugin Warehouse" height="40" style="display:block;height:40px;width:auto;border:0;outline:none;text-decoration:none;" />
               </td>
               <td align="right" style="font-family:'JetBrains Mono',ui-monospace,Menlo,monospace;font-size:11px;color:${DIM};letter-spacing:0.1em;">
                 ${escapeHtml(orderNumber)}
