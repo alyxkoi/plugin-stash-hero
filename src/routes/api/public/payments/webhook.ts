@@ -127,6 +127,7 @@ async function handleCheckoutCompleted(session: any) {
     const send = await sendEmail({
       from: FROM_ORDERS,
       to: recipient,
+      reply_to: "pluginwh@gmail.com",
       subject: rendered.subject,
       html: rendered.html,
       text: rendered.text,

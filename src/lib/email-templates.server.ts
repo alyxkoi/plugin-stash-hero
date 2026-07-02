@@ -100,8 +100,7 @@ export function renderOrderConfirmation(opts: {
         <!-- Footer -->
         <tr><td style="padding:22px 32px 26px 32px;background:${BG_DEEP};border-top:1px solid ${BORDER};">
           <div style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:12px;line-height:1.6;color:${DIM};">
-            Questions, refunds, missing files — reply to this email or write to
-            <a href="mailto:hello@thepluginwarehouse.com" style="color:${ACCENT_GLOW};text-decoration:none;">hello@thepluginwarehouse.com</a>.
+            Need help? <a href="https://thepluginwarehouse.com/contact-us" style="color:${ACCENT_GLOW};text-decoration:none;font-weight:700;">Contact us</a> for support or to ask about your order.
           </div>
           <div style="margin-top:14px;font-family:'Helvetica Neue',Arial,sans-serif;font-size:10px;letter-spacing:0.24em;color:${DIM};text-transform:uppercase;font-weight:700;">
             Plugin Warehouse · Sounds that hit.
@@ -115,7 +114,7 @@ export function renderOrderConfirmation(opts: {
 
   const text = `PLUGIN WAREHOUSE — Order ${orderNumber}\n\nYou're loaded up. Your downloads:\n\n${items
     .map((i) => `• ${i.name} — $${i.price.toFixed(2)}\n  ${i.downloadUrl}`)
-    .join("\n\n")}\n\nTotal paid: $${total.toFixed(2)}\nOrder page: ${orderUrl}\n\nQuestions: hello@thepluginwarehouse.com\n`;
+    .join("\n\n")}\n\nTotal paid: $${total.toFixed(2)}\nOrder page: ${orderUrl}\n\nNeed help? Contact us: https://thepluginwarehouse.com/contact-us\n`;
 
   return { html, text, subject: `Order ${orderNumber} — your Plugin Warehouse downloads` };
 }
