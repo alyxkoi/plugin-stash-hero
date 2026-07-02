@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { type StripeEnv, verifyWebhook } from "@/lib/stripe.server";
+import { sendEmail, FROM_ORDERS } from "@/lib/resend.server";
+import { renderOrderConfirmation } from "@/lib/email-templates.server";
 
-// TODO: order confirmation email — will be wired to Lovable Emails once
-// the email domain is configured (in-progress).
 
 
 
