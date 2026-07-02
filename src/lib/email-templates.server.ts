@@ -46,11 +46,11 @@ export function renderOrderConfirmation(opts: {
 
   const html = `<!doctype html>
 <html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Order ${escapeHtml(orderNumber)}</title></head>
-<body style="margin:0;padding:0;background:${BG_DEEP};font-family:'Helvetica Neue',Arial,sans-serif;color:${TEXT};">
+<body style="margin:0;padding:0;background:${BG_DEEP};font-family:'Helvetica Neue',Arial,sans-serif;color:${TEXT};" bgcolor="${BG_DEEP}">
   <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:${BG_DEEP};">Your Plugin Warehouse order ${escapeHtml(orderNumber)} — download links inside.</div>
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:${BG_DEEP};padding:36px 16px;">
-    <tr><td align="center">
-      <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width:600px;width:100%;background:${BG_CARD};border:1px solid ${BORDER};border-radius:20px;overflow:hidden;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" bgcolor="${BG_DEEP}" style="background:${BG_DEEP};padding:36px 16px;">
+    <tr><td align="center" bgcolor="${BG_DEEP}">
+      <table role="presentation" width="600" cellspacing="0" cellpadding="0" bgcolor="${BG_CARD}" style="max-width:600px;width:100%;background:${BG_CARD};border:1px solid ${BORDER};border-radius:20px;overflow:hidden;">
 
         <!-- Brand bar -->
         <tr><td style="padding:22px 32px;border-bottom:1px solid ${BORDER};background:${BG_DEEP};">
