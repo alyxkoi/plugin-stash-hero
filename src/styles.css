@@ -373,6 +373,29 @@
 .input-glass::placeholder { color: rgba(255,255,255,0.4); }
 .input-glass:focus { border-color: var(--accent-red); box-shadow: 0 0 0 3px rgba(255,0,60,0.2); }
 
+/* Native <select> styled to match the dark glass inputs. */
+select.input-glass, .select-glass {
+  color-scheme: dark;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path fill='none' stroke='%23ffffff' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' d='M1 1.5l5 5 5-5'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 1.1rem center;
+  background-size: 12px 8px;
+  padding-right: 2.75rem;
+  cursor: pointer;
+}
+select.input-glass option, .select-glass option {
+  background-color: #1a0538;
+  color: #ffffff;
+  font-weight: 600;
+}
+select.input-glass option:checked, .select-glass option:checked {
+  background-color: #2a0f5a;
+  color: #ffffff;
+}
+
 /* ===== SECTION HEADER — centered with blur fade-in ===== */
 .section-header {
   display: block;

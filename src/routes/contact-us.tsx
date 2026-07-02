@@ -83,7 +83,7 @@ function Contact() {
             <Field label="EMAIL" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
             <label className="block">
               <div className="font-mono text-xs text-white/60 mb-1.5 tracking-wider">SUBJECT</div>
-              <select className="input-glass" value={subject} onChange={(e) => setSubject(e.target.value)}>
+              <select className="input-glass select-glass" value={subject} onChange={(e) => setSubject(e.target.value)}>
                 <option value="install">Install help</option>
                 <option value="refund">Refund</option>
                 <option value="order">Order issue</option>
@@ -109,7 +109,7 @@ function Contact() {
       </GlassCard>
 
       <div className="mt-8 text-center font-mono text-sm text-white/60">
-        OR EMAIL US DIRECTLY → <a className="text-white" href="mailto:support@thepluginwarehouse.com">support@thepluginwarehouse.com</a>
+        OR EMAIL US DIRECTLY → <a className="text-white" href="mailto:pluginwh@gmail.com">pluginwh@gmail.com</a>
       </div>
     </div>
   );
