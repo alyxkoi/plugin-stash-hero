@@ -3,7 +3,7 @@ import { Link, useNavigate, useRouterState, Outlet } from "@tanstack/react-route
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   LayoutDashboard, Package, ShoppingBag, Tag, Users, BarChart3,
-  Megaphone, Settings, LogOut, ExternalLink, ChevronDown, Mail
+  Megaphone, Settings, LogOut, ExternalLink, ChevronDown
 } from "lucide-react";
 import logo from "@/assets/logo-dashboard.webp";
 import { useAuth, signOut } from "@/hooks/useAuth";
