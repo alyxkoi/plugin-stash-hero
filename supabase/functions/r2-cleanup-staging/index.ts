@@ -6,14 +6,8 @@ import { listObjects, deleteObject } from "../_shared/r2.ts";
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   const apiKey = req.headers.get("apikey") ?? req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-  const allowed = new Set(
-    [
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),
-      Deno.env.get("SUPABASE_ANON_KEY"),
-      Deno.env.get("SUPABASE_PUBLISHABLE_KEY"),
-    ].filter(Boolean) as string[],
-  );
-  if (!apiKey || !allowed.has(apiKey)) {
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!apiKey || !serviceKey || apiKey !== serviceKey) {
     return new Response("Forbidden", { status: 403, headers: corsHeaders });
   }
   try {
