@@ -2,7 +2,7 @@
 // All outbound email uses the verified thepluginwarehouse.com domain.
 
 export const FROM_ORDERS = "Plugin Warehouse <orders@thepluginwarehouse.com>";
-export const FROM_CONTACT = "Plugin Warehouse <hello@thepluginwarehouse.com>";
+export const FROM_CONTACT = "Plugin Warehouse <no-reply@thepluginwarehouse.com>";
 export const CONTACT_INBOX = "pluginwh@gmail.com";
 
 type SendEmailInput = {
