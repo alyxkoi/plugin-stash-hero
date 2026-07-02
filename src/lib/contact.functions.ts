@@ -1,8 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getRequest } from "@tanstack/react-start/server";
-import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
-import type { Database } from "@/integrations/supabase/types";
 import { sendEmail, FROM_CONTACT, CONTACT_INBOX } from "@/lib/resend.server";
 import { renderContactNotification } from "@/lib/email-templates.server";
 
@@ -13,52 +10,9 @@ const ContactSchema = z.object({
   message: z.string().trim().min(1, "Message required").max(5000),
 });
 
-async function optionalUserId(): Promise<string | null> {
-  try {
-    const req = getRequest();
-    const authHeader = req?.headers?.get("authorization");
-    if (!authHeader?.startsWith("Bearer ")) return null;
-    const token = authHeader.slice(7);
-    if (!token) return null;
-    const sb = createClient<Database>(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_PUBLISHABLE_KEY!,
-      { auth: { storage: undefined, persistSession: false, autoRefreshToken: false } },
-    );
-    const { data } = await sb.auth.getClaims(token);
-    return (data?.claims?.sub as string | undefined) ?? null;
-  } catch {
-    return null;
-  }
-}
-
 export const submitContactMessage = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => ContactSchema.parse(data))
   .handler(async ({ data }) => {
-    const userId = await optionalUserId();
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-    const baseRow = {
-      name: data.name,
-      email: data.email,
-      subject: data.subject,
-      message: data.message,
-    };
-    let { error: insertErr } = await supabaseAdmin
-      .from("contact_messages")
-      .insert({ ...baseRow, user_id: userId });
-    // If the token's user no longer exists in auth.users, retry as anonymous.
-    if (insertErr && (insertErr as { code?: string }).code === "23503" && userId) {
-      console.warn("[contact] stale user_id, retrying without it", { userId });
-      ({ error: insertErr } = await supabaseAdmin
-        .from("contact_messages")
-        .insert({ ...baseRow, user_id: null }));
-    }
-    if (insertErr) {
-      console.error("[contact] insert failed", insertErr);
-      return { ok: false as const, error: "Could not save your message. Try again." };
-    }
-
     const rendered = renderContactNotification(data);
     const send = await sendEmail({
       from: FROM_CONTACT,
@@ -69,8 +23,8 @@ export const submitContactMessage = createServerFn({ method: "POST" })
       text: rendered.text,
     });
     if (send.error) {
-      // Message is saved either way — surface a soft warning but treat as success.
       console.error("[contact] email send failed:", send.error);
+      return { ok: false as const, error: "Could not send your message. Try again." };
     }
     return { ok: true as const };
   });

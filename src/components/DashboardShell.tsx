@@ -3,7 +3,7 @@ import { Link, useNavigate, useRouterState, Outlet } from "@tanstack/react-route
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   LayoutDashboard, Package, ShoppingBag, Tag, Users, BarChart3,
-  Megaphone, Settings, LogOut, ExternalLink, ChevronDown, Mail
+  Megaphone, Settings, LogOut, ExternalLink, ChevronDown
 } from "lucide-react";
 import logo from "@/assets/logo-dashboard.webp";
 import { useAuth, signOut } from "@/hooks/useAuth";
@@ -14,7 +14,7 @@ const NAV: { to: string; label: string; icon: typeof LayoutDashboard; exact?: bo
   { to: "/dashboard/orders", label: "Orders", icon: ShoppingBag },
   { to: "/dashboard/sales", label: "Sales", icon: Tag },
   { to: "/dashboard/customers", label: "Customers", icon: Users },
-  { to: "/dashboard/messages", label: "Messages", icon: Mail },
+  
   { to: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/dashboard/marketing", label: "Marketing", icon: Megaphone },
   { to: "/dashboard/settings", label: "Settings", icon: Settings },
