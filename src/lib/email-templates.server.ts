@@ -133,8 +133,9 @@ export function renderContactNotification(opts: {
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:${BG_DEEP};padding:40px 16px;">
     <tr><td align="center">
       <table role="presentation" width="560" cellspacing="0" cellpadding="0" style="max-width:560px;width:100%;background:${BG_CARD};border:1px solid ${BORDER};border-radius:16px;overflow:hidden;">
-        <tr><td style="padding:24px 30px 8px 30px;border-bottom:1px solid ${BORDER};">
-          <div style="font-size:11px;letter-spacing:0.24em;color:${DIM};text-transform:uppercase;font-weight:800;">Plugin Warehouse · Contact</div>
+        <tr><td style="padding:24px 30px 18px 30px;border-bottom:1px solid ${BORDER};">
+          <img src="https://plugin-stash-hero.lovable.app/__l5e/assets-v1/fa4d9bc4-3fe5-40bc-9957-596235a7d11e/logo.png" alt="Plugin Warehouse" height="36" style="display:block;height:36px;width:auto;border:0;margin-bottom:14px;" />
+          <div style="font-size:11px;letter-spacing:0.24em;color:${DIM};text-transform:uppercase;font-weight:800;">Contact form</div>
           <h1 style="margin:10px 0 0 0;font-size:22px;line-height:1.25;color:${TEXT};font-weight:800;">${escapeHtml(subject)}</h1>
         </td></tr>
         <tr><td style="padding:18px 30px;color:${MUTED};font-size:14px;">
