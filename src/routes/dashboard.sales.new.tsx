@@ -139,7 +139,8 @@ function NewSale() {
         </DashCard>
       </div>
       <div className="fixed bottom-0 left-0 md:left-[220px] right-0 z-30 border-t border-white/10 bg-[#13002C]/95 backdrop-blur-md px-6 py-3 flex items-center gap-3">
-        <Link to="/dashboard/sales" className="btn-ghost !text-xs !py-2 !px-4">Cancel</Link>
+        <Link to="/dashboard/sales" onClick={clearDraft} className="btn-ghost !text-xs !py-2 !px-4">Cancel</Link>
+        <span className="text-[10px] text-white/40 font-mono ml-2 hidden md:inline">Draft auto-saved locally</span>
         <button disabled={saving} onClick={() => save("draft")} className="btn-ghost !text-xs !py-2 !px-4 ml-auto disabled:opacity-50">{saving ? "Saving…" : "Save draft"}</button>
         <button disabled={saving} onClick={() => save("scheduled")} className="btn-primary !text-xs !py-2 !px-6 disabled:opacity-50">{saving ? "Scheduling…" : "Schedule sale"}</button>
       </div>
