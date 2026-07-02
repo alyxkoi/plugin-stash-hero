@@ -92,43 +92,6 @@ function ProfileSection() {
   );
 }
 
-const ALERT_TOGGLES = [
-  { key: "sales", label: "Sale alerts", sub: "Tell me when a sale goes live." },
-  { key: "updates", label: "Update alerts", sub: "Email me when plugins I own get updated." },
-  { key: "wishlist", label: "Wishlist alerts", sub: "Tell me when something in my Saved drops in price." },
-  { key: "receipts", label: "Order receipts", sub: "Send me a copy of every order.", locked: true },
-] as const;
-
-function AlertsSection() {
-  const [prefs, setPrefs] = useState(mockUser.prefs);
-  const [saved, setSaved] = useState<string | null>(null);
-  const toggle = (k: keyof typeof prefs) => {
-    setPrefs(p => ({ ...p, [k]: !p[k] }));
-    setSaved(k); setTimeout(() => setSaved(null), 2000);
-  };
-  return (
-    <Panel id="alerts" title="EMAIL & ALERTS" sub="Pick what hits your inbox.">
-      <ul className="divide-y divide-white/8">
-        {ALERT_TOGGLES.map(t => (
-          <li key={t.key} className="py-4 flex items-center gap-4">
-            <div className="flex-1 min-w-0">
-              <div className="font-bold flex items-center gap-2">{t.label}{saved === t.key && <span className="font-mono text-[10px] text-emerald-400 fade-in">✓ Saved</span>}</div>
-              <div className="text-sm text-white/60">{t.sub}</div>
-            </div>
-            <button
-              role="switch" aria-checked={prefs[t.key]} disabled={"locked" in t && t.locked}
-              onClick={() => toggle(t.key)}
-              className={`relative w-12 h-7 rounded-full border transition disabled:opacity-50 ${prefs[t.key] ? "bg-[var(--accent-red)] border-white/30" : "bg-white/[0.06] border-white/20"}`}
-            >
-              <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${prefs[t.key] ? "translate-x-5" : ""}`} />
-            </button>
-          </li>
-        ))}
-      </ul>
-    </Panel>
-  );
-}
-
 function PasswordSection() {
   const [editing, setEditing] = useState(false);
   const [show, setShow] = useState(false);
