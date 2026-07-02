@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useStore } from "@/lib/store";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 
-export const Route = createFileRoute("/checkout")({
+export const Route = createFileRoute("/checkout/")({
   head: () => ({ meta: [{ title: "Checkout — Plugin Warehouse" }] }),
   component: CheckoutPage,
 });

@@ -94,41 +94,70 @@ function CheckoutReturn() {
     </Frame>;
   }
 
-  return (
-    <div className="min-h-screen bg-[var(--bg,#0b0316)] pt-16 pb-24">
-      <div className="max-w-2xl mx-auto px-4">
-        <div className="flex items-center gap-3 mb-6">
-          <CheckCircle2 className="w-8 h-8 text-emerald-400" />
-          <h1 className="font-display text-4xl">Order confirmed</h1>
-        </div>
-        <p className="text-white/60 mb-8">Order <span className="font-mono">{order!.number}</span> — download your files below. A copy will always live in your account.</p>
+  const isGuest = !order!.user_id;
 
+  return (
+    <div className="min-h-screen bg-[var(--bg-base)] pt-14 pb-24 relative overflow-hidden">
+      {/* Ambient glow */}
+      <div aria-hidden className="pointer-events-none absolute -top-32 left-1/2 -translate-x-1/2 w-[900px] h-[600px] rounded-full blur-3xl opacity-30" style={{ background: "radial-gradient(closest-side, var(--accent-red) 0%, transparent 70%)" }} />
+
+      <div className="max-w-2xl mx-auto px-4 relative">
+        <Link to="/shop" className="text-white/50 text-sm hover:text-white">← Back to shop</Link>
+
+        <div className="mt-8 mb-10">
+          <div className="text-[11px] font-black tracking-[0.28em] uppercase text-[var(--accent-red-glow)] mb-4 flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4" /> Order confirmed
+          </div>
+          <h1 className="font-display text-5xl md:text-6xl font-black tracking-tight leading-[1.02]">You're loaded up.</h1>
+          <p className="mt-4 text-white/60 text-base">
+            Order <span className="font-mono text-white/90">{order!.number}</span> — grab your files below. We also emailed the links to{" "}
+            <span className="text-white/90">{order!.guest_email ?? "your inbox"}</span>.
+          </p>
+        </div>
+
+        {/* Items */}
         <div className="space-y-3 mb-8">
           {items.map((it) => (
-            <div key={it.id} className="flex gap-3 p-3 rounded-xl border border-white/10 bg-white/[0.03] items-center">
-              <div className="w-14 h-14 rounded-lg shrink-0 overflow-hidden relative" style={{ background: it.cover_gradient ?? "#333" }}>
+            <div key={it.id} className="flex gap-4 p-4 rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur items-center">
+              <div className="w-16 h-16 rounded-xl shrink-0 overflow-hidden relative border border-white/10" style={{ background: it.cover_gradient ?? "#1F0540" }}>
                 {it.cover_url && <img src={it.cover_url} alt={it.name} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="font-bold truncate">{it.name}</div>
-                <div className="font-mono text-xs text-white/40">${Number(it.price).toFixed(2)}</div>
+                <div className="text-[10px] tracking-[0.22em] uppercase text-white/40 font-bold mb-1">Plugin</div>
+                <div className="font-bold truncate text-base">{it.name}</div>
+                <div className="font-mono text-xs text-white/50 mt-0.5">${Number(it.price).toFixed(2)}</div>
               </div>
-              <button onClick={() => download(it.product_id, it.name)} className="btn-primary !text-xs !py-2 !px-4 inline-flex items-center gap-1.5">
+              <button onClick={() => download(it.product_id, it.name)} className="btn-primary !text-xs !py-2.5 !px-4 inline-flex items-center gap-1.5">
                 <Download className="w-4 h-4" /> Download
               </button>
             </div>
           ))}
         </div>
 
-        <div className="p-4 rounded-xl bg-white/[0.03] border border-white/10 space-y-1 text-sm mb-8">
+        {/* Totals */}
+        <div className="p-5 rounded-2xl bg-white/[0.03] border border-white/10 space-y-1.5 text-sm mb-8">
           <Row label="Subtotal" value={`$${Number(order!.subtotal).toFixed(2)}`} />
           {Number(order!.discount) > 0 && <Row label={`Discount${order!.discount_code ? ` (${order!.discount_code})` : ""}`} value={`-$${Number(order!.discount).toFixed(2)}`} />}
-          <div className="h-px bg-white/10 my-2" />
-          <Row label="Total" value={`$${Number(order!.total).toFixed(2)}`} bold />
+          <div className="h-px bg-white/10 my-2.5" />
+          <div className="flex justify-between items-baseline">
+            <span className="text-[11px] tracking-[0.22em] uppercase text-white/50 font-bold">Total paid</span>
+            <span className="font-mono text-2xl font-black">${Number(order!.total).toFixed(2)}</span>
+          </div>
         </div>
 
-        <div className="flex gap-3">
-          <Link to="/account/orders" className="btn-ghost">View my orders</Link>
+        {/* Guest vs user footer */}
+        {isGuest ? (
+          <div className="p-5 rounded-2xl border border-[var(--accent-red)]/25 bg-[var(--accent-red)]/[0.06] mb-8">
+            <div className="text-sm font-bold mb-1">Want your downloads on tap?</div>
+            <p className="text-white/60 text-sm mb-3">
+              Create an account with <span className="text-white/90">{order!.guest_email}</span> and this order lands in your library — no re-downloading email links.
+            </p>
+            <Link to="/signup" search={{ email: order!.guest_email ?? "" } as any} className="btn-primary !text-xs !py-2 !px-4">Create account</Link>
+          </div>
+        ) : null}
+
+        <div className="flex flex-wrap gap-3">
+          {!isGuest && <Link to="/account/orders" className="btn-ghost">View my orders</Link>}
           <Link to="/shop" className="btn-primary">Keep shopping →</Link>
         </div>
       </div>
@@ -137,8 +166,9 @@ function CheckoutReturn() {
 }
 
 function Frame({ children }: { children: React.ReactNode }) {
-  return <div className="min-h-screen bg-[var(--bg,#0b0316)] flex items-center justify-center px-4"><div className="max-w-md text-center">{children}</div></div>;
+  return <div className="min-h-screen bg-[var(--bg-base)] flex items-center justify-center px-4"><div className="max-w-md text-center">{children}</div></div>;
 }
+
 function Row({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
   return <div className="flex justify-between"><span className="text-white/60">{label}</span><span className={`font-mono ${bold ? "font-black text-lg" : ""}`}>{value}</span></div>;
 }
