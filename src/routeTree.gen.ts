@@ -50,6 +50,7 @@ import { Route as DashboardProductsNewRouteImport } from './routes/dashboard.pro
 import { Route as DashboardProductsIdRouteImport } from './routes/dashboard.products.$id'
 import { Route as DashboardOrdersIdRouteImport } from './routes/dashboard.orders.$id'
 import { Route as DashboardCustomersIdRouteImport } from './routes/dashboard.customers.$id'
+import { Route as ApiPublicDownloadRouteImport } from './routes/api/public/download'
 import { Route as AccountOrdersIdRouteImport } from './routes/account.orders.$id'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 
@@ -258,6 +259,11 @@ const DashboardCustomersIdRoute = DashboardCustomersIdRouteImport.update({
   path: '/customers/$id',
   getParentRoute: () => DashboardRoute,
 } as any)
+const ApiPublicDownloadRoute = ApiPublicDownloadRouteImport.update({
+  id: '/api/public/download',
+  path: '/api/public/download',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AccountOrdersIdRoute = AccountOrdersIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -302,6 +308,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/': typeof DashboardIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/account/orders/$id': typeof AccountOrdersIdRoute
+  '/api/public/download': typeof ApiPublicDownloadRoute
   '/dashboard/customers/$id': typeof DashboardCustomersIdRoute
   '/dashboard/orders/$id': typeof DashboardOrdersIdRoute
   '/dashboard/products/$id': typeof DashboardProductsIdRoute
@@ -345,6 +352,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardIndexRoute
   '/shop': typeof ShopIndexRoute
   '/account/orders/$id': typeof AccountOrdersIdRoute
+  '/api/public/download': typeof ApiPublicDownloadRoute
   '/dashboard/customers/$id': typeof DashboardCustomersIdRoute
   '/dashboard/orders/$id': typeof DashboardOrdersIdRoute
   '/dashboard/products/$id': typeof DashboardProductsIdRoute
@@ -391,6 +399,7 @@ export interface FileRoutesById {
   '/dashboard/': typeof DashboardIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/account/orders/$id': typeof AccountOrdersIdRoute
+  '/api/public/download': typeof ApiPublicDownloadRoute
   '/dashboard/customers/$id': typeof DashboardCustomersIdRoute
   '/dashboard/orders/$id': typeof DashboardOrdersIdRoute
   '/dashboard/products/$id': typeof DashboardProductsIdRoute
@@ -438,6 +447,7 @@ export interface FileRouteTypes {
     | '/dashboard/'
     | '/shop/'
     | '/account/orders/$id'
+    | '/api/public/download'
     | '/dashboard/customers/$id'
     | '/dashboard/orders/$id'
     | '/dashboard/products/$id'
@@ -481,6 +491,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/shop'
     | '/account/orders/$id'
+    | '/api/public/download'
     | '/dashboard/customers/$id'
     | '/dashboard/orders/$id'
     | '/dashboard/products/$id'
@@ -526,6 +537,7 @@ export interface FileRouteTypes {
     | '/dashboard/'
     | '/shop/'
     | '/account/orders/$id'
+    | '/api/public/download'
     | '/dashboard/customers/$id'
     | '/dashboard/orders/$id'
     | '/dashboard/products/$id'
@@ -560,6 +572,7 @@ export interface RootRouteChildren {
   SaleSlugRoute: typeof SaleSlugRoute
   ShopCategoryRoute: typeof ShopCategoryRoute
   ShopIndexRoute: typeof ShopIndexRoute
+  ApiPublicDownloadRoute: typeof ApiPublicDownloadRoute
   ShopPSlugRoute: typeof ShopPSlugRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
 }
@@ -853,6 +866,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardCustomersIdRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/api/public/download': {
+      id: '/api/public/download'
+      path: '/api/public/download'
+      fullPath: '/api/public/download'
+      preLoaderRoute: typeof ApiPublicDownloadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/account/orders/$id': {
       id: '/account/orders/$id'
       path: '/$id'
@@ -973,6 +993,7 @@ const rootRouteChildren: RootRouteChildren = {
   SaleSlugRoute: SaleSlugRoute,
   ShopCategoryRoute: ShopCategoryRoute,
   ShopIndexRoute: ShopIndexRoute,
+  ApiPublicDownloadRoute: ApiPublicDownloadRoute,
   ShopPSlugRoute: ShopPSlugRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
 }
