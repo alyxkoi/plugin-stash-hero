@@ -209,7 +209,7 @@ function HelpSection() {
     <Panel id="help" title="GET HELP" sub="Stuck? We got you.">
       <div className="grid md:grid-cols-3 gap-5">
         <HelpTile icon={HelpCircle} title="FREQUENTLY ASKED" sub="Install issues, refunds, DAW compatibility." cta="BROWSE FAQS →" to="/faq" ghost />
-        <HelpTile icon={Mail} title="HIT US UP" sub="Real human reply, usually within a few hours." cta="EMAIL SUPPORT ↗" to={`mailto:support@pluginwarehouse.com?subject=Plugin Warehouse Support — ${mockUser.email}`} />
+        <HelpTile icon={Mail} title="HIT US UP" sub="Real human reply, usually within a few hours." cta="CONTACT US →" to="/contact-us" ghost />
         <HelpTile icon={Ticket} title="ABOUT AN ORDER?" sub="Have your order ID ready and we'll sort it." cta="OPEN ORDER HISTORY →" to="/account/orders" ghost />
       </div>
     </Panel>
