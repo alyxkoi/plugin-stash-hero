@@ -104,22 +104,9 @@ async function handleCheckoutCompleted(session: any) {
     await supabaseAdmin.from("cart_items").delete().eq("user_id", userId);
   }
 
-  // Send order confirmation email (best-effort; skipped silently if RESEND_API_KEY unset)
-  const recipientEmail = guestEmail
-    ?? (userId ? (await supabaseAdmin.from("profiles").select("email").eq("id", userId).maybeSingle()).data?.email as string | undefined
-                : undefined);
-  if (recipientEmail && items.length > 0) {
-    const emailItems = await Promise.all(items.map(async (it) => {
-      const signed = await signDownloadUrl(it.product_id, sessionId);
-      return { name: it.name, price: it.price * it.qty, downloadUrl: signed?.url };
-    }));
-    await sendOrderEmail({
-      to: recipientEmail,
-      orderNumber: number,
-      total: totalCents / 100,
-      items: emailItems,
-    });
-  }
+  // Order confirmation email will be sent here once Lovable Emails is configured.
+  void guestEmail;
+
 }
 
 export const Route = createFileRoute("/api/public/payments/webhook")({
