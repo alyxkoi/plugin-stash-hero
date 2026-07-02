@@ -93,9 +93,10 @@ function CheckoutPage() {
   // Guest email gate — no sign-up required
   if (needsEmail) {
     return (
-      <CheckoutFrame>
-        <h1 className="font-display text-4xl mb-2">Checkout as guest</h1>
-        <p className="text-white/60 mb-6">We'll send your receipt and download links here. No account needed.</p>
+      <GuestGateFrame>
+        <div className="font-mono text-xs tracking-[0.2em] text-[var(--accent-red-glow)] mb-3">CHECKOUT</div>
+        <h1 className="font-black text-4xl md:text-5xl chrome-text mb-2">GUEST CHECKOUT.</h1>
+        <p className="text-white/65 mb-8">We'll send your receipt and download links here. No account needed.</p>
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -106,26 +107,28 @@ function CheckoutPage() {
             setEmailConfirmed(true);
             startSession(guestEmail);
           }}
-          className="space-y-3 text-left"
+          className="text-left"
         >
-          <input
-            type="email"
-            required
-            autoFocus
-            value={guestEmail}
-            onChange={(e) => { setGuestEmail(e.target.value); setError(null); }}
-            placeholder="you@email.com"
-            className="w-full bg-white/5 border border-white/15 rounded-lg px-4 py-3 text-base outline-none focus:border-white/40"
-          />
-          {error && <div className="text-sm text-[var(--accent-red-glow)]">{error}</div>}
-          <button type="submit" className="btn-primary w-full !py-3">Continue to payment →</button>
+          <label className="block mb-4">
+            <div className="font-mono text-xs text-white/60 mb-1.5 tracking-wider">EMAIL</div>
+            <input
+              type="email"
+              required
+              autoFocus
+              value={guestEmail}
+              onChange={(e) => { setGuestEmail(e.target.value); setError(null); }}
+              placeholder="you@email.com"
+              className="input-glass"
+            />
+          </label>
+          {error && <div className="text-xs text-[var(--accent-red-glow)] font-mono mb-3">{error}</div>}
+          <button type="submit" className="btn-primary w-full !text-base !py-4">CONTINUE TO PAYMENT →</button>
         </form>
-        <div className="text-xs text-white/50 mt-6">
+        <div className="text-center text-xs text-white/50 mt-6">
           Have an account?{" "}
-          <Link to="/login" search={{ next: "/checkout" } as any} className="underline hover:text-white">Sign in</Link>{" "}
-          to save orders to your library.
+          <Link to="/login" search={{ next: "/checkout" } as any} className="text-[var(--accent-red-glow)] font-bold hover:underline">SIGN IN →</Link>
         </div>
-      </CheckoutFrame>
+      </GuestGateFrame>
     );
   }
 
