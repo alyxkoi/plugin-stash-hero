@@ -33,17 +33,18 @@ async function handleCheckoutCompleted(session: any) {
   let items: Array<{ product_id: string; slug: string; name: string; price: number; cover_gradient: string | null; cover_url: string | null; qty: number }> = [];
   try { items = JSON.parse(meta.items_json ?? "[]"); } catch { items = []; }
 
-  // Order number: PW-XXXXXX (retry on collision)
-  async function newNumber(): Promise<string> {
-    for (let i = 0; i < 6; i++) {
-      const n = Math.floor(100000 + Math.random() * 900000);
-      const candidate = `PW-${n}`;
-      const { data: dup } = await supabaseAdmin.from("orders").select("id").eq("number", candidate).maybeSingle();
-      if (!dup) return candidate;
+  // Order number: sequential PW-0001, PW-0002, ... via DB sequence
+  let number: string;
+  {
+    const { data: nn, error: nnErr } = await supabaseAdmin.rpc("next_order_number");
+    if (nnErr || !nn) {
+      console.error("[webhook] next_order_number failed", nnErr);
+      number = `PW-${Date.now().toString().slice(-6)}`;
+    } else {
+      number = nn as unknown as string;
     }
-    return `PW-${Date.now().toString().slice(-6)}`;
   }
-  const number = await newNumber();
+
 
   const { data: inserted, error: orderErr } = await supabaseAdmin
     .from("orders")
