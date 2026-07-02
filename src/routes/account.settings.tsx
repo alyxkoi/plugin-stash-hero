@@ -10,7 +10,6 @@ export const Route = createFileRoute("/account/settings")({
 
 const SECTIONS = [
   { id: "profile", label: "PROFILE" },
-  { id: "alerts", label: "EMAIL & ALERTS" },
   { id: "password", label: "PASSWORD" },
   { id: "payment", label: "PAYMENT METHODS" },
   { id: "data", label: "DATA & PRIVACY" },
@@ -38,7 +37,6 @@ function SettingsPage() {
 
 
       <ProfileSection />
-      <AlertsSection />
       <PasswordSection />
       <PaymentSection />
       <DataSection />
