@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Eye, EyeOff, HelpCircle, Mail, Ticket, ExternalLink } from "lucide-react";
 import { mockUser, library } from "@/lib/account-data";
@@ -209,7 +209,7 @@ function HelpSection() {
     <Panel id="help" title="GET HELP" sub="Stuck? We got you.">
       <div className="grid md:grid-cols-3 gap-5">
         <HelpTile icon={HelpCircle} title="FREQUENTLY ASKED" sub="Install issues, refunds, DAW compatibility." cta="BROWSE FAQS →" to="/faq" ghost />
-        <HelpTile icon={Mail} title="HIT US UP" sub="Real human reply, usually within a few hours." cta="EMAIL SUPPORT ↗" to={`mailto:support@pluginwarehouse.com?subject=Plugin Warehouse Support — ${mockUser.email}`} />
+        <HelpTile icon={Mail} title="HIT US UP" sub="Real human reply, usually within a few hours." cta="CONTACT US →" to="/contact-us" ghost />
         <HelpTile icon={Ticket} title="ABOUT AN ORDER?" sub="Have your order ID ready and we'll sort it." cta="OPEN ORDER HISTORY →" to="/account/orders" ghost />
       </div>
     </Panel>
@@ -217,12 +217,18 @@ function HelpSection() {
 }
 
 function HelpTile({ icon: Icon, title, sub, cta, to, ghost }: { icon: typeof HelpCircle; title: string; sub: string; cta: string; to: string; ghost?: boolean }) {
+  const isExternal = /^https?:\/\/|^mailto:/.test(to);
+  const className = `${ghost ? "btn-ghost" : "btn-primary"} !text-xs !py-2.5 inline-flex`;
   return (
     <div className="border border-white/10 rounded-2xl p-5 bg-white/[0.02] flex flex-col">
       <Icon className="w-7 h-7 text-white/75 mb-3" strokeWidth={1.4} />
       <h4 className="font-black text-base tracking-tight mb-1">{title}</h4>
       <p className="text-white/60 text-sm mb-5 flex-1">{sub}</p>
-      <a href={to} className={`${ghost ? "btn-ghost" : "btn-primary"} !text-xs !py-2.5 inline-flex`}>{cta}</a>
+      {isExternal ? (
+        <a href={to} className={className}>{cta}</a>
+      ) : (
+        <Link to={to} className={className}>{cta}</Link>
+      )}
     </div>
   );
 }
