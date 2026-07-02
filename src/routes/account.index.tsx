@@ -1,41 +1,83 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Folder, ReceiptText, Store, Heart, ChevronRight } from "lucide-react";
 import { GlassCard } from "@/components/GlassCard";
-import { mockUser, library, orders, savedItems, getLibProduct, getGreeting, formatDate, totalSpent } from "@/lib/account-data";
-import { SALE, products } from "@/lib/mock-data";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { getGreeting, formatDate } from "@/lib/account-data";
 
 export const Route = createFileRoute("/account/")({
   head: () => ({ meta: [{ title: "Dashboard — Plugin Warehouse" }] }),
   component: Dashboard,
 });
 
+type OrderRow = {
+  id: string; number: string; total: number; status: string; created_at: string;
+  order_items: { id: string; product_id: string | null; product_slug: string | null; name: string; price: number; cover_gradient: string | null; cover_url: string | null }[];
+};
+
 function Dashboard() {
   const greeting = getGreeting();
+  const { user, loading } = useAuth();
+  const [orders, setOrders] = useState<OrderRow[]>([]);
+  const [savedCount, setSavedCount] = useState(0);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    if (loading || !user) return;
+    (async () => {
+      const [ordersRes, savedRes] = await Promise.all([
+        supabase
+          .from("orders")
+          .select("id, number, total, status, created_at, order_items(id, product_id, product_slug, name, price, cover_gradient, cover_url)")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false }),
+        supabase.from("saved_items").select("id", { count: "exact", head: true }).eq("user_id", user.id),
+      ]);
+      setOrders((ordersRes.data ?? []) as OrderRow[]);
+      setSavedCount(savedRes.count ?? 0);
+      setReady(true);
+    })();
+  }, [user, loading]);
+
+  const completed = useMemo(() => orders.filter(o => o.status === "completed"), [orders]);
+  const totalSpent = useMemo(() => completed.reduce((n, o) => n + Number(o.total), 0), [completed]);
+  const ownedProducts = useMemo(() => {
+    const map = new Map<string, { id: string; slug: string | null; name: string; cover_gradient: string | null; cover_url: string | null; last: string }>();
+    for (const o of completed) {
+      for (const it of o.order_items ?? []) {
+        if (!it.product_id) continue;
+        const existing = map.get(it.product_id);
+        if (!existing || existing.last < o.created_at) {
+          map.set(it.product_id, { id: it.product_id, slug: it.product_slug, name: it.name, cover_gradient: it.cover_gradient, cover_url: it.cover_url, last: o.created_at });
+        }
+      }
+    }
+    return [...map.values()].sort((a, b) => (b.last > a.last ? 1 : -1));
+  }, [completed]);
+
+  const lastOrder = completed[0];
 
   return (
     <div className="space-y-12">
-      {/* Welcome header */}
       <header>
         <h1 className="font-display text-[clamp(2.5rem,6vw,5rem)] leading-[0.95] tracking-tight shimmer-once">
           {greeting}
         </h1>
       </header>
 
-      {/* Quick actions */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
-        <QuickTile icon={Folder} label="YOUR STASH" stat={`${library.length} PLUGINS LOADED`} to="/account/library" />
-        <QuickTile icon={ReceiptText} label="YOUR ORDERS" stat={`${orders.length} ORDERS · $${totalSpent} SPENT`} to="/account/orders" />
-        <QuickTile icon={Store} label="BROWSE THE WAREHOUSE" stat={`${products.length} PLUGINS WAITING`} to="/shop" />
-        <QuickTile icon={Heart} label="SAVED FOR LATER" stat={`${savedItems.length} SAVED · ${savedItems.filter(s => s.onSale).length} ON SALE`} to="/account/saved" />
+        <QuickTile icon={Folder} label="YOUR STASH" stat={`${ownedProducts.length} PLUGIN${ownedProducts.length === 1 ? "" : "S"} LOADED`} to="/account/library" />
+        <QuickTile icon={ReceiptText} label="YOUR ORDERS" stat={`${completed.length} ORDER${completed.length === 1 ? "" : "S"} · $${totalSpent.toFixed(2)} SPENT`} to="/account/orders" />
+        <QuickTile icon={Store} label="BROWSE THE WAREHOUSE" stat="FIND YOUR NEXT PLUGIN" to="/shop" />
+        <QuickTile icon={Heart} label="SAVED FOR LATER" stat={`${savedCount} SAVED`} to="/account/saved" />
       </div>
 
-      {/* Lately */}
       <section>
         <h2 className="section-header">LATELY</h2>
         <div className="grid lg:grid-cols-[1.6fr_1fr] gap-6">
-          <RecentlyLoaded />
-          <LastOrder />
+          <RecentlyLoaded items={ownedProducts.slice(0, 5)} ready={ready} />
+          <LastOrder order={lastOrder} />
         </div>
       </section>
     </div>
@@ -57,7 +99,6 @@ function QuickTile({ icon: Icon, label, stat, to }: { icon: typeof Folder; label
     el.addEventListener("mousemove", move); el.addEventListener("mouseleave", leave);
     return () => { el.removeEventListener("mousemove", move); el.removeEventListener("mouseleave", leave); };
   }, []);
-  void SALE;
   return (
     <Link ref={ref} to={to} aria-label={label} className="glass-card block p-5 group">
       <div className="chromatic-edge" />
@@ -71,35 +112,40 @@ function QuickTile({ icon: Icon, label, stat, to }: { icon: typeof Folder; label
   );
 }
 
-function RecentlyLoaded() {
-  const recent = [...library].filter(l => l.lastDownloaded).sort((a, b) => (b.lastDownloaded! > a.lastDownloaded! ? 1 : -1)).slice(0, 5);
+function RecentlyLoaded({ items, ready }: { items: { id: string; slug: string | null; name: string; cover_gradient: string | null; cover_url: string | null; last: string }[]; ready: boolean }) {
   return (
     <GlassCard variant="subtle" className="p-5">
-      <div className="label-mini mb-4">Recently loaded</div>
-      <ul className="divide-y divide-white/8">
-        {recent.map(item => {
-          const p = getLibProduct(item.slug)!;
-          return (
-            <li key={item.slug} className="flex items-center gap-4 py-3 group hover:bg-white/[0.03] -mx-2 px-2 rounded-lg transition">
-              <div className="w-14 h-14 rounded-xl shrink-0 border border-white/15 overflow-hidden" style={{ background: p.coverGradient }} />
+      <div className="label-mini mb-4">Recently added to your stash</div>
+      {!ready ? (
+        <div className="py-8 text-center font-mono text-xs text-white/40">Loading…</div>
+      ) : items.length === 0 ? (
+        <div className="py-8 text-center">
+          <div className="text-white/60 text-sm mb-4">Nothing in your stash yet.</div>
+          <Link to="/shop" className="btn-ghost !text-xs">BROWSE THE SHOP →</Link>
+        </div>
+      ) : (
+        <ul className="divide-y divide-white/8">
+          {items.map(p => (
+            <li key={p.id} className="flex items-center gap-4 py-3 -mx-2 px-2 rounded-lg">
+              <div className="w-14 h-14 rounded-xl shrink-0 border border-white/15 overflow-hidden relative" style={{ background: p.cover_gradient ?? "#333" }}>
+                {p.cover_url && <img src={p.cover_url} alt="" className="absolute inset-0 w-full h-full object-cover" />}
+              </div>
               <div className="min-w-0 flex-1">
                 <div className="font-display text-[17px] truncate tracking-wide">{p.name}</div>
-                <div className="label-mini mt-0.5">Downloaded {formatDate(item.lastDownloaded!)}</div>
+                <div className="label-mini mt-0.5">Added {formatDate(p.last)}</div>
               </div>
-              <button aria-label={`Re-download ${p.name}`} className="w-11 h-11 rounded-full border border-white/15 flex items-center justify-center text-white/70 hover:text-white hover:border-white/40 transition">
-                ↓
-              </button>
+              {p.slug ? (
+                <Link to="/shop/p/$slug" params={{ slug: p.slug }} className="btn-ghost !text-xs !px-3">VIEW →</Link>
+              ) : null}
             </li>
-          );
-        })}
-      </ul>
+          ))}
+        </ul>
+      )}
     </GlassCard>
   );
 }
 
-function LastOrder() {
-  const order = orders[0];
-  void mockUser;
+function LastOrder({ order }: { order?: OrderRow }) {
   if (!order) {
     return (
       <GlassCard variant="blue" className="p-6 flex flex-col">
@@ -110,21 +156,21 @@ function LastOrder() {
       </GlassCard>
     );
   }
-  const itemNames = order.items.map(i => getLibProduct(i.slug)?.name).filter(Boolean) as string[];
+  const itemNames = (order.order_items ?? []).map(i => i.name);
   const shown = itemNames.slice(0, 3);
   const extra = itemNames.length - shown.length;
   return (
     <GlassCard variant="blue" className="p-6 flex flex-col">
-      <div className="label-mini">Last order · {formatDate(order.date)}</div>
-      <div className="font-mono text-[11px] tracking-wider text-white/55 mb-5">#{order.id}</div>
+      <div className="label-mini">Last order · {formatDate(order.created_at)}</div>
+      <div className="font-mono text-[11px] tracking-wider text-white/55 mb-5">{order.number}</div>
       <ul className="space-y-1.5 mb-6">
         {shown.map(n => <li key={n} className="text-white/85 text-sm truncate">— {n}</li>)}
         {extra > 0 && <li className="text-white/50 text-sm font-mono">+{extra} more</li>}
       </ul>
-      <div className="font-mono text-4xl mb-5 mt-auto"><span className="text-red">$</span>{order.total}</div>
+      <div className="font-mono text-4xl mb-5 mt-auto"><span className="text-red">$</span>{Number(order.total).toFixed(2)}</div>
       <div className="flex gap-2">
-        <Link to="/account/orders/$id" params={{ id: order.id }} className="btn-ghost !text-xs flex-1 !px-3">VIEW ORDER →</Link>
-        <button className="btn-primary !text-xs flex-1 !px-3">RE-DOWNLOAD ALL</button>
+        <Link to="/account/orders" className="btn-ghost !text-xs flex-1 !px-3">VIEW ORDERS →</Link>
+        <Link to="/account/library" className="btn-primary !text-xs flex-1 !px-3">YOUR STASH →</Link>
       </div>
     </GlassCard>
   );
