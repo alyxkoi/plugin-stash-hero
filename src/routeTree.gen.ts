@@ -31,6 +31,7 @@ import { Route as ShopCategoryRouteImport } from './routes/shop.$category'
 import { Route as SaleSlugRouteImport } from './routes/sale.$slug'
 import { Route as LibraryTokenRouteImport } from './routes/library.$token'
 import { Route as DashboardSettingsRouteImport } from './routes/dashboard.settings'
+import { Route as DashboardMessagesRouteImport } from './routes/dashboard.messages'
 import { Route as DashboardMarketingRouteImport } from './routes/dashboard.marketing'
 import { Route as DashboardLoginRouteImport } from './routes/dashboard.login'
 import { Route as DashboardAnalyticsRouteImport } from './routes/dashboard.analytics'
@@ -162,6 +163,11 @@ const LibraryTokenRoute = LibraryTokenRouteImport.update({
 const DashboardSettingsRoute = DashboardSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardMessagesRoute = DashboardMessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
   getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardMarketingRoute = DashboardMarketingRouteImport.update({
@@ -300,6 +306,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
   '/dashboard/login': typeof DashboardLoginRoute
   '/dashboard/marketing': typeof DashboardMarketingRoute
+  '/dashboard/messages': typeof DashboardMessagesRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/library/$token': typeof LibraryTokenRoute
   '/sale/$slug': typeof SaleSlugRoute
@@ -344,6 +351,7 @@ export interface FileRoutesByTo {
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
   '/dashboard/login': typeof DashboardLoginRoute
   '/dashboard/marketing': typeof DashboardMarketingRoute
+  '/dashboard/messages': typeof DashboardMessagesRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/library/$token': typeof LibraryTokenRoute
   '/sale/$slug': typeof SaleSlugRoute
@@ -391,6 +399,7 @@ export interface FileRoutesById {
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
   '/dashboard/login': typeof DashboardLoginRoute
   '/dashboard/marketing': typeof DashboardMarketingRoute
+  '/dashboard/messages': typeof DashboardMessagesRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/library/$token': typeof LibraryTokenRoute
   '/sale/$slug': typeof SaleSlugRoute
@@ -439,6 +448,7 @@ export interface FileRouteTypes {
     | '/dashboard/analytics'
     | '/dashboard/login'
     | '/dashboard/marketing'
+    | '/dashboard/messages'
     | '/dashboard/settings'
     | '/library/$token'
     | '/sale/$slug'
@@ -483,6 +493,7 @@ export interface FileRouteTypes {
     | '/dashboard/analytics'
     | '/dashboard/login'
     | '/dashboard/marketing'
+    | '/dashboard/messages'
     | '/dashboard/settings'
     | '/library/$token'
     | '/sale/$slug'
@@ -529,6 +540,7 @@ export interface FileRouteTypes {
     | '/dashboard/analytics'
     | '/dashboard/login'
     | '/dashboard/marketing'
+    | '/dashboard/messages'
     | '/dashboard/settings'
     | '/library/$token'
     | '/sale/$slug'
@@ -731,6 +743,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/dashboard/settings'
       preLoaderRoute: typeof DashboardSettingsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/messages': {
+      id: '/dashboard/messages'
+      path: '/messages'
+      fullPath: '/dashboard/messages'
+      preLoaderRoute: typeof DashboardMessagesRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/dashboard/marketing': {
@@ -937,6 +956,7 @@ interface DashboardRouteChildren {
   DashboardAnalyticsRoute: typeof DashboardAnalyticsRoute
   DashboardLoginRoute: typeof DashboardLoginRoute
   DashboardMarketingRoute: typeof DashboardMarketingRoute
+  DashboardMessagesRoute: typeof DashboardMessagesRoute
   DashboardSettingsRoute: typeof DashboardSettingsRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
   DashboardCustomersIdRoute: typeof DashboardCustomersIdRoute
@@ -955,6 +975,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardAnalyticsRoute: DashboardAnalyticsRoute,
   DashboardLoginRoute: DashboardLoginRoute,
   DashboardMarketingRoute: DashboardMarketingRoute,
+  DashboardMessagesRoute: DashboardMessagesRoute,
   DashboardSettingsRoute: DashboardSettingsRoute,
   DashboardIndexRoute: DashboardIndexRoute,
   DashboardCustomersIdRoute: DashboardCustomersIdRoute,
