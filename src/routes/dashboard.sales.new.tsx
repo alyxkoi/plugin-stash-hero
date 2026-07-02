@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DashboardShell, DashCard } from "@/components/DashboardShell";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -11,18 +11,50 @@ export const Route = createFileRoute("/dashboard/sales/new")({
 
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 
+const DRAFT_KEY = "pw_sale_new_draft_v1";
+type Draft = {
+  name: string; slug: string; headline: string; subheadline: string;
+  pct: number; scope: "all" | "selected"; startAt: string; endAt: string; themeColor: string;
+};
+const EMPTY: Draft = { name: "", slug: "", headline: "", subheadline: "", pct: 25, scope: "all", startAt: "", endAt: "", themeColor: "#ff003c" };
+
+function loadDraft(): Draft {
+  if (typeof window === "undefined") return EMPTY;
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return EMPTY;
+    return { ...EMPTY, ...(JSON.parse(raw) as Partial<Draft>) };
+  } catch { return EMPTY; }
+}
+
 function NewSale() {
   const navigate = useNavigate();
-  const [name, setName] = useState("");
-  const [slug, setSlug] = useState("");
-  const [headline, setHeadline] = useState("");
-  const [subheadline, setSubheadline] = useState("");
-  const [pct, setPct] = useState(25);
-  const [scope, setScope] = useState<"all" | "selected">("all");
-  const [startAt, setStartAt] = useState("");
-  const [endAt, setEndAt] = useState("");
-  const [themeColor, setThemeColor] = useState("#ff003c");
+  const initial = useRef<Draft>(loadDraft());
+  const [name, setName] = useState(initial.current.name);
+  const [slug, setSlug] = useState(initial.current.slug);
+  const [headline, setHeadline] = useState(initial.current.headline);
+  const [subheadline, setSubheadline] = useState(initial.current.subheadline);
+  const [pct, setPct] = useState(initial.current.pct);
+  const [scope, setScope] = useState<"all" | "selected">(initial.current.scope);
+  const [startAt, setStartAt] = useState(initial.current.startAt);
+  const [endAt, setEndAt] = useState(initial.current.endAt);
+  const [themeColor, setThemeColor] = useState(initial.current.themeColor);
   const [saving, setSaving] = useState(false);
+
+  // Persist draft on every change so switching tabs / minimizing doesn't lose input.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const draft: Draft = { name, slug, headline, subheadline, pct, scope, startAt, endAt, themeColor };
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); } catch { /* noop */ }
+  }, [name, slug, headline, subheadline, pct, scope, startAt, endAt, themeColor]);
+
+  function clearDraft() {
+    if (typeof window !== "undefined") {
+      try { localStorage.removeItem(DRAFT_KEY); } catch { /* noop */ }
+    }
+  }
+
+
 
   async function save(status: "scheduled" | "draft") {
     if (saving) return;
@@ -48,6 +80,7 @@ function NewSale() {
         status,
       });
       if (error) throw error;
+      clearDraft();
       toast.success(status === "scheduled" ? "Sale scheduled." : "Draft saved.");
       navigate({ to: "/dashboard/sales" });
     } catch (e: any) {
@@ -106,7 +139,8 @@ function NewSale() {
         </DashCard>
       </div>
       <div className="fixed bottom-0 left-0 md:left-[220px] right-0 z-30 border-t border-white/10 bg-[#13002C]/95 backdrop-blur-md px-6 py-3 flex items-center gap-3">
-        <Link to="/dashboard/sales" className="btn-ghost !text-xs !py-2 !px-4">Cancel</Link>
+        <Link to="/dashboard/sales" onClick={clearDraft} className="btn-ghost !text-xs !py-2 !px-4">Cancel</Link>
+        <span className="text-[10px] text-white/40 font-mono ml-2 hidden md:inline">Draft auto-saved locally</span>
         <button disabled={saving} onClick={() => save("draft")} className="btn-ghost !text-xs !py-2 !px-4 ml-auto disabled:opacity-50">{saving ? "Saving…" : "Save draft"}</button>
         <button disabled={saving} onClick={() => save("scheduled")} className="btn-primary !text-xs !py-2 !px-6 disabled:opacity-50">{saving ? "Scheduling…" : "Schedule sale"}</button>
       </div>
