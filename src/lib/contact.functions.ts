@@ -38,13 +38,22 @@ export const submitContactMessage = createServerFn({ method: "POST" })
     const userId = await optionalUserId();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const { error: insertErr } = await supabaseAdmin.from("contact_messages").insert({
+    const baseRow = {
       name: data.name,
       email: data.email,
       subject: data.subject,
       message: data.message,
-      user_id: userId,
-    });
+    };
+    let { error: insertErr } = await supabaseAdmin
+      .from("contact_messages")
+      .insert({ ...baseRow, user_id: userId });
+    // If the token's user no longer exists in auth.users, retry as anonymous.
+    if (insertErr && (insertErr as { code?: string }).code === "23503" && userId) {
+      console.warn("[contact] stale user_id, retrying without it", { userId });
+      ({ error: insertErr } = await supabaseAdmin
+        .from("contact_messages")
+        .insert({ ...baseRow, user_id: null }));
+    }
     if (insertErr) {
       console.error("[contact] insert failed", insertErr);
       return { ok: false as const, error: "Could not save your message. Try again." };
