@@ -114,7 +114,7 @@ export function renderOrderConfirmation(opts: {
 
   const text = `PLUGIN WAREHOUSE — Order ${orderNumber}\n\nYou're loaded up. Your downloads:\n\n${items
     .map((i) => `• ${i.name} — $${i.price.toFixed(2)}\n  ${i.downloadUrl}`)
-    .join("\n\n")}\n\nTotal paid: $${total.toFixed(2)}\nOrder page: ${orderUrl}\n\nQuestions: hello@thepluginwarehouse.com\n`;
+    .join("\n\n")}\n\nTotal paid: $${total.toFixed(2)}\nOrder page: ${orderUrl}\n\nNeed help? Contact us: https://thepluginwarehouse.com/contact-us\n`;
 
   return { html, text, subject: `Order ${orderNumber} — your Plugin Warehouse downloads` };
 }
