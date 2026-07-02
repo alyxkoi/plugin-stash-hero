@@ -61,7 +61,7 @@ function LoginPage() {
     >
       <form onSubmit={onSubmit}>
         <Field label="EMAIL" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-        <Field label="PASSWORD" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+        <PasswordField label="PASSWORD" required value={password} onChange={(e) => setPassword(e.target.value)} />
         <div className="text-right -mt-3 mb-4"><Link to="/forgot-password" className="text-xs text-white/60 hover:text-white">Forgot it?</Link></div>
         {error && <div className="text-xs text-[var(--accent-red-glow)] font-mono mb-3">{error}</div>}
         <button disabled={busy} className="btn-primary w-full !text-base !py-4 disabled:opacity-60">{busy ? "SIGNING IN…" : "SIGN IN →"}</button>
