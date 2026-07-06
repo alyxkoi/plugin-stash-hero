@@ -119,8 +119,10 @@ export function SaleForm({
     const { data: rows } = await supabase
       .from("sale_events")
       .select("id, name, discount_pct, scope, categories, start_at, end_at, status")
-      .in("status", ["active", "scheduled"] as any);
-    const list = (rows ?? []).filter((r) => r.id !== v.id) as any[];
+        .neq("status", "draft" as any);
+    const list = (rows ?? [])
+      .filter((r) => r.id !== v.id)
+      .filter((r) => ["active", "scheduled"].includes(deriveSaleStatus(r.start_at as string, r.end_at as string, r.status as string))) as any[];
     if (list.length === 0) return [];
     const { data: jr } = await supabase
       .from("sale_event_products")

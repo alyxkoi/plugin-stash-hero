@@ -26,7 +26,7 @@ export function useActiveSale() {
       const { data } = await supabase
         .from("sale_events")
         .select("id, name, slug, headline, subheadline, discount_pct, theme_color, start_at, end_at, status")
-        .in("status", ["active", "scheduled"])
+        .neq("status", "draft")
         .lte("start_at", nowIso)
         .gte("end_at", nowIso)
         .order("start_at", { ascending: false })
