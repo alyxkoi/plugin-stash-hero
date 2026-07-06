@@ -3,18 +3,12 @@ import { useEffect, useState } from "react";
 import { DashboardShell, DashCard } from "@/components/DashboardShell";
 import { SaleForm, type SaleFormValues } from "@/components/dashboard/SaleForm";
 import { supabase } from "@/integrations/supabase/client";
+import { isoToCentralInput } from "@/lib/sale-time";
 
 export const Route = createFileRoute("/dashboard/sales/$id")({
   head: () => ({ meta: [{ title: "Edit sale — Plugin Warehouse" }] }),
   component: EditSale,
 });
-
-function toLocalInput(iso: string | null | undefined): string {
-  if (!iso) return "";
-  const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
 
 function EditSale() {
   const { id } = useParams({ from: "/dashboard/sales/$id" });
@@ -23,11 +17,12 @@ function EditSale() {
 
   useEffect(() => {
     (async () => {
-      const { data: row } = await supabase
+      const { data: row, error } = await supabase
         .from("sale_events")
         .select("id, name, slug, discount_pct, scope, categories, start_at, end_at, status")
         .eq("id", id)
         .maybeSingle();
+      if (error) { console.error("[sales] edit load failed", error); setNotFound(true); return; }
       if (!row) { setNotFound(true); return; }
       const { data: junction } = await supabase
         .from("sale_event_products")
@@ -41,8 +36,8 @@ function EditSale() {
         scope: (row.scope as any) ?? "all",
         categories: ((row as any).categories ?? []) as string[],
         productIds: (junction ?? []).map((j) => j.product_id as string),
-        startAt: toLocalInput(row.start_at as string | null),
-        endAt: toLocalInput(row.end_at as string | null),
+        startAt: isoToCentralInput(row.start_at as string | null),
+        endAt: isoToCentralInput(row.end_at as string | null),
         status: (row.status as any),
       });
     })();
