@@ -3,13 +3,19 @@ import { Heart, ShoppingCart } from "lucide-react";
 import type { Product } from "@/lib/mock-data";
 import { actions } from "@/lib/store";
 import { useSavedIds, useToggleSaved } from "@/hooks/useSaved";
+import { useSalePricing } from "@/lib/sale-pricing";
 
 export function ProductCard({ product, variant = "default", rank }: { product: Product; variant?: "default" | "blue"; rank?: number }) {
   const { data: savedIds } = useSavedIds();
   const toggleSaved = useToggleSaved();
   const saved = !!(product.id && savedIds?.has(product.id));
 
-  const onSale = product.compareAtPrice && product.compareAtPrice > product.price;
+  const { finalPrice, pct, sale } = useSalePricing(product);
+  const onSale = pct > 0 || (product.compareAtPrice && product.compareAtPrice > product.price);
+  const displayPrice = pct > 0 ? finalPrice : product.price;
+  const strikePrice = pct > 0 ? product.price : product.compareAtPrice;
+  const badgeText = pct > 0 ? `${pct}% OFF` : "35% OFF";
+
 
   return (
     <div className={`glass-card product-card group ${variant === "blue" ? "glass-card--blue" : ""} h-full flex flex-col`}>
