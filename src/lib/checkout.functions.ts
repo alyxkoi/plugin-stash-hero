@@ -150,10 +150,10 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
         })
         .filter((x): x is { product: NonNullable<ReturnType<typeof byId.get>>; qty: number; unitPrice: number } => !!x);
 
-      const subtotalCents = items.reduce((n, i) => n + Math.round(Number(i.product.price) * 100) * i.qty, 0);
+      const subtotalCents = items.reduce((n, i) => n + Math.round(i.unitPrice * 100) * i.qty, 0);
       if (subtotalCents <= 0) return { error: "Cart total must be greater than zero." };
 
-      // Discount
+      // Promo code (applied on top of any sale-event pricing already baked into unitPrice)
       let discountCents = 0;
       let discountCode: string | null = null;
       if (data.discountCode) {
@@ -182,12 +182,12 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
 
       const stripe = createStripeClient(data.environment);
 
-      // Build one line item per product using price_data; distribute discount pro-rata via unit_amount reduction
-      const discountRatio = subtotalCents > 0 ? (subtotalCents - discountCents) / subtotalCents : 1;
+      // Distribute any promo-code discount pro-rata across the sale-adjusted unit prices.
+      const promoRatio = subtotalCents > 0 ? (subtotalCents - discountCents) / subtotalCents : 1;
 
       const line_items = items.map((i) => {
-        const originalUnit = Math.round(Number(i.product.price) * 100);
-        const discountedUnit = Math.max(1, Math.round(originalUnit * discountRatio));
+        const saleUnitCents = Math.round(i.unitPrice * 100);
+        const finalUnit = Math.max(1, Math.round(saleUnitCents * promoRatio));
         const images = i.product.cover_url ? [i.product.cover_url as string] : undefined;
         return {
           price_data: {
@@ -197,7 +197,7 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
               ...(images && { images }),
               metadata: { product_id: i.product.id as string, slug: i.product.slug as string },
             },
-            unit_amount: discountedUnit,
+            unit_amount: finalUnit,
           },
           quantity: i.qty,
         };
