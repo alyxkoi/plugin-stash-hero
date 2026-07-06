@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { DashboardShell, DashCard, StatusBadge } from "@/components/DashboardShell";
 import { Search, Mail, X, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -269,10 +270,17 @@ function CustomerPanel({ customer, onClose }: { customer: Aggregate | null; onCl
     if (!customer) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
   }, [customer, onClose]);
 
   if (!customer) return null;
+  if (typeof document === "undefined") return null;
+
   const aov = customer.completedCount > 0 ? customer.totalSpent / customer.completedCount : 0;
   const owned = new Map<string, { name: string }>();
   for (const o of customer.orders) {
@@ -281,34 +289,53 @@ function CustomerPanel({ customer, onClose }: { customer: Aggregate | null; onCl
   }
   const refundableOrder = customer.orders.find(o => o.status === "completed") || customer.orders[0];
 
-  return (
-    <div className="fixed inset-0 z-[60]" role="dialog" aria-modal="true">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <aside className="absolute right-0 top-0 h-full w-full sm:w-[520px] max-w-full overflow-y-auto glass-card !rounded-none !rounded-l-2xl p-6 animate-[slideIn_.25s_ease-out]" style={{ background: "var(--bg-base)" }}>
-        <div className="chromatic-edge" />
-        <div className="relative z-10">
-          <div className="flex items-start gap-3 mb-6">
-            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[var(--accent-red)] to-[var(--accent-blue)] flex items-center justify-center text-lg font-bold shrink-0">{initialsFrom(customer.name, customer.email)}</div>
-            <div className="flex-1 min-w-0">
-              <h2 className="font-display text-xl truncate">{customer.name || customer.email}</h2>
-              <div className="text-xs font-mono text-white/60 truncate">{customer.email}</div>
-              <div className="flex items-center gap-2 mt-2 flex-wrap">
-                <AccountBadge hasAccount={customer.hasAccount} />
-                <PurchaseBadge count={customer.completedCount} />
-                <span className="text-[10px] text-white/50 font-mono">Customer since {new Date(customer.firstOrderAt).toLocaleDateString("en", { month: "short", day: "numeric", year: "numeric" })}</span>
-              </div>
+  return createPortal(
+    <div className="dashboard-scope fixed inset-0 z-[100]" role="dialog" aria-modal="true">
+      <div
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-[fadeIn_.2s_ease-out]"
+        onClick={onClose}
+      />
+      <aside
+        className="absolute right-0 top-0 h-[100dvh] w-full sm:w-[440px] md:w-[480px] max-w-full flex flex-col border-l border-white/10 shadow-[0_0_60px_rgba(0,0,0,0.6)] animate-[slideIn_.28s_cubic-bezier(.2,.8,.2,1)]"
+        style={{ background: "var(--bg-base, #1a0733)" }}
+      >
+        <div className="chromatic-edge pointer-events-none" />
+        {/* Header (fixed) */}
+        <div className="relative z-10 flex items-start gap-3 p-5 border-b border-white/10 shrink-0">
+          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[var(--accent-red)] to-[var(--accent-blue)] flex items-center justify-center text-base font-bold shrink-0">
+            {initialsFrom(customer.name, customer.email)}
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="font-display text-lg md:text-xl truncate">{customer.name || customer.email}</h2>
+            <div className="text-xs font-mono text-white/60 truncate">{customer.email}</div>
+            <div className="flex items-center gap-2 mt-2 flex-wrap">
+              <AccountBadge hasAccount={customer.hasAccount} />
+              <PurchaseBadge count={customer.completedCount} />
             </div>
-            <button onClick={onClose} className="text-white/60 hover:text-white p-1.5 rounded hover:bg-white/10"><X size={16} /></button>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Close panel"
+            className="text-white/60 hover:text-white p-2 rounded-lg hover:bg-white/10 shrink-0"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Scrollable body */}
+        <div className="relative z-10 flex-1 min-h-0 overflow-y-auto p-5 space-y-6">
+          <div className="text-[10px] text-white/50 font-mono">
+            Customer since {new Date(customer.firstOrderAt).toLocaleDateString("en", { month: "short", day: "numeric", year: "numeric" })}
           </div>
 
-          <div className="grid grid-cols-2 gap-3 mb-6">
+          <div className="grid grid-cols-2 gap-3">
             <PanelStat label="Total spent" value={money(customer.totalSpent)} />
             <PanelStat label="Orders" value={customer.completedCount.toString()} />
             <PanelStat label="Avg order value" value={money(aov)} />
             <PanelStat label="Status" value={customer.completedCount > 1 ? "Returning" : customer.completedCount === 1 ? "New" : "No purchases"} />
           </div>
 
-          <div className="flex flex-wrap gap-2 mb-6">
+          <div className="flex flex-wrap gap-2">
             <a href={`mailto:${customer.email}`} className="btn-ghost !text-xs !py-2 !px-3 inline-flex items-center gap-2"><Mail size={13} /> Email customer</a>
             {refundableOrder && (
               <Link to={"/dashboard/orders/$id" as any} params={{ id: refundableOrder.id } as any} className="btn-ghost !text-xs !py-2 !px-3 inline-flex items-center gap-2" onClick={onClose}>
@@ -317,7 +344,7 @@ function CustomerPanel({ customer, onClose }: { customer: Aggregate | null; onCl
             )}
           </div>
 
-          <div className="mb-6">
+          <div>
             <h3 className="font-display text-sm mb-3 tracking-wide">Order history</h3>
             {customer.orders.length === 0 ? (
               <div className="text-xs text-white/40 py-4">No orders yet.</div>
@@ -353,9 +380,14 @@ function CustomerPanel({ customer, onClose }: { customer: Aggregate | null; onCl
             )}
           </div>
         </div>
-        <style>{`@keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }`}</style>
+
+        <style>{`
+          @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+          @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        `}</style>
       </aside>
-    </div>
+    </div>,
+    document.body
   );
 }
 
