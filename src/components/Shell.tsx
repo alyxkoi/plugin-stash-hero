@@ -28,7 +28,7 @@ export function Shell() {
 
   return (
     <SalePricingProvider>
-      <SaleBanner />
+      
       <Nav />
       <main className="pt-24 md:pt-28">
         <div className="route-transition-stack">
