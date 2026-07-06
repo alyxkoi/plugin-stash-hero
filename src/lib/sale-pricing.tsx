@@ -25,7 +25,7 @@ const Ctx = createContext<SalesCtx>({ loaded: false, sales: [] });
 
 /**
  * Loads every currently-active sale event plus its product junctions once,
- * refreshing every minute so newly-active or newly-ended sales appear
+ * refreshing frequently so newly-active, newly-ended, or deleted sales appear
  * automatically without a full reload.
  */
 export function SalePricingProvider({ children }: { children: ReactNode }) {
@@ -35,13 +35,12 @@ export function SalePricingProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     async function load() {
       const nowIso = new Date().toISOString();
-      // "Effectively active" = status is active OR scheduled AND we're within the window.
-      // This lets a sale go live automatically the moment its start time passes,
-      // even before an admin flips its stored status to 'active'.
+      // "Effectively active" = not a draft AND we're within the window.
+      // This lets a sale go live/end automatically even if the stored label is stale.
       const { data: rows } = await supabase
         .from("sale_events")
         .select("id, name, slug, discount_pct, scope, categories, start_at, end_at, status")
-        .in("status", ["active", "scheduled"])
+        .neq("status", "draft")
         .lte("start_at", nowIso)
         .gte("end_at", nowIso);
       const list = (rows ?? []) as Omit<ActiveSaleRow, "productIds">[];
@@ -68,8 +67,19 @@ export function SalePricingProvider({ children }: { children: ReactNode }) {
       if (!cancelled) setState({ loaded: true, sales: enriched });
     }
     load();
-    const i = setInterval(load, 60_000);
-    return () => { cancelled = true; clearInterval(i); };
+    const i = setInterval(load, 15_000);
+    const channel = supabase
+      .channel("sale-pricing-refresh")
+      .on("postgres_changes", { event: "*", schema: "public", table: "sale_events" }, load)
+      .on("postgres_changes", { event: "*", schema: "public", table: "sale_event_products" }, load)
+      .subscribe();
+    window.addEventListener("focus", load);
+    return () => {
+      cancelled = true;
+      clearInterval(i);
+      window.removeEventListener("focus", load);
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   return <Ctx.Provider value={state}>{children}</Ctx.Provider>;

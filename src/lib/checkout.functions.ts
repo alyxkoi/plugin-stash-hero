@@ -102,12 +102,13 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
 
       // Load currently-active sales and their scope details so we apply the same
       // discount to Stripe that the storefront/cart already shows the buyer.
-      // "Effectively active" includes scheduled sales that are already inside their window.
+      // "Effectively active" = not a draft AND inside the sale window. This avoids stale
+      // stored labels like "scheduled" or "ended" controlling the Stripe price.
       const nowIso = new Date().toISOString();
       const { data: activeSales } = await supabaseAdmin
         .from("sale_events")
         .select("id, discount_pct, scope, categories")
-        .in("status", ["active", "scheduled"])
+        .neq("status", "draft")
         .lte("start_at", nowIso)
         .gte("end_at", nowIso);
       const saleList = (activeSales ?? []) as Array<{ id: string; discount_pct: number; scope: string; categories: string[] | null }>;

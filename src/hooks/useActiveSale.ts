@@ -26,7 +26,7 @@ export function useActiveSale() {
       const { data } = await supabase
         .from("sale_events")
         .select("id, name, slug, headline, subheadline, discount_pct, theme_color, start_at, end_at, status")
-        .in("status", ["active", "scheduled"])
+        .neq("status", "draft")
         .lte("start_at", nowIso)
         .gte("end_at", nowIso)
         .order("start_at", { ascending: false })
@@ -37,9 +37,19 @@ export function useActiveSale() {
       setLoaded(true);
     }
     load();
-    // Re-check every minute so banner disappears when end_at passes without a reload.
-    const i = setInterval(load, 60_000);
-    return () => { cancelled = true; clearInterval(i); };
+    // Re-check frequently and react to sale deletes/updates so banners disappear cleanly.
+    const i = setInterval(load, 15_000);
+    const channel = supabase
+      .channel("active-sale-refresh")
+      .on("postgres_changes", { event: "*", schema: "public", table: "sale_events" }, load)
+      .subscribe();
+    window.addEventListener("focus", load);
+    return () => {
+      cancelled = true;
+      clearInterval(i);
+      window.removeEventListener("focus", load);
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   return { sale, loaded };
