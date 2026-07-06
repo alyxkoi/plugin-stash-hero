@@ -85,7 +85,11 @@ function ProductDetail() {
 
   const p = data.product;
   const related = data.related;
-  const onSale = !!(p.compareAtPrice && p.compareAtPrice > p.price);
+  const { finalPrice, pct } = useSalePricing(p);
+  const activeSale = pct > 0;
+  const strike = activeSale ? p.price : p.compareAtPrice;
+  const shown = activeSale ? finalPrice : p.price;
+  const onSale = activeSale || !!(p.compareAtPrice && p.compareAtPrice > p.price);
   const showDawLine = !["software", "daws"].includes(p.category);
 
   return (
