@@ -60,10 +60,10 @@ export function ProductCard({ product, variant = "default", rank }: { product: P
         </Link>
         <div className="mt-auto flex items-end justify-between pt-2">
           <div>
-            {onSale && (
-              <div className="font-mono text-xs text-white/40 line-through">${product.compareAtPrice}</div>
+            {onSale && !product.isFree && strikePrice && (
+              <div className="font-mono text-xs text-white/40 line-through">${strikePrice}</div>
             )}
-            <div className="font-mono font-bold text-xl">{product.isFree ? "FREE" : `$${product.price}`}</div>
+            <div className="font-mono font-bold text-xl">{product.isFree ? "FREE" : `$${displayPrice.toFixed(2)}`}</div>
           </div>
           <div className="flex gap-2 items-center">
             <button
