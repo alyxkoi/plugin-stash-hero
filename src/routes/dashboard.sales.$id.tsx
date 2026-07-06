@@ -1,30 +1,67 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { DashboardShell, DashCard } from "@/components/DashboardShell";
-import { saleEvents } from "@/lib/dashboard-mock";
+import { SaleForm, type SaleFormValues } from "@/components/dashboard/SaleForm";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/dashboard/sales/$id")({
   head: () => ({ meta: [{ title: "Edit sale — Plugin Warehouse" }] }),
   component: EditSale,
 });
 
+function toLocalInput(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 function EditSale() {
   const { id } = useParams({ from: "/dashboard/sales/$id" });
-  const s = saleEvents.find(x => x.id === id);
-  if (!s) return <DashboardShell title="Not found"><DashCard><Link to="/dashboard/sales" className="text-[var(--accent-red-glow)] text-sm">Back</Link></DashCard></DashboardShell>;
-  return (
-    <DashboardShell title={`Edit · ${s.name}`}>
-      <div className="max-w-4xl mx-auto space-y-6 pb-32">
-        <DashCard title="Event details">
-          <label className="block mb-3"><span className="label-mini text-[10px] opacity-70 mb-1.5 block">Name</span><input defaultValue={s.name} className="w-full bg-white/5 border border-white/15 rounded-lg px-3 py-2 text-sm outline-none focus:border-[var(--accent-red)]" /></label>
-          <label className="block mb-3"><span className="label-mini text-[10px] opacity-70 mb-1.5 block">Headline</span><input defaultValue={s.headline} className="w-full bg-white/5 border border-white/15 rounded-lg px-3 py-2 text-sm outline-none focus:border-[var(--accent-red)]" /></label>
-          <label className="block"><span className="label-mini text-[10px] opacity-70 mb-1.5 block">Discount %</span><input type="number" defaultValue={s.discountPct} className="w-32 bg-white/5 border border-white/15 rounded-lg px-3 py-2 text-sm outline-none focus:border-[var(--accent-red)]" /></label>
+  const [initial, setInitial] = useState<SaleFormValues | null>(null);
+  const [notFound, setNotFound] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const { data: row } = await supabase
+        .from("sale_events")
+        .select("id, name, slug, discount_pct, scope, categories, start_at, end_at, status")
+        .eq("id", id)
+        .maybeSingle();
+      if (!row) { setNotFound(true); return; }
+      const { data: junction } = await supabase
+        .from("sale_event_products")
+        .select("product_id")
+        .eq("sale_event_id", id);
+      setInitial({
+        id: row.id as string,
+        name: (row.name as string) ?? "",
+        slug: (row.slug as string) ?? "",
+        discount_pct: (row.discount_pct as number) ?? 0,
+        scope: (row.scope as any) ?? "all",
+        categories: ((row as any).categories ?? []) as string[],
+        productIds: (junction ?? []).map((j) => j.product_id as string),
+        startAt: toLocalInput(row.start_at as string | null),
+        endAt: toLocalInput(row.end_at as string | null),
+        status: (row.status as any),
+      });
+    })();
+  }, [id]);
+
+  if (notFound) {
+    return (
+      <DashboardShell title="Not found">
+        <DashCard>
+          <Link to="/dashboard/sales" className="text-[var(--accent-red-glow)] text-sm">← Back to sales</Link>
         </DashCard>
-      </div>
-      <div className="fixed bottom-0 left-0 md:left-[220px] right-0 z-30 border-t border-white/10 bg-[#13002C]/95 backdrop-blur-md px-6 py-3 flex items-center gap-3">
-        <Link to="/dashboard/sales" className="btn-ghost !text-xs !py-2 !px-4">Cancel</Link>
-        <button className="btn-primary !text-xs !py-2 !px-6 ml-auto">Save changes</button>
-        <button className="btn-ghost !text-xs !py-2 !px-4 !border-[var(--accent-red)]/40 !text-[var(--accent-red-glow)]">Deactivate / End now</button>
-      </div>
+      </DashboardShell>
+    );
+  }
+  if (!initial) return <DashboardShell title="Loading…"><DashCard><div className="text-sm text-white/50">Loading sale…</div></DashCard></DashboardShell>;
+
+  return (
+    <DashboardShell title={`Edit · ${initial.name}`}>
+      <SaleForm mode="edit" initial={initial} />
     </DashboardShell>
   );
 }
