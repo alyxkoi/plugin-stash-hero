@@ -34,9 +34,9 @@ export function ProductCard({ product, variant = "default", rank }: { product: P
                 </div>
               </div>
             )}
-            {onSale && (
-              <div className="absolute top-2 right-2 px-2 py-1 rounded-md font-mono text-[10px] font-bold bg-[var(--accent-red)] text-white shadow-lg">
-                35% OFF
+            {onSale && !product.isFree && (
+              <div className="absolute top-2 right-2 px-2 py-1 rounded-md font-mono text-[10px] font-bold bg-[var(--accent-red)] text-white shadow-lg" title={sale?.name}>
+                {badgeText}
               </div>
             )}
             {rank && (
