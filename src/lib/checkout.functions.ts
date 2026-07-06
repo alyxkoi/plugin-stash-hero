@@ -102,11 +102,12 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
 
       // Load currently-active sales and their scope details so we apply the same
       // discount to Stripe that the storefront/cart already shows the buyer.
+      // "Effectively active" includes scheduled sales that are already inside their window.
       const nowIso = new Date().toISOString();
       const { data: activeSales } = await supabaseAdmin
         .from("sale_events")
         .select("id, discount_pct, scope, categories")
-        .eq("status", "active")
+        .in("status", ["active", "scheduled"])
         .lte("start_at", nowIso)
         .gte("end_at", nowIso);
       const saleList = (activeSales ?? []) as Array<{ id: string; discount_pct: number; scope: string; categories: string[] | null }>;
