@@ -9,6 +9,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { actions } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
 import { useSavedIds, useToggleSaved } from "@/hooks/useSaved";
+import { useSalePricing } from "@/lib/sale-pricing";
 
 export const Route = createFileRoute("/shop/p/$slug")({
   head: ({ params }) => ({ meta: [{ title: `${params.slug} — Plugin Warehouse` }] }),
