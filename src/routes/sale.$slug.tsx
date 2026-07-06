@@ -1,8 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ShopPage } from "@/components/ShopPage";
-import { AuroraTitle } from "@/components/AuroraTitle";
-import { ProductCard } from "@/components/ProductCard";
 import { products } from "@/lib/mock-data";
 import { supabase } from "@/integrations/supabase/client";
 
