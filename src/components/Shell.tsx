@@ -24,11 +24,11 @@ export function Shell() {
 
   if (isDashboard) {
     // Dashboard manages its own chrome (sidebar + topbar).
-    return <Outlet />;
+    return <SalePricingProvider><Outlet /></SalePricingProvider>;
   }
 
   return (
-    <>
+    <SalePricingProvider>
       <SaleBanner />
       <Nav />
       <main className="pt-24 md:pt-28">
@@ -54,6 +54,6 @@ export function Shell() {
       <Footer />
       <CartDrawer />
       <CartSync />
-    </>
+    </SalePricingProvider>
   );
 }
