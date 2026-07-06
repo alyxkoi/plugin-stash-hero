@@ -9,6 +9,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { actions } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
 import { useSavedIds, useToggleSaved } from "@/hooks/useSaved";
+import { useSalePricing } from "@/lib/sale-pricing";
 
 export const Route = createFileRoute("/shop/p/$slug")({
   head: ({ params }) => ({ meta: [{ title: `${params.slug} — Plugin Warehouse` }] }),
@@ -84,7 +85,11 @@ function ProductDetail() {
 
   const p = data.product;
   const related = data.related;
-  const onSale = !!(p.compareAtPrice && p.compareAtPrice > p.price);
+  const { finalPrice, pct } = useSalePricing(p);
+  const activeSale = pct > 0;
+  const strike = activeSale ? p.price : p.compareAtPrice;
+  const shown = activeSale ? finalPrice : p.price;
+  const onSale = activeSale || !!(p.compareAtPrice && p.compareAtPrice > p.price);
   const showDawLine = !["software", "daws"].includes(p.category);
 
   return (
@@ -124,8 +129,8 @@ function ProductDetail() {
           </div>
 
           <div className="mb-6">
-            {onSale && <div className="font-mono text-lg text-white/40 line-through">${p.compareAtPrice}</div>}
-            <div className="font-mono font-black" style={{ fontSize: "clamp(3rem, 5vw, 4.5rem)", lineHeight: 1 }}>{p.isFree ? "FREE" : `$${p.price}`}</div>
+            {onSale && strike && <div className="font-mono text-lg text-white/40 line-through">${strike}</div>}
+            <div className="font-mono font-black" style={{ fontSize: "clamp(3rem, 5vw, 4.5rem)", lineHeight: 1 }}>{p.isFree ? "FREE" : `$${shown.toFixed(2)}`}</div>
           </div>
 
           <button onClick={() => actions.addToCart(p)} className="btn-primary w-full !py-4 !text-base mb-3 inline-flex items-center justify-center gap-2"><ShoppingCart className="w-5 h-5" /> Add to cart</button>

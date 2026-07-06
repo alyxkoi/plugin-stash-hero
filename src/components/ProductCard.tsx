@@ -3,13 +3,19 @@ import { Heart, ShoppingCart } from "lucide-react";
 import type { Product } from "@/lib/mock-data";
 import { actions } from "@/lib/store";
 import { useSavedIds, useToggleSaved } from "@/hooks/useSaved";
+import { useSalePricing } from "@/lib/sale-pricing";
 
 export function ProductCard({ product, variant = "default", rank }: { product: Product; variant?: "default" | "blue"; rank?: number }) {
   const { data: savedIds } = useSavedIds();
   const toggleSaved = useToggleSaved();
   const saved = !!(product.id && savedIds?.has(product.id));
 
-  const onSale = product.compareAtPrice && product.compareAtPrice > product.price;
+  const { finalPrice, pct, sale } = useSalePricing(product);
+  const onSale = pct > 0 || (product.compareAtPrice && product.compareAtPrice > product.price);
+  const displayPrice = pct > 0 ? finalPrice : product.price;
+  const strikePrice = pct > 0 ? product.price : product.compareAtPrice;
+  const badgeText = pct > 0 ? `${pct}% OFF` : "35% OFF";
+
 
   return (
     <div className={`glass-card product-card group ${variant === "blue" ? "glass-card--blue" : ""} h-full flex flex-col`}>
@@ -28,9 +34,9 @@ export function ProductCard({ product, variant = "default", rank }: { product: P
                 </div>
               </div>
             )}
-            {onSale && (
-              <div className="absolute top-2 right-2 px-2 py-1 rounded-md font-mono text-[10px] font-bold bg-[var(--accent-red)] text-white shadow-lg">
-                35% OFF
+            {onSale && !product.isFree && (
+              <div className="absolute top-2 right-2 px-2 py-1 rounded-md font-mono text-[10px] font-bold bg-[var(--accent-red)] text-white shadow-lg" title={sale?.name}>
+                {badgeText}
               </div>
             )}
             {rank && (
@@ -54,10 +60,10 @@ export function ProductCard({ product, variant = "default", rank }: { product: P
         </Link>
         <div className="mt-auto flex items-end justify-between pt-2">
           <div>
-            {onSale && (
-              <div className="font-mono text-xs text-white/40 line-through">${product.compareAtPrice}</div>
+            {onSale && !product.isFree && strikePrice && (
+              <div className="font-mono text-xs text-white/40 line-through">${strikePrice}</div>
             )}
-            <div className="font-mono font-bold text-xl">{product.isFree ? "FREE" : `$${product.price}`}</div>
+            <div className="font-mono font-bold text-xl">{product.isFree ? "FREE" : `$${displayPrice.toFixed(2)}`}</div>
           </div>
           <div className="flex gap-2 items-center">
             <button

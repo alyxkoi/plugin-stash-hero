@@ -94,22 +94,67 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
       const productIds = data.items.map((i) => i.productId);
       const { data: prodRows, error: prodErr } = await supabaseAdmin
         .from("products")
-        .select("id,slug,name,price,cover_gradient,cover_url,status")
+        .select("id,slug,name,price,category,cover_gradient,cover_url,status")
         .in("id", productIds);
       if (prodErr) return { error: prodErr.message };
       const products = (prodRows ?? []).filter((p) => p.status === "published");
       if (products.length === 0) return { error: "None of these products are available." };
 
-      // Build ordered items (respect original cart order)
+      // Load currently-active sales and their scope details so we apply the same
+      // discount to Stripe that the storefront/cart already shows the buyer.
+      // "Effectively active" includes scheduled sales that are already inside their window.
+      const nowIso = new Date().toISOString();
+      const { data: activeSales } = await supabaseAdmin
+        .from("sale_events")
+        .select("id, discount_pct, scope, categories")
+        .in("status", ["active", "scheduled"])
+        .lte("start_at", nowIso)
+        .gte("end_at", nowIso);
+      const saleList = (activeSales ?? []) as Array<{ id: string; discount_pct: number; scope: string; categories: string[] | null }>;
+      let saleProdMap = new Map<string, Set<string>>(); // sale_id -> product_ids
+      if (saleList.length > 0) {
+        const { data: jr } = await supabaseAdmin
+          .from("sale_event_products")
+          .select("sale_event_id, product_id")
+          .in("sale_event_id", saleList.map((s) => s.id));
+        for (const j of jr ?? []) {
+          const set = saleProdMap.get(j.sale_event_id as string) ?? new Set<string>();
+          set.add(j.product_id as string);
+          saleProdMap.set(j.sale_event_id as string, set);
+        }
+      }
+      function saleUnitFor(p: { id: string; price: number; category: string | null }): number {
+        let bestPct = 0;
+        for (const s of saleList) {
+          const cats = (s.categories ?? []).map((c) => c.toLowerCase());
+          const applies =
+            s.scope === "all" ||
+            (s.scope === "categories" && !!p.category && cats.includes(p.category.toLowerCase())) ||
+            (s.scope === "selected" && (saleProdMap.get(s.id)?.has(p.id) ?? false));
+          if (applies && s.discount_pct > bestPct) bestPct = s.discount_pct;
+        }
+        return Math.round(Number(p.price) * (100 - bestPct)) / 100;
+      }
+
+      // Build ordered items (respect original cart order) with sale-adjusted unit price.
       const byId = new Map(products.map((p) => [p.id as string, p]));
       const items = data.items
-        .map((i) => ({ product: byId.get(i.productId), qty: i.qty }))
-        .filter((x): x is { product: NonNullable<ReturnType<typeof byId.get>>; qty: number } => !!x.product);
+        .map((i) => {
+          const product = byId.get(i.productId);
+          if (!product) return null;
+          const salePrice = saleUnitFor({
+            id: product.id as string,
+            price: Number(product.price),
+            category: (product.category as string | null) ?? null,
+          });
+          return { product, qty: i.qty, unitPrice: salePrice };
+        })
+        .filter((x): x is { product: NonNullable<ReturnType<typeof byId.get>>; qty: number; unitPrice: number } => !!x);
 
-      const subtotalCents = items.reduce((n, i) => n + Math.round(Number(i.product.price) * 100) * i.qty, 0);
+      const subtotalCents = items.reduce((n, i) => n + Math.round(i.unitPrice * 100) * i.qty, 0);
       if (subtotalCents <= 0) return { error: "Cart total must be greater than zero." };
 
-      // Discount
+      // Promo code (applied on top of any sale-event pricing already baked into unitPrice)
       let discountCents = 0;
       let discountCode: string | null = null;
       if (data.discountCode) {
@@ -138,12 +183,12 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
 
       const stripe = createStripeClient(data.environment);
 
-      // Build one line item per product using price_data; distribute discount pro-rata via unit_amount reduction
-      const discountRatio = subtotalCents > 0 ? (subtotalCents - discountCents) / subtotalCents : 1;
+      // Distribute any promo-code discount pro-rata across the sale-adjusted unit prices.
+      const promoRatio = subtotalCents > 0 ? (subtotalCents - discountCents) / subtotalCents : 1;
 
       const line_items = items.map((i) => {
-        const originalUnit = Math.round(Number(i.product.price) * 100);
-        const discountedUnit = Math.max(1, Math.round(originalUnit * discountRatio));
+        const saleUnitCents = Math.round(i.unitPrice * 100);
+        const finalUnit = Math.max(1, Math.round(saleUnitCents * promoRatio));
         const images = i.product.cover_url ? [i.product.cover_url as string] : undefined;
         return {
           price_data: {
@@ -153,7 +198,7 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
               ...(images && { images }),
               metadata: { product_id: i.product.id as string, slug: i.product.slug as string },
             },
-            unit_amount: discountedUnit,
+            unit_amount: finalUnit,
           },
           quantity: i.qty,
         };

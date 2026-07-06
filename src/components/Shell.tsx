@@ -6,6 +6,7 @@ import { Footer } from "./Footer";
 import { CartDrawer } from "./CartDrawer";
 import { SaleBanner } from "./SaleBanner";
 import { useCartSync } from "@/hooks/useCartSync";
+import { SalePricingProvider } from "@/lib/sale-pricing";
 
 function CartSync() {
   useCartSync();
@@ -23,11 +24,11 @@ export function Shell() {
 
   if (isDashboard) {
     // Dashboard manages its own chrome (sidebar + topbar).
-    return <Outlet />;
+    return <SalePricingProvider><Outlet /></SalePricingProvider>;
   }
 
   return (
-    <>
+    <SalePricingProvider>
       <SaleBanner />
       <Nav />
       <main className="pt-24 md:pt-28">
@@ -53,6 +54,6 @@ export function Shell() {
       <Footer />
       <CartDrawer />
       <CartSync />
-    </>
+    </SalePricingProvider>
   );
 }

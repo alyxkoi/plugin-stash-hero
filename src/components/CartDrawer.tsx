@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useStore, actions } from "@/lib/store";
 import { validateDiscount } from "@/lib/checkout.functions";
+import { pickSaleFor, useAllActiveSales } from "@/lib/sale-pricing";
 
 export function CartDrawer() {
   const open = useStore((s) => s.cartOpen);
   const cart = useStore((s) => s.cart);
   const discount = useStore((s) => s.discount);
+  const { sales } = useAllActiveSales();
   const reduce = useReducedMotion();
   const navigate = useNavigate();
 
@@ -26,7 +28,14 @@ export function CartDrawer() {
     return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = prev; };
   }, [open]);
 
-  const subtotal = cart.reduce((n, i) => n + i.product.price * i.qty, 0);
+  // Effective unit price per item after any active sale-event discount.
+  const priced = cart.map((i) => {
+    const hit = pickSaleFor(sales, i.product);
+    const unit = hit ? Math.round(i.product.price * (100 - hit.pct)) / 100 : i.product.price;
+    return { ...i, unit, salePct: hit?.pct ?? 0 };
+  });
+  const subtotal = priced.reduce((n, i) => n + i.unit * i.qty, 0);
+  const saleSavings = priced.reduce((n, i) => n + (i.product.price - i.unit) * i.qty, 0);
   const discountAmount = !discount
     ? 0
     : discount.type === "percent"
@@ -106,7 +115,7 @@ export function CartDrawer() {
                   </Link>
                 </div>
               ) : (
-                cart.map((item) => (
+                priced.map((item) => (
                   <div key={item.product.slug} className="flex gap-3 p-3 rounded-xl border border-white/8 bg-white/3">
                     <div
                       className="w-16 h-16 rounded-lg shrink-0 overflow-hidden relative flex items-center justify-center"
@@ -121,11 +130,19 @@ export function CartDrawer() {
                     <div className="flex-1 min-w-0">
                       <div className="font-mono text-[9px] text-white/40 tracking-wider">{item.product.maker.toUpperCase()}</div>
                       <div className="font-bold truncate">{item.product.name}</div>
+                      {item.salePct > 0 && (
+                        <div className="font-mono text-[10px] text-[var(--accent-red-glow)] mt-0.5">{item.salePct}% off applied</div>
+                      )}
                       <button onClick={() => actions.removeFromCart(item.product.slug)} className="text-xs text-white/50 hover:text-[var(--accent-red)] mt-1 transition">
                         Remove
                       </button>
                     </div>
-                    <div className="font-mono font-bold">${(item.product.price * item.qty).toFixed(2)}</div>
+                    <div className="text-right">
+                      {item.salePct > 0 && (
+                        <div className="font-mono text-[10px] text-white/40 line-through">${(item.product.price * item.qty).toFixed(2)}</div>
+                      )}
+                      <div className="font-mono font-bold">${(item.unit * item.qty).toFixed(2)}</div>
+                    </div>
                   </div>
                 ))
               )}
@@ -163,6 +180,7 @@ export function CartDrawer() {
                 )}
 
                 <div className="p-4 rounded-xl bg-white/3 border border-white/8 space-y-2 text-sm">
+                  {saleSavings > 0 && <Row label="Sale savings" value={`-$${saleSavings.toFixed(2)}`} highlight />}
                   <Row label="Subtotal" value={`$${subtotal.toFixed(2)}`} />
                   {discountAmount > 0 && <Row label="Discount" value={`-$${discountAmount.toFixed(2)}`} highlight />}
                   <div className="h-px bg-white/10 my-2" />
