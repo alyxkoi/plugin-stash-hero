@@ -4,7 +4,6 @@ import { useEffect } from "react";
 import { Nav } from "./Nav";
 import { Footer } from "./Footer";
 import { CartDrawer } from "./CartDrawer";
-import { SaleBanner } from "./SaleBanner";
 import { useCartSync } from "@/hooks/useCartSync";
 import { SalePricingProvider } from "@/lib/sale-pricing";
 
