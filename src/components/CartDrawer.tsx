@@ -10,6 +10,7 @@ export function CartDrawer() {
   const open = useStore((s) => s.cartOpen);
   const cart = useStore((s) => s.cart);
   const discount = useStore((s) => s.discount);
+  const { sales } = useAllActiveSales();
   const reduce = useReducedMotion();
   const navigate = useNavigate();
 
@@ -27,7 +28,14 @@ export function CartDrawer() {
     return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = prev; };
   }, [open]);
 
-  const subtotal = cart.reduce((n, i) => n + i.product.price * i.qty, 0);
+  // Effective unit price per item after any active sale-event discount.
+  const priced = cart.map((i) => {
+    const hit = pickSaleFor(sales, i.product);
+    const unit = hit ? Math.round(i.product.price * (100 - hit.pct)) / 100 : i.product.price;
+    return { ...i, unit, salePct: hit?.pct ?? 0 };
+  });
+  const subtotal = priced.reduce((n, i) => n + i.unit * i.qty, 0);
+  const saleSavings = priced.reduce((n, i) => n + (i.product.price - i.unit) * i.qty, 0);
   const discountAmount = !discount
     ? 0
     : discount.type === "percent"
