@@ -575,6 +575,7 @@ export type Database = {
       }
       sale_events: {
         Row: {
+          categories: string[]
           created_at: string
           discount_pct: number
           end_at: string
@@ -590,6 +591,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          categories?: string[]
           created_at?: string
           discount_pct?: number
           end_at: string
@@ -605,6 +607,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          categories?: string[]
           created_at?: string
           discount_pct?: number
           end_at?: string
@@ -696,7 +699,7 @@ export type Database = {
       order_status: "completed" | "refunded" | "partial" | "pending"
       product_status: "published" | "draft" | "archived"
       sale_event_status: "active" | "scheduled" | "ended" | "draft"
-      sale_scope: "all" | "selected"
+      sale_scope: "all" | "selected" | "categories"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -831,7 +834,7 @@ export const Constants = {
       order_status: ["completed", "refunded", "partial", "pending"],
       product_status: ["published", "draft", "archived"],
       sale_event_status: ["active", "scheduled", "ended", "draft"],
-      sale_scope: ["all", "selected"],
+      sale_scope: ["all", "selected", "categories"],
     },
   },
 } as const
