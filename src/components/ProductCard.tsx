@@ -14,7 +14,11 @@ export function ProductCard({ product, variant = "default", rank }: { product: P
   const onSale = pct > 0 || (product.compareAtPrice && product.compareAtPrice > product.price);
   const displayPrice = pct > 0 ? finalPrice : product.price;
   const strikePrice = pct > 0 ? product.price : product.compareAtPrice;
-  const badgeText = pct > 0 ? `${pct}% OFF` : "35% OFF";
+  const fallbackPct = product.compareAtPrice && product.compareAtPrice > product.price
+    ? Math.round((1 - product.price / product.compareAtPrice) * 100)
+    : 0;
+  const badgePct = pct > 0 ? pct : fallbackPct;
+  const badgeText = badgePct > 0 ? `EXTRA ${badgePct}% OFF` : "";
 
 
   return (

@@ -1,8 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ShopPage } from "@/components/ShopPage";
-import { AuroraTitle } from "@/components/AuroraTitle";
-import { ProductCard } from "@/components/ProductCard";
 import { products } from "@/lib/mock-data";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -130,13 +128,6 @@ function SaleEvent() {
         </div>
       </section>
 
-      <section className="px-4 md:px-12 mb-12">
-        <div className="font-mono text-xs tracking-[0.2em] mb-3" style={{ color }}>TODAY'S SPOTLIGHT</div>
-        <AuroraTitle>HAND-PICKED FOR THE STEALS.</AuroraTitle>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
-          {spotlight.map((p) => <ProductCard key={p.slug} product={p} />)}
-        </div>
-      </section>
 
       <div id="grid"><ShopPage title="EVERYTHING ON SALE." subtitle="Pre-filtered. Best discounts up top." initialOnSale /></div>
 
