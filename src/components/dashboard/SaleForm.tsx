@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { categories as ALL_CATEGORIES, type Category } from "@/lib/mock-data";
 import { toast } from "sonner";
 import { X, Search, AlertTriangle } from "lucide-react";
+import { SALE_TIME_ZONE, centralInputToUtcDate, centralInputToUtcIso, deriveSaleStatus } from "@/lib/sale-time";
 
 const slugify = (s: string) =>
   s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -36,14 +37,6 @@ type OtherSale = {
   categories: string[]; productIds: Set<string>;
   start_at: string; end_at: string; status: string;
 };
-
-/** Turn a Supabase ISO timestamp into a value usable by <input type="datetime-local"> in local time. */
-function isoToLocalInput(iso: string | null | undefined): string {
-  if (!iso) return "";
-  const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
 
 export function SaleForm({
   mode,
@@ -173,7 +166,10 @@ export function SaleForm({
     if (v.scope === "selected" && v.productIds.length === 0) return "Add at least one plugin.";
     if (status === "scheduled") {
       if (!v.startAt || !v.endAt) return "Start and end dates are required to schedule.";
-      if (new Date(v.endAt) <= new Date(v.startAt)) return "End must be after start.";
+      const start = centralInputToUtcDate(v.startAt);
+      const end = centralInputToUtcDate(v.endAt);
+      if (!start || !end) return "Enter valid Central time start and end dates.";
+      if (end <= start) return "End must be after start.";
     }
     return null;
   }
@@ -192,15 +188,18 @@ export function SaleForm({
     setSaving(true);
     try {
       const now = new Date().toISOString();
+      const startAtIso = v.startAt ? centralInputToUtcIso(v.startAt) : now;
+      const endAtIso = v.endAt ? centralInputToUtcIso(v.endAt) : now;
+      const liveStatus = status === "draft" ? "draft" : deriveSaleStatus(startAtIso, endAtIso);
       const payload = {
         name: v.name.trim(),
         slug: v.slug.trim(),
         discount_pct: v.discount_pct,
         scope: v.scope as any,
         categories: v.scope === "categories" ? v.categories : [],
-        start_at: v.startAt ? new Date(v.startAt).toISOString() : now,
-        end_at: v.endAt ? new Date(v.endAt).toISOString() : now,
-        status: status as any,
+        start_at: startAtIso,
+        end_at: endAtIso,
+        status: liveStatus as any,
         // Clear any old presentation fields — this form no longer sets them.
         headline: null,
         subheadline: null,
@@ -230,7 +229,7 @@ export function SaleForm({
 
       clearDraft();
       toast.success(mode === "new"
-        ? (status === "scheduled" ? "Sale scheduled." : "Draft saved.")
+        ? (status === "scheduled" ? `Sale ${liveStatus === "active" ? "activated" : liveStatus}.` : "Draft saved.")
         : "Sale updated.");
       navigate({ to: "/dashboard/sales" });
     } catch (e: any) {
@@ -303,7 +302,7 @@ export function SaleForm({
             <Field label="End"><input type="datetime-local" value={v.endAt} onChange={(e) => set("endAt", e.target.value)} className="ipt" /></Field>
           </div>
           <div className="text-[10px] text-white/40 mt-2 font-mono">
-            Time zone: {Intl.DateTimeFormat().resolvedOptions().timeZone}
+            Time zone: {SALE_TIME_ZONE}. Times are saved in UTC automatically.
           </div>
           <div className="text-[11px] text-white/50 mt-2">
             Status is derived automatically — Scheduled before start, Active between start &amp; end, then Ended.
