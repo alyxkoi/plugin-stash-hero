@@ -35,10 +35,13 @@ export function SalePricingProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     async function load() {
       const nowIso = new Date().toISOString();
+      // "Effectively active" = status is active OR scheduled AND we're within the window.
+      // This lets a sale go live automatically the moment its start time passes,
+      // even before an admin flips its stored status to 'active'.
       const { data: rows } = await supabase
         .from("sale_events")
         .select("id, name, slug, discount_pct, scope, categories, start_at, end_at, status")
-        .eq("status", "active")
+        .in("status", ["active", "scheduled"])
         .lte("start_at", nowIso)
         .gte("end_at", nowIso);
       const list = (rows ?? []) as Omit<ActiveSaleRow, "productIds">[];
