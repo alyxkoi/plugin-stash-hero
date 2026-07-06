@@ -115,7 +115,7 @@ export function CartDrawer() {
                   </Link>
                 </div>
               ) : (
-                cart.map((item) => (
+                priced.map((item) => (
                   <div key={item.product.slug} className="flex gap-3 p-3 rounded-xl border border-white/8 bg-white/3">
                     <div
                       className="w-16 h-16 rounded-lg shrink-0 overflow-hidden relative flex items-center justify-center"
@@ -130,11 +130,19 @@ export function CartDrawer() {
                     <div className="flex-1 min-w-0">
                       <div className="font-mono text-[9px] text-white/40 tracking-wider">{item.product.maker.toUpperCase()}</div>
                       <div className="font-bold truncate">{item.product.name}</div>
+                      {item.salePct > 0 && (
+                        <div className="font-mono text-[10px] text-[var(--accent-red-glow)] mt-0.5">{item.salePct}% off applied</div>
+                      )}
                       <button onClick={() => actions.removeFromCart(item.product.slug)} className="text-xs text-white/50 hover:text-[var(--accent-red)] mt-1 transition">
                         Remove
                       </button>
                     </div>
-                    <div className="font-mono font-bold">${(item.product.price * item.qty).toFixed(2)}</div>
+                    <div className="text-right">
+                      {item.salePct > 0 && (
+                        <div className="font-mono text-[10px] text-white/40 line-through">${(item.product.price * item.qty).toFixed(2)}</div>
+                      )}
+                      <div className="font-mono font-bold">${(item.unit * item.qty).toFixed(2)}</div>
+                    </div>
                   </div>
                 ))
               )}
