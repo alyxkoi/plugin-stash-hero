@@ -129,8 +129,8 @@ function ProductDetail() {
           </div>
 
           <div className="mb-6">
-            {onSale && <div className="font-mono text-lg text-white/40 line-through">${p.compareAtPrice}</div>}
-            <div className="font-mono font-black" style={{ fontSize: "clamp(3rem, 5vw, 4.5rem)", lineHeight: 1 }}>{p.isFree ? "FREE" : `$${p.price}`}</div>
+            {onSale && strike && <div className="font-mono text-lg text-white/40 line-through">${strike}</div>}
+            <div className="font-mono font-black" style={{ fontSize: "clamp(3rem, 5vw, 4.5rem)", lineHeight: 1 }}>{p.isFree ? "FREE" : `$${shown.toFixed(2)}`}</div>
           </div>
 
           <button onClick={() => actions.addToCart(p)} className="btn-primary w-full !py-4 !text-base mb-3 inline-flex items-center justify-center gap-2"><ShoppingCart className="w-5 h-5" /> Add to cart</button>
