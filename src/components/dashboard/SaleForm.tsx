@@ -2,7 +2,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DashCard } from "@/components/DashboardShell";
 import { supabase } from "@/integrations/supabase/client";
-import { categories as ALL_CATEGORIES, type Category } from "@/lib/mock-data";
+import { categories as ALL_CATEGORIES } from "@/lib/mock-data";
 import { toast } from "sonner";
 import { X, Search, AlertTriangle } from "lucide-react";
 import { SALE_TIME_ZONE, centralInputToUtcDate, centralInputToUtcIso, deriveSaleStatus } from "@/lib/sale-time";
