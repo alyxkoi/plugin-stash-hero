@@ -180,6 +180,7 @@ export function CartDrawer() {
                 )}
 
                 <div className="p-4 rounded-xl bg-white/3 border border-white/8 space-y-2 text-sm">
+                  {saleSavings > 0 && <Row label="Sale savings" value={`-$${saleSavings.toFixed(2)}`} highlight />}
                   <Row label="Subtotal" value={`$${subtotal.toFixed(2)}`} />
                   {discountAmount > 0 && <Row label="Discount" value={`-$${discountAmount.toFixed(2)}`} highlight />}
                   <div className="h-px bg-white/10 my-2" />
