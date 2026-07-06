@@ -111,11 +111,6 @@ export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageP
       <section className="px-4 md:px-12 py-12 md:py-16 text-center relative">
         <h1 className="font-black chrome-text" style={{ fontSize: "clamp(2.5rem, 6vw, 5rem)" }}>{title}</h1>
         <p className="mt-3 text-white/65 max-w-2xl mx-auto">{subtitle}</p>
-        {SALE.active && (
-          <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/15 bg-white/5 font-mono text-xs">
-            🌴 35% off everything — {SALE.endsLabel}
-          </div>
-        )}
       </section>
 
       <div className="px-4 md:px-12 grid lg:grid-cols-[280px_1fr] gap-8 pb-16">
