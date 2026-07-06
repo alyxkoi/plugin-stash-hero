@@ -4,7 +4,7 @@ import { Link } from "@tanstack/react-router";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ProductCard } from "./ProductCard";
 import { GlassCard } from "./GlassCard";
-import { categories, type Category, type Product, SALE } from "@/lib/mock-data";
+import { categories, type Category, type Product } from "@/lib/mock-data";
 import { supabase } from "@/integrations/supabase/client";
 
 type Row = {
