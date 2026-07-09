@@ -124,6 +124,7 @@ function EditProduct() {
         published_at: status === "published" ? new Date().toISOString() : null,
       }).eq("id", id);
       if (upErr) throw new Error(upErr.message);
+      queryClient.invalidateQueries({ queryKey: ["dashboard-products"] });
       toast.success("Product saved.");
     } catch (e: any) {
       toast.error(e.message || "Save failed");
