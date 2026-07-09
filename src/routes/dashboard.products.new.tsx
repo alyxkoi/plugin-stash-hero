@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { DashboardShell, DashCard } from "@/components/DashboardShell";
-import { productCategories, saleEvents, formatMoney } from "@/lib/dashboard-mock";
+import { productCategories } from "@/lib/dashboard-mock";
 import { supabase } from "@/integrations/supabase/client";
 import { Upload, Sparkles, CheckCircle2, X, RotateCcw, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
@@ -144,11 +144,9 @@ function NewProduct() {
     return () => window.removeEventListener("beforeunload", handler);
   }, [uploading]);
 
-  const activeSale = saleEvents.find(s => s.status === "active");
   const priceNum = Number(price) || 0;
   const compareNum = Number(compareAt) || 0;
   const baseDiscountPct = compareNum > priceNum && compareNum > 0 ? Math.round((1 - priceNum / compareNum) * 100) : 0;
-  const salePrice = priceNum && activeSale && includeSale ? Math.round(priceNum * (1 - activeSale.discountPct / 100)) : null;
 
   const missing = useMemo(() => ({
     file: !stagingKey || uploadState !== "complete",
@@ -480,14 +478,9 @@ function NewProduct() {
                 Base discount: <strong className="text-emerald-200">{baseDiscountPct}% off</strong> ({`$${compareNum} → $${priceNum}`})
               </div>
             )}
-            <div>
-              <label className="flex items-center gap-2 text-sm cursor-pointer">
-                <input type="checkbox" disabled={!activeSale} checked={includeSale} onChange={e => setIncludeSale(e.target.checked)} className="accent-[var(--accent-red)]" />
-                <span>Stack <strong>extra</strong> discount from current sale event{activeSale ? ` (${activeSale.name}, ${activeSale.discountPct}% off)` : ""}</span>
-              </label>
-              {!activeSale && <p className="text-[10px] text-white/40 mt-1">No active sale to apply.</p>}
-              {salePrice && <p className="text-xs text-[var(--accent-red-glow)] mt-2 font-mono">Final sale price after stack: {formatMoney(salePrice)}</p>}
-            </div>
+            <p className="text-[11px] text-white/40 font-mono">
+              Site-wide sale events apply automatically to matching products at checkout — no per-product opt-in needed.
+            </p>
             <Field label="Publish status">
               <div className="flex gap-3">
                 {([["publish","Publish now"],["draft","Save as draft"]] as const).map(([v,l]) => (
