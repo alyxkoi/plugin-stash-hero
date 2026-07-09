@@ -204,6 +204,7 @@ function NewProduct() {
     setCategory(e.category); setTags(e.tags); setFormats(new Set(e.formats));
     setPrice(e.price); setCompareAt(e.compareAt); setVersion(e.version);
     setIncludeSale(e.includeSale); setPublishStatus(e.publishStatus);
+    setSupportsWindows(e.supportsWindows); setSupportsMac(e.supportsMac);
     setResumed(false); setCanResumeFromDisk(false); clearDraft();
   };
 
