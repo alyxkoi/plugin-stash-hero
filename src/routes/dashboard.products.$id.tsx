@@ -229,22 +229,25 @@ function EditProduct() {
     if (saving) return;
     setSaving(true);
     try {
+      const effectivePrice = isFree ? 0 : (Number(price) || 0);
       const { error: upErr } = await supabase.from("products").update({
         name: name.trim(),
         maker: maker.trim(),
         description: desc,
         category,
-        price: Number(price) || 0,
-        compare_at_price: Number(compareAt) > 0 ? Number(compareAt) : null,
+        price: effectivePrice,
+        compare_at_price: !isFree && Number(compareAt) > 0 ? Number(compareAt) : null,
         version,
         formats: Array.from(formats),
         cover_url: coverUrl,
         status,
         supports_windows: supportsWindows,
         supports_mac: supportsMac,
+        is_free: isFree || effectivePrice === 0,
         published_at: status === "published" ? new Date().toISOString() : null,
       }).eq("id", id);
       if (upErr) throw new Error(upErr.message);
+
       queryClient.invalidateQueries({ queryKey: ["dashboard-products"] });
       toast.success("Product saved.");
     } catch (e: any) {
