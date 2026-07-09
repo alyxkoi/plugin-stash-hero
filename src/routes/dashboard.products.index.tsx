@@ -109,6 +109,7 @@ function ProductsPage() {
                 <tr>
                   <th className="px-2 py-2 w-8"></th><th className="px-2 py-2 w-12"></th>
                   <th className="text-left px-2 py-2">Name</th><th className="text-left px-2 py-2">Category</th>
+                  <th className="text-left px-2 py-2">OS</th>
                   <th className="text-right px-2 py-2">Price</th><th className="text-left px-2 py-2">Status</th>
                   <th className="text-right px-2 py-2">Updated</th><th className="text-right px-2 py-2">Actions</th>
                 </tr>
