@@ -76,7 +76,7 @@ const emptyDraft = (): DraftShape => ({
   fileName: null, fileSize: 0, stagingKey: null, uploadState: "idle",
   mpUploadId: null, mpKey: null, mpPartSize: 0, mpFileName: null, mpFileSize: 0, mpParts: {},
   name: "", maker: "Plugin Warehouse", desc: "", coverUrl: null,
-  category: productCategories[0], tags: [], formats: ["VST3", "AU"],
+  category: productCategories[0], tags: [], formats: ["VST", "VST3"],
   price: "", compareAt: "", version: "1.0",
   includeSale: false, publishStatus: "publish",
   supportsWindows: true, supportsMac: false,
@@ -150,6 +150,21 @@ function NewProduct() {
   const [supportsWindows, setSupportsWindows] = useState(initial.draft.supportsWindows);
   const [supportsMac, setSupportsMac] = useState(initial.draft.supportsMac);
 
+  // AU is Mac-only. Checking Mac auto-checks AU; unchecking Mac auto-removes AU.
+  const setMacWithAU = (mac: boolean) => {
+    setSupportsMac(mac);
+    setFormats((prev) => {
+      const n = new Set(prev);
+      if (mac) n.add("AU");
+      else n.delete("AU");
+      return n;
+    });
+  };
+  const applyDetectedOS = (detected: { win: boolean; mac: boolean }) => {
+    setSupportsWindows(detected.win);
+    setMacWithAU(detected.mac);
+  };
+
   const [resumed, setResumed] = useState(initial.resumed);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [replaceOpen, setReplaceOpen] = useState<File | null>(null);
@@ -191,10 +206,12 @@ function NewProduct() {
   }), [stagingKey, uploadState, name, maker, desc, category, formats, priceNum]);
 
   const canPublish = !Object.values(missing).some(Boolean);
+  const defaultFormats = new Set(["VST", "VST3"]);
   const isDirty = !!fileName || !!name || !!desc || !!coverUrl || tags.length > 0 ||
     !!price || !!compareAt || includeSale || maker !== "Plugin Warehouse" ||
-    formats.size !== 2 || !Array.from(formats).every(f => ["VST3", "AU"].includes(f)) ||
-    category !== productCategories[0] || publishStatus !== "publish";
+    formats.size !== defaultFormats.size || !Array.from(formats).every(f => defaultFormats.has(f)) ||
+    category !== productCategories[0] || publishStatus !== "publish" ||
+    supportsWindows !== true || supportsMac !== false;
 
   const clearDraft = () => { try { localStorage.removeItem(DRAFT_KEY); } catch { /* */ } };
 
@@ -285,10 +302,10 @@ function NewProduct() {
     setFileName(f.name); setFileSize(f.size);
     setStagingKey(null); setUploadPct(0);
     setUploadState("uploading");
-    // Smart pre-fill: infer OS support from filename. User can still toggle.
+    // Smart pre-fill: infer OS support from filename. AU is Mac-only, so a Mac
+    // detection also auto-checks AU (and unchecking Mac later removes it).
     const detected = detectOSFromFilename(f.name);
-    setSupportsWindows(detected.win);
-    setSupportsMac(detected.mac);
+    applyDetectedOS(detected);
     patchDraft({ fileName: f.name, fileSize: f.size, stagingKey: null, uploadState: "uploading", supportsWindows: detected.win, supportsMac: detected.mac });
 
     // Decide fresh vs resume by comparing name+size against saved mp state.
@@ -715,12 +732,14 @@ function NewProduct() {
             </Field>
             <Field label={<>Operating system <span className="text-white/40 normal-case font-mono ml-1">(auto-detected from filename — adjust if needed)</span></>}>
               <div className="grid grid-cols-2 gap-2">
-                {([["Windows", supportsWindows, setSupportsWindows], ["Mac", supportsMac, setSupportsMac]] as const).map(([label, checked, setter]) => (
-                  <label key={label} className={`flex items-center gap-2 rounded-lg px-3 py-2.5 text-xs cursor-pointer transition border ${checked ? "bg-[var(--accent-red)]/15 border-[var(--accent-red)]/60 text-white" : "bg-white/5 border-white/10 text-white/70 hover:border-white/25"}`}>
-                    <input type="checkbox" checked={checked} onChange={e => setter(e.target.checked)} className="accent-[var(--accent-red)]" />
-                    <span className="font-mono tracking-wider">{label}</span>
-                  </label>
-                ))}
+                <label className={`flex items-center gap-2 rounded-lg px-3 py-2.5 text-xs cursor-pointer transition border ${supportsWindows ? "bg-[var(--accent-red)]/15 border-[var(--accent-red)]/60 text-white" : "bg-white/5 border-white/10 text-white/70 hover:border-white/25"}`}>
+                  <input type="checkbox" checked={supportsWindows} onChange={e => setSupportsWindows(e.target.checked)} className="accent-[var(--accent-red)]" />
+                  <span className="font-mono tracking-wider">Windows</span>
+                </label>
+                <label className={`flex items-center gap-2 rounded-lg px-3 py-2.5 text-xs cursor-pointer transition border ${supportsMac ? "bg-[var(--accent-red)]/15 border-[var(--accent-red)]/60 text-white" : "bg-white/5 border-white/10 text-white/70 hover:border-white/25"}`}>
+                  <input type="checkbox" checked={supportsMac} onChange={e => setMacWithAU(e.target.checked)} className="accent-[var(--accent-red)]" />
+                  <span className="font-mono tracking-wider">Mac</span>
+                </label>
               </div>
             </Field>
           </div>

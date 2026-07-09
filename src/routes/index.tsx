@@ -166,10 +166,10 @@ function Hero() {
               params={{ slug: "summer-steals" }}
               className="btn-primary !text-base !py-4 !px-8"
             >
-              LEVEL UP →
+              SHOP THE SALE →
             </Link>
             <Link to="/shop" className="btn-ghost !text-base !py-4 !px-8">
-              WATCH NOW
+              SHOP ALL PLUGINS
             </Link>
           </div>
         </div>
