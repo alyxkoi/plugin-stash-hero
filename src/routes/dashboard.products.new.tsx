@@ -36,6 +36,15 @@ type DraftShape = {
   fileSize: number;
   stagingKey: string | null;
   uploadState: UploadState;
+  // Multipart resume state — populated while a large-file upload is in flight
+  // and cleared once complete/aborted. Persisted synchronously via patchDraft
+  // so a tab freeze between chunks never loses part progress.
+  mpUploadId: string | null;
+  mpKey: string | null;
+  mpPartSize: number;
+  mpFileName: string | null;
+  mpFileSize: number;
+  mpParts: Record<number, string>; // partNumber -> ETag
   name: string;
   maker: string;
   desc: string;
@@ -52,11 +61,13 @@ type DraftShape = {
 
 const emptyDraft = (): DraftShape => ({
   fileName: null, fileSize: 0, stagingKey: null, uploadState: "idle",
+  mpUploadId: null, mpKey: null, mpPartSize: 0, mpFileName: null, mpFileSize: 0, mpParts: {},
   name: "", maker: "Plugin Warehouse", desc: "", coverUrl: null,
   category: productCategories[0], tags: [], formats: ["VST3", "AU"],
   price: "", compareAt: "", version: "1.0",
   includeSale: false, publishStatus: "publish",
 });
+
 
 const loadDraft = (): { draft: DraftShape; resumed: boolean } => {
   if (typeof window === "undefined") return { draft: emptyDraft(), resumed: false };
