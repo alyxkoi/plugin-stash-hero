@@ -76,7 +76,9 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (fileErr || !fileRow?.zip_url) return json({ error: "Plugin file not found." }, 404);
 
-    const url = await presign({ method: "GET", key: fileRow.zip_url, expiresIn: 600 });
+    // 24h expiry — a 35GB download at ~5MB/s takes ~2h; give buyers plenty
+    // of headroom to pause, resume, or complete over an average connection.
+    const url = await presign({ method: "GET", key: fileRow.zip_url, expiresIn: 24 * 3600 });
 
     if (downloadUserId) {
       await admin.from("library_downloads").insert({ user_id: downloadUserId, product_id: productId }).select().maybeSingle();

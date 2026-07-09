@@ -58,6 +58,7 @@ export async function presign(opts: {
   key: string;
   expiresIn?: number;        // seconds, default 900
   contentType?: string;      // accepted for backwards compatibility; not signed
+  extraQuery?: Record<string, string>;
 }) {
   const expiresIn = opts.expiresIn ?? 900;
   const now = new Date();
@@ -72,14 +73,15 @@ export async function presign(opts: {
   const signedHeaders = signedHeadersList.join(";");
   const canonicalHeaders = signedHeadersList.map(h => `${h}:${headers[h]}\n`).join("");
 
-  const params = new URLSearchParams({
+  const allParams: Record<string, string> = {
+    ...(opts.extraQuery ?? {}),
     "X-Amz-Algorithm":  "AWS4-HMAC-SHA256",
     "X-Amz-Credential": credential,
     "X-Amz-Date":       amz,
     "X-Amz-Expires":    String(expiresIn),
     "X-Amz-SignedHeaders": signedHeaders,
-  });
-  const sortedParams = [...params.entries()].sort(([a],[b]) => a < b ? -1 : 1);
+  };
+  const sortedParams = Object.entries(allParams).sort(([a],[b]) => a < b ? -1 : 1);
   const canonicalQuery = sortedParams.map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join("&");
 
   const canonicalRequest = [
@@ -104,6 +106,71 @@ export async function presign(opts: {
 
   return `https://${host}${canonicalUri}?${canonicalQuery}&X-Amz-Signature=${signature}`;
 }
+
+/** S3 Multipart Upload: initiate. Returns the UploadId. */
+export async function createMultipartUpload(key: string): Promise<string> {
+  const { url, headers } = await signRequest({
+    method: "POST",
+    key,
+    query: { uploads: "" },
+    extraHeaders: { "content-type": "application/octet-stream" },
+  });
+  const res = await fetch(url, { method: "POST", headers });
+  if (!res.ok) throw new Error(`CreateMultipartUpload ${res.status}: ${await res.text()}`);
+  const xml = await res.text();
+  const uploadId = xml.match(/<UploadId>([^<]+)<\/UploadId>/)?.[1];
+  if (!uploadId) throw new Error("No UploadId returned from R2");
+  return uploadId;
+}
+
+/** Presigned PUT URL for a single part of an in-flight multipart upload. */
+export function presignUploadPart(key: string, uploadId: string, partNumber: number, expiresIn = 6 * 3600) {
+  return presign({
+    method: "PUT",
+    key,
+    expiresIn,
+    extraQuery: { partNumber: String(partNumber), uploadId },
+  });
+}
+
+/** S3 Multipart Upload: complete. Parts must include PartNumber + ETag. */
+export async function completeMultipartUpload(
+  key: string,
+  uploadId: string,
+  parts: Array<{ PartNumber: number; ETag: string }>,
+): Promise<void> {
+  const sorted = [...parts].sort((a, b) => a.PartNumber - b.PartNumber);
+  const bodyXml =
+    `<CompleteMultipartUpload>` +
+    sorted.map(p => `<Part><PartNumber>${p.PartNumber}</PartNumber><ETag>${p.ETag}</ETag></Part>`).join("") +
+    `</CompleteMultipartUpload>`;
+  const { url, headers } = await signRequest({
+    method: "POST",
+    key,
+    query: { uploadId },
+    body: bodyXml,
+    extraHeaders: { "content-type": "application/xml" },
+  });
+  const res = await fetch(url, { method: "POST", headers, body: bodyXml });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`CompleteMultipartUpload ${res.status}: ${text}`);
+  // S3/R2 can return 200 with an <Error> body — surface those too.
+  if (/<Error>/.test(text)) throw new Error(`CompleteMultipartUpload error body: ${text}`);
+}
+
+/** S3 Multipart Upload: abort. Idempotent (404 is treated as success). */
+export async function abortMultipartUpload(key: string, uploadId: string): Promise<void> {
+  const { url, headers } = await signRequest({
+    method: "DELETE",
+    key,
+    query: { uploadId },
+  });
+  const res = await fetch(url, { method: "DELETE", headers });
+  if (!res.ok && res.status !== 404) {
+    throw new Error(`AbortMultipartUpload ${res.status}: ${await res.text()}`);
+  }
+}
+
 
 /** Signs a direct fetch (server -> R2). Returns headers to attach. */
 export async function signRequest(opts: {
