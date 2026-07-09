@@ -543,7 +543,7 @@ function NewProduct() {
         cover_url: coverUrl,
         status: status === "publish" ? "published" : "draft",
         published_at: status === "publish" ? new Date().toISOString() : null,
-        is_free: priceNum === 0,
+        is_free: isFree || priceNum === 0,
         file_size: fileSize > 0 ? formatBytes(fileSize) : null,
         supports_windows: supportsWindows,
         supports_mac: supportsMac,
