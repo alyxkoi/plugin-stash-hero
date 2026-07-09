@@ -70,6 +70,7 @@ type DraftShape = {
   publishStatus: "publish" | "draft";
   supportsWindows: boolean;
   supportsMac: boolean;
+  isFree: boolean;
 };
 
 const emptyDraft = (): DraftShape => ({
@@ -79,8 +80,9 @@ const emptyDraft = (): DraftShape => ({
   category: productCategories[0], tags: [], formats: ["VST", "VST3"],
   price: "", compareAt: "", version: "1.0",
   includeSale: false, publishStatus: "publish",
-  supportsWindows: true, supportsMac: false,
+  supportsWindows: true, supportsMac: false, isFree: false,
 });
+
 
 
 const loadDraft = (): { draft: DraftShape; resumed: boolean } => {
@@ -149,6 +151,8 @@ function NewProduct() {
   const [publishStatus, setPublishStatus] = useState<"publish" | "draft">(initial.draft.publishStatus);
   const [supportsWindows, setSupportsWindows] = useState(initial.draft.supportsWindows);
   const [supportsMac, setSupportsMac] = useState(initial.draft.supportsMac);
+  const [isFree, setIsFree] = useState(initial.draft.isFree);
+
 
   // AU is Mac-only. Checking Mac auto-checks AU; unchecking Mac auto-removes AU.
   const setMacWithAU = (mac: boolean) => {
@@ -179,9 +183,10 @@ function NewProduct() {
     patchDraft({
       fileName, fileSize, stagingKey, uploadState, name, maker, desc, coverUrl,
       category, tags, formats: Array.from(formats), price, compareAt, version,
-      includeSale, publishStatus, supportsWindows, supportsMac,
+      includeSale, publishStatus, supportsWindows, supportsMac, isFree,
     });
-  }, [fileName, fileSize, stagingKey, uploadState, name, maker, desc, coverUrl, category, tags, formats, price, compareAt, version, includeSale, publishStatus, supportsWindows, supportsMac]);
+  }, [fileName, fileSize, stagingKey, uploadState, name, maker, desc, coverUrl, category, tags, formats, price, compareAt, version, includeSale, publishStatus, supportsWindows, supportsMac, isFree]);
+
 
   // Warn if user tries to close/reload while an upload is in flight.
   useEffect(() => {
@@ -191,7 +196,7 @@ function NewProduct() {
     return () => window.removeEventListener("beforeunload", handler);
   }, [uploading]);
 
-  const priceNum = Number(price) || 0;
+  const priceNum = isFree ? 0 : (Number(price) || 0);
   const compareNum = Number(compareAt) || 0;
   const baseDiscountPct = compareNum > priceNum && compareNum > 0 ? Math.round((1 - priceNum / compareNum) * 100) : 0;
 
@@ -202,8 +207,9 @@ function NewProduct() {
     desc: !desc.trim(),
     category: !category,
     formats: formats.size === 0,
-    price: !(priceNum > 0),
-  }), [stagingKey, uploadState, name, maker, desc, category, formats, priceNum]);
+    price: !isFree && !(priceNum > 0),
+  }), [stagingKey, uploadState, name, maker, desc, category, formats, priceNum, isFree]);
+
 
   const canPublish = !Object.values(missing).some(Boolean);
   const defaultFormats = new Set(["VST", "VST3"]);
@@ -223,7 +229,7 @@ function NewProduct() {
     setCategory(e.category); setTags(e.tags); setFormats(new Set(e.formats));
     setPrice(e.price); setCompareAt(e.compareAt); setVersion(e.version);
     setIncludeSale(e.includeSale); setPublishStatus(e.publishStatus);
-    setSupportsWindows(e.supportsWindows); setSupportsMac(e.supportsMac);
+    setSupportsWindows(e.supportsWindows); setSupportsMac(e.supportsMac); setIsFree(e.isFree);
     setResumed(false); setCanResumeFromDisk(false); clearDraft();
   };
 
@@ -537,7 +543,7 @@ function NewProduct() {
         cover_url: coverUrl,
         status: status === "publish" ? "published" : "draft",
         published_at: status === "publish" ? new Date().toISOString() : null,
-        is_free: priceNum === 0,
+        is_free: isFree || priceNum === 0,
         file_size: fileSize > 0 ? formatBytes(fileSize) : null,
         supports_windows: supportsWindows,
         supports_mac: supportsMac,
@@ -748,25 +754,54 @@ function NewProduct() {
         {/* Pricing */}
         <DashCard title="Pricing">
           <div className="space-y-4">
+            <label className="flex items-start gap-3 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5 cursor-pointer hover:bg-white/[0.05]">
+              <input
+                type="checkbox"
+                checked={isFree}
+                onChange={e => setIsFree(e.target.checked)}
+                className="accent-[var(--accent-red)] mt-0.5"
+              />
+              <div>
+                <div className="font-mono text-xs tracking-wider text-white">FREEBIE</div>
+                <div className="text-[11px] text-white/50 font-mono mt-0.5">
+                  Give this plugin away for free. Price locks at $0 and the storefront shows "FREE".
+                </div>
+              </div>
+            </label>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Field label={<>Price {req(missing.price)}</>}>
+              <Field label={<>Price {!isFree && req(missing.price)}</>}>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 font-mono">$</span>
-                  <input type="number" value={price} onChange={e => setPrice(e.target.value)} className="ipt !pl-7" placeholder="49" />
+                  <span className={`absolute left-3 top-1/2 -translate-y-1/2 font-mono ${isFree ? "text-white/25" : "text-white/40"}`}>$</span>
+                  <input
+                    type="number"
+                    value={isFree ? "0" : price}
+                    onChange={e => setPrice(e.target.value)}
+                    disabled={isFree}
+                    className={`ipt !pl-7 ${isFree ? "opacity-50 cursor-not-allowed" : ""}`}
+                    placeholder="49"
+                  />
                 </div>
               </Field>
               <Field label={<span>Compare-at price <span className="text-white/40 normal-case font-mono">(optional, struck-through original)</span></span>}>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 font-mono">$</span>
-                  <input type="number" value={compareAt} onChange={e => setCompareAt(e.target.value)} className="ipt !pl-7" placeholder="99" />
+                  <span className={`absolute left-3 top-1/2 -translate-y-1/2 font-mono ${isFree ? "text-white/25" : "text-white/40"}`}>$</span>
+                  <input
+                    type="number"
+                    value={compareAt}
+                    onChange={e => setCompareAt(e.target.value)}
+                    disabled={isFree}
+                    className={`ipt !pl-7 ${isFree ? "opacity-50 cursor-not-allowed" : ""}`}
+                    placeholder="99"
+                  />
                 </div>
               </Field>
             </div>
-            {baseDiscountPct > 0 && (
+            {baseDiscountPct > 0 && !isFree && (
               <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs font-mono text-emerald-300">
                 Base discount: <strong className="text-emerald-200">{baseDiscountPct}% off</strong> ({`$${compareNum} → $${priceNum}`})
               </div>
             )}
+
             <p className="text-[11px] text-white/40 font-mono">
               Site-wide sale events apply automatically to matching products at checkout — no per-product opt-in needed.
             </p>

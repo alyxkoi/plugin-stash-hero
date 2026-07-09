@@ -3,6 +3,7 @@ import { getRequest } from "@tanstack/react-start/server";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { type StripeEnv, createStripeClient, getStripeErrorMessage } from "@/lib/stripe.server";
+import { finalizeOrder, type FulfillItem } from "@/lib/order-fulfill.server";
 
 type DiscountResult =
   | { ok: true; code: string; type: "percent" | "fixed"; value: number }
@@ -10,7 +11,9 @@ type DiscountResult =
 
 type CheckoutResult =
   | { clientSecret: string }
+  | { freeSessionId: string }
   | { error: string };
+
 
 type ItemInput = { productId: string; qty: number };
 
@@ -178,9 +181,43 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
       }
 
       const totalCents = Math.max(0, subtotalCents - discountCents);
+
+      // Free-checkout path: total is $0 (all freebies, or discount zeroed it out).
+      // Skip Stripe entirely — create the order directly and hand the client a
+      // synthetic session id so the return page + download links work the same.
+      if (totalCents === 0) {
+        const freeSessionId = `free_${crypto.randomUUID()}`;
+        const fulfillItems: FulfillItem[] = items.map((i) => ({
+          product_id: i.product.id as string,
+          slug: i.product.slug as string,
+          name: i.product.name as string,
+          price: i.unitPrice,
+          cover_gradient: (i.product.cover_gradient as string | null) ?? null,
+          cover_url: (i.product.cover_url as string | null) ?? null,
+          qty: i.qty,
+        }));
+        const guestEmail = data.email ?? null;
+        const finalized = await finalizeOrder({
+          sessionId: freeSessionId,
+          userId: userId ?? null,
+          guestEmail: userId ? guestEmail : guestEmail,
+          discountCode,
+          utmSource: data.utmSource ?? null,
+          subtotalCents,
+          discountCents,
+          totalCents,
+          items: fulfillItems,
+          stripePaymentIntentId: null,
+        });
+        if (!finalized) return { error: "Could not complete free order." };
+        return { freeSessionId };
+      }
+
       if (totalCents < 50) {
         return { error: "Order total must be at least $0.50 to checkout." };
       }
+
+
 
       const stripe = createStripeClient(data.environment);
 

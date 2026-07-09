@@ -21,6 +21,7 @@ type Row = {
   status: "draft" | "published" | "archived";
   cover_url: string | null; cover_gradient: string | null;
   supports_windows: boolean; supports_mac: boolean;
+  is_free: boolean | null;
 };
 
 type FileRow = { zip_url: string; zip_file_name: string | null };
@@ -28,9 +29,10 @@ type FileRow = { zip_url: string; zip_file_name: string | null };
 async function fetchProduct(id: string): Promise<Row | null> {
   const { data, error } = await supabase
     .from("products")
-    .select("id,slug,name,maker,category,description,tags,formats,version,price,compare_at_price,status,cover_url,cover_gradient,supports_windows,supports_mac")
+    .select("id,slug,name,maker,category,description,tags,formats,version,price,compare_at_price,status,cover_url,cover_gradient,supports_windows,supports_mac,is_free")
     .eq("id", id)
     .maybeSingle();
+
   if (error) throw new Error(error.message);
   return data as Row | null;
 }
@@ -94,6 +96,8 @@ function EditProduct() {
   const [status, setStatus] = useState<"draft" | "published" | "archived">("draft");
   const [supportsWindows, setSupportsWindows] = useState(true);
   const [supportsMac, setSupportsMac] = useState(false);
+  const [isFree, setIsFree] = useState(false);
+
   const [coverUploading, setCoverUploading] = useState(false);
   const [zipUploading, setZipUploading] = useState(false);
   const [zipProgress, setZipProgress] = useState(0);
@@ -119,7 +123,9 @@ function EditProduct() {
     setStatus(product.status);
     setSupportsWindows(product.supports_windows ?? true);
     setSupportsMac(product.supports_mac ?? false);
+    setIsFree(!!product.is_free);
   }, [product]);
+
 
   if (isLoading) {
     return <DashboardShell title="Loading…"><DashCard><p className="text-sm text-white/50 font-mono py-6 text-center">Loading product…</p></DashCard></DashboardShell>;
@@ -223,22 +229,25 @@ function EditProduct() {
     if (saving) return;
     setSaving(true);
     try {
+      const effectivePrice = isFree ? 0 : (Number(price) || 0);
       const { error: upErr } = await supabase.from("products").update({
         name: name.trim(),
         maker: maker.trim(),
         description: desc,
         category,
-        price: Number(price) || 0,
-        compare_at_price: Number(compareAt) > 0 ? Number(compareAt) : null,
+        price: effectivePrice,
+        compare_at_price: !isFree && Number(compareAt) > 0 ? Number(compareAt) : null,
         version,
         formats: Array.from(formats),
         cover_url: coverUrl,
         status,
         supports_windows: supportsWindows,
         supports_mac: supportsMac,
+        is_free: isFree || effectivePrice === 0,
         published_at: status === "published" ? new Date().toISOString() : null,
       }).eq("id", id);
       if (upErr) throw new Error(upErr.message);
+
       queryClient.invalidateQueries({ queryKey: ["dashboard-products"] });
       toast.success("Product saved.");
     } catch (e: any) {
@@ -370,9 +379,40 @@ function EditProduct() {
         </DashCard>
 
         <DashCard title="Pricing & status">
+          <label className="flex items-start gap-3 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5 mb-4 cursor-pointer hover:bg-white/[0.05]">
+            <input
+              type="checkbox"
+              checked={isFree}
+              onChange={e => setIsFree(e.target.checked)}
+              className="accent-[var(--accent-red)] mt-0.5"
+            />
+            <div>
+              <div className="font-mono text-xs tracking-wider text-white">FREEBIE</div>
+              <div className="text-[11px] text-white/50 font-mono mt-0.5">
+                Give this plugin away for free. Price locks at $0 and the storefront shows "FREE".
+              </div>
+            </div>
+          </label>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Field label="Price"><input type="number" value={price} onChange={e => setPrice(e.target.value)} className="ipt" /></Field>
-            <Field label="Compare-at price"><input type="number" value={compareAt} onChange={e => setCompareAt(e.target.value)} className="ipt" placeholder="optional" /></Field>
+            <Field label="Price">
+              <input
+                type="number"
+                value={isFree ? "0" : price}
+                onChange={e => setPrice(e.target.value)}
+                disabled={isFree}
+                className={`ipt ${isFree ? "opacity-50 cursor-not-allowed" : ""}`}
+              />
+            </Field>
+            <Field label="Compare-at price">
+              <input
+                type="number"
+                value={compareAt}
+                onChange={e => setCompareAt(e.target.value)}
+                disabled={isFree}
+                className={`ipt ${isFree ? "opacity-50 cursor-not-allowed" : ""}`}
+                placeholder="optional"
+              />
+            </Field>
             <Field label="Status">
               <select value={status} onChange={e => setStatus(e.target.value as any)} className="ipt">
                 <option value="draft" className="bg-[#1F0540]">Draft</option>
@@ -381,6 +421,7 @@ function EditProduct() {
               </select>
             </Field>
           </div>
+
           <div className="text-[10px] text-white/40 mt-3 font-mono">Slug: {product.slug}</div>
           {coverUrl && <div className="text-[10px] text-white/40 mt-1 font-mono break-all">cover_url: {coverUrl}</div>}
         </DashCard>

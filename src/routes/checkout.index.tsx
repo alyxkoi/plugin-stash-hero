@@ -60,9 +60,13 @@ function CheckoutPage() {
       if ("error" in result) {
         setError(result.error);
         startedRef.current = false;
+      } else if ("freeSessionId" in result) {
+        // $0 order — order already created server-side, skip Stripe.
+        navigate({ to: "/checkout/return", search: { session_id: result.freeSessionId } as any });
       } else {
         setClientSecret(result.clientSecret);
       }
+
     } catch (e: any) {
       setError(e?.message ?? "Failed to start checkout.");
       startedRef.current = false;
