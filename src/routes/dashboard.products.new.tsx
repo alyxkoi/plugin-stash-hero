@@ -144,11 +144,9 @@ function NewProduct() {
     return () => window.removeEventListener("beforeunload", handler);
   }, [uploading]);
 
-  const activeSale = saleEvents.find(s => s.status === "active");
   const priceNum = Number(price) || 0;
   const compareNum = Number(compareAt) || 0;
   const baseDiscountPct = compareNum > priceNum && compareNum > 0 ? Math.round((1 - priceNum / compareNum) * 100) : 0;
-  const salePrice = priceNum && activeSale && includeSale ? Math.round(priceNum * (1 - activeSale.discountPct / 100)) : null;
 
   const missing = useMemo(() => ({
     file: !stagingKey || uploadState !== "complete",
