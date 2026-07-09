@@ -112,6 +112,7 @@ const patchDraft = (patch: Partial<DraftShape>) => {
 
 function NewProduct() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const initial = useRef(loadDraft()).current;
 
   const [fileName, setFileName] = useState(initial.draft.fileName);
