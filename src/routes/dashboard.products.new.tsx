@@ -575,16 +575,24 @@ function NewProduct() {
             <div className="text-[11px] text-white/40 mt-1">Max 50GB · multipart upload to private R2 · resumable</div>
             {fileName && (
               <div className="mt-4 max-w-sm mx-auto text-left bg-white/5 rounded-lg p-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-xs font-mono truncate">{fileName}</span>
+                <div className="flex justify-between items-center gap-2">
+                  <span className="text-xs font-mono truncate flex-1">{fileName}</span>
                   <span className="text-[10px] text-white/40 font-mono">{(fileSize/1024/1024).toFixed(1)} MB</span>
+                  <button
+                    type="button"
+                    onClick={e => { e.preventDefault(); e.stopPropagation(); discardUpload(); }}
+                    title="Discard this file and reset the upload zone"
+                    className="text-white/50 hover:text-[var(--accent-red-glow)] transition p-0.5"
+                  >
+                    <X size={13} />
+                  </button>
                 </div>
                 {uploading && (
                   <div className="mt-2 h-1.5 bg-white/10 rounded overflow-hidden">
                     <div className="h-full bg-[var(--accent-red)] transition-all" style={{ width: `${uploadPct}%` }} />
                   </div>
                 )}
-                {uploading && <div className="mt-1 text-[10px] text-white/50 font-mono">{uploadPct}%</div>}
+                {uploading && <div className="mt-1 text-[10px] text-white/50 font-mono">{uploadPct}% · {PART_CONCURRENCY} parallel chunks</div>}
                 {stagingKey && !uploading && (
                   <div className="mt-2 flex items-center gap-1.5 text-xs text-emerald-400">
                     <CheckCircle2 size={12} /> Uploaded to R2 staging
@@ -595,19 +603,24 @@ function NewProduct() {
                     <AlertCircle size={12} className="mt-0.5 shrink-0" />
                     <div className="flex-1">
                       <div>{uploadErr}</div>
-                      {canResumeFromDisk && !uploading && (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {canResumeFromDisk && !uploading && (
+                          <button
+                            type="button"
+                            onClick={e => { e.preventDefault(); e.stopPropagation(); zipInputRef.current?.click(); }}
+                            className="inline-flex items-center gap-1.5 rounded-md border border-[var(--accent-red)]/60 bg-[var(--accent-red)]/15 px-2.5 py-1 text-[11px] text-white hover:bg-[var(--accent-red)]/25"
+                          >
+                            <RotateCcw size={11} /> Resume — re-select same file
+                          </button>
+                        )}
                         <button
                           type="button"
-                          onClick={e => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            zipInputRef.current?.click();
-                          }}
-                          className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-[var(--accent-red)]/60 bg-[var(--accent-red)]/15 px-2.5 py-1 text-[11px] text-white hover:bg-[var(--accent-red)]/25"
+                          onClick={e => { e.preventDefault(); e.stopPropagation(); discardUpload(); }}
+                          className="inline-flex items-center gap-1.5 rounded-md border border-white/20 bg-white/5 px-2.5 py-1 text-[11px] text-white/80 hover:bg-white/10"
                         >
-                          <RotateCcw size={11} /> Resume upload — re-select {fileName}
+                          <X size={11} /> Discard & upload different file
                         </button>
-                      )}
+                      </div>
                     </div>
                   </div>
                 )}
