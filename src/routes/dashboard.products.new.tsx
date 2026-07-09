@@ -5,6 +5,7 @@ import { productCategories } from "@/lib/dashboard-mock";
 import { supabase } from "@/integrations/supabase/client";
 import { Upload, Sparkles, CheckCircle2, X, RotateCcw, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
