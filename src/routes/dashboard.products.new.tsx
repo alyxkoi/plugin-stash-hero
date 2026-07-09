@@ -162,9 +162,9 @@ function NewProduct() {
     patchDraft({
       fileName, fileSize, stagingKey, uploadState, name, maker, desc, coverUrl,
       category, tags, formats: Array.from(formats), price, compareAt, version,
-      includeSale, publishStatus,
+      includeSale, publishStatus, supportsWindows, supportsMac,
     });
-  }, [fileName, fileSize, stagingKey, uploadState, name, maker, desc, coverUrl, category, tags, formats, price, compareAt, version, includeSale, publishStatus]);
+  }, [fileName, fileSize, stagingKey, uploadState, name, maker, desc, coverUrl, category, tags, formats, price, compareAt, version, includeSale, publishStatus, supportsWindows, supportsMac]);
 
   // Warn if user tries to close/reload while an upload is in flight.
   useEffect(() => {
