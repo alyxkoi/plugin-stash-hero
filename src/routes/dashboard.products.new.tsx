@@ -709,6 +709,16 @@ function NewProduct() {
                 })}
               </div>
             </Field>
+            <Field label={<>Operating system <span className="text-white/40 normal-case font-mono ml-1">(auto-detected from filename — adjust if needed)</span></>}>
+              <div className="grid grid-cols-2 gap-2">
+                {([["Windows", supportsWindows, setSupportsWindows], ["Mac", supportsMac, setSupportsMac]] as const).map(([label, checked, setter]) => (
+                  <label key={label} className={`flex items-center gap-2 rounded-lg px-3 py-2.5 text-xs cursor-pointer transition border ${checked ? "bg-[var(--accent-red)]/15 border-[var(--accent-red)]/60 text-white" : "bg-white/5 border-white/10 text-white/70 hover:border-white/25"}`}>
+                    <input type="checkbox" checked={checked} onChange={e => setter(e.target.checked)} className="accent-[var(--accent-red)]" />
+                    <span className="font-mono tracking-wider">{label}</span>
+                  </label>
+                ))}
+              </div>
+            </Field>
           </div>
         </DashCard>
 
