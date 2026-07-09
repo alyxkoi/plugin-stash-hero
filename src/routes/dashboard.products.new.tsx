@@ -363,7 +363,7 @@ function NewProduct() {
             }}
             className={`block border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition ${zipDragOver ? "border-[var(--accent-red)] bg-[var(--accent-red)]/10" : "border-[var(--accent-red)]/40 hover:border-[var(--accent-red)]"}`}
           >
-            <input type="file" accept=".zip" hidden onChange={e => e.target.files?.[0] && uploadFile(e.target.files[0])} />
+            <input type="file" accept=".zip" hidden onChange={e => { const f = e.target.files?.[0]; e.target.value = ""; if (f) uploadFile(f); }} />
             <Upload size={28} className="mx-auto mb-2 text-[var(--accent-red-glow)]" />
             <div className="text-sm">{zipDragOver ? "Drop to upload" : "Drop your ZIP here or click to browse"}</div>
             <div className="text-[11px] text-white/40 mt-1">Max 5GB · uploads directly to private R2 staging</div>
