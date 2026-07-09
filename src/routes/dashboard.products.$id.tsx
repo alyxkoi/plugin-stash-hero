@@ -21,6 +21,7 @@ type Row = {
   status: "draft" | "published" | "archived";
   cover_url: string | null; cover_gradient: string | null;
   supports_windows: boolean; supports_mac: boolean;
+  is_free: boolean | null;
 };
 
 type FileRow = { zip_url: string; zip_file_name: string | null };
@@ -28,9 +29,10 @@ type FileRow = { zip_url: string; zip_file_name: string | null };
 async function fetchProduct(id: string): Promise<Row | null> {
   const { data, error } = await supabase
     .from("products")
-    .select("id,slug,name,maker,category,description,tags,formats,version,price,compare_at_price,status,cover_url,cover_gradient,supports_windows,supports_mac")
+    .select("id,slug,name,maker,category,description,tags,formats,version,price,compare_at_price,status,cover_url,cover_gradient,supports_windows,supports_mac,is_free")
     .eq("id", id)
     .maybeSingle();
+
   if (error) throw new Error(error.message);
   return data as Row | null;
 }
