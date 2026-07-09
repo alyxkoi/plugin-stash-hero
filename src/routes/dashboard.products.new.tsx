@@ -201,7 +201,9 @@ function NewProduct() {
   // Resume: completed part ETags are persisted synchronously to localStorage
   // after each part. Re-selecting the same file (matching name + size)
   // picks up where we left off — remaining parts are re-signed and uploaded.
-  const PART_CONCURRENCY = 4;
+  // 8 parallel parts × 100MB ≈ ~800MB in flight — enough to saturate
+  // gigabit uplinks without overwhelming R2's per-connection throughput.
+  const PART_CONCURRENCY = 8;
   const PART_RETRIES = 4;
 
   // Track whether the currently-shown "interrupted" state has resume state
