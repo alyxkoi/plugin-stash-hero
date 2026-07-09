@@ -474,15 +474,12 @@ function NewProduct() {
     try {
       const productSlug = `${slugify(name)}-${Date.now().toString(36).slice(-5)}`;
 
-      // 1. Finalize R2 (copy staging → final category folder). Only required if file uploaded.
-      let finalKey: string | null = null;
-      if (stagingKey) {
-        const { data: fin, error: finErr } = await supabase.functions.invoke("r2-finalize-upload", {
-          body: { stagingKey, category, productSlug, version },
-        });
-        if (finErr || !fin?.objectKey) throw new Error(fin?.error || finErr?.message || "Failed to finalize file");
-        finalKey = fin.objectKey;
-      }
+      // File is already uploaded to R2 at `stagingKey`. Publishing only writes
+      // the DB row — we no longer copy the object to a "final" folder, which
+      // used to make publish time scale with file size (a 35GB CopyObject can
+      // take minutes). The staging key IS the permanent key; r2-cleanup-staging
+      // skips any object referenced by product_files.zip_url.
+      const finalKey: string | null = stagingKey;
 
       // 2. Insert product
       const { data: product, error: insErr } = await supabase.from("products").insert({
@@ -517,6 +514,7 @@ function NewProduct() {
         });
         if (fErr) throw new Error(`Product saved but file link failed: ${fErr.message}`);
       }
+
 
       clearDraft();
       toast.success(status === "publish" ? "Plugin published successfully" : "Draft saved.");
