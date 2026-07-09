@@ -379,9 +379,40 @@ function EditProduct() {
         </DashCard>
 
         <DashCard title="Pricing & status">
+          <label className="flex items-start gap-3 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5 mb-4 cursor-pointer hover:bg-white/[0.05]">
+            <input
+              type="checkbox"
+              checked={isFree}
+              onChange={e => setIsFree(e.target.checked)}
+              className="accent-[var(--accent-red)] mt-0.5"
+            />
+            <div>
+              <div className="font-mono text-xs tracking-wider text-white">FREEBIE</div>
+              <div className="text-[11px] text-white/50 font-mono mt-0.5">
+                Give this plugin away for free. Price locks at $0 and the storefront shows "FREE".
+              </div>
+            </div>
+          </label>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Field label="Price"><input type="number" value={price} onChange={e => setPrice(e.target.value)} className="ipt" /></Field>
-            <Field label="Compare-at price"><input type="number" value={compareAt} onChange={e => setCompareAt(e.target.value)} className="ipt" placeholder="optional" /></Field>
+            <Field label="Price">
+              <input
+                type="number"
+                value={isFree ? "0" : price}
+                onChange={e => setPrice(e.target.value)}
+                disabled={isFree}
+                className={`ipt ${isFree ? "opacity-50 cursor-not-allowed" : ""}`}
+              />
+            </Field>
+            <Field label="Compare-at price">
+              <input
+                type="number"
+                value={compareAt}
+                onChange={e => setCompareAt(e.target.value)}
+                disabled={isFree}
+                className={`ipt ${isFree ? "opacity-50 cursor-not-allowed" : ""}`}
+                placeholder="optional"
+              />
+            </Field>
             <Field label="Status">
               <select value={status} onChange={e => setStatus(e.target.value as any)} className="ipt">
                 <option value="draft" className="bg-[#1F0540]">Draft</option>
@@ -390,6 +421,7 @@ function EditProduct() {
               </select>
             </Field>
           </div>
+
           <div className="text-[10px] text-white/40 mt-3 font-mono">Slug: {product.slug}</div>
           {coverUrl && <div className="text-[10px] text-white/40 mt-1 font-mono break-all">cover_url: {coverUrl}</div>}
         </DashCard>
