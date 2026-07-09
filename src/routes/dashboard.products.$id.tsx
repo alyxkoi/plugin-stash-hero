@@ -53,6 +53,8 @@ function EditProduct() {
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
   const [coverGradient, setCoverGradient] = useState<string | null>(null);
   const [status, setStatus] = useState<"draft" | "published" | "archived">("draft");
+  const [supportsWindows, setSupportsWindows] = useState(true);
+  const [supportsMac, setSupportsMac] = useState(false);
   const [coverUploading, setCoverUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
