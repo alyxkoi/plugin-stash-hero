@@ -193,15 +193,41 @@ function NewProduct() {
   };
 
   // ---- File upload (zip) — S3 multipart to R2 ----
-  // Reliable ceiling: 50 GB per file. R2/S3 hard-caps at 5 TB (10,000 parts ×
-  // 5 GB); we cap at 50 GB with 100 MB parts to keep per-chunk retries cheap
-  // and progress accurate. Each chunk is retried up to 4× with exponential
-  // backoff, so a flaky network only ever loses one 100 MB slice at a time.
-  // Resume: if a tab freeze / reload interrupts the upload, re-selecting the
-  // same file (matching name + size) picks up where we left off — completed
-  // part ETags are persisted synchronously to localStorage after each part.
+  // Reliable ceiling: 50 GB per file. Each 100 MB chunk is uploaded from a
+  // dedicated Web Worker, which keeps running when the tab is backgrounded
+  // (the main thread is aggressively throttled by Chromium/Safari and would
+  // otherwise pause in-flight PUTs). Chunks are retried up to 4× with
+  // exponential backoff.
+  // Resume: completed part ETags are persisted synchronously to localStorage
+  // after each part. Re-selecting the same file (matching name + size)
+  // picks up where we left off — remaining parts are re-signed and uploaded.
   const PART_CONCURRENCY = 4;
   const PART_RETRIES = 4;
+
+  // Track whether the currently-shown "interrupted" state has resume state
+  // we can pick up on a re-select. Drives the visible Resume button + hint.
+  const [canResumeFromDisk, setCanResumeFromDisk] = useState<boolean>(!!initial.draft.mpUploadId);
+  // File input ref so the visible Resume button can trigger the file picker.
+  const zipInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Advisory: tell the user their backgrounded upload is still going.
+  useEffect(() => {
+    if (!uploading) return;
+    let notifiedHidden = false;
+    const onVis = () => {
+      if (document.visibilityState === "hidden" && !notifiedHidden) {
+        notifiedHidden = true;
+        // Non-blocking; the worker keeps chunk PUTs alive.
+        toast.message("Upload continues in the background", {
+          description: "Chunks upload from a Web Worker so tab-switching won't drop them.",
+          duration: 4000,
+        });
+      }
+      if (document.visibilityState === "visible") notifiedHidden = false;
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, [uploading]);
 
   const runUpload = async (f: File): Promise<void> => {
     setUploadErr(null);
@@ -224,14 +250,19 @@ function NewProduct() {
     let partSize: number;
     let doneParts: Record<number, string> = {};
 
+    const workers: Worker[] = [];
     try {
       if (canResume && saved) {
         key = saved.mpKey!;
         uploadId = saved.mpUploadId!;
         partSize = saved.mpPartSize;
         doneParts = { ...(saved.mpParts ?? {}) };
+        const doneCount = Object.keys(doneParts).length;
+        const totalHint = Math.max(1, Math.ceil(f.size / partSize));
+        const pct = Math.min(99, Math.round((doneCount / totalHint) * 100));
+        toast.success(`Resuming upload — ${pct}% already complete`);
       } else {
-        // Best-effort abort any stale multipart from a different file.
+        // Different file selected → abort the stale multipart on R2.
         if (saved?.mpUploadId && saved?.mpKey) {
           supabase.functions.invoke("r2-multipart-abort", {
             body: { key: saved.mpKey, uploadId: saved.mpUploadId },
@@ -247,6 +278,7 @@ function NewProduct() {
           mpFileName: f.name, mpFileSize: f.size, mpParts: {},
         });
       }
+      setCanResumeFromDisk(true);
 
       const totalParts = Math.max(1, Math.ceil(f.size / partSize));
       const pending: number[] = [];
@@ -265,7 +297,7 @@ function NewProduct() {
       };
       emitProgress();
 
-      // Presign remaining parts in batches of 100 (edge function batch limit).
+      // Presign remaining parts in batches of 100.
       const urls: Record<number, string> = {};
       for (let i = 0; i < pending.length; i += 100) {
         const chunk = pending.slice(i, i + 100);
@@ -279,59 +311,48 @@ function NewProduct() {
       const abortCtrl = new AbortController();
       abortRef.current = abortCtrl;
 
-      const uploadOne = async (partNumber: number): Promise<string> => {
-        const start = (partNumber - 1) * partSize;
-        const end = Math.min(start + partSize, f.size);
-        const blob = f.slice(start, end);
-        let lastErr: Error | null = null;
-        for (let attempt = 0; attempt < PART_RETRIES; attempt++) {
-          if (abortCtrl.signal.aborted) throw new Error("Aborted");
-          try {
-            return await new Promise<string>((resolve, reject) => {
-              const xhr = new XMLHttpRequest();
-              xhr.open("PUT", urls[partNumber]);
-              xhr.upload.onprogress = (e) => {
-                if (e.lengthComputable) { partLoaded.set(partNumber, e.loaded); emitProgress(); }
-              };
-              xhr.onload = () => {
-                if (xhr.status >= 200 && xhr.status < 300) {
-                  // ETag is exposed via CORS ExposeHeader on the bucket.
-                  const etag = xhr.getResponseHeader("ETag") || xhr.getResponseHeader("etag");
-                  if (!etag) return reject(new Error("R2 did not return an ETag (check bucket CORS ExposeHeader: ETag)"));
-                  partLoaded.set(partNumber, blob.size); emitProgress();
-                  resolve(etag);
-                } else {
-                  reject(new Error(`Part ${partNumber} failed (${xhr.status})`));
-                }
-              };
-              xhr.onerror = () => reject(new Error(`Network error on part ${partNumber}`));
-              xhr.onabort = () => reject(new Error("Aborted"));
-              abortCtrl.signal.addEventListener("abort", () => xhr.abort(), { once: true });
-              xhr.send(blob);
-            });
-          } catch (err) {
-            lastErr = err as Error;
-            if (abortCtrl.signal.aborted) throw lastErr;
-            // Reset progress for this part before retry.
-            partLoaded.set(partNumber, 0); emitProgress();
-            await new Promise(r => setTimeout(r, Math.min(30_000, 1000 * Math.pow(2, attempt))));
-          }
-        }
-        throw lastErr ?? new Error(`Part ${partNumber} failed`);
+      // Web Worker pool. Workers keep executing while the tab is backgrounded,
+      // so in-flight chunk PUTs survive tab-switching (main-thread XHR does not).
+      const uploadInWorker = (partNumber: number): Promise<string> => {
+        return new Promise((resolve, reject) => {
+          const w = new Worker(new URL("../workers/upload-part.worker.ts", import.meta.url), { type: "module" });
+          workers.push(w);
+          const cleanup = () => { try { w.terminate(); } catch { /* */ } };
+          const onAbort = () => { cleanup(); reject(new Error("Aborted")); };
+          abortCtrl.signal.addEventListener("abort", onAbort, { once: true });
+          w.onmessage = (ev: MessageEvent) => {
+            const m = ev.data as { type: string; partNumber: number; loaded?: number; etag?: string; message?: string };
+            if (m.type === "progress") {
+              partLoaded.set(m.partNumber, m.loaded ?? 0);
+              emitProgress();
+            } else if (m.type === "done") {
+              partLoaded.set(m.partNumber, f.slice((m.partNumber - 1) * partSize, Math.min(m.partNumber * partSize, f.size)).size);
+              emitProgress();
+              cleanup();
+              resolve(m.etag!);
+            } else if (m.type === "error") {
+              cleanup();
+              reject(new Error(m.message || `Part ${m.partNumber} failed`));
+            }
+          };
+          w.onerror = (err) => { cleanup(); reject(new Error(err.message || "Worker error")); };
+          const start = (partNumber - 1) * partSize;
+          const end = Math.min(start + partSize, f.size);
+          const blob = f.slice(start, end);
+          w.postMessage({ partNumber, url: urls[partNumber], blob, retries: PART_RETRIES });
+        });
       };
 
-      // Worker pool over `pending`.
       let cursor = 0;
-      const workers = Array.from({ length: Math.min(PART_CONCURRENCY, pending.length) }, async () => {
+      const runners = Array.from({ length: Math.min(PART_CONCURRENCY, pending.length) }, async () => {
         while (cursor < pending.length) {
           const my = pending[cursor++];
-          const etag = await uploadOne(my);
+          const etag = await uploadInWorker(my);
           doneParts[my] = etag;
-          // Persist synchronously — one tab-freeze away from being priceless.
           patchDraft({ mpParts: { ...doneParts } });
         }
       });
-      await Promise.all(workers);
+      await Promise.all(runners);
 
       const partList = Object.entries(doneParts).map(([n, etag]) => ({ PartNumber: Number(n), ETag: etag }));
       const { data: comp, error: compErr } = await supabase.functions.invoke("r2-multipart-complete", {
@@ -339,7 +360,6 @@ function NewProduct() {
       });
       if (compErr || !comp?.objectKey) throw new Error(comp?.error || compErr?.message || "Failed to finalize upload");
 
-      // Clear mp state, mark complete — all in one synchronous write.
       patchDraft({
         stagingKey: comp.objectKey, uploadState: "complete",
         mpUploadId: null, mpKey: null, mpPartSize: 0,
@@ -348,24 +368,25 @@ function NewProduct() {
       setStagingKey(comp.objectKey);
       setUploadPct(100);
       setUploadState("complete");
+      setCanResumeFromDisk(false);
       toast.success("Plugin uploaded.");
     } catch (e: any) {
       const msg = e?.message || "Upload failed";
-      setUploadErr(msg);
+      setUploadErr(canResumeFromDisk || (e as any)?.__resumable ? msg + " — re-select the same file to resume." : msg);
       setUploadState("error");
       // Keep mp state so the user can re-select the same file to resume.
       patchDraft({ uploadState: "error", stagingKey: null });
       toast.error(msg);
     } finally {
       abortRef.current = null;
+      for (const w of workers) { try { w.terminate(); } catch { /* */ } }
     }
   };
 
   const uploadFile = async (f: File) => {
     // Guard: don't let an accidental drop/click nuke a completed upload.
     if (stagingKey && uploadState === "complete") { setReplaceOpen(f); return; }
-    // Web Locks keep Chromium from freezing/discarding the tab while held,
-    // so backgrounded uploads actually finish instead of being killed.
+    // Web Locks keep Chromium from discarding the tab while held.
     const locks = (navigator as any).locks;
     if (locks?.request) {
       await locks.request("pw-upload-plugin-zip", { mode: "exclusive" }, () => runUpload(f));
