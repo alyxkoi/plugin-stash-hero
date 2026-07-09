@@ -541,6 +541,7 @@ function NewProduct() {
 
 
       clearDraft();
+      queryClient.invalidateQueries({ queryKey: ["dashboard-products"] });
       toast.success(status === "publish" ? "Plugin published successfully" : "Draft saved.");
       setTimeout(() => navigate({ to: "/dashboard/products" as any }), 250);
     } catch (e: any) {
