@@ -67,6 +67,8 @@ type DraftShape = {
   version: string;
   includeSale: boolean;
   publishStatus: "publish" | "draft";
+  supportsWindows: boolean;
+  supportsMac: boolean;
 };
 
 const emptyDraft = (): DraftShape => ({
@@ -76,6 +78,7 @@ const emptyDraft = (): DraftShape => ({
   category: productCategories[0], tags: [], formats: ["VST3", "AU"],
   price: "", compareAt: "", version: "1.0",
   includeSale: false, publishStatus: "publish",
+  supportsWindows: true, supportsMac: false,
 });
 
 
