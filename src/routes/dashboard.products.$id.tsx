@@ -170,6 +170,16 @@ function EditProduct() {
                   })}
                 </div>
               </Field>
+              <Field label="Operating system">
+                <div className="flex flex-wrap gap-2">
+                  {([["Windows", supportsWindows, setSupportsWindows], ["Mac", supportsMac, setSupportsMac]] as const).map(([label, checked, setter]) => (
+                    <label key={label} className={`inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-md border font-mono cursor-pointer ${checked ? "bg-[var(--accent-red)]/15 border-[var(--accent-red)]/60" : "bg-white/5 border-white/15 text-white/70"}`}>
+                      <input type="checkbox" checked={checked} onChange={e => setter(e.target.checked)} className="accent-[var(--accent-red)]" />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+              </Field>
             </div>
           </div>
         </DashCard>
