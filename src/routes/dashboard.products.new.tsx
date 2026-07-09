@@ -533,6 +533,33 @@ function NewProduct() {
         </AlertDialogContent>
       </AlertDialog>
 
+      <AlertDialog open={!!replaceOpen} onOpenChange={(o) => !o && setReplaceOpen(null)}>
+        <AlertDialogContent className="bg-[#13002C] border-white/15 text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Replace uploaded plugin file?</AlertDialogTitle>
+            <AlertDialogDescription className="text-white/60">
+              You already have <span className="font-mono text-white/80">{fileName}</span> uploaded. Replacing it will discard that upload and re-upload the new file.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-transparent border-white/20 text-white hover:bg-white/10">Keep current file</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                const f = replaceOpen; setReplaceOpen(null);
+                if (!f) return;
+                // Force replacement by clearing state, then re-invoke.
+                setStagingKey(null); setUploadState("idle");
+                patchDraft({ stagingKey: null, uploadState: "idle" });
+                setTimeout(() => uploadFile(f), 0);
+              }}
+              className="bg-[var(--accent-red)] hover:bg-[var(--accent-red)]/90"
+            >
+              Replace
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <style>{`.ipt{width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:0.55rem 0.75rem;font-size:13px;color:#fff;outline:none;transition:border-color .15s}.ipt:focus{border-color:var(--accent-red)}`}</style>
     </DashboardShell>
   );
