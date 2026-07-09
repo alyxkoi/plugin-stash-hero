@@ -15,6 +15,16 @@ const DRAFT_KEY = "pw:new-product-draft:v2";
 
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 
+// Detect OS support from a filename. Case-insensitive, tolerant of any
+// separator. If neither is detected, default to Windows-only.
+const detectOSFromFilename = (name: string): { win: boolean; mac: boolean } => {
+  const s = name.toLowerCase();
+  const win = /(^|[^a-z])(win(dows|32|64)?|w(?:in)?64|x64)([^a-z]|$)/i.test(s);
+  const mac = /(^|[^a-z])(mac(os|osx)?|osx|os-x|apple|darwin|universal)([^a-z]|$)/i.test(s);
+  if (!win && !mac) return { win: true, mac: false };
+  return { win, mac };
+};
+
 const formatBytes = (n: number): string => {
   if (!n || n <= 0) return "";
   const units = ["B", "KB", "MB", "GB", "TB"];
