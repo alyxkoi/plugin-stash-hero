@@ -519,6 +519,8 @@ function NewProduct() {
         published_at: status === "publish" ? new Date().toISOString() : null,
         is_free: priceNum === 0,
         file_size: fileSize > 0 ? formatBytes(fileSize) : null,
+        supports_windows: supportsWindows,
+        supports_mac: supportsMac,
       }).select("id").single();
 
 
