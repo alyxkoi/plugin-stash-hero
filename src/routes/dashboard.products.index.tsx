@@ -72,7 +72,7 @@ function ProductsPage() {
         <Select value={status} onChange={(v) => { setStatus(v as any); setPage(1); }} options={[
           { value: "all", label: "All status" }, { value: "published", label: "Published" }, { value: "draft", label: "Draft" }, { value: "archived", label: "Archived" },
         ]} />
-        <button onClick={() => refetch()} className="btn-ghost !text-xs !py-2 !px-3">Refresh</button>
+        <button onClick={() => refetch()} className="btn-ghost !text-xs !py-2 !px-3">{isFetching ? "Refreshing…" : "Refresh"}</button>
         <button onClick={() => setShowCats(true)} className="btn-ghost !text-xs !py-2 !px-3 ml-auto">Manage categories</button>
       </div>
 
