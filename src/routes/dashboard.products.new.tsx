@@ -189,7 +189,38 @@ function NewProduct() {
     setCategory(e.category); setTags(e.tags); setFormats(new Set(e.formats));
     setPrice(e.price); setCompareAt(e.compareAt); setVersion(e.version);
     setIncludeSale(e.includeSale); setPublishStatus(e.publishStatus);
-    setResumed(false); clearDraft();
+    setResumed(false); setCanResumeFromDisk(false); clearDraft();
+  };
+
+  // Fully reset the upload zone WITHOUT touching the rest of the form.
+  // Aborts any in-flight worker pool, tells R2 to release the multipart
+  // upload, wipes persisted resume state, and re-arms the drop zone so a
+  // new file can be dropped immediately — no page refresh needed.
+  const discardUpload = () => {
+    try { abortRef.current?.abort(); } catch { /* */ }
+    abortRef.current = null;
+    // Read the live mp state directly from storage — state closures may be
+    // stale if this runs right after an error.
+    let saved: DraftShape | null = null;
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (raw) saved = JSON.parse(raw) as DraftShape;
+    } catch { /* */ }
+    if (saved?.mpUploadId && saved?.mpKey) {
+      // Fire-and-forget: freeing R2 storage shouldn't block the UI reset.
+      supabase.functions.invoke("r2-multipart-abort", {
+        body: { key: saved.mpKey, uploadId: saved.mpUploadId },
+      }).catch(() => { /* ignore */ });
+    }
+    setFileName(null); setFileSize(0); setStagingKey(null);
+    setUploadState("idle"); setUploadPct(0); setUploadErr(null);
+    setCanResumeFromDisk(false);
+    patchDraft({
+      fileName: null, fileSize: 0, stagingKey: null, uploadState: "idle",
+      mpUploadId: null, mpKey: null, mpPartSize: 0,
+      mpFileName: null, mpFileSize: 0, mpParts: {},
+    });
+    toast.success("Upload discarded — drop a new file to start.");
   };
 
   // ---- File upload (zip) — S3 multipart to R2 ----
