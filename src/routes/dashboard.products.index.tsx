@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { DashboardShell, DashCard, StatusBadge } from "@/components/DashboardShell";
 import { productCategories, formatMoney, relativeTime, type ProductStatus } from "@/lib/dashboard-mock";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Search, Edit3, Archive, Trash2, X } from "lucide-react";
+import { Plus, Search, Edit3, Archive, Trash2, X, Check } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard/products/")({
   head: () => ({ meta: [{ title: "Products — Plugin Warehouse" }] }),
@@ -28,11 +29,10 @@ async function fetchProducts(): Promise<Row[]> {
 }
 
 function ProductsPage() {
+  const queryClient = useQueryClient();
   const { data: products = [], isLoading, isFetching, error, refetch } = useQuery({
     queryKey: ["dashboard-products"],
     queryFn: fetchProducts,
-    // Keep the list cached across tab-focus. Tabbing back shows the last
-    // data instantly; a silent background refresh runs after 60s of staleness.
     staleTime: 60_000,
     gcTime: 10 * 60_000,
     refetchOnWindowFocus: false,
@@ -46,6 +46,25 @@ function ProductsPage() {
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [showCats, setShowCats] = useState(false);
+  const [savedId, setSavedId] = useState<string | null>(null);
+
+  async function updateProduct(id: string, patch: Partial<Row>, prev: Row) {
+    // Optimistic update
+    queryClient.setQueryData<Row[]>(["dashboard-products"], (rows) =>
+      (rows ?? []).map((r) => (r.id === id ? { ...r, ...patch } : r))
+    );
+    const { error } = await supabase.from("products").update(patch).eq("id", id);
+    if (error) {
+      queryClient.setQueryData<Row[]>(["dashboard-products"], (rows) =>
+        (rows ?? []).map((r) => (r.id === id ? prev : r))
+      );
+      toast.error(`Save failed: ${error.message}`);
+      return false;
+    }
+    setSavedId(id);
+    setTimeout(() => setSavedId((s) => (s === id ? null : s)), 1200);
+    return true;
+  }
 
   const filtered = useMemo(() => products.filter(p => {
     if (q && !p.name.toLowerCase().includes(q.toLowerCase())) return false;
@@ -116,7 +135,7 @@ function ProductsPage() {
               </thead>
               <tbody>
                 {paged.map(p => (
-                  <tr key={p.id} className="border-t border-white/5 hover:bg-white/[0.03]">
+                  <tr key={p.id} className={`border-t border-white/5 hover:bg-white/[0.03] transition-colors ${savedId === p.id ? "bg-emerald-500/10" : ""}`}>
                     <td className="px-2 py-2"><input type="checkbox" checked={selected.has(p.id)} onChange={() => toggle(p.id)} className="accent-[var(--accent-red)]" /></td>
                     <td className="px-2 py-2">
                       {p.cover_url
@@ -127,18 +146,14 @@ function ProductsPage() {
                       <Link to={"/dashboard/products/$id" as any} params={{ id: p.id } as any} className="text-sm hover:text-[var(--accent-red-glow)]">{p.name}</Link>
                       <div className="text-[10px] text-white/40">{p.maker}</div>
                     </td>
-                    <td className="px-2 py-2"><span className="inline-block text-[10px] uppercase tracking-wider font-mono px-2 py-0.5 rounded bg-white/5 border border-white/10">{p.category}</span></td>
                     <td className="px-2 py-2">
-                      <div className="inline-flex gap-1">
-                        {p.supports_windows && <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-sky-500/15 border border-sky-500/40 text-sky-200">Win</span>}
-                        {p.supports_mac && <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-fuchsia-500/15 border border-fuchsia-500/40 text-fuchsia-200">Mac</span>}
-                        {!p.supports_windows && !p.supports_mac && <span className="text-[10px] font-mono text-white/30">—</span>}
-                      </div>
+                      <CategoryCell product={p} onSave={(v) => updateProduct(p.id, { category: v }, p)} />
                     </td>
-                    <td className="px-2 py-2 text-right font-mono text-xs">
-                      {p.compare_at_price && p.compare_at_price > p.price
-                        ? <><span className="text-[var(--accent-red-glow)]">{formatMoney(p.price)}</span> <span className="line-through text-white/30 ml-1">{formatMoney(p.compare_at_price)}</span></>
-                        : formatMoney(p.price)}
+                    <td className="px-2 py-2">
+                      <OsCell product={p} onSave={(win, mac) => updateProduct(p.id, { supports_windows: win, supports_mac: mac }, p)} />
+                    </td>
+                    <td className="px-2 py-2 text-right">
+                      <PriceCell product={p} onSave={(price, cmp) => updateProduct(p.id, { price, compare_at_price: cmp }, p)} justSaved={savedId === p.id} />
                     </td>
                     <td className="px-2 py-2"><StatusBadge status={p.status} /></td>
                     <td className="px-2 py-2 text-right font-mono text-[10px] text-white/50">{relativeTime(p.updated_at)}</td>
@@ -170,6 +185,155 @@ function ProductsPage() {
 
       {showCats && <CategoriesModal onClose={() => setShowCats(false)} />}
     </DashboardShell>
+  );
+}
+
+// ---------- Inline edit cells ----------
+
+function useOutsideClose(open: boolean, onClose: () => void) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onKey); };
+  }, [open, onClose]);
+  return ref;
+}
+
+function OsCell({ product, onSave }: { product: Row; onSave: (win: boolean, mac: boolean) => Promise<boolean> }) {
+  const [open, setOpen] = useState(false);
+  const ref = useOutsideClose(open, () => setOpen(false));
+  const set = async (win: boolean, mac: boolean) => {
+    if (!win && !mac) return; // require at least one
+    await onSave(win, mac);
+    setOpen(false);
+  };
+  return (
+    <div ref={ref} className="relative inline-block">
+      <button onClick={() => setOpen(o => !o)} className="inline-flex gap-1 rounded hover:bg-white/5 px-1 py-0.5 cursor-pointer">
+        {product.supports_windows && <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-sky-500/15 border border-sky-500/40 text-sky-200">Win</span>}
+        {product.supports_mac && <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-fuchsia-500/15 border border-fuchsia-500/40 text-fuchsia-200">Mac</span>}
+        {!product.supports_windows && !product.supports_mac && <span className="text-[10px] font-mono text-white/30">—</span>}
+      </button>
+      {open && (
+        <div className="absolute z-40 top-full mt-1 left-0 w-44 glass-card p-2 shadow-2xl">
+          <div className="relative z-10 space-y-1">
+            <button onClick={() => set(true, false)} className="w-full text-left text-xs px-2 py-1.5 rounded hover:bg-white/10 flex items-center justify-between">
+              Windows only {product.supports_windows && !product.supports_mac && <Check size={12} />}
+            </button>
+            <button onClick={() => set(false, true)} className="w-full text-left text-xs px-2 py-1.5 rounded hover:bg-white/10 flex items-center justify-between">
+              Mac only {!product.supports_windows && product.supports_mac && <Check size={12} />}
+            </button>
+            <button onClick={() => set(true, true)} className="w-full text-left text-xs px-2 py-1.5 rounded hover:bg-white/10 flex items-center justify-between">
+              Both {product.supports_windows && product.supports_mac && <Check size={12} />}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CategoryCell({ product, onSave }: { product: Row; onSave: (v: string) => Promise<boolean> }) {
+  const [open, setOpen] = useState(false);
+  const ref = useOutsideClose(open, () => setOpen(false));
+  const pick = async (v: string) => { await onSave(v); setOpen(false); };
+  return (
+    <div ref={ref} className="relative inline-block">
+      <button onClick={() => setOpen(o => !o)} className="inline-block text-[10px] uppercase tracking-wider font-mono px-2 py-0.5 rounded bg-white/5 border border-white/10 hover:bg-white/10 cursor-pointer">
+        {product.category}
+      </button>
+      {open && (
+        <div className="absolute z-40 top-full mt-1 left-0 w-44 glass-card p-1 shadow-2xl max-h-64 overflow-y-auto">
+          <div className="relative z-10">
+            {productCategories.map(c => (
+              <button key={c} onClick={() => pick(c)} className="w-full text-left text-xs px-2 py-1.5 rounded hover:bg-white/10 flex items-center justify-between">
+                <span className="capitalize">{c}</span>
+                {product.category === c && <Check size={12} />}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PriceCell({ product, onSave, justSaved }: { product: Row; onSave: (price: number, cmp: number | null) => Promise<boolean>; justSaved: boolean }) {
+  const [editing, setEditing] = useState<"price" | "cmp" | null>(null);
+  const [val, setVal] = useState("");
+
+  const startEdit = (which: "price" | "cmp") => {
+    setEditing(which);
+    setVal(which === "price" ? String(product.price) : (product.compare_at_price ? String(product.compare_at_price) : ""));
+  };
+
+  const commit = async () => {
+    if (!editing) return;
+    const trimmed = val.trim();
+    if (editing === "price") {
+      const n = parseFloat(trimmed);
+      if (!isFinite(n) || n < 0) { toast.error("Enter a valid price"); setEditing(null); return; }
+      if (n !== product.price) await onSave(n, product.compare_at_price);
+    } else {
+      const n = trimmed === "" ? null : parseFloat(trimmed);
+      if (n !== null && (!isFinite(n) || n < 0)) { toast.error("Enter a valid compare-at price"); setEditing(null); return; }
+      if (n !== product.compare_at_price) await onSave(product.price, n);
+    }
+    setEditing(null);
+  };
+
+  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") { e.preventDefault(); commit(); }
+    else if (e.key === "Escape") { e.preventDefault(); setEditing(null); }
+  };
+
+  return (
+    <div className="inline-flex items-center gap-1 font-mono text-xs justify-end">
+      {editing === "price" ? (
+        <PriceInput value={val} setVal={setVal} onBlur={commit} onKeyDown={onKeyDown} />
+      ) : (
+        <button onClick={() => startEdit("price")} className={`px-1 py-0.5 rounded hover:bg-white/10 ${product.compare_at_price && product.compare_at_price > product.price ? "text-[var(--accent-red-glow)]" : ""}`}>
+          {formatMoney(product.price)}
+        </button>
+      )}
+      {editing === "cmp" ? (
+        <PriceInput value={val} setVal={setVal} onBlur={commit} onKeyDown={onKeyDown} placeholder="—" />
+      ) : (
+        <button onClick={() => startEdit("cmp")} className="px-1 py-0.5 rounded hover:bg-white/10 text-white/40">
+          {product.compare_at_price ? <span className="line-through">{formatMoney(product.compare_at_price)}</span> : <span className="text-white/20">+cmp</span>}
+        </button>
+      )}
+      {justSaved && <Check size={12} className="text-emerald-400" />}
+    </div>
+  );
+}
+
+function PriceInput({ value, setVal, onBlur, onKeyDown, placeholder }: {
+  value: string; setVal: (v: string) => void; onBlur: () => void;
+  onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void; placeholder?: string;
+}) {
+  const ref = useRef<HTMLInputElement>(null);
+  useEffect(() => { ref.current?.focus(); ref.current?.select(); }, []);
+  return (
+    <div className="inline-flex items-center bg-white/10 border border-[var(--accent-red)]/60 rounded px-1 py-0.5">
+      <span className="text-white/50 mr-0.5">$</span>
+      <input
+        ref={ref}
+        value={value}
+        onChange={e => setVal(e.target.value)}
+        onBlur={onBlur}
+        onKeyDown={onKeyDown}
+        placeholder={placeholder}
+        inputMode="decimal"
+        className="w-16 bg-transparent outline-none text-xs text-white text-right"
+      />
+    </div>
   );
 }
 
