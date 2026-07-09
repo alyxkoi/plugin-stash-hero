@@ -525,7 +525,18 @@ function NewProduct() {
             }}
             className={`block border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition ${zipDragOver ? "border-[var(--accent-red)] bg-[var(--accent-red)]/10" : "border-[var(--accent-red)]/40 hover:border-[var(--accent-red)]"}`}
           >
-            <input type="file" accept=".zip" hidden onChange={e => { const f = e.target.files?.[0]; e.target.value = ""; if (f) uploadFile(f); }} />
+            <input
+              ref={zipInputRef}
+              type="file"
+              accept=".zip"
+              hidden
+              // Reset value BEFORE opening — without this, picking the same
+              // file twice in a row is a no-op on most browsers (value
+              // unchanged → no `change` event fires), which is exactly why
+              // "re-select to resume" was silently failing.
+              onClick={e => { (e.currentTarget as HTMLInputElement).value = ""; }}
+              onChange={e => { const f = e.target.files?.[0]; e.target.value = ""; if (f) uploadFile(f); }}
+            />
             <Upload size={28} className="mx-auto mb-2 text-[var(--accent-red-glow)]" />
             <div className="text-sm">{zipDragOver ? "Drop to upload" : "Drop your ZIP here or click to browse"}</div>
             <div className="text-[11px] text-white/40 mt-1">Max 50GB · multipart upload to private R2 · resumable</div>
