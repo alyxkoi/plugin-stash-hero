@@ -189,7 +189,38 @@ function NewProduct() {
     setCategory(e.category); setTags(e.tags); setFormats(new Set(e.formats));
     setPrice(e.price); setCompareAt(e.compareAt); setVersion(e.version);
     setIncludeSale(e.includeSale); setPublishStatus(e.publishStatus);
-    setResumed(false); clearDraft();
+    setResumed(false); setCanResumeFromDisk(false); clearDraft();
+  };
+
+  // Fully reset the upload zone WITHOUT touching the rest of the form.
+  // Aborts any in-flight worker pool, tells R2 to release the multipart
+  // upload, wipes persisted resume state, and re-arms the drop zone so a
+  // new file can be dropped immediately — no page refresh needed.
+  const discardUpload = () => {
+    try { abortRef.current?.abort(); } catch { /* */ }
+    abortRef.current = null;
+    // Read the live mp state directly from storage — state closures may be
+    // stale if this runs right after an error.
+    let saved: DraftShape | null = null;
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (raw) saved = JSON.parse(raw) as DraftShape;
+    } catch { /* */ }
+    if (saved?.mpUploadId && saved?.mpKey) {
+      // Fire-and-forget: freeing R2 storage shouldn't block the UI reset.
+      supabase.functions.invoke("r2-multipart-abort", {
+        body: { key: saved.mpKey, uploadId: saved.mpUploadId },
+      }).catch(() => { /* ignore */ });
+    }
+    setFileName(null); setFileSize(0); setStagingKey(null);
+    setUploadState("idle"); setUploadPct(0); setUploadErr(null);
+    setCanResumeFromDisk(false);
+    patchDraft({
+      fileName: null, fileSize: 0, stagingKey: null, uploadState: "idle",
+      mpUploadId: null, mpKey: null, mpPartSize: 0,
+      mpFileName: null, mpFileSize: 0, mpParts: {},
+    });
+    toast.success("Upload discarded — drop a new file to start.");
   };
 
   // ---- File upload (zip) — S3 multipart to R2 ----
@@ -201,7 +232,9 @@ function NewProduct() {
   // Resume: completed part ETags are persisted synchronously to localStorage
   // after each part. Re-selecting the same file (matching name + size)
   // picks up where we left off — remaining parts are re-signed and uploaded.
-  const PART_CONCURRENCY = 4;
+  // 8 parallel parts × 100MB ≈ ~800MB in flight — enough to saturate
+  // gigabit uplinks without overwhelming R2's per-connection throughput.
+  const PART_CONCURRENCY = 8;
   const PART_RETRIES = 4;
 
   // Track whether the currently-shown "interrupted" state has resume state
@@ -542,16 +575,24 @@ function NewProduct() {
             <div className="text-[11px] text-white/40 mt-1">Max 50GB · multipart upload to private R2 · resumable</div>
             {fileName && (
               <div className="mt-4 max-w-sm mx-auto text-left bg-white/5 rounded-lg p-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-xs font-mono truncate">{fileName}</span>
+                <div className="flex justify-between items-center gap-2">
+                  <span className="text-xs font-mono truncate flex-1">{fileName}</span>
                   <span className="text-[10px] text-white/40 font-mono">{(fileSize/1024/1024).toFixed(1)} MB</span>
+                  <button
+                    type="button"
+                    onClick={e => { e.preventDefault(); e.stopPropagation(); discardUpload(); }}
+                    title="Discard this file and reset the upload zone"
+                    className="text-white/50 hover:text-[var(--accent-red-glow)] transition p-0.5"
+                  >
+                    <X size={13} />
+                  </button>
                 </div>
                 {uploading && (
                   <div className="mt-2 h-1.5 bg-white/10 rounded overflow-hidden">
                     <div className="h-full bg-[var(--accent-red)] transition-all" style={{ width: `${uploadPct}%` }} />
                   </div>
                 )}
-                {uploading && <div className="mt-1 text-[10px] text-white/50 font-mono">{uploadPct}%</div>}
+                {uploading && <div className="mt-1 text-[10px] text-white/50 font-mono">{uploadPct}% · {PART_CONCURRENCY} parallel chunks</div>}
                 {stagingKey && !uploading && (
                   <div className="mt-2 flex items-center gap-1.5 text-xs text-emerald-400">
                     <CheckCircle2 size={12} /> Uploaded to R2 staging
@@ -562,19 +603,24 @@ function NewProduct() {
                     <AlertCircle size={12} className="mt-0.5 shrink-0" />
                     <div className="flex-1">
                       <div>{uploadErr}</div>
-                      {canResumeFromDisk && !uploading && (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {canResumeFromDisk && !uploading && (
+                          <button
+                            type="button"
+                            onClick={e => { e.preventDefault(); e.stopPropagation(); zipInputRef.current?.click(); }}
+                            className="inline-flex items-center gap-1.5 rounded-md border border-[var(--accent-red)]/60 bg-[var(--accent-red)]/15 px-2.5 py-1 text-[11px] text-white hover:bg-[var(--accent-red)]/25"
+                          >
+                            <RotateCcw size={11} /> Resume — re-select same file
+                          </button>
+                        )}
                         <button
                           type="button"
-                          onClick={e => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            zipInputRef.current?.click();
-                          }}
-                          className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-[var(--accent-red)]/60 bg-[var(--accent-red)]/15 px-2.5 py-1 text-[11px] text-white hover:bg-[var(--accent-red)]/25"
+                          onClick={e => { e.preventDefault(); e.stopPropagation(); discardUpload(); }}
+                          className="inline-flex items-center gap-1.5 rounded-md border border-white/20 bg-white/5 px-2.5 py-1 text-[11px] text-white/80 hover:bg-white/10"
                         >
-                          <RotateCcw size={11} /> Resume upload — re-select {fileName}
+                          <X size={11} /> Discard & upload different file
                         </button>
-                      )}
+                      </div>
                     </div>
                   </div>
                 )}
