@@ -5,6 +5,7 @@ import { productCategories } from "@/lib/dashboard-mock";
 import { supabase } from "@/integrations/supabase/client";
 import { Upload, Sparkles, CheckCircle2, X, RotateCcw, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -14,6 +15,16 @@ const FORMATS = ["VST", "VST3", "AU", "AAX"];
 const DRAFT_KEY = "pw:new-product-draft:v2";
 
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+
+// Detect OS support from a filename. Case-insensitive, tolerant of any
+// separator. If neither is detected, default to Windows-only.
+const detectOSFromFilename = (name: string): { win: boolean; mac: boolean } => {
+  const s = name.toLowerCase();
+  const win = /(^|[^a-z])(win(dows|32|64)?|w(?:in)?64|x64)([^a-z]|$)/i.test(s);
+  const mac = /(^|[^a-z])(mac(os|osx)?|osx|os-x|apple|darwin|universal)([^a-z]|$)/i.test(s);
+  if (!win && !mac) return { win: true, mac: false };
+  return { win, mac };
+};
 
 const formatBytes = (n: number): string => {
   if (!n || n <= 0) return "";
@@ -57,6 +68,8 @@ type DraftShape = {
   version: string;
   includeSale: boolean;
   publishStatus: "publish" | "draft";
+  supportsWindows: boolean;
+  supportsMac: boolean;
 };
 
 const emptyDraft = (): DraftShape => ({
@@ -66,6 +79,7 @@ const emptyDraft = (): DraftShape => ({
   category: productCategories[0], tags: [], formats: ["VST3", "AU"],
   price: "", compareAt: "", version: "1.0",
   includeSale: false, publishStatus: "publish",
+  supportsWindows: true, supportsMac: false,
 });
 
 
@@ -98,6 +112,7 @@ const patchDraft = (patch: Partial<DraftShape>) => {
 
 function NewProduct() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const initial = useRef(loadDraft()).current;
 
   const [fileName, setFileName] = useState(initial.draft.fileName);
@@ -132,6 +147,8 @@ function NewProduct() {
   const [version, setVersion] = useState(initial.draft.version);
   const [includeSale, setIncludeSale] = useState(initial.draft.includeSale);
   const [publishStatus, setPublishStatus] = useState<"publish" | "draft">(initial.draft.publishStatus);
+  const [supportsWindows, setSupportsWindows] = useState(initial.draft.supportsWindows);
+  const [supportsMac, setSupportsMac] = useState(initial.draft.supportsMac);
 
   const [resumed, setResumed] = useState(initial.resumed);
   const [cancelOpen, setCancelOpen] = useState(false);
@@ -147,9 +164,9 @@ function NewProduct() {
     patchDraft({
       fileName, fileSize, stagingKey, uploadState, name, maker, desc, coverUrl,
       category, tags, formats: Array.from(formats), price, compareAt, version,
-      includeSale, publishStatus,
+      includeSale, publishStatus, supportsWindows, supportsMac,
     });
-  }, [fileName, fileSize, stagingKey, uploadState, name, maker, desc, coverUrl, category, tags, formats, price, compareAt, version, includeSale, publishStatus]);
+  }, [fileName, fileSize, stagingKey, uploadState, name, maker, desc, coverUrl, category, tags, formats, price, compareAt, version, includeSale, publishStatus, supportsWindows, supportsMac]);
 
   // Warn if user tries to close/reload while an upload is in flight.
   useEffect(() => {
@@ -189,6 +206,7 @@ function NewProduct() {
     setCategory(e.category); setTags(e.tags); setFormats(new Set(e.formats));
     setPrice(e.price); setCompareAt(e.compareAt); setVersion(e.version);
     setIncludeSale(e.includeSale); setPublishStatus(e.publishStatus);
+    setSupportsWindows(e.supportsWindows); setSupportsMac(e.supportsMac);
     setResumed(false); setCanResumeFromDisk(false); clearDraft();
   };
 
@@ -267,7 +285,11 @@ function NewProduct() {
     setFileName(f.name); setFileSize(f.size);
     setStagingKey(null); setUploadPct(0);
     setUploadState("uploading");
-    patchDraft({ fileName: f.name, fileSize: f.size, stagingKey: null, uploadState: "uploading" });
+    // Smart pre-fill: infer OS support from filename. User can still toggle.
+    const detected = detectOSFromFilename(f.name);
+    setSupportsWindows(detected.win);
+    setSupportsMac(detected.mac);
+    patchDraft({ fileName: f.name, fileSize: f.size, stagingKey: null, uploadState: "uploading", supportsWindows: detected.win, supportsMac: detected.mac });
 
     // Decide fresh vs resume by comparing name+size against saved mp state.
     let saved: DraftShape | null = null;
@@ -500,6 +522,8 @@ function NewProduct() {
         published_at: status === "publish" ? new Date().toISOString() : null,
         is_free: priceNum === 0,
         file_size: fileSize > 0 ? formatBytes(fileSize) : null,
+        supports_windows: supportsWindows,
+        supports_mac: supportsMac,
       }).select("id").single();
 
 
@@ -517,6 +541,7 @@ function NewProduct() {
 
 
       clearDraft();
+      queryClient.invalidateQueries({ queryKey: ["dashboard-products"] });
       toast.success(status === "publish" ? "Plugin published successfully" : "Draft saved.");
       setTimeout(() => navigate({ to: "/dashboard/products" as any }), 250);
     } catch (e: any) {
@@ -686,6 +711,16 @@ function NewProduct() {
                     </label>
                   );
                 })}
+              </div>
+            </Field>
+            <Field label={<>Operating system <span className="text-white/40 normal-case font-mono ml-1">(auto-detected from filename — adjust if needed)</span></>}>
+              <div className="grid grid-cols-2 gap-2">
+                {([["Windows", supportsWindows, setSupportsWindows], ["Mac", supportsMac, setSupportsMac]] as const).map(([label, checked, setter]) => (
+                  <label key={label} className={`flex items-center gap-2 rounded-lg px-3 py-2.5 text-xs cursor-pointer transition border ${checked ? "bg-[var(--accent-red)]/15 border-[var(--accent-red)]/60 text-white" : "bg-white/5 border-white/10 text-white/70 hover:border-white/25"}`}>
+                    <input type="checkbox" checked={checked} onChange={e => setter(e.target.checked)} className="accent-[var(--accent-red)]" />
+                    <span className="font-mono tracking-wider">{label}</span>
+                  </label>
+                ))}
               </div>
             </Field>
           </div>

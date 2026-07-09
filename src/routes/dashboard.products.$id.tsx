@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { DashboardShell, DashCard } from "@/components/DashboardShell";
 import { supabase } from "@/integrations/supabase/client";
 import { productCategories } from "@/lib/dashboard-mock";
@@ -20,12 +20,13 @@ type Row = {
   version: string | null; price: number; compare_at_price: number | null;
   status: "draft" | "published" | "archived";
   cover_url: string | null; cover_gradient: string | null;
+  supports_windows: boolean; supports_mac: boolean;
 };
 
 async function fetchProduct(id: string): Promise<Row | null> {
   const { data, error } = await supabase
     .from("products")
-    .select("id,slug,name,maker,category,description,tags,formats,version,price,compare_at_price,status,cover_url,cover_gradient")
+    .select("id,slug,name,maker,category,description,tags,formats,version,price,compare_at_price,status,cover_url,cover_gradient,supports_windows,supports_mac")
     .eq("id", id)
     .maybeSingle();
   if (error) throw new Error(error.message);
@@ -35,6 +36,7 @@ async function fetchProduct(id: string): Promise<Row | null> {
 function EditProduct() {
   const { id } = useParams({ from: "/dashboard/products/$id" });
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { data: product, isLoading, error } = useQuery({
     queryKey: ["dashboard-product", id],
     queryFn: () => fetchProduct(id),
@@ -52,6 +54,8 @@ function EditProduct() {
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
   const [coverGradient, setCoverGradient] = useState<string | null>(null);
   const [status, setStatus] = useState<"draft" | "published" | "archived">("draft");
+  const [supportsWindows, setSupportsWindows] = useState(true);
+  const [supportsMac, setSupportsMac] = useState(false);
   const [coverUploading, setCoverUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -70,6 +74,8 @@ function EditProduct() {
     setCoverUrl(product.cover_url);
     setCoverGradient(product.cover_gradient);
     setStatus(product.status);
+    setSupportsWindows(product.supports_windows ?? true);
+    setSupportsMac(product.supports_mac ?? false);
   }, [product]);
 
   if (isLoading) {
@@ -113,9 +119,12 @@ function EditProduct() {
         formats: Array.from(formats),
         cover_url: coverUrl,
         status,
+        supports_windows: supportsWindows,
+        supports_mac: supportsMac,
         published_at: status === "published" ? new Date().toISOString() : null,
       }).eq("id", id);
       if (upErr) throw new Error(upErr.message);
+      queryClient.invalidateQueries({ queryKey: ["dashboard-products"] });
       toast.success("Product saved.");
     } catch (e: any) {
       toast.error(e.message || "Save failed");
@@ -125,6 +134,7 @@ function EditProduct() {
   const remove = async () => {
     const { error } = await supabase.from("products").delete().eq("id", id);
     if (error) { toast.error(error.message); return; }
+    queryClient.invalidateQueries({ queryKey: ["dashboard-products"] });
     toast.success("Deleted.");
     navigate({ to: "/dashboard/products" as any });
   };
@@ -161,6 +171,16 @@ function EditProduct() {
                         className={`text-xs px-3 py-1.5 rounded-md border font-mono ${on ? "bg-[var(--accent-red)]/15 border-[var(--accent-red)]/60" : "bg-white/5 border-white/15 text-white/70"}`}>{f}</button>
                     );
                   })}
+                </div>
+              </Field>
+              <Field label="Operating system">
+                <div className="flex flex-wrap gap-2">
+                  {([["Windows", supportsWindows, setSupportsWindows], ["Mac", supportsMac, setSupportsMac]] as const).map(([label, checked, setter]) => (
+                    <label key={label} className={`inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-md border font-mono cursor-pointer ${checked ? "bg-[var(--accent-red)]/15 border-[var(--accent-red)]/60" : "bg-white/5 border-white/15 text-white/70"}`}>
+                      <input type="checkbox" checked={checked} onChange={e => setter(e.target.checked)} className="accent-[var(--accent-red)]" />
+                      {label}
+                    </label>
+                  ))}
                 </div>
               </Field>
             </div>

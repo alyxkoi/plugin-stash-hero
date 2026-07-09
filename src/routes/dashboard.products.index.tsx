@@ -15,23 +15,29 @@ type Row = {
   id: string; slug: string; name: string; maker: string; category: string;
   price: number; compare_at_price: number | null; status: ProductStatus;
   cover_url: string | null; cover_gradient: string | null; updated_at: string;
+  supports_windows: boolean; supports_mac: boolean;
 };
 
 async function fetchProducts(): Promise<Row[]> {
   const { data, error } = await supabase
     .from("products")
-    .select("id,slug,name,maker,category,price,compare_at_price,status,cover_url,cover_gradient,updated_at")
+    .select("id,slug,name,maker,category,price,compare_at_price,status,cover_url,cover_gradient,updated_at,supports_windows,supports_mac")
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   return (data ?? []) as Row[];
 }
 
 function ProductsPage() {
-  const { data: products = [], isLoading, error, refetch } = useQuery({
+  const { data: products = [], isLoading, isFetching, error, refetch } = useQuery({
     queryKey: ["dashboard-products"],
     queryFn: fetchProducts,
-    staleTime: 0,
-    refetchOnMount: "always",
+    // Keep the list cached across tab-focus. Tabbing back shows the last
+    // data instantly; a silent background refresh runs after 60s of staleness.
+    staleTime: 60_000,
+    gcTime: 10 * 60_000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    placeholderData: (prev) => prev,
   });
 
   const [q, setQ] = useState("");
@@ -66,7 +72,7 @@ function ProductsPage() {
         <Select value={status} onChange={(v) => { setStatus(v as any); setPage(1); }} options={[
           { value: "all", label: "All status" }, { value: "published", label: "Published" }, { value: "draft", label: "Draft" }, { value: "archived", label: "Archived" },
         ]} />
-        <button onClick={() => refetch()} className="btn-ghost !text-xs !py-2 !px-3">Refresh</button>
+        <button onClick={() => refetch()} className="btn-ghost !text-xs !py-2 !px-3">{isFetching ? "Refreshing…" : "Refresh"}</button>
         <button onClick={() => setShowCats(true)} className="btn-ghost !text-xs !py-2 !px-3 ml-auto">Manage categories</button>
       </div>
 
@@ -103,6 +109,7 @@ function ProductsPage() {
                 <tr>
                   <th className="px-2 py-2 w-8"></th><th className="px-2 py-2 w-12"></th>
                   <th className="text-left px-2 py-2">Name</th><th className="text-left px-2 py-2">Category</th>
+                  <th className="text-left px-2 py-2">OS</th>
                   <th className="text-right px-2 py-2">Price</th><th className="text-left px-2 py-2">Status</th>
                   <th className="text-right px-2 py-2">Updated</th><th className="text-right px-2 py-2">Actions</th>
                 </tr>
@@ -121,6 +128,13 @@ function ProductsPage() {
                       <div className="text-[10px] text-white/40">{p.maker}</div>
                     </td>
                     <td className="px-2 py-2"><span className="inline-block text-[10px] uppercase tracking-wider font-mono px-2 py-0.5 rounded bg-white/5 border border-white/10">{p.category}</span></td>
+                    <td className="px-2 py-2">
+                      <div className="inline-flex gap-1">
+                        {p.supports_windows && <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-sky-500/15 border border-sky-500/40 text-sky-200">Win</span>}
+                        {p.supports_mac && <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-fuchsia-500/15 border border-fuchsia-500/40 text-fuchsia-200">Mac</span>}
+                        {!p.supports_windows && !p.supports_mac && <span className="text-[10px] font-mono text-white/30">—</span>}
+                      </div>
+                    </td>
                     <td className="px-2 py-2 text-right font-mono text-xs">
                       {p.compare_at_price && p.compare_at_price > p.price
                         ? <><span className="text-[var(--accent-red-glow)]">{formatMoney(p.price)}</span> <span className="line-through text-white/30 ml-1">{formatMoney(p.compare_at_price)}</span></>
