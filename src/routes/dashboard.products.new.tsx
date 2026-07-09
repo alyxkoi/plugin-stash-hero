@@ -282,7 +282,11 @@ function NewProduct() {
     setFileName(f.name); setFileSize(f.size);
     setStagingKey(null); setUploadPct(0);
     setUploadState("uploading");
-    patchDraft({ fileName: f.name, fileSize: f.size, stagingKey: null, uploadState: "uploading" });
+    // Smart pre-fill: infer OS support from filename. User can still toggle.
+    const detected = detectOSFromFilename(f.name);
+    setSupportsWindows(detected.win);
+    setSupportsMac(detected.mac);
+    patchDraft({ fileName: f.name, fileSize: f.size, stagingKey: null, uploadState: "uploading", supportsWindows: detected.win, supportsMac: detected.mac });
 
     // Decide fresh vs resume by comparing name+size against saved mp state.
     let saved: DraftShape | null = null;
