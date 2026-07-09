@@ -372,7 +372,7 @@ function NewProduct() {
       toast.success("Plugin uploaded.");
     } catch (e: any) {
       const msg = e?.message || "Upload failed";
-      setUploadErr(canResumeFromDisk || (e as any)?.__resumable ? msg + " — re-select the same file to resume." : msg);
+      setUploadErr(canResumeFromDisk ? `${msg} — re-select the same file to resume.` : msg);
       setUploadState("error");
       // Keep mp state so the user can re-select the same file to resume.
       patchDraft({ uploadState: "error", stagingKey: null });
