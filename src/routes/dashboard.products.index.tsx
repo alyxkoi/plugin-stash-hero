@@ -128,6 +128,13 @@ function ProductsPage() {
                       <div className="text-[10px] text-white/40">{p.maker}</div>
                     </td>
                     <td className="px-2 py-2"><span className="inline-block text-[10px] uppercase tracking-wider font-mono px-2 py-0.5 rounded bg-white/5 border border-white/10">{p.category}</span></td>
+                    <td className="px-2 py-2">
+                      <div className="inline-flex gap-1">
+                        {p.supports_windows && <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-sky-500/15 border border-sky-500/40 text-sky-200">Win</span>}
+                        {p.supports_mac && <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-fuchsia-500/15 border border-fuchsia-500/40 text-fuchsia-200">Mac</span>}
+                        {!p.supports_windows && !p.supports_mac && <span className="text-[10px] font-mono text-white/30">—</span>}
+                      </div>
+                    </td>
                     <td className="px-2 py-2 text-right font-mono text-xs">
                       {p.compare_at_price && p.compare_at_price > p.price
                         ? <><span className="text-[var(--accent-red-glow)]">{formatMoney(p.price)}</span> <span className="line-through text-white/30 ml-1">{formatMoney(p.compare_at_price)}</span></>
