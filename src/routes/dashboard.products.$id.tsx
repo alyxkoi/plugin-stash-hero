@@ -118,6 +118,8 @@ function EditProduct() {
         formats: Array.from(formats),
         cover_url: coverUrl,
         status,
+        supports_windows: supportsWindows,
+        supports_mac: supportsMac,
         published_at: status === "published" ? new Date().toISOString() : null,
       }).eq("id", id);
       if (upErr) throw new Error(upErr.message);
