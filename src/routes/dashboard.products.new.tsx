@@ -153,11 +153,10 @@ function NewProduct() {
     name: !name.trim(),
     maker: !maker.trim(),
     desc: !desc.trim(),
-    cover: !coverUrl,
     category: !category,
     formats: formats.size === 0,
     price: !(priceNum > 0),
-  }), [stagingKey, uploadState, name, maker, desc, coverUrl, category, formats, priceNum]);
+  }), [stagingKey, uploadState, name, maker, desc, category, formats, priceNum]);
 
   const canPublish = !Object.values(missing).some(Boolean);
   const isDirty = !!fileName || !!name || !!desc || !!coverUrl || tags.length > 0 ||
@@ -403,7 +402,7 @@ function NewProduct() {
               <textarea value={desc} onChange={e => setDesc(e.target.value)} rows={6} className="ipt resize-none" />
               <div className="text-[10px] text-white/40 mt-1 text-right font-mono">{desc.length} chars</div>
             </Field>
-            <Field label={<>Cover art (JPG or PNG, 1:1, max 5MB) {req(missing.cover)}</>}>
+            <Field label={<>Cover art <span className="text-white/40 font-normal">(optional — JPG or PNG, 1:1, max 5MB. You can add it later on the edit page.)</span></>}>
               <label
                 onDragOver={e => { e.preventDefault(); setCoverDragOver(true); }}
                 onDragEnter={e => { e.preventDefault(); setCoverDragOver(true); }}
