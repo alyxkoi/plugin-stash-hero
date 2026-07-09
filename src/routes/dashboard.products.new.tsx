@@ -153,11 +153,10 @@ function NewProduct() {
     name: !name.trim(),
     maker: !maker.trim(),
     desc: !desc.trim(),
-    cover: !coverUrl,
     category: !category,
     formats: formats.size === 0,
     price: !(priceNum > 0),
-  }), [stagingKey, uploadState, name, maker, desc, coverUrl, category, formats, priceNum]);
+  }), [stagingKey, uploadState, name, maker, desc, category, formats, priceNum]);
 
   const canPublish = !Object.values(missing).some(Boolean);
   const isDirty = !!fileName || !!name || !!desc || !!coverUrl || tags.length > 0 ||
