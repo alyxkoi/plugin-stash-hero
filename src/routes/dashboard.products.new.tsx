@@ -29,10 +29,13 @@ export const Route = createFileRoute("/dashboard/products/new")({
   component: NewProduct,
 });
 
+type UploadState = "idle" | "uploading" | "complete" | "error";
+
 type DraftShape = {
   fileName: string | null;
   fileSize: number;
   stagingKey: string | null;
+  uploadState: UploadState;
   name: string;
   maker: string;
   desc: string;
@@ -48,7 +51,7 @@ type DraftShape = {
 };
 
 const emptyDraft = (): DraftShape => ({
-  fileName: null, fileSize: 0, stagingKey: null,
+  fileName: null, fileSize: 0, stagingKey: null, uploadState: "idle",
   name: "", maker: "Plugin Warehouse", desc: "", coverUrl: null,
   category: productCategories[0], tags: [], formats: ["VST3", "AU"],
   price: "", compareAt: "", version: "1.0",
@@ -60,8 +63,24 @@ const loadDraft = (): { draft: DraftShape; resumed: boolean } => {
   try {
     const raw = localStorage.getItem(DRAFT_KEY);
     if (!raw) return { draft: emptyDraft(), resumed: false };
-    return { draft: { ...emptyDraft(), ...JSON.parse(raw) }, resumed: true };
+    const parsed = { ...emptyDraft(), ...JSON.parse(raw) } as DraftShape;
+    // Interrupted upload → surface it, don't silently pretend it's fine.
+    if (parsed.uploadState === "uploading" && !parsed.stagingKey) {
+      parsed.uploadState = "error";
+    }
+    return { draft: parsed, resumed: true };
   } catch { return { draft: emptyDraft(), resumed: false }; }
+};
+
+// Synchronous localStorage write — used at the exact moment upload completes,
+// so tab freezing/discarding after the XHR resolves can't drop the stagingKey.
+const patchDraft = (patch: Partial<DraftShape>) => {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    const cur = raw ? JSON.parse(raw) : emptyDraft();
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({ ...cur, ...patch }));
+  } catch { /* quota */ }
 };
 
 function NewProduct() {
@@ -71,9 +90,14 @@ function NewProduct() {
   const [fileName, setFileName] = useState(initial.draft.fileName);
   const [fileSize, setFileSize] = useState(initial.draft.fileSize);
   const [stagingKey, setStagingKey] = useState<string | null>(initial.draft.stagingKey);
+  const [uploadState, setUploadState] = useState<UploadState>(initial.draft.uploadState);
   const [uploadPct, setUploadPct] = useState(initial.draft.stagingKey ? 100 : 0);
-  const [uploadErr, setUploadErr] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
+  const [uploadErr, setUploadErr] = useState<string | null>(
+    initial.draft.uploadState === "error" && initial.draft.fileName && !initial.draft.stagingKey
+      ? "Upload was interrupted (tab was backgrounded too long). Please re-upload."
+      : null,
+  );
+  const uploading = uploadState === "uploading";
   const xhrRef = useRef<XMLHttpRequest | null>(null);
 
   const [name, setName] = useState(initial.draft.name);
@@ -96,20 +120,29 @@ function NewProduct() {
 
   const [resumed, setResumed] = useState(initial.resumed);
   const [cancelOpen, setCancelOpen] = useState(false);
+  const [replaceOpen, setReplaceOpen] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [zipDragOver, setZipDragOver] = useState(false);
   const [coverDragOver, setCoverDragOver] = useState(false);
 
-  // Persist draft (no File objects)
+  // Persist draft (no File objects).
   useEffect(() => {
     if (typeof window === "undefined") return;
     const snap: DraftShape = {
-      fileName, fileSize, stagingKey, name, maker, desc, coverUrl,
+      fileName, fileSize, stagingKey, uploadState, name, maker, desc, coverUrl,
       category, tags, formats: Array.from(formats), price, compareAt, version,
       includeSale, publishStatus,
     };
     try { localStorage.setItem(DRAFT_KEY, JSON.stringify(snap)); } catch { /* quota */ }
-  }, [fileName, fileSize, stagingKey, name, maker, desc, coverUrl, category, tags, formats, price, compareAt, version, includeSale, publishStatus]);
+  }, [fileName, fileSize, stagingKey, uploadState, name, maker, desc, coverUrl, category, tags, formats, price, compareAt, version, includeSale, publishStatus]);
+
+  // Warn if user tries to close/reload while an upload is in flight.
+  useEffect(() => {
+    if (!uploading) return;
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [uploading]);
 
   const activeSale = saleEvents.find(s => s.status === "active");
   const priceNum = Number(price) || 0;
@@ -118,7 +151,7 @@ function NewProduct() {
   const salePrice = priceNum && activeSale && includeSale ? Math.round(priceNum * (1 - activeSale.discountPct / 100)) : null;
 
   const missing = useMemo(() => ({
-    file: !stagingKey,
+    file: !stagingKey || uploadState !== "complete",
     name: !name.trim(),
     maker: !maker.trim(),
     desc: !desc.trim(),
@@ -126,7 +159,7 @@ function NewProduct() {
     category: !category,
     formats: formats.size === 0,
     price: !(priceNum > 0),
-  }), [stagingKey, name, maker, desc, coverUrl, category, formats, priceNum]);
+  }), [stagingKey, uploadState, name, maker, desc, coverUrl, category, formats, priceNum]);
 
   const canPublish = !Object.values(missing).some(Boolean);
   const isDirty = !!fileName || !!name || !!desc || !!coverUrl || tags.length > 0 ||
@@ -138,7 +171,8 @@ function NewProduct() {
 
   const resetForm = () => {
     const e = emptyDraft();
-    setFileName(e.fileName); setFileSize(e.fileSize); setStagingKey(e.stagingKey); setUploadPct(0); setUploadErr(null);
+    setFileName(e.fileName); setFileSize(e.fileSize); setStagingKey(e.stagingKey);
+    setUploadState("idle"); setUploadPct(0); setUploadErr(null);
     setName(e.name); setMaker(e.maker); setDesc(e.desc); setCoverUrl(e.coverUrl);
     setCategory(e.category); setTags(e.tags); setFormats(new Set(e.formats));
     setPrice(e.price); setCompareAt(e.compareAt); setVersion(e.version);
@@ -147,10 +181,12 @@ function NewProduct() {
   };
 
   // ---- File upload (zip) ----
-  const uploadFile = async (f: File) => {
+  const runUpload = async (f: File): Promise<void> => {
     setUploadErr(null);
     setFileName(f.name); setFileSize(f.size);
-    setStagingKey(null); setUploadPct(0); setUploading(true);
+    setStagingKey(null); setUploadPct(0);
+    setUploadState("uploading");
+    patchDraft({ fileName: f.name, fileSize: f.size, stagingKey: null, uploadState: "uploading" });
     try {
       const { data, error } = await supabase.functions.invoke("r2-upload-url", {
         body: { kind: "zip", filename: f.name, size: f.size, contentType: f.type || "application/zip" },
@@ -167,15 +203,34 @@ function NewProduct() {
         xhr.onabort = () => reject(new Error("Upload cancelled"));
         xhr.send(f);
       });
+      // Persist synchronously the moment the upload finishes — this survives
+      // tab freeze/discard even if the React commit hasn't run yet.
+      patchDraft({ stagingKey: data.objectKey, uploadState: "complete" });
       setStagingKey(data.objectKey);
       setUploadPct(100);
+      setUploadState("complete");
       toast.success("Plugin uploaded.");
     } catch (e: any) {
-      setUploadErr(e.message || "Upload failed");
-      toast.error(e.message || "Upload failed");
+      const msg = e?.message || "Upload failed";
+      setUploadErr(msg);
+      setUploadState("error");
+      patchDraft({ uploadState: "error", stagingKey: null });
+      toast.error(msg);
     } finally {
-      setUploading(false);
       xhrRef.current = null;
+    }
+  };
+
+  const uploadFile = async (f: File) => {
+    // Guard: don't let an accidental drop/click nuke a completed upload.
+    if (stagingKey && uploadState === "complete") { setReplaceOpen(f); return; }
+    // Web Locks keep Chromium from freezing/discarding the tab while held,
+    // so backgrounded uploads actually finish instead of being killed.
+    const locks = (navigator as any).locks;
+    if (locks?.request) {
+      await locks.request("pw-upload-plugin-zip", { mode: "exclusive" }, () => runUpload(f));
+    } else {
+      await runUpload(f);
     }
   };
 
@@ -308,7 +363,7 @@ function NewProduct() {
             }}
             className={`block border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition ${zipDragOver ? "border-[var(--accent-red)] bg-[var(--accent-red)]/10" : "border-[var(--accent-red)]/40 hover:border-[var(--accent-red)]"}`}
           >
-            <input type="file" accept=".zip" hidden onChange={e => e.target.files?.[0] && uploadFile(e.target.files[0])} />
+            <input type="file" accept=".zip" hidden onChange={e => { const f = e.target.files?.[0]; e.target.value = ""; if (f) uploadFile(f); }} />
             <Upload size={28} className="mx-auto mb-2 text-[var(--accent-red-glow)]" />
             <div className="text-sm">{zipDragOver ? "Drop to upload" : "Drop your ZIP here or click to browse"}</div>
             <div className="text-[11px] text-white/40 mt-1">Max 5GB · uploads directly to private R2 staging</div>
@@ -473,6 +528,33 @@ function NewProduct() {
             <AlertDialogCancel className="bg-transparent border-white/20 text-white hover:bg-white/10">Keep editing</AlertDialogCancel>
             <AlertDialogAction onClick={() => { clearDraft(); navigate({ to: "/dashboard/products" as any }); }} className="bg-[var(--accent-red)] hover:bg-[var(--accent-red)]/90">
               Discard
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!replaceOpen} onOpenChange={(o) => !o && setReplaceOpen(null)}>
+        <AlertDialogContent className="bg-[#13002C] border-white/15 text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Replace uploaded plugin file?</AlertDialogTitle>
+            <AlertDialogDescription className="text-white/60">
+              You already have <span className="font-mono text-white/80">{fileName}</span> uploaded. Replacing it will discard that upload and re-upload the new file.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-transparent border-white/20 text-white hover:bg-white/10">Keep current file</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                const f = replaceOpen; setReplaceOpen(null);
+                if (!f) return;
+                // Force replacement by clearing state, then re-invoke.
+                setStagingKey(null); setUploadState("idle");
+                patchDraft({ stagingKey: null, uploadState: "idle" });
+                setTimeout(() => uploadFile(f), 0);
+              }}
+              className="bg-[var(--accent-red)] hover:bg-[var(--accent-red)]/90"
+            >
+              Replace
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
