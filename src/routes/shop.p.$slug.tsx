@@ -80,12 +80,19 @@ function ProductDetail() {
   const { data: savedIds } = useSavedIds();
   const toggleSaved = useToggleSaved();
 
+  // Hooks must run in a stable order every render — call useSalePricing
+  // BEFORE any early return, using a safe fallback until the product loads.
+  // (Calling it after the isLoading/not-found returns changes the hook count
+  // between renders and throws "Rendered more hooks than during the previous
+  // render", which is why the first click errored and only the cached retry worked.)
+  const pricingInput = data?.product ?? { price: 0, isFree: false, category: null, id: undefined };
+  const { finalPrice, pct } = useSalePricing(pricingInput);
+
   if (isLoading) return <div className="px-6 py-24 text-center font-mono text-white/50">Loading…</div>;
   if (!data?.product) return <div className="px-6 py-24 text-center"><h1 className="font-black text-3xl mb-2">NOT FOUND</h1><Link to="/shop" className="text-[var(--accent-red-glow)]">Back to the warehouse →</Link></div>;
 
   const p = data.product;
   const related = data.related;
-  const { finalPrice, pct } = useSalePricing(p);
   const activeSale = pct > 0;
   const strike = activeSale ? p.price : p.compareAtPrice;
   const shown = activeSale ? finalPrice : p.price;
