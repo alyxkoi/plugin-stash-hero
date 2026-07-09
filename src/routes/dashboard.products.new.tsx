@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { DashboardShell, DashCard } from "@/components/DashboardShell";
-import { productCategories, saleEvents, formatMoney } from "@/lib/dashboard-mock";
+import { productCategories } from "@/lib/dashboard-mock";
 import { supabase } from "@/integrations/supabase/client";
 import { Upload, Sparkles, CheckCircle2, X, RotateCcw, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
