@@ -480,14 +480,9 @@ function NewProduct() {
                 Base discount: <strong className="text-emerald-200">{baseDiscountPct}% off</strong> ({`$${compareNum} → $${priceNum}`})
               </div>
             )}
-            <div>
-              <label className="flex items-center gap-2 text-sm cursor-pointer">
-                <input type="checkbox" disabled={!activeSale} checked={includeSale} onChange={e => setIncludeSale(e.target.checked)} className="accent-[var(--accent-red)]" />
-                <span>Stack <strong>extra</strong> discount from current sale event{activeSale ? ` (${activeSale.name}, ${activeSale.discountPct}% off)` : ""}</span>
-              </label>
-              {!activeSale && <p className="text-[10px] text-white/40 mt-1">No active sale to apply.</p>}
-              {salePrice && <p className="text-xs text-[var(--accent-red-glow)] mt-2 font-mono">Final sale price after stack: {formatMoney(salePrice)}</p>}
-            </div>
+            <p className="text-[11px] text-white/40 font-mono">
+              Site-wide sale events apply automatically to matching products at checkout — no per-product opt-in needed.
+            </p>
             <Field label="Publish status">
               <div className="flex gap-3">
                 {([["publish","Publish now"],["draft","Save as draft"]] as const).map(([v,l]) => (
