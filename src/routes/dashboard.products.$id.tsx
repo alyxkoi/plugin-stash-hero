@@ -36,6 +36,7 @@ async function fetchProduct(id: string): Promise<Row | null> {
 function EditProduct() {
   const { id } = useParams({ from: "/dashboard/products/$id" });
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { data: product, isLoading, error } = useQuery({
     queryKey: ["dashboard-product", id],
     queryFn: () => fetchProduct(id),
