@@ -96,6 +96,8 @@ function EditProduct() {
   const [status, setStatus] = useState<"draft" | "published" | "archived">("draft");
   const [supportsWindows, setSupportsWindows] = useState(true);
   const [supportsMac, setSupportsMac] = useState(false);
+  const [isFree, setIsFree] = useState(false);
+
   const [coverUploading, setCoverUploading] = useState(false);
   const [zipUploading, setZipUploading] = useState(false);
   const [zipProgress, setZipProgress] = useState(0);
