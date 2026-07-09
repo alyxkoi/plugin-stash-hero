@@ -558,8 +558,24 @@ function NewProduct() {
                   </div>
                 )}
                 {uploadErr && (
-                  <div className="mt-2 flex items-center gap-1.5 text-xs text-[var(--accent-red-glow)]">
-                    <AlertCircle size={12} /> {uploadErr}
+                  <div className="mt-2 flex items-start gap-1.5 text-xs text-[var(--accent-red-glow)]">
+                    <AlertCircle size={12} className="mt-0.5 shrink-0" />
+                    <div className="flex-1">
+                      <div>{uploadErr}</div>
+                      {canResumeFromDisk && !uploading && (
+                        <button
+                          type="button"
+                          onClick={e => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            zipInputRef.current?.click();
+                          }}
+                          className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-[var(--accent-red)]/60 bg-[var(--accent-red)]/15 px-2.5 py-1 text-[11px] text-white hover:bg-[var(--accent-red)]/25"
+                        >
+                          <RotateCcw size={11} /> Resume upload — re-select {fileName}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
