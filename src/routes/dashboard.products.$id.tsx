@@ -134,6 +134,7 @@ function EditProduct() {
   const remove = async () => {
     const { error } = await supabase.from("products").delete().eq("id", id);
     if (error) { toast.error(error.message); return; }
+    queryClient.invalidateQueries({ queryKey: ["dashboard-products"] });
     toast.success("Deleted.");
     navigate({ to: "/dashboard/products" as any });
   };
