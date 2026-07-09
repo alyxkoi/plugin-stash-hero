@@ -420,6 +420,8 @@ export type Database = {
           slug: string
           status: Database["public"]["Enums"]["product_status"]
           sub_type: string | null
+          supports_mac: boolean
+          supports_windows: boolean
           tagline: string | null
           tags: string[]
           updated_at: string
@@ -447,6 +449,8 @@ export type Database = {
           slug: string
           status?: Database["public"]["Enums"]["product_status"]
           sub_type?: string | null
+          supports_mac?: boolean
+          supports_windows?: boolean
           tagline?: string | null
           tags?: string[]
           updated_at?: string
@@ -474,6 +478,8 @@ export type Database = {
           slug?: string
           status?: Database["public"]["Enums"]["product_status"]
           sub_type?: string | null
+          supports_mac?: boolean
+          supports_windows?: boolean
           tagline?: string | null
           tags?: string[]
           updated_at?: string
