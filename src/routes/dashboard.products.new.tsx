@@ -151,6 +151,8 @@ function NewProduct() {
   const [publishStatus, setPublishStatus] = useState<"publish" | "draft">(initial.draft.publishStatus);
   const [supportsWindows, setSupportsWindows] = useState(initial.draft.supportsWindows);
   const [supportsMac, setSupportsMac] = useState(initial.draft.supportsMac);
+  const [isFree, setIsFree] = useState(initial.draft.isFree);
+
 
   // AU is Mac-only. Checking Mac auto-checks AU; unchecking Mac auto-removes AU.
   const setMacWithAU = (mac: boolean) => {
