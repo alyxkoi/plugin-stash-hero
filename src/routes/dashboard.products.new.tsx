@@ -76,6 +76,8 @@ const loadDraft = (): { draft: DraftShape; resumed: boolean } => {
     if (!raw) return { draft: emptyDraft(), resumed: false };
     const parsed = { ...emptyDraft(), ...JSON.parse(raw) } as DraftShape;
     // Interrupted upload → surface it, don't silently pretend it's fine.
+    // If we still have mp resume state, re-selecting the same file will
+    // pick up where we left off (existing parts are skipped).
     if (parsed.uploadState === "uploading" && !parsed.stagingKey) {
       parsed.uploadState = "error";
     }
@@ -105,11 +107,13 @@ function NewProduct() {
   const [uploadPct, setUploadPct] = useState(initial.draft.stagingKey ? 100 : 0);
   const [uploadErr, setUploadErr] = useState<string | null>(
     initial.draft.uploadState === "error" && initial.draft.fileName && !initial.draft.stagingKey
-      ? "Upload was interrupted (tab was backgrounded too long). Please re-upload."
+      ? (initial.draft.mpUploadId
+          ? "Upload was interrupted. Re-select the same file to resume where you left off."
+          : "Upload was interrupted (tab was backgrounded too long). Please re-upload.")
       : null,
   );
   const uploading = uploadState === "uploading";
-  const xhrRef = useRef<XMLHttpRequest | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const [name, setName] = useState(initial.draft.name);
   const [maker, setMaker] = useState(initial.draft.maker);
@@ -136,15 +140,15 @@ function NewProduct() {
   const [zipDragOver, setZipDragOver] = useState(false);
   const [coverDragOver, setCoverDragOver] = useState(false);
 
-  // Persist draft (no File objects).
+  // Persist draft (no File objects). Uses patchDraft so it merges into any
+  // multipart resume state written synchronously by the uploader.
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const snap: DraftShape = {
+    patchDraft({
       fileName, fileSize, stagingKey, uploadState, name, maker, desc, coverUrl,
       category, tags, formats: Array.from(formats), price, compareAt, version,
       includeSale, publishStatus,
-    };
-    try { localStorage.setItem(DRAFT_KEY, JSON.stringify(snap)); } catch { /* quota */ }
+    });
   }, [fileName, fileSize, stagingKey, uploadState, name, maker, desc, coverUrl, category, tags, formats, price, compareAt, version, includeSale, publishStatus]);
 
   // Warn if user tries to close/reload while an upload is in flight.
@@ -188,33 +192,160 @@ function NewProduct() {
     setResumed(false); clearDraft();
   };
 
-  // ---- File upload (zip) ----
+  // ---- File upload (zip) — S3 multipart to R2 ----
+  // Reliable ceiling: 50 GB per file. R2/S3 hard-caps at 5 TB (10,000 parts ×
+  // 5 GB); we cap at 50 GB with 100 MB parts to keep per-chunk retries cheap
+  // and progress accurate. Each chunk is retried up to 4× with exponential
+  // backoff, so a flaky network only ever loses one 100 MB slice at a time.
+  // Resume: if a tab freeze / reload interrupts the upload, re-selecting the
+  // same file (matching name + size) picks up where we left off — completed
+  // part ETags are persisted synchronously to localStorage after each part.
+  const PART_CONCURRENCY = 4;
+  const PART_RETRIES = 4;
+
   const runUpload = async (f: File): Promise<void> => {
     setUploadErr(null);
     setFileName(f.name); setFileSize(f.size);
     setStagingKey(null); setUploadPct(0);
     setUploadState("uploading");
     patchDraft({ fileName: f.name, fileSize: f.size, stagingKey: null, uploadState: "uploading" });
-    try {
-      const { data, error } = await supabase.functions.invoke("r2-upload-url", {
-        body: { kind: "zip", filename: f.name, size: f.size, contentType: f.type || "application/zip" },
-      });
-      if (error || !data?.uploadUrl) throw new Error(data?.error || error?.message || "Failed to get upload URL");
 
-      await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhrRef.current = xhr;
-        xhr.open("PUT", data.uploadUrl);
-        xhr.upload.onprogress = (e) => { if (e.lengthComputable) setUploadPct(Math.round((e.loaded / e.total) * 100)); };
-        xhr.onload = () => (xhr.status >= 200 && xhr.status < 300) ? resolve() : reject(new Error(`Upload failed (${xhr.status})`));
-        xhr.onerror = () => reject(new Error("Network error during upload"));
-        xhr.onabort = () => reject(new Error("Upload cancelled"));
-        xhr.send(f);
+    // Decide fresh vs resume by comparing name+size against saved mp state.
+    let saved: DraftShape | null = null;
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (raw) saved = JSON.parse(raw) as DraftShape;
+    } catch { /* ignore */ }
+    const canResume = !!(saved?.mpUploadId && saved?.mpKey && saved?.mpPartSize
+      && saved.mpFileName === f.name && saved.mpFileSize === f.size);
+
+    let key: string;
+    let uploadId: string;
+    let partSize: number;
+    let doneParts: Record<number, string> = {};
+
+    try {
+      if (canResume && saved) {
+        key = saved.mpKey!;
+        uploadId = saved.mpUploadId!;
+        partSize = saved.mpPartSize;
+        doneParts = { ...(saved.mpParts ?? {}) };
+      } else {
+        // Best-effort abort any stale multipart from a different file.
+        if (saved?.mpUploadId && saved?.mpKey) {
+          supabase.functions.invoke("r2-multipart-abort", {
+            body: { key: saved.mpKey, uploadId: saved.mpUploadId },
+          }).catch(() => { /* ignore */ });
+        }
+        const { data, error } = await supabase.functions.invoke("r2-multipart-create", {
+          body: { filename: f.name, size: f.size },
+        });
+        if (error || !data?.uploadId) throw new Error(data?.error || error?.message || "Failed to start upload");
+        key = data.key; uploadId = data.uploadId; partSize = data.partSize;
+        patchDraft({
+          mpKey: key, mpUploadId: uploadId, mpPartSize: partSize,
+          mpFileName: f.name, mpFileSize: f.size, mpParts: {},
+        });
+      }
+
+      const totalParts = Math.max(1, Math.ceil(f.size / partSize));
+      const pending: number[] = [];
+      for (let n = 1; n <= totalParts; n++) if (!doneParts[n]) pending.push(n);
+
+      // Progress accounting across all parts.
+      const partLoaded = new Map<number, number>();
+      for (const n of Object.keys(doneParts).map(Number)) {
+        const start = (n - 1) * partSize;
+        partLoaded.set(n, Math.max(0, Math.min(partSize, f.size - start)));
+      }
+      const emitProgress = () => {
+        let sum = 0;
+        for (const v of partLoaded.values()) sum += v;
+        setUploadPct(Math.min(99, Math.round((sum / f.size) * 100)));
+      };
+      emitProgress();
+
+      // Presign remaining parts in batches of 100 (edge function batch limit).
+      const urls: Record<number, string> = {};
+      for (let i = 0; i < pending.length; i += 100) {
+        const chunk = pending.slice(i, i + 100);
+        const { data, error } = await supabase.functions.invoke("r2-multipart-sign", {
+          body: { key, uploadId, partNumbers: chunk },
+        });
+        if (error || !data?.urls) throw new Error(data?.error || error?.message || "Failed to sign parts");
+        Object.assign(urls, data.urls);
+      }
+
+      const abortCtrl = new AbortController();
+      abortRef.current = abortCtrl;
+
+      const uploadOne = async (partNumber: number): Promise<string> => {
+        const start = (partNumber - 1) * partSize;
+        const end = Math.min(start + partSize, f.size);
+        const blob = f.slice(start, end);
+        let lastErr: Error | null = null;
+        for (let attempt = 0; attempt < PART_RETRIES; attempt++) {
+          if (abortCtrl.signal.aborted) throw new Error("Aborted");
+          try {
+            return await new Promise<string>((resolve, reject) => {
+              const xhr = new XMLHttpRequest();
+              xhr.open("PUT", urls[partNumber]);
+              xhr.upload.onprogress = (e) => {
+                if (e.lengthComputable) { partLoaded.set(partNumber, e.loaded); emitProgress(); }
+              };
+              xhr.onload = () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                  // ETag is exposed via CORS ExposeHeader on the bucket.
+                  const etag = xhr.getResponseHeader("ETag") || xhr.getResponseHeader("etag");
+                  if (!etag) return reject(new Error("R2 did not return an ETag (check bucket CORS ExposeHeader: ETag)"));
+                  partLoaded.set(partNumber, blob.size); emitProgress();
+                  resolve(etag);
+                } else {
+                  reject(new Error(`Part ${partNumber} failed (${xhr.status})`));
+                }
+              };
+              xhr.onerror = () => reject(new Error(`Network error on part ${partNumber}`));
+              xhr.onabort = () => reject(new Error("Aborted"));
+              abortCtrl.signal.addEventListener("abort", () => xhr.abort(), { once: true });
+              xhr.send(blob);
+            });
+          } catch (err) {
+            lastErr = err as Error;
+            if (abortCtrl.signal.aborted) throw lastErr;
+            // Reset progress for this part before retry.
+            partLoaded.set(partNumber, 0); emitProgress();
+            await new Promise(r => setTimeout(r, Math.min(30_000, 1000 * Math.pow(2, attempt))));
+          }
+        }
+        throw lastErr ?? new Error(`Part ${partNumber} failed`);
+      };
+
+      // Worker pool over `pending`.
+      let cursor = 0;
+      const workers = Array.from({ length: Math.min(PART_CONCURRENCY, pending.length) }, async () => {
+        while (cursor < pending.length) {
+          const my = pending[cursor++];
+          const etag = await uploadOne(my);
+          doneParts[my] = etag;
+          // Persist synchronously — one tab-freeze away from being priceless.
+          patchDraft({ mpParts: { ...doneParts } });
+        }
       });
-      // Persist synchronously the moment the upload finishes — this survives
-      // tab freeze/discard even if the React commit hasn't run yet.
-      patchDraft({ stagingKey: data.objectKey, uploadState: "complete" });
-      setStagingKey(data.objectKey);
+      await Promise.all(workers);
+
+      const partList = Object.entries(doneParts).map(([n, etag]) => ({ PartNumber: Number(n), ETag: etag }));
+      const { data: comp, error: compErr } = await supabase.functions.invoke("r2-multipart-complete", {
+        body: { key, uploadId, parts: partList },
+      });
+      if (compErr || !comp?.objectKey) throw new Error(comp?.error || compErr?.message || "Failed to finalize upload");
+
+      // Clear mp state, mark complete — all in one synchronous write.
+      patchDraft({
+        stagingKey: comp.objectKey, uploadState: "complete",
+        mpUploadId: null, mpKey: null, mpPartSize: 0,
+        mpFileName: null, mpFileSize: 0, mpParts: {},
+      });
+      setStagingKey(comp.objectKey);
       setUploadPct(100);
       setUploadState("complete");
       toast.success("Plugin uploaded.");
@@ -222,10 +353,11 @@ function NewProduct() {
       const msg = e?.message || "Upload failed";
       setUploadErr(msg);
       setUploadState("error");
+      // Keep mp state so the user can re-select the same file to resume.
       patchDraft({ uploadState: "error", stagingKey: null });
       toast.error(msg);
     } finally {
-      xhrRef.current = null;
+      abortRef.current = null;
     }
   };
 
@@ -241,6 +373,7 @@ function NewProduct() {
       await runUpload(f);
     }
   };
+
 
   // ---- Cover upload (image) ----
   const uploadCover = async (f: File) => {
@@ -374,7 +507,7 @@ function NewProduct() {
             <input type="file" accept=".zip" hidden onChange={e => { const f = e.target.files?.[0]; e.target.value = ""; if (f) uploadFile(f); }} />
             <Upload size={28} className="mx-auto mb-2 text-[var(--accent-red-glow)]" />
             <div className="text-sm">{zipDragOver ? "Drop to upload" : "Drop your ZIP here or click to browse"}</div>
-            <div className="text-[11px] text-white/40 mt-1">Max 5GB · uploads directly to private R2 staging</div>
+            <div className="text-[11px] text-white/40 mt-1">Max 50GB · multipart upload to private R2 · resumable</div>
             {fileName && (
               <div className="mt-4 max-w-sm mx-auto text-left bg-white/5 rounded-lg p-3">
                 <div className="flex justify-between items-center">
