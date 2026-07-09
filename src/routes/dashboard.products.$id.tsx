@@ -123,7 +123,9 @@ function EditProduct() {
     setStatus(product.status);
     setSupportsWindows(product.supports_windows ?? true);
     setSupportsMac(product.supports_mac ?? false);
+    setIsFree(!!product.is_free);
   }, [product]);
+
 
   if (isLoading) {
     return <DashboardShell title="Loading…"><DashCard><p className="text-sm text-white/50 font-mono py-6 text-center">Loading product…</p></DashCard></DashboardShell>;
