@@ -9,8 +9,6 @@ const Toaster = ({ ...props }: ToasterProps) => {
       position="top-right"
       duration={3500}
       toastOptions={{
-        // Click anywhere on the toast to dismiss instantly.
-        onClick: (t) => toast.dismiss(t.id),
         closeButton: true,
         classNames: {
           toast:
@@ -19,6 +17,12 @@ const Toaster = ({ ...props }: ToasterProps) => {
           actionButton: "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
           cancelButton: "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
         },
+      }}
+      // Click anywhere on the toast card to dismiss instantly.
+      onClick={(e) => {
+        const el = (e.target as HTMLElement).closest("[data-sonner-toast]") as HTMLElement | null;
+        const id = el?.getAttribute("data-id");
+        if (id) toast.dismiss(id); else toast.dismiss();
       }}
       {...props}
     />
