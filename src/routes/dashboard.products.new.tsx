@@ -196,7 +196,7 @@ function NewProduct() {
     return () => window.removeEventListener("beforeunload", handler);
   }, [uploading]);
 
-  const priceNum = Number(price) || 0;
+  const priceNum = isFree ? 0 : (Number(price) || 0);
   const compareNum = Number(compareAt) || 0;
   const baseDiscountPct = compareNum > priceNum && compareNum > 0 ? Math.round((1 - priceNum / compareNum) * 100) : 0;
 
@@ -207,8 +207,9 @@ function NewProduct() {
     desc: !desc.trim(),
     category: !category,
     formats: formats.size === 0,
-    price: !(priceNum > 0),
-  }), [stagingKey, uploadState, name, maker, desc, category, formats, priceNum]);
+    price: !isFree && !(priceNum > 0),
+  }), [stagingKey, uploadState, name, maker, desc, category, formats, priceNum, isFree]);
+
 
   const canPublish = !Object.values(missing).some(Boolean);
   const defaultFormats = new Set(["VST", "VST3"]);
