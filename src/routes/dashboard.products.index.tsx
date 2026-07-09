@@ -28,11 +28,16 @@ async function fetchProducts(): Promise<Row[]> {
 }
 
 function ProductsPage() {
-  const { data: products = [], isLoading, error, refetch } = useQuery({
+  const { data: products = [], isLoading, isFetching, error, refetch } = useQuery({
     queryKey: ["dashboard-products"],
     queryFn: fetchProducts,
-    staleTime: 0,
-    refetchOnMount: "always",
+    // Keep the list cached across tab-focus. Tabbing back shows the last
+    // data instantly; a silent background refresh runs after 60s of staleness.
+    staleTime: 60_000,
+    gcTime: 10 * 60_000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    placeholderData: (prev) => prev,
   });
 
   const [q, setQ] = useState("");
