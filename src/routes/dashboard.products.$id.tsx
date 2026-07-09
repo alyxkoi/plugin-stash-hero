@@ -20,12 +20,13 @@ type Row = {
   version: string | null; price: number; compare_at_price: number | null;
   status: "draft" | "published" | "archived";
   cover_url: string | null; cover_gradient: string | null;
+  supports_windows: boolean; supports_mac: boolean;
 };
 
 async function fetchProduct(id: string): Promise<Row | null> {
   const { data, error } = await supabase
     .from("products")
-    .select("id,slug,name,maker,category,description,tags,formats,version,price,compare_at_price,status,cover_url,cover_gradient")
+    .select("id,slug,name,maker,category,description,tags,formats,version,price,compare_at_price,status,cover_url,cover_gradient,supports_windows,supports_mac")
     .eq("id", id)
     .maybeSingle();
   if (error) throw new Error(error.message);
