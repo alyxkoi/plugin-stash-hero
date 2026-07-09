@@ -73,6 +73,8 @@ function EditProduct() {
     setCoverUrl(product.cover_url);
     setCoverGradient(product.cover_gradient);
     setStatus(product.status);
+    setSupportsWindows(product.supports_windows ?? true);
+    setSupportsMac(product.supports_mac ?? false);
   }, [product]);
 
   if (isLoading) {
