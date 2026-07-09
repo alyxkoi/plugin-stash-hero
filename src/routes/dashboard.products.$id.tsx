@@ -175,12 +175,23 @@ function EditProduct() {
               </Field>
               <Field label="Operating system">
                 <div className="flex flex-wrap gap-2">
-                  {([["Windows", supportsWindows, setSupportsWindows], ["Mac", supportsMac, setSupportsMac]] as const).map(([label, checked, setter]) => (
-                    <label key={label} className={`inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-md border font-mono cursor-pointer ${checked ? "bg-[var(--accent-red)]/15 border-[var(--accent-red)]/60" : "bg-white/5 border-white/15 text-white/70"}`}>
-                      <input type="checkbox" checked={checked} onChange={e => setter(e.target.checked)} className="accent-[var(--accent-red)]" />
-                      {label}
-                    </label>
-                  ))}
+                  <label className={`inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-md border font-mono cursor-pointer ${supportsWindows ? "bg-[var(--accent-red)]/15 border-[var(--accent-red)]/60" : "bg-white/5 border-white/15 text-white/70"}`}>
+                    <input type="checkbox" checked={supportsWindows} onChange={e => setSupportsWindows(e.target.checked)} className="accent-[var(--accent-red)]" />
+                    Windows
+                  </label>
+                  <label className={`inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-md border font-mono cursor-pointer ${supportsMac ? "bg-[var(--accent-red)]/15 border-[var(--accent-red)]/60" : "bg-white/5 border-white/15 text-white/70"}`}>
+                    <input type="checkbox" checked={supportsMac} onChange={e => {
+                      const mac = e.target.checked;
+                      setSupportsMac(mac);
+                      setFormats((prev) => {
+                        const n = new Set(prev);
+                        if (mac) n.add("AU");
+                        else n.delete("AU");
+                        return n;
+                      });
+                    }} className="accent-[var(--accent-red)]" />
+                    Mac
+                  </label>
                 </div>
               </Field>
             </div>
