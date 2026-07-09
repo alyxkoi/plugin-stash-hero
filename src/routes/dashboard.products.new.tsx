@@ -754,25 +754,54 @@ function NewProduct() {
         {/* Pricing */}
         <DashCard title="Pricing">
           <div className="space-y-4">
+            <label className="flex items-start gap-3 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5 cursor-pointer hover:bg-white/[0.05]">
+              <input
+                type="checkbox"
+                checked={isFree}
+                onChange={e => setIsFree(e.target.checked)}
+                className="accent-[var(--accent-red)] mt-0.5"
+              />
+              <div>
+                <div className="font-mono text-xs tracking-wider text-white">FREEBIE</div>
+                <div className="text-[11px] text-white/50 font-mono mt-0.5">
+                  Give this plugin away for free. Price locks at $0 and the storefront shows "FREE".
+                </div>
+              </div>
+            </label>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Field label={<>Price {req(missing.price)}</>}>
+              <Field label={<>Price {!isFree && req(missing.price)}</>}>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 font-mono">$</span>
-                  <input type="number" value={price} onChange={e => setPrice(e.target.value)} className="ipt !pl-7" placeholder="49" />
+                  <span className={`absolute left-3 top-1/2 -translate-y-1/2 font-mono ${isFree ? "text-white/25" : "text-white/40"}`}>$</span>
+                  <input
+                    type="number"
+                    value={isFree ? "0" : price}
+                    onChange={e => setPrice(e.target.value)}
+                    disabled={isFree}
+                    className={`ipt !pl-7 ${isFree ? "opacity-50 cursor-not-allowed" : ""}`}
+                    placeholder="49"
+                  />
                 </div>
               </Field>
               <Field label={<span>Compare-at price <span className="text-white/40 normal-case font-mono">(optional, struck-through original)</span></span>}>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 font-mono">$</span>
-                  <input type="number" value={compareAt} onChange={e => setCompareAt(e.target.value)} className="ipt !pl-7" placeholder="99" />
+                  <span className={`absolute left-3 top-1/2 -translate-y-1/2 font-mono ${isFree ? "text-white/25" : "text-white/40"}`}>$</span>
+                  <input
+                    type="number"
+                    value={compareAt}
+                    onChange={e => setCompareAt(e.target.value)}
+                    disabled={isFree}
+                    className={`ipt !pl-7 ${isFree ? "opacity-50 cursor-not-allowed" : ""}`}
+                    placeholder="99"
+                  />
                 </div>
               </Field>
             </div>
-            {baseDiscountPct > 0 && (
+            {baseDiscountPct > 0 && !isFree && (
               <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs font-mono text-emerald-300">
                 Base discount: <strong className="text-emerald-200">{baseDiscountPct}% off</strong> ({`$${compareNum} → $${priceNum}`})
               </div>
             )}
+
             <p className="text-[11px] text-white/40 font-mono">
               Site-wide sale events apply automatically to matching products at checkout — no per-product opt-in needed.
             </p>
