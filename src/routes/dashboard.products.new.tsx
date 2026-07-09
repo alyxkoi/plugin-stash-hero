@@ -145,6 +145,8 @@ function NewProduct() {
   const [version, setVersion] = useState(initial.draft.version);
   const [includeSale, setIncludeSale] = useState(initial.draft.includeSale);
   const [publishStatus, setPublishStatus] = useState<"publish" | "draft">(initial.draft.publishStatus);
+  const [supportsWindows, setSupportsWindows] = useState(initial.draft.supportsWindows);
+  const [supportsMac, setSupportsMac] = useState(initial.draft.supportsMac);
 
   const [resumed, setResumed] = useState(initial.resumed);
   const [cancelOpen, setCancelOpen] = useState(false);
