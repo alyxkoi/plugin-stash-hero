@@ -137,7 +137,7 @@ function ProductDetail() {
 
           <div className="flex flex-wrap gap-2 mb-6">
             {p.daws.slice(0, 4).map((d) => <Pill key={d}>{d}</Pill>)}
-            {p.formats.map((f) => <Pill key={f}>{f}</Pill>)}
+            {p.category !== "libraries" && p.formats.map((f) => <Pill key={f}>{f}</Pill>)}
           </div>
 
           <div className="mb-6">
