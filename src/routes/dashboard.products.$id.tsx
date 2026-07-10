@@ -316,7 +316,13 @@ function EditProduct() {
                     {productCategories.map(c => <option key={c} value={c} className="bg-[#1F0540]">{c}</option>)}
                   </select>
                 </Field>
-                <Field label="Version"><input value={version} onChange={e => setVersion(e.target.value)} className="ipt" /></Field>
+                {category === "libraries" ? (
+                  <Field label="Library type">
+                    <LibraryTypeField value={libraryType || null} onChange={setLibraryType} />
+                  </Field>
+                ) : (
+                  <Field label="Version"><input value={version} onChange={e => setVersion(e.target.value)} className="ipt" /></Field>
+                )}
               </div>
               <Field label="Formats">
                 <div className="flex flex-wrap gap-2">
