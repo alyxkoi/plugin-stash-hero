@@ -613,9 +613,9 @@ function NewProduct() {
         sub_type: null,
         tags,
         daws: [],
-        formats: Array.from(formats),
+        formats: isLibrary ? [] : Array.from(formats),
         version,
-        library_type: category === "libraries" ? (libraryType.trim() || null) : null,
+        library_type: isLibrary ? (libraryType.trim() || null) : null,
         price: priceNum,
         compare_at_price: compareNum > 0 ? compareNum : null,
         description: desc,
@@ -624,8 +624,8 @@ function NewProduct() {
         published_at: status === "publish" ? new Date().toISOString() : null,
         is_free: isFree || priceNum === 0,
         file_size: fileSize > 0 ? formatBytes(fileSize) : null,
-        supports_windows: supportsWindows,
-        supports_mac: supportsMac,
+        supports_windows: isLibrary ? false : supportsWindows,
+        supports_mac: isLibrary ? false : supportsMac,
       }).select("id").single();
 
 
