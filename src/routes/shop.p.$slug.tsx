@@ -155,7 +155,9 @@ function ProductDetail() {
           </div>
 
           <div className={`grid grid-cols-2 ${p.fileSize ? "md:grid-cols-4" : "md:grid-cols-3"} gap-3 mb-6`}>
-            <Meta label="VERSION" value={p.version} />
+            {p.category === "libraries" && p.libraryType
+              ? <Meta label="LIBRARY TYPE" value={p.libraryType} />
+              : <Meta label="VERSION" value={p.version} />}
             {p.fileSize && <Meta label="FILE SIZE" value={p.fileSize} />}
             <Meta label="FORMATS" value={p.formats.slice(0, 2).join(" / ") || "—"} />
             <Meta label="UPDATED" value={p.updated} />
