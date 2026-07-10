@@ -79,10 +79,9 @@ function Settings() {
         {statusErr && <div className="text-[11px] font-mono text-[var(--accent-red-glow)] border border-[var(--accent-red)]/30 bg-[var(--accent-red)]/5 rounded px-3 py-2">Status check failed: {statusErr}</div>}
         <DashCard title="Store info">
           <Field label="Store name"><input defaultValue="Plugin Warehouse" className="ipt" /></Field>
-          <Field label="Contact email"><input defaultValue="hello@pluginwarehouse.com" className="ipt" /></Field>
-          <Field label="Support email"><input defaultValue="support@pluginwarehouse.com" className="ipt" /></Field>
-          <Field label="Logo"><input type="file" accept="image/*" className="text-xs" /></Field>
+          <Field label="Contact email"><input defaultValue="pluginwh@gmail.com" className="ipt" /></Field>
         </DashCard>
+
 
         <DashCard title="Stripe">
           <div className="flex items-center justify-between mb-3">
