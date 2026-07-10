@@ -344,8 +344,12 @@ function OnRotation() {
 function RotationCard({ product }: { product: Product }) {
   const wished = useStore((s) => s.wishlist.includes(product.slug));
   const [added, setAdded] = useState(false);
-  const onSale = product.compareAtPrice && product.compareAtPrice > product.price;
-  const savings = onSale ? Math.round(((product.compareAtPrice! - product.price) / product.compareAtPrice!) * 100) : 0;
+  const { finalPrice, pct } = useSalePricing(product);
+  const hasCompareAt = !!(product.compareAtPrice && product.compareAtPrice > product.price);
+  const onSale = pct > 0 || hasCompareAt;
+  const strikePrice = hasCompareAt ? product.compareAtPrice : (pct > 0 ? product.price : undefined);
+  const displayPrice = pct > 0 ? finalPrice : product.price;
+  const badgePct = pct > 0 ? pct : (hasCompareAt ? Math.round((1 - product.price / (product.compareAtPrice as number)) * 100) : 0);
   const navigate = useNavigate();
 
   const handleAdd = (e: React.MouseEvent) => {
@@ -368,12 +372,16 @@ function RotationCard({ product }: { product: Product }) {
     >
       <div className="chromatic-edge" />
       <div className="rotation-artwork" style={{ background: product.coverGradient }}>
-        <div className="absolute inset-0 flex items-center justify-center p-4 text-center">
-          <div>
-            <div className="label-mini mb-1">{product.maker}</div>
-            <div className="font-display text-3xl leading-tight">{product.name}</div>
+        {product.coverUrl ? (
+          <img src={product.coverUrl} alt={product.name} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center p-4 text-center">
+            <div>
+              <div className="label-mini mb-1">{product.maker}</div>
+              <div className="font-display text-3xl leading-tight">{product.name}</div>
+            </div>
           </div>
-        </div>
+        )}
         <div
           className="absolute inset-0 glow-breathe pointer-events-none"
           style={{
@@ -381,16 +389,16 @@ function RotationCard({ product }: { product: Product }) {
               "radial-gradient(ellipse at center, rgba(255,0,60,0.28), transparent 65%)",
           }}
         />
-        {onSale && (
+        {onSale && !product.isFree && badgePct > 0 && (
           <div className="absolute top-3 right-3 px-2 py-1 rounded-md font-mono text-[10px] font-bold bg-[var(--accent-red)] text-white shadow-lg">
-            {savings}% OFF
+            {badgePct}% OFF
           </div>
         )}
       </div>
 
       {/* Default minimal state: name + price + cart (top-bottom subtle) */}
       <div className="absolute top-3 left-3 z-10 px-2 py-1 rounded-md bg-black/40 backdrop-blur-sm font-mono text-[10px] tracking-wider text-white/90 pointer-events-none">
-        {product.isFree ? "FREE" : `$${product.price}`}
+        {product.isFree ? "FREE" : `$${displayPrice.toFixed(2)}`}
       </div>
 
       {/* Hover overlay reveals brand/tags/savings + favorite + view details */}
