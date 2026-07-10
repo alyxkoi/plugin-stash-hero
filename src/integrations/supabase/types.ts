@@ -413,6 +413,7 @@ export type Database = {
           is_featured: boolean
           is_free: boolean
           is_new: boolean
+          library_type: string | null
           maker: string
           name: string
           price: number
@@ -442,6 +443,7 @@ export type Database = {
           is_featured?: boolean
           is_free?: boolean
           is_new?: boolean
+          library_type?: string | null
           maker: string
           name: string
           price?: number
@@ -471,6 +473,7 @@ export type Database = {
           is_featured?: boolean
           is_free?: boolean
           is_new?: boolean
+          library_type?: string | null
           maker?: string
           name?: string
           price?: number

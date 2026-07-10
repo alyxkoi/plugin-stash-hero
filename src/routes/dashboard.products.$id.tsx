@@ -2,6 +2,7 @@ import { createFileRoute, Link, useParams, useNavigate } from "@tanstack/react-r
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { DashboardShell, DashCard } from "@/components/DashboardShell";
+import { LibraryTypeField } from "@/components/LibraryTypeField";
 import { supabase } from "@/integrations/supabase/client";
 import { productCategories } from "@/lib/dashboard-mock";
 import { Upload, X, Sparkles, RefreshCw } from "lucide-react";
@@ -17,7 +18,8 @@ export const Route = createFileRoute("/dashboard/products/$id")({
 type Row = {
   id: string; slug: string; name: string; maker: string; category: string;
   description: string | null; tags: string[] | null; formats: string[] | null;
-  version: string | null; price: number; compare_at_price: number | null;
+  version: string | null; library_type: string | null;
+  price: number; compare_at_price: number | null;
   status: "draft" | "published" | "archived";
   cover_url: string | null; cover_gradient: string | null;
   supports_windows: boolean; supports_mac: boolean;
@@ -29,7 +31,7 @@ type FileRow = { zip_url: string; zip_file_name: string | null };
 async function fetchProduct(id: string): Promise<Row | null> {
   const { data, error } = await supabase
     .from("products")
-    .select("id,slug,name,maker,category,description,tags,formats,version,price,compare_at_price,status,cover_url,cover_gradient,supports_windows,supports_mac,is_free")
+    .select("id,slug,name,maker,category,description,tags,formats,version,library_type,price,compare_at_price,status,cover_url,cover_gradient,supports_windows,supports_mac,is_free")
     .eq("id", id)
     .maybeSingle();
 
@@ -89,6 +91,7 @@ function EditProduct() {
   const [price, setPrice] = useState("");
   const [compareAt, setCompareAt] = useState("");
   const [version, setVersion] = useState("");
+  const [libraryType, setLibraryType] = useState<string>("");
   const [formats, setFormats] = useState<Set<string>>(new Set());
   const [tags, setTags] = useState<string[]>([]);
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
@@ -116,6 +119,7 @@ function EditProduct() {
     setPrice(String(product.price ?? ""));
     setCompareAt(product.compare_at_price ? String(product.compare_at_price) : "");
     setVersion(product.version || "");
+    setLibraryType(product.library_type || "");
     setFormats(new Set(product.formats || []));
     setTags(product.tags || []);
     setCoverUrl(product.cover_url);
@@ -238,6 +242,7 @@ function EditProduct() {
         price: effectivePrice,
         compare_at_price: !isFree && Number(compareAt) > 0 ? Number(compareAt) : null,
         version,
+        library_type: category === "libraries" ? (libraryType.trim() || null) : null,
         formats: Array.from(formats),
         cover_url: coverUrl,
         status,
@@ -311,7 +316,13 @@ function EditProduct() {
                     {productCategories.map(c => <option key={c} value={c} className="bg-[#1F0540]">{c}</option>)}
                   </select>
                 </Field>
-                <Field label="Version"><input value={version} onChange={e => setVersion(e.target.value)} className="ipt" /></Field>
+                {category === "libraries" ? (
+                  <Field label="Library type">
+                    <LibraryTypeField value={libraryType || null} onChange={setLibraryType} />
+                  </Field>
+                ) : (
+                  <Field label="Version"><input value={version} onChange={e => setVersion(e.target.value)} className="ipt" /></Field>
+                )}
               </div>
               <Field label="Formats">
                 <div className="flex flex-wrap gap-2">

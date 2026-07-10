@@ -19,7 +19,7 @@ export const Route = createFileRoute("/shop/p/$slug")({
 type Row = {
   id: string;
   slug: string; name: string; maker: string; category: string;
-  formats: string[] | null; daws: string[] | null; version: string | null;
+  formats: string[] | null; daws: string[] | null; version: string | null; library_type: string | null;
   price: number; compare_at_price: number | null; description: string | null;
   tagline?: string | null;
   cover_url: string | null; cover_gradient: string | null;
@@ -37,6 +37,7 @@ function toProduct(r: Row): Product {
     daws: r.daws ?? [],
     formats: r.formats ?? [],
     version: r.version ?? "1.0",
+    libraryType: r.library_type ?? null,
     fileSize: r.file_size?.trim() || undefined,
     updated: new Date(r.updated_at).toLocaleDateString(undefined, { month: "short", year: "numeric" }),
     price: Number(r.price) || 0,
@@ -50,7 +51,7 @@ function toProduct(r: Row): Product {
 }
 
 async function fetchBySlug(slug: string): Promise<{ product: Product | null; related: Product[] }> {
-  const cols = "id,slug,name,maker,category,formats,daws,version,price,compare_at_price,description,tagline,cover_url,cover_gradient,is_free,updated_at,file_size";
+  const cols = "id,slug,name,maker,category,formats,daws,version,library_type,price,compare_at_price,description,tagline,cover_url,cover_gradient,is_free,updated_at,file_size";
 
   const { data, error } = await supabase
     .from("products")
@@ -121,7 +122,7 @@ function ProductDetail() {
                   <div className="h-full w-full flex flex-col items-center justify-center">
                     <div className="font-mono text-xs text-white/60 mb-3 tracking-[0.25em]">{p.maker.toUpperCase()}</div>
                     <div className="font-black chrome-text text-center px-6" style={{ fontSize: "clamp(2.5rem,6vw,4.5rem)", lineHeight: 1 }}>{p.name}</div>
-                    <div className="font-mono text-xs text-white/50 mt-4 tracking-[0.2em]">VERSION {p.version}</div>
+                    <div className="font-mono text-xs text-white/50 mt-4 tracking-[0.2em]">{p.category === "libraries" && p.libraryType ? `FOR ${p.libraryType.toUpperCase()}` : `VERSION ${p.version}`}</div>
                   </div>
                 )}
               </div>
@@ -154,7 +155,9 @@ function ProductDetail() {
           </div>
 
           <div className={`grid grid-cols-2 ${p.fileSize ? "md:grid-cols-4" : "md:grid-cols-3"} gap-3 mb-6`}>
-            <Meta label="VERSION" value={p.version} />
+            {p.category === "libraries" && p.libraryType
+              ? <Meta label="LIBRARY TYPE" value={p.libraryType} />
+              : <Meta label="VERSION" value={p.version} />}
             {p.fileSize && <Meta label="FILE SIZE" value={p.fileSize} />}
             <Meta label="FORMATS" value={p.formats.slice(0, 2).join(" / ") || "—"} />
             <Meta label="UPDATED" value={p.updated} />

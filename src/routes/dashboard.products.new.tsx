@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { DashboardShell, DashCard } from "@/components/DashboardShell";
+import { LibraryTypeField } from "@/components/LibraryTypeField";
 import { productCategories } from "@/lib/dashboard-mock";
 import { supabase } from "@/integrations/supabase/client";
 import { Upload, Sparkles, CheckCircle2, X, RotateCcw, AlertCircle } from "lucide-react";
@@ -129,6 +130,7 @@ type DraftShape = {
   price: string;
   compareAt: string;
   version: string;
+  libraryType: string;
   includeSale: boolean;
   publishStatus: "publish" | "draft";
   supportsWindows: boolean;
@@ -141,7 +143,7 @@ const emptyDraft = (): DraftShape => ({
   mpUploadId: null, mpKey: null, mpPartSize: 0, mpFileName: null, mpFileSize: 0, mpParts: {},
   name: "", maker: "Plugin Warehouse", desc: "", coverUrl: null,
   category: productCategories[0], tags: [], formats: ["VST", "VST3"],
-  price: "", compareAt: "", version: "1.0",
+  price: "", compareAt: "", version: "1.0", libraryType: "",
   includeSale: false, publishStatus: "publish",
   supportsWindows: true, supportsMac: false, isFree: false,
 });
@@ -210,6 +212,7 @@ function NewProduct() {
   const [price, setPrice] = useState(initial.draft.price);
   const [compareAt, setCompareAt] = useState(initial.draft.compareAt);
   const [version, setVersion] = useState(initial.draft.version);
+  const [libraryType, setLibraryType] = useState(initial.draft.libraryType);
   const [includeSale, setIncludeSale] = useState(initial.draft.includeSale);
   const [publishStatus, setPublishStatus] = useState<"publish" | "draft">(initial.draft.publishStatus);
   const [supportsWindows, setSupportsWindows] = useState(initial.draft.supportsWindows);
@@ -245,10 +248,10 @@ function NewProduct() {
     if (typeof window === "undefined") return;
     patchDraft({
       fileName, fileSize, stagingKey, uploadState, name, maker, desc, coverUrl,
-      category, tags, formats: Array.from(formats), price, compareAt, version,
+      category, tags, formats: Array.from(formats), price, compareAt, version, libraryType,
       includeSale, publishStatus, supportsWindows, supportsMac, isFree,
     });
-  }, [fileName, fileSize, stagingKey, uploadState, name, maker, desc, coverUrl, category, tags, formats, price, compareAt, version, includeSale, publishStatus, supportsWindows, supportsMac, isFree]);
+  }, [fileName, fileSize, stagingKey, uploadState, name, maker, desc, coverUrl, category, tags, formats, price, compareAt, version, libraryType, includeSale, publishStatus, supportsWindows, supportsMac, isFree]);
 
 
   // Warn if user tries to close/reload while an upload is in flight.
@@ -290,7 +293,7 @@ function NewProduct() {
     setUploadState("idle"); setUploadPct(0); setUploadErr(null);
     setName(e.name); setMaker(e.maker); setDesc(e.desc); setCoverUrl(e.coverUrl);
     setCategory(e.category); setTags(e.tags); setFormats(new Set(e.formats));
-    setPrice(e.price); setCompareAt(e.compareAt); setVersion(e.version);
+    setPrice(e.price); setCompareAt(e.compareAt); setVersion(e.version); setLibraryType(e.libraryType);
     setIncludeSale(e.includeSale); setPublishStatus(e.publishStatus);
     setSupportsWindows(e.supportsWindows); setSupportsMac(e.supportsMac); setIsFree(e.isFree);
     setResumed(false); setCanResumeFromDisk(false); clearDraft();
@@ -611,6 +614,7 @@ function NewProduct() {
         daws: [],
         formats: Array.from(formats),
         version,
+        library_type: category === "libraries" ? (libraryType.trim() || null) : null,
         price: priceNum,
         compare_at_price: compareNum > 0 ? compareNum : null,
         description: desc,
@@ -787,9 +791,15 @@ function NewProduct() {
                   {productCategories.map(c => <option key={c} value={c} className="bg-[#1F0540]">{c.charAt(0).toUpperCase()+c.slice(1)}</option>)}
                 </select>
               </Field>
-              <Field label="Version">
-                <input value={version} onChange={e => setVersion(e.target.value)} className="ipt" placeholder="1.0" />
-              </Field>
+              {category === "libraries" ? (
+                <Field label="Library type">
+                  <LibraryTypeField value={libraryType || null} onChange={setLibraryType} />
+                </Field>
+              ) : (
+                <Field label="Version">
+                  <input value={version} onChange={e => setVersion(e.target.value)} className="ipt" placeholder="1.0" />
+                </Field>
+              )}
             </div>
             <Field label="Tags">
               <div className="flex flex-wrap gap-2 mb-2">
