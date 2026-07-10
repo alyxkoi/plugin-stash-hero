@@ -266,15 +266,16 @@ function NewProduct() {
   const compareNum = Number(compareAt) || 0;
   const baseDiscountPct = compareNum > priceNum && compareNum > 0 ? Math.round((1 - priceNum / compareNum) * 100) : 0;
 
+  const isLibrary = category === "libraries";
   const missing = useMemo(() => ({
     file: !stagingKey || uploadState !== "complete",
     name: !name.trim(),
     maker: !maker.trim(),
     desc: !desc.trim(),
     category: !category,
-    formats: formats.size === 0,
+    formats: !isLibrary && formats.size === 0,
     price: !isFree && !(priceNum > 0),
-  }), [stagingKey, uploadState, name, maker, desc, category, formats, priceNum, isFree]);
+  }), [stagingKey, uploadState, name, maker, desc, category, formats, priceNum, isFree, isLibrary]);
 
 
   const canPublish = !Object.values(missing).some(Boolean);
