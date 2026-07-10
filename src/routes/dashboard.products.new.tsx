@@ -26,6 +26,68 @@ const detectOSFromFilename = (name: string): { win: boolean; mac: boolean } => {
   return { win, mac };
 };
 
+// Extract a clean product name from a filename like:
+//   "Shaperbox (Mac-Win).zip"          → "Shaperbox"
+//   "Scaler 3 (win).zip"               → "Scaler 3"
+//   "Waves Ultimate (Mac-Win)-005.zip" → "Waves Ultimate"
+//   "morph 3.zip"                      → "morph 3"
+// Strips the .zip, the OS parens, and any trailing part/build code that
+// follows the OS parens (e.g. "-005"). Preserves in-name version numbers
+// (e.g. "Scaler 3", "RC-20", "Nectar 4 Adv").
+const parseProductNameFromFilename = (filename: string): string => {
+  let n = filename.replace(/\.zip$/i, "");
+  // Remove OS parens: (Mac), (Win), (Mac-Win), (Win-Mac), (osx), (universal), etc.
+  n = n.replace(
+    /\s*\(\s*(?:mac(?:os|osx)?|osx|os-x|win(?:dows|32|64)?|universal|apple|darwin)(?:\s*[-_/,\s]+\s*(?:mac(?:os|osx)?|osx|os-x|win(?:dows|32|64)?|universal|apple|darwin))*\s*\)\s*/gi,
+    " ",
+  );
+  // Remove trailing part/build codes like "-005", "_013", " 007" that come
+  // after the OS parens.
+  n = n.replace(/[-_\s]+\d{2,4}\s*$/g, "");
+  // Trim stray separators / collapse whitespace.
+  n = n.replace(/^[\s\-_]+|[\s\-_]+$/g, "").replace(/\s+/g, " ").trim();
+  return n;
+};
+
+// Suggest a small set of tags from a plugin name using keyword matching.
+// Editable pre-fill — user can accept, remove, or add more.
+const suggestTagsFromName = (name: string): string[] => {
+  const s = name.toLowerCase();
+  const rules: Array<[RegExp, string]> = [
+    [/\breverb\b|\bverb\b|\broom\b|\bhall\b|\bplate\b/, "reverb"],
+    [/\bdelay\b|\becho\b/, "delay"],
+    [/\beq\b|equali[sz]er/, "eq"],
+    [/\bcomp(ressor)?\b|\bglue\b/, "compressor"],
+    [/limit(er)?/, "limiter"],
+    [/saturat|\btape\b|\btube\b|analog(ue)?|vintage/, "saturation"],
+    [/distort|\bdrive\b|fuzz|overdrive/, "distortion"],
+    [/chorus|flanger|phaser|\bmod(ulation)?\b/, "modulation"],
+    [/\bfilter\b/, "filter"],
+    [/\bgate\b/, "gate"],
+    [/de-?esser/, "de-esser"],
+    [/synth|wavetable|granular|\bfm\b|subtractive|additive|serum|massive|omnisphere/, "synth"],
+    [/sampl(er|ing)|kontakt/, "sampler"],
+    [/drum|kick|snare|percuss|beat/, "drums"],
+    [/\bbass\b/, "bass"],
+    [/vocal|voice|nectar|melodyne|auto-?tune/, "vocal"],
+    [/master(ing)?|t-?racks|ozone/, "mastering"],
+    [/\bmix(ing)?\b|neutron/, "mixing"],
+    [/bundle|suite|collection|ultimate|complete/, "bundle"],
+    [/orchestr|cinematic|scoring/, "cinematic"],
+    [/lo-?fi|\brc-?\d+/, "lofi"],
+    [/transient|exciter/, "dynamics"],
+    [/multiband/, "multiband"],
+    [/pitch|scaler|\bchord\b|\bmidi\b|\bkey\b/, "midi"],
+    [/shaperbox|shaper|\bmorph\b/, "multi-fx"],
+    [/\bssl\b|console|channel[-\s]?strip/, "channel-strip"],
+    [/fabfilter|pro-?q|pro-?c|pro-?l|pro-?r/, "fabfilter"],
+    [/waves\b/, "waves"],
+  ];
+  const out = new Set<string>();
+  for (const [re, tag] of rules) if (re.test(s)) out.add(tag);
+  return Array.from(out).slice(0, 6);
+};
+
 const formatBytes = (n: number): string => {
   if (!n || n <= 0) return "";
   const units = ["B", "KB", "MB", "GB", "TB"];
