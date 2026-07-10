@@ -23,15 +23,10 @@ import {
   Gift,
   type LucideIcon,
 } from "lucide-react";
-import {
-  bestsellerProducts,
-  recentProducts,
-  SALE,
-  products,
-  getProductBySlug,
-  type Product,
-} from "@/lib/mock-data";
+import { type Product } from "@/lib/mock-data";
 import { actions, useStore } from "@/lib/store";
+import { usePublishedProducts, useBestsellerIds } from "@/hooks/useProducts";
+import { useSalePricing } from "@/lib/sale-pricing";
 
 /* ============ PLACEHOLDER PRODUCTS ============
  * Used so every section keeps its layout, titles, and body copy even before
@@ -108,9 +103,15 @@ function Index() {
 /* ============ HERO ============ */
 
 function Hero() {
+  const { data: allProducts = [] } = usePublishedProducts();
   const cover1 = useRef<HTMLDivElement>(null);
   const cover2 = useRef<HTMLDivElement>(null);
   const cover3 = useRef<HTMLDivElement>(null);
+  const heroPicks: Product[] = [
+    allProducts.find((p) => p.isFeatured) ?? allProducts[0] ?? placeholder(0),
+    allProducts.find((p) => p.isBestseller && p.slug !== allProducts[0]?.slug) ?? allProducts[1] ?? placeholder(1),
+    allProducts[2] ?? placeholder(2),
+  ];
 
   useEffect(() => {
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -175,23 +176,14 @@ function Hero() {
         </div>
 
         <div className="relative h-[420px] md:h-[520px] lg:h-[640px] hidden lg:block lg:-translate-x-24 xl:-translate-x-32">
-          {[
-            { p: products.find((p) => p.slug === "serum") ?? placeholder(0), pos: "top-0 left-0", rot: "-6deg", ref: cover1, z: 1 },
-            {
-              p: products.find((p) => p.slug === "ozone-12") ?? placeholder(1),
-              pos: "top-24 left-1/3",
-              rot: "4deg",
-              ref: cover2,
-              z: 3,
-            },
-            {
-              p: products.find((p) => p.slug === "omnisphere") ?? placeholder(2),
-              pos: "top-10 right-0",
-              rot: "-2deg",
-              ref: cover3,
-              z: 2,
-            },
-          ].map((c, i) => (
+          {heroPicks.map((p, i) => {
+            const layout = [
+              { pos: "top-0 left-0", rot: "-6deg", ref: cover1, z: 1 },
+              { pos: "top-24 left-1/3", rot: "4deg", ref: cover2, z: 3 },
+              { pos: "top-10 right-0", rot: "-2deg", ref: cover3, z: 2 },
+            ][i];
+            const c = { p, ...layout };
+            return (
             <div
               key={i}
               ref={c.ref}
@@ -213,19 +205,24 @@ function Hero() {
                   className="relative z-10 aspect-square rounded-2xl overflow-hidden"
                   style={{ background: c.p.coverGradient }}
                 >
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center">
-                      <div className="label-mini mb-2">{c.p.maker}</div>
-                      <div className="font-display text-3xl">{c.p.name}</div>
+                  {c.p.coverUrl ? (
+                    <img src={c.p.coverUrl} alt={c.p.name} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="label-mini mb-2">{c.p.maker}</div>
+                        <div className="font-display text-3xl">{c.p.name}</div>
+                      </div>
                     </div>
-                  </div>
+                  )}
                   <div className="absolute top-2 right-2 px-2 py-1 rounded-md font-mono text-[10px] font-bold bg-[var(--accent-red)] text-white">
                     35% OFF
                   </div>
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>
@@ -270,7 +267,13 @@ function Ticker() {
 const ROTATION_DURATION_MS = 38000;
 
 function OnRotation() {
-  const source = (bestsellerProducts.length >= 5 ? bestsellerProducts : recentProducts).slice(0, 8);
+  const { data: allProducts = [] } = usePublishedProducts();
+  const { data: bestsellerIds = [] } = useBestsellerIds(12);
+  const byId = new Map(allProducts.map((p) => [p.id!, p]));
+  const bestsellers = bestsellerIds.map((id) => byId.get(id)).filter(Boolean) as Product[];
+  const featured = allProducts.filter((p) => p.isFeatured);
+  const rest = allProducts.filter((p) => !bestsellerIds.includes(p.id!) && !p.isFeatured);
+  const source = [...bestsellers, ...featured, ...rest].slice(0, 8);
   const list = source.length > 0 ? source : placeholderList(8);
   const [progress, setProgress] = useState(0);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -471,34 +474,38 @@ type Recipe = {
 
 const RECIPES: Recipe[] = [
   {
-    a: "soundtoys-5",
-    b: "pro-q-4",
+    a: "antares-autotune-11-p9f2g",
+    b: "nectar-4-advanced-1t25w",
+    outcome: "Vocals that actually sit.",
+    description:
+      "Autotune locks the pitch, Nectar handles everything else — EQ, comp, de-ess, reverb in one chain. Get a clean, radio-ready vocal without stacking ten plugins.",
+    useFor: "Vocals, rap, pop, vocal chains, mixing prep.",
+  },
+  {
+    a: "soothe2-a385o",
+    b: "fabfilter-complete-bundle-v3n62",
     outcome: "Clean fkn mix.",
     description:
-      "Cleaner EQ moves, tighter control, better balance, and a polished mix chain without overthinking it.",
+      "Soothe2 kills harsh resonance dynamically, FabFilter gives you surgical EQ and control over everything else. Tighter, cleaner, more balanced mixes without overthinking it.",
     useFor: "Vocals, beats, full mixes, mastering prep.",
   },
   {
-    a: "serum",
-    b: "omnisphere",
-    outcome: "Melodies that don't sound stock.",
+    a: "rc-20-9jd5j",
+    b: "valhalla-bundle-aadb7",
+    outcome: "Vintage warmth, instant vibe.",
     description:
-      "Serum gives you sharp modern synths. Omnisphere adds texture, depth, pads, keys, and cinematic layers.",
-    useFor: "Melodies, hooks, ambient layers, trap, R&B, EDM, film-style production.",
-  },
-  {
-    a: "kontakt-7",
-    b: "splice-essentials",
-    outcome: "Full tracks without empty gaps.",
-    description:
-      "Kontakt gives you playable instruments. Splice Essentials fills in drums, loops, one-shots, textures, and quick ideas.",
-    useFor: "Starting ideas, filling arrangements, adding layers, speeding up workflow.",
+      "RC-20 adds grit, noise, and analog character. Valhalla drenches it in lush reverb and space. Turn sterile, stock-sounding tracks into something with soul.",
+    useFor: "Lo-fi, ambient, textures, adding character, R&B.",
   },
 ];
 
 function PluginRecipes() {
+  const { data: allProducts = [] } = usePublishedProducts();
+  const bySlug = new Map(allProducts.map((p) => [p.slug, p]));
+  const available = RECIPES.filter((r) => bySlug.get(r.a) && bySlug.get(r.b));
+  const recipes = available.length > 0 ? available : RECIPES;
   const [index, setIndex] = useState(0);
-  const len = RECIPES.length;
+  const len = recipes.length;
 
   const slotFor = (i: number) => {
     let d = i - index;
@@ -532,7 +539,7 @@ function PluginRecipes() {
             <ChevronRight className="w-5 h-5" />
           </button>
           <div className="recipe-stage">
-            {RECIPES.map((r, i) => {
+            {recipes.map((r, i) => {
               const slot = slotFor(i);
               const onSideClick = slot === 0 ? undefined : () => setIndex(i);
               return (
@@ -549,7 +556,7 @@ function PluginRecipes() {
             })}
           </div>
           <div className="recipe-dots">
-            {RECIPES.map((r, i) => (
+            {recipes.map((r, i) => (
               <button
                 key={r.a + r.b}
                 className="recipe-dot"
@@ -566,11 +573,17 @@ function PluginRecipes() {
 }
 
 function RecipeSlideCard({ recipe, active }: { recipe: Recipe; active: boolean }) {
-  const a = getProductBySlug(recipe.a) ?? placeholder(0, { slug: recipe.a, name: recipe.a.toUpperCase().replace(/-/g, " ") });
-  const b = getProductBySlug(recipe.b) ?? placeholder(1, { slug: recipe.b, name: recipe.b.toUpperCase().replace(/-/g, " ") });
+  const { data: allProducts = [] } = usePublishedProducts();
+  const bySlug = new Map(allProducts.map((p) => [p.slug, p]));
+  const a = bySlug.get(recipe.a) ?? placeholder(0, { slug: recipe.a, name: recipe.a.toUpperCase().replace(/-/g, " ") });
+  const b = bySlug.get(recipe.b) ?? placeholder(1, { slug: recipe.b, name: recipe.b.toUpperCase().replace(/-/g, " ") });
+  const saleA = useSalePricing(a);
+  const saleB = useSalePricing(b);
+  const priceA = saleA.finalPrice;
+  const priceB = saleB.finalPrice;
   const [added, setAdded] = useState(false);
 
-  const total = a.price + b.price;
+  const total = priceA + priceB;
   const compareTotal = (a.compareAtPrice ?? a.price) + (b.compareAtPrice ?? b.price);
 
   const addBoth = (e: React.MouseEvent) => {
@@ -640,6 +653,7 @@ function RecipeSlideCard({ recipe, active }: { recipe: Recipe; active: boolean }
 
 function RecipeTile({ product, className = "" }: { product: Product; className?: string }) {
   const navigate = useNavigate();
+  const { finalPrice } = useSalePricing(product);
   return (
     <div
       className={`recipe-tile ${className}`}
@@ -654,18 +668,22 @@ function RecipeTile({ product, className = "" }: { product: Product; className?:
         className="aspect-square rounded-lg overflow-hidden relative"
         style={{ background: product.coverGradient }}
       >
-        <div className="absolute inset-0 flex items-center justify-center text-center p-2">
-          <div>
-            <div className="label-mini !text-[0.55rem] mb-1">{product.maker}</div>
-            <div className="font-display text-base leading-tight">{product.name}</div>
+        {product.coverUrl ? (
+          <img src={product.coverUrl} alt={product.name} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center text-center p-2">
+            <div>
+              <div className="label-mini !text-[0.55rem] mb-1">{product.maker}</div>
+              <div className="font-display text-base leading-tight">{product.name}</div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
       <div className="flex items-center justify-between gap-2">
         <span className="font-mono text-[10px] text-white/65 inline-flex items-center gap-1">
           VIEW PRODUCT <ArrowUpRight className="w-3 h-3" />
         </span>
-        <span className="font-mono text-xs font-bold">${product.price}</span>
+        <span className="font-mono text-xs font-bold">{product.isFree ? "FREE" : `$${finalPrice.toFixed(2)}`}</span>
       </div>
     </div>
   );
@@ -754,7 +772,8 @@ function BrowseTheVault() {
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const reduce = useReducedMotion();
   const active = VAULT_TABS.find((t) => t.slug === activeSlug) ?? VAULT_TABS[3];
-  const previews = products.filter((p) => p.category === active.slug).slice(0, 3);
+  const { data: allProducts = [] } = usePublishedProducts();
+  const previews = allProducts.filter((p) => p.category === active.slug).slice(0, 3);
 
   const onTabKey = (e: React.KeyboardEvent, i: number) => {
     if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
@@ -1206,9 +1225,14 @@ function ConsolePreviewCard({ product }: { product: Product }) {
 
 
 function SoundsOfTheDecade() {
-  // 1 featured + 3 supporting
-  const featured = getProductBySlug("omnisphere") || recentProducts[0] || placeholder(0, { name: "FEATURED SOUND" });
-  const supportingReal = recentProducts.filter((p) => p.slug !== featured.slug).slice(0, 3);
+  const { data: allProducts = [] } = usePublishedProducts();
+  const { data: bestsellerIds = [] } = useBestsellerIds(8);
+  const byId = new Map(allProducts.map((p) => [p.id!, p]));
+  const bestsellerProds = bestsellerIds.map((id) => byId.get(id)).filter(Boolean) as Product[];
+  const featuredList = allProducts.filter((p) => p.isFeatured);
+  const pool = bestsellerProds.length > 0 ? bestsellerProds : (featuredList.length > 0 ? featuredList : allProducts);
+  const featured = pool[0] ?? placeholder(0, { name: "FEATURED SOUND" });
+  const supportingReal = pool.filter((p) => p.slug !== featured.slug).slice(0, 3);
   const supporting = supportingReal.length > 0 ? supportingReal : [placeholder(1), placeholder(2), placeholder(3)];
 
 
@@ -1354,11 +1378,45 @@ function SoundRowCard({ product }: { product: Product }) {
 
 /* ============ PLUGIN OF THE WEEK (wide spotlight) ============ */
 
+function getPluginOfTheWeekIndex(): number {
+  // Rotate every Monday at 12:00 America/Chicago (CST/CDT handled by locale conversion).
+  const nowChicago = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Chicago" }));
+  const day = nowChicago.getDay(); // 0=Sun, 1=Mon
+  const hour = nowChicago.getHours();
+  let daysSinceMon = (day + 6) % 7; // Mon=0, Tue=1, ... Sun=6
+  if (daysSinceMon === 0 && hour < 12) daysSinceMon = 7; // before noon Mon = last week's pick
+  const monday = new Date(nowChicago);
+  monday.setDate(nowChicago.getDate() - daysSinceMon);
+  monday.setHours(12, 0, 0, 0);
+  return Math.floor(monday.getTime() / (7 * 24 * 60 * 60 * 1000));
+}
+
 function PluginOfTheWeek() {
-  const featured = getProductBySlug("omnisphere") || products[0] || placeholder(0, { name: "PLUGIN OF THE WEEK" });
+  const { data: allProducts = [] } = usePublishedProducts();
+  const { data: bestsellerIds = [] } = useBestsellerIds(20);
+  const byId = new Map(allProducts.map((p) => [p.id!, p]));
+  const bestsellers = bestsellerIds.map((id) => byId.get(id)).filter(Boolean) as Product[];
+  const featuredPool = allProducts.filter((p) => p.isFeatured);
+  // Prefer bestsellers → featured → all published. Dedupe so the pool doesn't repeat.
+  const seen = new Set<string>();
+  const candidates: Product[] = [];
+  for (const p of [...bestsellers, ...featuredPool, ...allProducts]) {
+    if (!p.id || seen.has(p.id)) continue;
+    seen.add(p.id);
+    candidates.push(p);
+  }
+  const weekIndex = getPluginOfTheWeekIndex();
+  const featured = candidates.length > 0
+    ? candidates[weekIndex % candidates.length]
+    : placeholder(0, { name: "PLUGIN OF THE WEEK" });
+  const { finalPrice, pct } = useSalePricing(featured);
   const [added, setAdded] = useState(false);
-  const onSale = featured.compareAtPrice && featured.compareAtPrice > featured.price;
-  const savings = onSale ? featured.compareAtPrice! - featured.price : 0;
+  const hasCompareAt = !!(featured.compareAtPrice && featured.compareAtPrice > featured.price);
+  const strikePrice = hasCompareAt ? featured.compareAtPrice! : (pct > 0 ? featured.price : undefined);
+  const displayPrice = pct > 0 ? finalPrice : featured.price;
+  const savings = strikePrice ? Math.round((strikePrice - displayPrice) * 100) / 100 : 0;
+  const description = featured.description?.trim() || featured.tagline?.trim() ||
+    "A producer-ready pick from the vault — refreshed every week.";
 
 
   return (
@@ -1377,12 +1435,16 @@ function PluginOfTheWeek() {
                 className="relative aspect-square rounded-2xl overflow-hidden block group"
                 style={{ background: featured.coverGradient }}
               >
-                <div className="absolute inset-0 flex items-center justify-center text-center">
-                  <div>
-                    <div className="label-mini mb-2">{featured.maker}</div>
-                    <div className="font-display text-5xl md:text-7xl">{featured.name}</div>
+                {featured.coverUrl ? (
+                  <img src={featured.coverUrl} alt={featured.name} className="absolute inset-0 w-full h-full object-cover" />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center text-center">
+                    <div>
+                      <div className="label-mini mb-2">{featured.maker}</div>
+                      <div className="font-display text-5xl md:text-7xl">{featured.name}</div>
+                    </div>
                   </div>
-                </div>
+                )}
                 <div
                   className="absolute inset-0 glow-breathe pointer-events-none"
                   style={{
@@ -1403,18 +1465,20 @@ function PluginOfTheWeek() {
                   {featured.name}
                 </Link>
                 <p className="text-white/80 mt-4 max-w-md leading-relaxed">
-                  A deep sound source for pads, keys, textures, leads, and cinematic layers.
+                  {description}
                 </p>
 
                 <div className="flex items-baseline gap-3 mt-5">
-                  <span className="font-mono text-4xl font-bold text-red">${featured.price}</span>
-                  {onSale && (
+                  <span className="font-mono text-4xl font-bold text-red">
+                    {featured.isFree ? "FREE" : `$${displayPrice.toFixed(2)}`}
+                  </span>
+                  {strikePrice && !featured.isFree && (
                     <>
                       <span className="font-mono text-white/40 line-through text-lg">
-                        ${featured.compareAtPrice}
+                        ${strikePrice}
                       </span>
                       <span className="font-mono text-xs px-2 py-1 rounded-md bg-[var(--accent-red)]/20 border border-[var(--accent-red)]/40 text-[var(--accent-red-glow)]">
-                        SAVE ${savings}
+                        SAVE ${savings.toFixed(2)}
                       </span>
                     </>
                   )}
