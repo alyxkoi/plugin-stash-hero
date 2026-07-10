@@ -128,32 +128,11 @@ function Settings() {
           <button onClick={() => toast.success("Test ran successfully")} className="btn-ghost !text-xs !py-2 !px-4 ml-3">Test description generation</button>
         </DashCard>
 
-        <DashCard title="Mailchimp">
-          {status?.mailchimp.connected ? <Badge color="emerald">Connected</Badge> : <Badge color="amber">Not configured</Badge>}
-          {!status?.mailchimp.connected && (
-            <div className="text-[11px] text-white/50 mt-2">Add <code className="font-mono">MAILCHIMP_API_KEY</code> and <code className="font-mono">MAILCHIMP_AUDIENCE_ID</code> secrets to enable.</div>
-          )}
-        </DashCard>
-
         <DashCard title="Admin account">
           <Field label="Email"><input defaultValue="admin@pluginwarehouse.com" className="ipt" /></Field>
           <Field label="Change password"><input type="password" className="ipt" /></Field>
-          <label className="flex items-center gap-2 text-sm mt-3"><input type="checkbox" className="accent-[var(--accent-red)]" /> Two-factor authentication</label>
-          <div className="mt-4 pt-4 border-t border-white/10">
-            <div className="text-xs text-white/60 mb-2">Add another admin</div>
-            <div className="flex gap-2"><input placeholder="email@example.com" className="ipt" /><button className="btn-ghost !text-xs !py-2 !px-4">Invite</button></div>
-          </div>
         </DashCard>
 
-
-        <div className="glass-card p-5 border !border-[var(--accent-red)]/40">
-          <div className="chromatic-edge" />
-          <div className="relative z-10">
-            <h3 className="font-display text-base text-[var(--accent-red-glow)] mb-3">Danger zone</h3>
-            <label className="flex items-center gap-2 text-sm mb-3"><input type="checkbox" className="accent-[var(--accent-red)]" /> Maintenance mode</label>
-            <div className="flex gap-2 flex-wrap"><button className="btn-ghost !text-xs !py-2 !px-4">Export all data</button><button className="btn-ghost !text-xs !py-2 !px-4">Delete all draft products</button></div>
-          </div>
-        </div>
       </div>
       <style>{`.ipt{width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:0.55rem 0.75rem;font-size:13px;color:#fff;outline:none}.ipt:focus{border-color:var(--accent-red)}`}</style>
     </DashboardShell>
