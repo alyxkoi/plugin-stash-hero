@@ -292,7 +292,7 @@ function NewProduct() {
     setUploadState("idle"); setUploadPct(0); setUploadErr(null);
     setName(e.name); setMaker(e.maker); setDesc(e.desc); setCoverUrl(e.coverUrl);
     setCategory(e.category); setTags(e.tags); setFormats(new Set(e.formats));
-    setPrice(e.price); setCompareAt(e.compareAt); setVersion(e.version);
+    setPrice(e.price); setCompareAt(e.compareAt); setVersion(e.version); setLibraryType(e.libraryType);
     setIncludeSale(e.includeSale); setPublishStatus(e.publishStatus);
     setSupportsWindows(e.supportsWindows); setSupportsMac(e.supportsMac); setIsFree(e.isFree);
     setResumed(false); setCanResumeFromDisk(false); clearDraft();
