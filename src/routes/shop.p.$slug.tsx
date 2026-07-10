@@ -122,7 +122,7 @@ function ProductDetail() {
                   <div className="h-full w-full flex flex-col items-center justify-center">
                     <div className="font-mono text-xs text-white/60 mb-3 tracking-[0.25em]">{p.maker.toUpperCase()}</div>
                     <div className="font-black chrome-text text-center px-6" style={{ fontSize: "clamp(2.5rem,6vw,4.5rem)", lineHeight: 1 }}>{p.name}</div>
-                    <div className="font-mono text-xs text-white/50 mt-4 tracking-[0.2em]">VERSION {p.version}</div>
+                    <div className="font-mono text-xs text-white/50 mt-4 tracking-[0.2em]">{p.category === "libraries" && p.libraryType ? `FOR ${p.libraryType.toUpperCase()}` : `VERSION ${p.version}`}</div>
                   </div>
                 )}
               </div>
