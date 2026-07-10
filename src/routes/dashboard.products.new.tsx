@@ -370,10 +370,21 @@ function NewProduct() {
     setFileName(f.name); setFileSize(f.size);
     setStagingKey(null); setUploadPct(0);
     setUploadState("uploading");
-    // Smart pre-fill: infer OS support from filename. AU is Mac-only, so a Mac
-    // detection also auto-checks AU (and unchecking Mac later removes it).
+    // Smart pre-fill: infer OS support, product name, and suggested tags from
+    // filename. All fields remain editable — name only auto-fills when empty
+    // (don't clobber user edits); tags merge in without removing existing ones.
     const detected = detectOSFromFilename(f.name);
     applyDetectedOS(detected);
+    const parsedName = parseProductNameFromFilename(f.name);
+    if (parsedName && !name.trim()) setName(parsedName);
+    const suggested = suggestTagsFromName(parsedName || f.name);
+    if (suggested.length) {
+      setTags((prev) => {
+        const merged = [...prev];
+        for (const t of suggested) if (!merged.includes(t)) merged.push(t);
+        return merged;
+      });
+    }
     patchDraft({ fileName: f.name, fileSize: f.size, stagingKey: null, uploadState: "uploading", supportsWindows: detected.win, supportsMac: detected.mac });
 
     // Decide fresh vs resume by comparing name+size against saved mp state.
