@@ -146,11 +146,12 @@ export function CartDrawer() {
                       </button>
                     </div>
                     <div className="text-right">
-                      {item.salePct > 0 && (
-                        <div className="font-mono text-[10px] text-white/40 line-through">${(item.product.price * item.qty).toFixed(2)}</div>
+                      {i_showRetail(item) && (
+                        <div className="font-mono text-[10px] text-white/40 line-through">${(item.retail * item.qty).toFixed(2)}</div>
                       )}
                       <div className="font-mono font-bold">${(item.unit * item.qty).toFixed(2)}</div>
                     </div>
+
                   </div>
                 ))
               )}
