@@ -211,6 +211,7 @@ function NewProduct() {
   const [price, setPrice] = useState(initial.draft.price);
   const [compareAt, setCompareAt] = useState(initial.draft.compareAt);
   const [version, setVersion] = useState(initial.draft.version);
+  const [libraryType, setLibraryType] = useState(initial.draft.libraryType);
   const [includeSale, setIncludeSale] = useState(initial.draft.includeSale);
   const [publishStatus, setPublishStatus] = useState<"publish" | "draft">(initial.draft.publishStatus);
   const [supportsWindows, setSupportsWindows] = useState(initial.draft.supportsWindows);
