@@ -613,6 +613,7 @@ function NewProduct() {
         daws: [],
         formats: Array.from(formats),
         version,
+        library_type: category === "libraries" ? (libraryType.trim() || null) : null,
         price: priceNum,
         compare_at_price: compareNum > 0 ? compareNum : null,
         description: desc,
