@@ -119,6 +119,7 @@ function EditProduct() {
     setPrice(String(product.price ?? ""));
     setCompareAt(product.compare_at_price ? String(product.compare_at_price) : "");
     setVersion(product.version || "");
+    setLibraryType(product.library_type || "");
     setFormats(new Set(product.formats || []));
     setTags(product.tags || []);
     setCoverUrl(product.cover_url);
