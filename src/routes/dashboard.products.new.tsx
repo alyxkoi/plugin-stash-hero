@@ -42,8 +42,9 @@ const parseProductNameFromFilename = (filename: string): string => {
     " ",
   );
   // Remove trailing part/build codes like "-005", "_013", " 007" that come
-  // after the OS parens.
-  n = n.replace(/[-_\s]+\d{2,4}\s*$/g, "");
+  // after the OS parens. Requires 3-4 digits so real trailing version numbers
+  // like "RC-20" or "Model 77" survive.
+  n = n.replace(/[-_\s]+\d{3,4}\s*$/g, "");
   // Trim stray separators / collapse whitespace.
   n = n.replace(/^[\s\-_]+|[\s\-_]+$/g, "").replace(/\s+/g, " ").trim();
   return n;
