@@ -30,7 +30,7 @@ type FileRow = { zip_url: string; zip_file_name: string | null };
 async function fetchProduct(id: string): Promise<Row | null> {
   const { data, error } = await supabase
     .from("products")
-    .select("id,slug,name,maker,category,description,tags,formats,version,price,compare_at_price,status,cover_url,cover_gradient,supports_windows,supports_mac,is_free")
+    .select("id,slug,name,maker,category,description,tags,formats,version,library_type,price,compare_at_price,status,cover_url,cover_gradient,supports_windows,supports_mac,is_free")
     .eq("id", id)
     .maybeSingle();
 
