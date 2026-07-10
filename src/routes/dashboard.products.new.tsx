@@ -142,7 +142,7 @@ const emptyDraft = (): DraftShape => ({
   mpUploadId: null, mpKey: null, mpPartSize: 0, mpFileName: null, mpFileSize: 0, mpParts: {},
   name: "", maker: "Plugin Warehouse", desc: "", coverUrl: null,
   category: productCategories[0], tags: [], formats: ["VST", "VST3"],
-  price: "", compareAt: "", version: "1.0",
+  price: "", compareAt: "", version: "1.0", libraryType: "",
   includeSale: false, publishStatus: "publish",
   supportsWindows: true, supportsMac: false, isFree: false,
 });
