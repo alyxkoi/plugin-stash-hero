@@ -157,9 +157,9 @@ function ProductDetail() {
           {(() => {
             const isLib = p.category === "libraries";
             const cells = 1 + (p.fileSize ? 1 : 0) + (isLib ? 0 : 1) + 1;
-            const cls = `grid grid-cols-2 md:grid-cols-${Math.min(4, cells)} gap-3 mb-6`;
+            const colClass = cells >= 4 ? "md:grid-cols-4" : cells === 3 ? "md:grid-cols-3" : "md:grid-cols-2";
             return (
-              <div className={cls}>
+              <div className={`grid grid-cols-2 ${colClass} gap-3 mb-6`}>
                 {isLib && p.libraryType
                   ? <Meta label="LIBRARY TYPE" value={p.libraryType} />
                   : <Meta label="VERSION" value={p.version} />}
