@@ -91,6 +91,7 @@ function EditProduct() {
   const [price, setPrice] = useState("");
   const [compareAt, setCompareAt] = useState("");
   const [version, setVersion] = useState("");
+  const [libraryType, setLibraryType] = useState<string>("");
   const [formats, setFormats] = useState<Set<string>>(new Set());
   const [tags, setTags] = useState<string[]>([]);
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
