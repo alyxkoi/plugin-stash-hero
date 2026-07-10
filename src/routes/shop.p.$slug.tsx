@@ -51,7 +51,7 @@ function toProduct(r: Row): Product {
 }
 
 async function fetchBySlug(slug: string): Promise<{ product: Product | null; related: Product[] }> {
-  const cols = "id,slug,name,maker,category,formats,daws,version,price,compare_at_price,description,tagline,cover_url,cover_gradient,is_free,updated_at,file_size";
+  const cols = "id,slug,name,maker,category,formats,daws,version,library_type,price,compare_at_price,description,tagline,cover_url,cover_gradient,is_free,updated_at,file_size";
 
   const { data, error } = await supabase
     .from("products")
