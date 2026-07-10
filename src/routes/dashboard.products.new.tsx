@@ -790,9 +790,15 @@ function NewProduct() {
                   {productCategories.map(c => <option key={c} value={c} className="bg-[#1F0540]">{c.charAt(0).toUpperCase()+c.slice(1)}</option>)}
                 </select>
               </Field>
-              <Field label="Version">
-                <input value={version} onChange={e => setVersion(e.target.value)} className="ipt" placeholder="1.0" />
-              </Field>
+              {category === "libraries" ? (
+                <Field label="Library type">
+                  <LibraryTypeField value={libraryType || null} onChange={setLibraryType} />
+                </Field>
+              ) : (
+                <Field label="Version">
+                  <input value={version} onChange={e => setVersion(e.target.value)} className="ipt" placeholder="1.0" />
+                </Field>
+              )}
             </div>
             <Field label="Tags">
               <div className="flex flex-wrap gap-2 mb-2">
