@@ -234,6 +234,7 @@ function EditProduct() {
     setSaving(true);
     try {
       const effectivePrice = isFree ? 0 : (Number(price) || 0);
+      const isLibrary = category === "libraries";
       const { error: upErr } = await supabase.from("products").update({
         name: name.trim(),
         maker: maker.trim(),
@@ -242,12 +243,12 @@ function EditProduct() {
         price: effectivePrice,
         compare_at_price: !isFree && Number(compareAt) > 0 ? Number(compareAt) : null,
         version,
-        library_type: category === "libraries" ? (libraryType.trim() || null) : null,
-        formats: Array.from(formats),
+        library_type: isLibrary ? (libraryType.trim() || null) : null,
+        formats: isLibrary ? [] : Array.from(formats),
         cover_url: coverUrl,
         status,
-        supports_windows: supportsWindows,
-        supports_mac: supportsMac,
+        supports_windows: isLibrary ? false : supportsWindows,
+        supports_mac: isLibrary ? false : supportsMac,
         is_free: isFree || effectivePrice === 0,
         published_at: status === "published" ? new Date().toISOString() : null,
       }).eq("id", id);
@@ -324,38 +325,42 @@ function EditProduct() {
                   <Field label="Version"><input value={version} onChange={e => setVersion(e.target.value)} className="ipt" /></Field>
                 )}
               </div>
-              <Field label="Formats">
-                <div className="flex flex-wrap gap-2">
-                  {FORMATS.map(f => {
-                    const on = formats.has(f);
-                    return (
-                      <button key={f} onClick={() => { const n = new Set(formats); on ? n.delete(f) : n.add(f); setFormats(n); }}
-                        className={`text-xs px-3 py-1.5 rounded-md border font-mono ${on ? "bg-[var(--accent-red)]/15 border-[var(--accent-red)]/60" : "bg-white/5 border-white/15 text-white/70"}`}>{f}</button>
-                    );
-                  })}
-                </div>
-              </Field>
-              <Field label="Operating system">
-                <div className="flex flex-wrap gap-2">
-                  <label className={`inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-md border font-mono cursor-pointer ${supportsWindows ? "bg-[var(--accent-red)]/15 border-[var(--accent-red)]/60" : "bg-white/5 border-white/15 text-white/70"}`}>
-                    <input type="checkbox" checked={supportsWindows} onChange={e => setSupportsWindows(e.target.checked)} className="accent-[var(--accent-red)]" />
-                    Windows
-                  </label>
-                  <label className={`inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-md border font-mono cursor-pointer ${supportsMac ? "bg-[var(--accent-red)]/15 border-[var(--accent-red)]/60" : "bg-white/5 border-white/15 text-white/70"}`}>
-                    <input type="checkbox" checked={supportsMac} onChange={e => {
-                      const mac = e.target.checked;
-                      setSupportsMac(mac);
-                      setFormats((prev) => {
-                        const n = new Set(prev);
-                        if (mac) n.add("AU");
-                        else n.delete("AU");
-                        return n;
-                      });
-                    }} className="accent-[var(--accent-red)]" />
-                    Mac
-                  </label>
-                </div>
-              </Field>
+              {category !== "libraries" && (
+                <Field label="Formats">
+                  <div className="flex flex-wrap gap-2">
+                    {FORMATS.map(f => {
+                      const on = formats.has(f);
+                      return (
+                        <button key={f} onClick={() => { const n = new Set(formats); on ? n.delete(f) : n.add(f); setFormats(n); }}
+                          className={`text-xs px-3 py-1.5 rounded-md border font-mono ${on ? "bg-[var(--accent-red)]/15 border-[var(--accent-red)]/60" : "bg-white/5 border-white/15 text-white/70"}`}>{f}</button>
+                      );
+                    })}
+                  </div>
+                </Field>
+              )}
+              {category !== "libraries" && (
+                <Field label="Operating system">
+                  <div className="flex flex-wrap gap-2">
+                    <label className={`inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-md border font-mono cursor-pointer ${supportsWindows ? "bg-[var(--accent-red)]/15 border-[var(--accent-red)]/60" : "bg-white/5 border-white/15 text-white/70"}`}>
+                      <input type="checkbox" checked={supportsWindows} onChange={e => setSupportsWindows(e.target.checked)} className="accent-[var(--accent-red)]" />
+                      Windows
+                    </label>
+                    <label className={`inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-md border font-mono cursor-pointer ${supportsMac ? "bg-[var(--accent-red)]/15 border-[var(--accent-red)]/60" : "bg-white/5 border-white/15 text-white/70"}`}>
+                      <input type="checkbox" checked={supportsMac} onChange={e => {
+                        const mac = e.target.checked;
+                        setSupportsMac(mac);
+                        setFormats((prev) => {
+                          const n = new Set(prev);
+                          if (mac) n.add("AU");
+                          else n.delete("AU");
+                          return n;
+                        });
+                      }} className="accent-[var(--accent-red)]" />
+                      Mac
+                    </label>
+                  </div>
+                </Field>
+              )}
             </div>
           </div>
         </DashCard>

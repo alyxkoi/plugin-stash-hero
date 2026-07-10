@@ -150,7 +150,9 @@ function ProductsPage() {
                       <CategoryCell product={p} onSave={(v) => updateProduct(p.id, { category: v }, p)} />
                     </td>
                     <td className="px-2 py-2">
-                      <OsCell product={p} onSave={(win, mac) => updateProduct(p.id, { supports_windows: win, supports_mac: mac }, p)} />
+                      {p.category === "libraries"
+                        ? <span className="text-[10px] font-mono text-white/30">—</span>
+                        : <OsCell product={p} onSave={(win, mac) => updateProduct(p.id, { supports_windows: win, supports_mac: mac }, p)} />}
                     </td>
                     <td className="px-2 py-2 text-right">
                       <PriceCell product={p} onSave={(price, cmp) => updateProduct(p.id, { price, compare_at_price: cmp }, p)} justSaved={savedId === p.id} />

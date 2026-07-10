@@ -266,15 +266,16 @@ function NewProduct() {
   const compareNum = Number(compareAt) || 0;
   const baseDiscountPct = compareNum > priceNum && compareNum > 0 ? Math.round((1 - priceNum / compareNum) * 100) : 0;
 
+  const isLibrary = category === "libraries";
   const missing = useMemo(() => ({
     file: !stagingKey || uploadState !== "complete",
     name: !name.trim(),
     maker: !maker.trim(),
     desc: !desc.trim(),
     category: !category,
-    formats: formats.size === 0,
+    formats: !isLibrary && formats.size === 0,
     price: !isFree && !(priceNum > 0),
-  }), [stagingKey, uploadState, name, maker, desc, category, formats, priceNum, isFree]);
+  }), [stagingKey, uploadState, name, maker, desc, category, formats, priceNum, isFree, isLibrary]);
 
 
   const canPublish = !Object.values(missing).some(Boolean);
@@ -612,9 +613,9 @@ function NewProduct() {
         sub_type: null,
         tags,
         daws: [],
-        formats: Array.from(formats),
+        formats: isLibrary ? [] : Array.from(formats),
         version,
-        library_type: category === "libraries" ? (libraryType.trim() || null) : null,
+        library_type: isLibrary ? (libraryType.trim() || null) : null,
         price: priceNum,
         compare_at_price: compareNum > 0 ? compareNum : null,
         description: desc,
@@ -623,8 +624,8 @@ function NewProduct() {
         published_at: status === "publish" ? new Date().toISOString() : null,
         is_free: isFree || priceNum === 0,
         file_size: fileSize > 0 ? formatBytes(fileSize) : null,
-        supports_windows: supportsWindows,
-        supports_mac: supportsMac,
+        supports_windows: isLibrary ? false : supportsWindows,
+        supports_mac: isLibrary ? false : supportsMac,
       }).select("id").single();
 
 
@@ -807,31 +808,35 @@ function NewProduct() {
               </div>
               <input value={tagInput} onChange={e => setTagInput(e.target.value)} onKeyDown={e => e.key === "Enter" && (e.preventDefault(), addTag())} placeholder="Type and press enter" className="ipt" />
             </Field>
-            <Field label={<>Compatible formats {req(missing.formats)}</>}>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {FORMATS.map(d => {
-                  const checked = formats.has(d);
-                  return (
-                    <label key={d} className={`flex items-center gap-2 rounded-lg px-3 py-2.5 text-xs cursor-pointer transition border ${checked ? "bg-[var(--accent-red)]/15 border-[var(--accent-red)]/60 text-white" : "bg-white/5 border-white/10 text-white/70 hover:border-white/25"}`}>
-                      <input type="checkbox" checked={checked} onChange={() => { const n = new Set(formats); n.has(d) ? n.delete(d) : n.add(d); setFormats(n); }} className="accent-[var(--accent-red)]" />
-                      <span className="font-mono tracking-wider">{d}</span>
-                    </label>
-                  );
-                })}
-              </div>
-            </Field>
-            <Field label={<>Operating system <span className="text-white/40 normal-case font-mono ml-1">(auto-detected from filename — adjust if needed)</span></>}>
-              <div className="grid grid-cols-2 gap-2">
-                <label className={`flex items-center gap-2 rounded-lg px-3 py-2.5 text-xs cursor-pointer transition border ${supportsWindows ? "bg-[var(--accent-red)]/15 border-[var(--accent-red)]/60 text-white" : "bg-white/5 border-white/10 text-white/70 hover:border-white/25"}`}>
-                  <input type="checkbox" checked={supportsWindows} onChange={e => setSupportsWindows(e.target.checked)} className="accent-[var(--accent-red)]" />
-                  <span className="font-mono tracking-wider">Windows</span>
-                </label>
-                <label className={`flex items-center gap-2 rounded-lg px-3 py-2.5 text-xs cursor-pointer transition border ${supportsMac ? "bg-[var(--accent-red)]/15 border-[var(--accent-red)]/60 text-white" : "bg-white/5 border-white/10 text-white/70 hover:border-white/25"}`}>
-                  <input type="checkbox" checked={supportsMac} onChange={e => setMacWithAU(e.target.checked)} className="accent-[var(--accent-red)]" />
-                  <span className="font-mono tracking-wider">Mac</span>
-                </label>
-              </div>
-            </Field>
+            {!isLibrary && (
+              <Field label={<>Compatible formats {req(missing.formats)}</>}>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  {FORMATS.map(d => {
+                    const checked = formats.has(d);
+                    return (
+                      <label key={d} className={`flex items-center gap-2 rounded-lg px-3 py-2.5 text-xs cursor-pointer transition border ${checked ? "bg-[var(--accent-red)]/15 border-[var(--accent-red)]/60 text-white" : "bg-white/5 border-white/10 text-white/70 hover:border-white/25"}`}>
+                        <input type="checkbox" checked={checked} onChange={() => { const n = new Set(formats); n.has(d) ? n.delete(d) : n.add(d); setFormats(n); }} className="accent-[var(--accent-red)]" />
+                        <span className="font-mono tracking-wider">{d}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </Field>
+            )}
+            {!isLibrary && (
+              <Field label={<>Operating system <span className="text-white/40 normal-case font-mono ml-1">(auto-detected from filename — adjust if needed)</span></>}>
+                <div className="grid grid-cols-2 gap-2">
+                  <label className={`flex items-center gap-2 rounded-lg px-3 py-2.5 text-xs cursor-pointer transition border ${supportsWindows ? "bg-[var(--accent-red)]/15 border-[var(--accent-red)]/60 text-white" : "bg-white/5 border-white/10 text-white/70 hover:border-white/25"}`}>
+                    <input type="checkbox" checked={supportsWindows} onChange={e => setSupportsWindows(e.target.checked)} className="accent-[var(--accent-red)]" />
+                    <span className="font-mono tracking-wider">Windows</span>
+                  </label>
+                  <label className={`flex items-center gap-2 rounded-lg px-3 py-2.5 text-xs cursor-pointer transition border ${supportsMac ? "bg-[var(--accent-red)]/15 border-[var(--accent-red)]/60 text-white" : "bg-white/5 border-white/10 text-white/70 hover:border-white/25"}`}>
+                    <input type="checkbox" checked={supportsMac} onChange={e => setMacWithAU(e.target.checked)} className="accent-[var(--accent-red)]" />
+                    <span className="font-mono tracking-wider">Mac</span>
+                  </label>
+                </div>
+              </Field>
+            )}
           </div>
         </DashCard>
 

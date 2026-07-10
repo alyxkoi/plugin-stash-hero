@@ -137,7 +137,7 @@ function ProductDetail() {
 
           <div className="flex flex-wrap gap-2 mb-6">
             {p.daws.slice(0, 4).map((d) => <Pill key={d}>{d}</Pill>)}
-            {p.formats.map((f) => <Pill key={f}>{f}</Pill>)}
+            {p.category !== "libraries" && p.formats.map((f) => <Pill key={f}>{f}</Pill>)}
           </div>
 
           <div className="mb-6">
@@ -154,14 +154,21 @@ function ProductDetail() {
             <button className="btn-ghost"><Share2 className="w-4 h-4" /> SHARE</button>
           </div>
 
-          <div className={`grid grid-cols-2 ${p.fileSize ? "md:grid-cols-4" : "md:grid-cols-3"} gap-3 mb-6`}>
-            {p.category === "libraries" && p.libraryType
-              ? <Meta label="LIBRARY TYPE" value={p.libraryType} />
-              : <Meta label="VERSION" value={p.version} />}
-            {p.fileSize && <Meta label="FILE SIZE" value={p.fileSize} />}
-            <Meta label="FORMATS" value={p.formats.slice(0, 2).join(" / ") || "—"} />
-            <Meta label="UPDATED" value={p.updated} />
-          </div>
+          {(() => {
+            const isLib = p.category === "libraries";
+            const cells = 1 + (p.fileSize ? 1 : 0) + (isLib ? 0 : 1) + 1;
+            const colClass = cells >= 4 ? "md:grid-cols-4" : cells === 3 ? "md:grid-cols-3" : "md:grid-cols-2";
+            return (
+              <div className={`grid grid-cols-2 ${colClass} gap-3 mb-6`}>
+                {isLib && p.libraryType
+                  ? <Meta label="LIBRARY TYPE" value={p.libraryType} />
+                  : <Meta label="VERSION" value={p.version} />}
+                {p.fileSize && <Meta label="FILE SIZE" value={p.fileSize} />}
+                {!isLib && <Meta label="FORMATS" value={p.formats.slice(0, 2).join(" / ") || "—"} />}
+                <Meta label="UPDATED" value={p.updated} />
+              </div>
+            );
+          })()}
 
           {p.category === "libraries" && p.libraryType?.toLowerCase() === "kontakt" && (
             <div className="mb-6 rounded-2xl border border-[var(--accent-red-glow)]/30 bg-[var(--accent-red)]/10 backdrop-blur-md p-4">

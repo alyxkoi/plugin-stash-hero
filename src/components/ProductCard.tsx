@@ -61,7 +61,7 @@ export function ProductCard({ product, variant = "default", rank }: { product: P
           <div className="font-mono text-[10px] tracking-[0.15em] text-[var(--accent-red-glow)] mb-1">{product.maker.toUpperCase()}</div>
           <h3 className="font-bold text-lg leading-tight mb-2 group-hover:text-white">{product.name}</h3>
           <div className="flex flex-wrap gap-1 mb-3">
-            {product.formats.slice(0, 2).map((f) => (
+            {product.category !== "libraries" && product.formats.slice(0, 2).map((f) => (
               <span key={f} className="font-mono text-[9px] tracking-wider px-2 py-0.5 rounded-full border border-white/15 text-white/60">{f}</span>
             ))}
           </div>
