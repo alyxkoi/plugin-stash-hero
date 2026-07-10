@@ -324,38 +324,42 @@ function EditProduct() {
                   <Field label="Version"><input value={version} onChange={e => setVersion(e.target.value)} className="ipt" /></Field>
                 )}
               </div>
-              <Field label="Formats">
-                <div className="flex flex-wrap gap-2">
-                  {FORMATS.map(f => {
-                    const on = formats.has(f);
-                    return (
-                      <button key={f} onClick={() => { const n = new Set(formats); on ? n.delete(f) : n.add(f); setFormats(n); }}
-                        className={`text-xs px-3 py-1.5 rounded-md border font-mono ${on ? "bg-[var(--accent-red)]/15 border-[var(--accent-red)]/60" : "bg-white/5 border-white/15 text-white/70"}`}>{f}</button>
-                    );
-                  })}
-                </div>
-              </Field>
-              <Field label="Operating system">
-                <div className="flex flex-wrap gap-2">
-                  <label className={`inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-md border font-mono cursor-pointer ${supportsWindows ? "bg-[var(--accent-red)]/15 border-[var(--accent-red)]/60" : "bg-white/5 border-white/15 text-white/70"}`}>
-                    <input type="checkbox" checked={supportsWindows} onChange={e => setSupportsWindows(e.target.checked)} className="accent-[var(--accent-red)]" />
-                    Windows
-                  </label>
-                  <label className={`inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-md border font-mono cursor-pointer ${supportsMac ? "bg-[var(--accent-red)]/15 border-[var(--accent-red)]/60" : "bg-white/5 border-white/15 text-white/70"}`}>
-                    <input type="checkbox" checked={supportsMac} onChange={e => {
-                      const mac = e.target.checked;
-                      setSupportsMac(mac);
-                      setFormats((prev) => {
-                        const n = new Set(prev);
-                        if (mac) n.add("AU");
-                        else n.delete("AU");
-                        return n;
-                      });
-                    }} className="accent-[var(--accent-red)]" />
-                    Mac
-                  </label>
-                </div>
-              </Field>
+              {category !== "libraries" && (
+                <Field label="Formats">
+                  <div className="flex flex-wrap gap-2">
+                    {FORMATS.map(f => {
+                      const on = formats.has(f);
+                      return (
+                        <button key={f} onClick={() => { const n = new Set(formats); on ? n.delete(f) : n.add(f); setFormats(n); }}
+                          className={`text-xs px-3 py-1.5 rounded-md border font-mono ${on ? "bg-[var(--accent-red)]/15 border-[var(--accent-red)]/60" : "bg-white/5 border-white/15 text-white/70"}`}>{f}</button>
+                      );
+                    })}
+                  </div>
+                </Field>
+              )}
+              {category !== "libraries" && (
+                <Field label="Operating system">
+                  <div className="flex flex-wrap gap-2">
+                    <label className={`inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-md border font-mono cursor-pointer ${supportsWindows ? "bg-[var(--accent-red)]/15 border-[var(--accent-red)]/60" : "bg-white/5 border-white/15 text-white/70"}`}>
+                      <input type="checkbox" checked={supportsWindows} onChange={e => setSupportsWindows(e.target.checked)} className="accent-[var(--accent-red)]" />
+                      Windows
+                    </label>
+                    <label className={`inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-md border font-mono cursor-pointer ${supportsMac ? "bg-[var(--accent-red)]/15 border-[var(--accent-red)]/60" : "bg-white/5 border-white/15 text-white/70"}`}>
+                      <input type="checkbox" checked={supportsMac} onChange={e => {
+                        const mac = e.target.checked;
+                        setSupportsMac(mac);
+                        setFormats((prev) => {
+                          const n = new Set(prev);
+                          if (mac) n.add("AU");
+                          else n.delete("AU");
+                          return n;
+                        });
+                      }} className="accent-[var(--accent-red)]" />
+                      Mac
+                    </label>
+                  </div>
+                </Field>
+              )}
             </div>
           </div>
         </DashCard>
