@@ -19,7 +19,7 @@ export const Route = createFileRoute("/shop/p/$slug")({
 type Row = {
   id: string;
   slug: string; name: string; maker: string; category: string;
-  formats: string[] | null; daws: string[] | null; version: string | null; library_type: string | null; category: string | null;
+  formats: string[] | null; daws: string[] | null; version: string | null; library_type: string | null;
   price: number; compare_at_price: number | null; description: string | null;
   tagline?: string | null;
   cover_url: string | null; cover_gradient: string | null;
