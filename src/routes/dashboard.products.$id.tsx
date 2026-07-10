@@ -234,6 +234,7 @@ function EditProduct() {
     setSaving(true);
     try {
       const effectivePrice = isFree ? 0 : (Number(price) || 0);
+      const isLibrary = category === "libraries";
       const { error: upErr } = await supabase.from("products").update({
         name: name.trim(),
         maker: maker.trim(),
@@ -242,12 +243,12 @@ function EditProduct() {
         price: effectivePrice,
         compare_at_price: !isFree && Number(compareAt) > 0 ? Number(compareAt) : null,
         version,
-        library_type: category === "libraries" ? (libraryType.trim() || null) : null,
-        formats: Array.from(formats),
+        library_type: isLibrary ? (libraryType.trim() || null) : null,
+        formats: isLibrary ? [] : Array.from(formats),
         cover_url: coverUrl,
         status,
-        supports_windows: supportsWindows,
-        supports_mac: supportsMac,
+        supports_windows: isLibrary ? false : supportsWindows,
+        supports_mac: isLibrary ? false : supportsMac,
         is_free: isFree || effectivePrice === 0,
         published_at: status === "published" ? new Date().toISOString() : null,
       }).eq("id", id);
