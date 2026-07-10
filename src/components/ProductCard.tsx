@@ -11,14 +11,18 @@ export function ProductCard({ product, variant = "default", rank }: { product: P
   const saved = !!(product.id && savedIds?.has(product.id));
 
   const { finalPrice, pct, sale } = useSalePricing(product);
-  const onSale = pct > 0 || (product.compareAtPrice && product.compareAtPrice > product.price);
+  const hasCompareAt = !!(product.compareAtPrice && product.compareAtPrice > product.price);
+  const onSale = pct > 0 || hasCompareAt;
   const displayPrice = pct > 0 ? finalPrice : product.price;
-  const strikePrice = pct > 0 ? product.price : product.compareAtPrice;
-  const fallbackPct = product.compareAtPrice && product.compareAtPrice > product.price
-    ? Math.round((1 - product.price / product.compareAtPrice) * 100)
+  // Always prefer the compare-at (retail) as the strike so the saving looks as
+  // big as it really is; only fall back to my price when no retail is set.
+  const strikePrice = hasCompareAt ? product.compareAtPrice : (pct > 0 ? product.price : undefined);
+  const fallbackPct = hasCompareAt
+    ? Math.round((1 - product.price / (product.compareAtPrice as number)) * 100)
     : 0;
   const badgePct = pct > 0 ? pct : fallbackPct;
   const badgeText = badgePct > 0 ? `EXTRA ${badgePct}% OFF` : "";
+
 
 
   return (

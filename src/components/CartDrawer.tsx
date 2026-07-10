@@ -29,12 +29,18 @@ export function CartDrawer() {
   }, [open]);
 
   // Effective unit price per item after any active sale-event discount.
+  // `retail` is the compare-at price when set (else my price) — display only.
+  // `unit` is what Stripe actually charges (my price minus any active sale %).
   const priced = cart.map((i) => {
     const hit = pickSaleFor(sales, i.product);
     const unit = hit ? Math.round(i.product.price * (100 - hit.pct)) / 100 : i.product.price;
-    return { ...i, unit, salePct: hit?.pct ?? 0 };
+    const retail = i.product.compareAtPrice && i.product.compareAtPrice > i.product.price
+      ? i.product.compareAtPrice
+      : i.product.price;
+    return { ...i, unit, retail, salePct: hit?.pct ?? 0 };
   });
   const subtotal = priced.reduce((n, i) => n + i.unit * i.qty, 0);
+  const retailTotal = priced.reduce((n, i) => n + i.retail * i.qty, 0);
   const saleSavings = priced.reduce((n, i) => n + (i.product.price - i.unit) * i.qty, 0);
   const discountAmount = !discount
     ? 0
@@ -42,7 +48,9 @@ export function CartDrawer() {
       ? Math.min(subtotal, (subtotal * discount.value) / 100)
       : Math.min(subtotal, discount.value);
   const total = Math.max(0, subtotal - discountAmount);
+  const totalSavedVsRetail = Math.max(0, retailTotal - total);
   const itemCount = cart.reduce((n, i) => n + i.qty, 0);
+
 
   async function applyCode(e: React.FormEvent) {
     e.preventDefault();
@@ -138,11 +146,12 @@ export function CartDrawer() {
                       </button>
                     </div>
                     <div className="text-right">
-                      {item.salePct > 0 && (
-                        <div className="font-mono text-[10px] text-white/40 line-through">${(item.product.price * item.qty).toFixed(2)}</div>
+                      {item.retail > item.unit && (
+                        <div className="font-mono text-[10px] text-white/40 line-through">${(item.retail * item.qty).toFixed(2)}</div>
                       )}
                       <div className="font-mono font-bold">${(item.unit * item.qty).toFixed(2)}</div>
                     </div>
+
                   </div>
                 ))
               )}
@@ -180,15 +189,25 @@ export function CartDrawer() {
                 )}
 
                 <div className="p-4 rounded-xl bg-white/3 border border-white/8 space-y-2 text-sm">
-                  {saleSavings > 0 && <Row label="Sale savings" value={`-$${saleSavings.toFixed(2)}`} highlight />}
+                  {retailTotal > subtotal && (
+                    <Row label="Retail total" value={<span className="line-through text-white/50">${retailTotal.toFixed(2)}</span>} />
+                  )}
                   <Row label="Subtotal" value={`$${subtotal.toFixed(2)}`} />
-                  {discountAmount > 0 && <Row label="Discount" value={`-$${discountAmount.toFixed(2)}`} highlight />}
+                  {saleSavings > 0 && <Row label="Sale discount" value={`-$${saleSavings.toFixed(2)}`} highlight />}
+                  {discountAmount > 0 && <Row label={`Code ${discount?.code ?? ""}`} value={`-$${discountAmount.toFixed(2)}`} highlight />}
                   <div className="h-px bg-white/10 my-2" />
                   <div className="flex justify-between items-center">
                     <span className="font-bold">Total</span>
                     <span className="font-mono font-black text-2xl">${total.toFixed(2)}</span>
                   </div>
+                  {totalSavedVsRetail > 0 && (
+                    <div className="mt-2 flex justify-between items-center rounded-lg bg-emerald-500/10 border border-emerald-500/25 px-3 py-2">
+                      <span className="font-mono text-[11px] uppercase tracking-wider text-emerald-300">You save vs retail</span>
+                      <span className="font-mono font-bold text-emerald-300">${totalSavedVsRetail.toFixed(2)}</span>
+                    </div>
+                  )}
                 </div>
+
                 <div className="font-mono text-[10px] text-white/50 text-center">🔒 Secure checkout · Instant delivery to your library</div>
                 <button onClick={goCheckout} disabled={goingToCheckout} className="btn-primary w-full !text-base !py-4 disabled:opacity-70">
                   {goingToCheckout ? "OPENING CHECKOUT…" : "CHECKOUT →"}
@@ -205,7 +224,7 @@ export function CartDrawer() {
   );
 }
 
-function Row({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+function Row({ label, value, highlight }: { label: string; value: React.ReactNode; highlight?: boolean }) {
   return (
     <div className="flex justify-between">
       <span className="text-white/60">{label}</span>
@@ -213,3 +232,4 @@ function Row({ label, value, highlight }: { label: string; value: string; highli
     </div>
   );
 }
+
