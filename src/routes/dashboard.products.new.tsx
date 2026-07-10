@@ -129,6 +129,7 @@ type DraftShape = {
   price: string;
   compareAt: string;
   version: string;
+  libraryType: string;
   includeSale: boolean;
   publishStatus: "publish" | "draft";
   supportsWindows: boolean;
