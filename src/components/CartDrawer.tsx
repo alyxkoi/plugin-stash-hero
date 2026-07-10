@@ -189,15 +189,25 @@ export function CartDrawer() {
                 )}
 
                 <div className="p-4 rounded-xl bg-white/3 border border-white/8 space-y-2 text-sm">
-                  {saleSavings > 0 && <Row label="Sale savings" value={`-$${saleSavings.toFixed(2)}`} highlight />}
+                  {retailTotal > subtotal && (
+                    <Row label="Retail total" value={<span className="line-through text-white/50">${retailTotal.toFixed(2)}</span>} />
+                  )}
                   <Row label="Subtotal" value={`$${subtotal.toFixed(2)}`} />
-                  {discountAmount > 0 && <Row label="Discount" value={`-$${discountAmount.toFixed(2)}`} highlight />}
+                  {saleSavings > 0 && <Row label="Sale discount" value={`-$${saleSavings.toFixed(2)}`} highlight />}
+                  {discountAmount > 0 && <Row label={`Code ${discount?.code ?? ""}`} value={`-$${discountAmount.toFixed(2)}`} highlight />}
                   <div className="h-px bg-white/10 my-2" />
                   <div className="flex justify-between items-center">
                     <span className="font-bold">Total</span>
                     <span className="font-mono font-black text-2xl">${total.toFixed(2)}</span>
                   </div>
+                  {totalSavedVsRetail > 0 && (
+                    <div className="mt-2 flex justify-between items-center rounded-lg bg-emerald-500/10 border border-emerald-500/25 px-3 py-2">
+                      <span className="font-mono text-[11px] uppercase tracking-wider text-emerald-300">You save vs retail</span>
+                      <span className="font-mono font-bold text-emerald-300">${totalSavedVsRetail.toFixed(2)}</span>
+                    </div>
+                  )}
                 </div>
+
                 <div className="font-mono text-[10px] text-white/50 text-center">🔒 Secure checkout · Instant delivery to your library</div>
                 <button onClick={goCheckout} disabled={goingToCheckout} className="btn-primary w-full !text-base !py-4 disabled:opacity-70">
                   {goingToCheckout ? "OPENING CHECKOUT…" : "CHECKOUT →"}
