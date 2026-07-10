@@ -17,7 +17,8 @@ export const Route = createFileRoute("/dashboard/products/$id")({
 type Row = {
   id: string; slug: string; name: string; maker: string; category: string;
   description: string | null; tags: string[] | null; formats: string[] | null;
-  version: string | null; price: number; compare_at_price: number | null;
+  version: string | null; library_type: string | null;
+  price: number; compare_at_price: number | null;
   status: "draft" | "published" | "archived";
   cover_url: string | null; cover_gradient: string | null;
   supports_windows: boolean; supports_mac: boolean;
