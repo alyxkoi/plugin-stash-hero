@@ -224,7 +224,7 @@ export function CartDrawer() {
   );
 }
 
-function Row({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+function Row({ label, value, highlight }: { label: string; value: React.ReactNode; highlight?: boolean }) {
   return (
     <div className="flex justify-between">
       <span className="text-white/60">{label}</span>
@@ -232,3 +232,4 @@ function Row({ label, value, highlight }: { label: string; value: string; highli
     </div>
   );
 }
+
