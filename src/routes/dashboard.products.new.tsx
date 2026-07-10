@@ -247,10 +247,10 @@ function NewProduct() {
     if (typeof window === "undefined") return;
     patchDraft({
       fileName, fileSize, stagingKey, uploadState, name, maker, desc, coverUrl,
-      category, tags, formats: Array.from(formats), price, compareAt, version,
+      category, tags, formats: Array.from(formats), price, compareAt, version, libraryType,
       includeSale, publishStatus, supportsWindows, supportsMac, isFree,
     });
-  }, [fileName, fileSize, stagingKey, uploadState, name, maker, desc, coverUrl, category, tags, formats, price, compareAt, version, includeSale, publishStatus, supportsWindows, supportsMac, isFree]);
+  }, [fileName, fileSize, stagingKey, uploadState, name, maker, desc, coverUrl, category, tags, formats, price, compareAt, version, libraryType, includeSale, publishStatus, supportsWindows, supportsMac, isFree]);
 
 
   // Warn if user tries to close/reload while an upload is in flight.
