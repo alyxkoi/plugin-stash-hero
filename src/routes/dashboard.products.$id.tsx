@@ -242,6 +242,7 @@ function EditProduct() {
         price: effectivePrice,
         compare_at_price: !isFree && Number(compareAt) > 0 ? Number(compareAt) : null,
         version,
+        library_type: category === "libraries" ? (libraryType.trim() || null) : null,
         formats: Array.from(formats),
         cover_url: coverUrl,
         status,
