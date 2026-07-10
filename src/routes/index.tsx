@@ -439,11 +439,11 @@ function RotationCard({ product }: { product: Product }) {
           <div className="min-w-0">
             <div className="flex items-baseline gap-2">
               <span className="font-mono font-bold text-base">
-                {product.isFree ? "FREE" : `$${product.price}`}
+                {product.isFree ? "FREE" : `$${displayPrice.toFixed(2)}`}
               </span>
-              {onSale && (
+              {strikePrice && !product.isFree && (
                 <span className="font-mono text-xs text-white/40 line-through">
-                  ${product.compareAtPrice}
+                  ${strikePrice}
                 </span>
               )}
             </div>
