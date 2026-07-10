@@ -37,6 +37,7 @@ function toProduct(r: Row): Product {
     daws: r.daws ?? [],
     formats: r.formats ?? [],
     version: r.version ?? "1.0",
+    libraryType: r.library_type ?? null,
     fileSize: r.file_size?.trim() || undefined,
     updated: new Date(r.updated_at).toLocaleDateString(undefined, { month: "short", year: "numeric" }),
     price: Number(r.price) || 0,
