@@ -2,6 +2,7 @@ import { createFileRoute, Link, useParams, useNavigate } from "@tanstack/react-r
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { DashboardShell, DashCard } from "@/components/DashboardShell";
+import { LibraryTypeField } from "@/components/LibraryTypeField";
 import { supabase } from "@/integrations/supabase/client";
 import { productCategories } from "@/lib/dashboard-mock";
 import { Upload, X, Sparkles, RefreshCw } from "lucide-react";
