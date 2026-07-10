@@ -29,12 +29,18 @@ export function CartDrawer() {
   }, [open]);
 
   // Effective unit price per item after any active sale-event discount.
+  // `retail` is the compare-at price when set (else my price) — display only.
+  // `unit` is what Stripe actually charges (my price minus any active sale %).
   const priced = cart.map((i) => {
     const hit = pickSaleFor(sales, i.product);
     const unit = hit ? Math.round(i.product.price * (100 - hit.pct)) / 100 : i.product.price;
-    return { ...i, unit, salePct: hit?.pct ?? 0 };
+    const retail = i.product.compareAtPrice && i.product.compareAtPrice > i.product.price
+      ? i.product.compareAtPrice
+      : i.product.price;
+    return { ...i, unit, retail, salePct: hit?.pct ?? 0 };
   });
   const subtotal = priced.reduce((n, i) => n + i.unit * i.qty, 0);
+  const retailTotal = priced.reduce((n, i) => n + i.retail * i.qty, 0);
   const saleSavings = priced.reduce((n, i) => n + (i.product.price - i.unit) * i.qty, 0);
   const discountAmount = !discount
     ? 0
@@ -42,7 +48,9 @@ export function CartDrawer() {
       ? Math.min(subtotal, (subtotal * discount.value) / 100)
       : Math.min(subtotal, discount.value);
   const total = Math.max(0, subtotal - discountAmount);
+  const totalSavedVsRetail = Math.max(0, retailTotal - total);
   const itemCount = cart.reduce((n, i) => n + i.qty, 0);
+
 
   async function applyCode(e: React.FormEvent) {
     e.preventDefault();
