@@ -94,9 +94,13 @@ function ProductDetail() {
   const p = data.product;
   const related = data.related;
   const activeSale = pct > 0;
-  const strike = activeSale ? p.price : p.compareAtPrice;
+  const hasCompareAt = !!(p.compareAtPrice && p.compareAtPrice > p.price);
+  // Strike is always the retail compare-at when set (biggest visible saving);
+  // fall back to my price only if there's no compare-at and a sale is on.
+  const strike = hasCompareAt ? p.compareAtPrice : (activeSale ? p.price : undefined);
   const shown = activeSale ? finalPrice : p.price;
-  const onSale = activeSale || !!(p.compareAtPrice && p.compareAtPrice > p.price);
+  const onSale = activeSale || hasCompareAt;
+
   const showDawLine = !["software", "daws"].includes(p.category);
 
   return (
