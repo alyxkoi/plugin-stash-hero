@@ -215,11 +215,15 @@ function Analytics() {
             ) : (
               <ResponsiveContainer>
                 <PieChart>
-                  <Pie data={split} dataKey="value" innerRadius={50} outerRadius={80} paddingAngle={3} isAnimationActive animationDuration={700}>
+                  <Pie data={split} dataKey="value" innerRadius={50} outerRadius={80} paddingAngle={3} stroke="rgba(20,6,44,0.9)" strokeWidth={2} isAnimationActive animationDuration={700}>
                     <Cell fill="#FF003C" />
                     <Cell fill="#0E0BD1" />
                   </Pie>
-                  <Tooltip contentStyle={{ background: "#1F0540", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, fontSize: 12 }} />
+                  <Tooltip
+                    contentStyle={TOOLTIP_STYLE}
+                    labelStyle={TOOLTIP_LABEL_STYLE}
+                    itemStyle={TOOLTIP_ITEM_STYLE}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             )}
@@ -237,15 +241,22 @@ function Analytics() {
             ) : (
               <ResponsiveContainer>
                 <BarChart data={sources} layout="vertical" margin={{ left: 60 }}>
-                  <CartesianGrid stroke="rgba(255,255,255,0.05)" horizontal={false} />
-                  <XAxis type="number" stroke="rgba(255,255,255,0.4)" fontSize={10} />
-                  <YAxis dataKey="source" type="category" stroke="rgba(255,255,255,0.4)" fontSize={10} />
-                  <Tooltip contentStyle={{ background: "#1F0540", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, fontSize: 12 }} formatter={(v: number) => fmtMoney(v)} />
-                  <Bar dataKey="revenue" fill="#0E0BD1" radius={[0, 6, 6, 0]} isAnimationActive animationDuration={700} />
+                  <CartesianGrid stroke="rgba(255,255,255,0.06)" horizontal={false} />
+                  <XAxis type="number" stroke="rgba(255,255,255,0.55)" fontSize={10} tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                  <YAxis dataKey="source" type="category" stroke="rgba(255,255,255,0.55)" fontSize={10} tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                  <Tooltip
+                    cursor={BAR_CURSOR}
+                    contentStyle={TOOLTIP_STYLE}
+                    labelStyle={TOOLTIP_LABEL_STYLE}
+                    itemStyle={TOOLTIP_ITEM_STYLE}
+                    formatter={(v: number) => fmtMoney(v)}
+                  />
+                  <Bar dataKey="revenue" fill="#0E0BD1" radius={[0, 6, 6, 0]} activeBar={{ fill: "#FF1F5C", stroke: "#FF003C", strokeWidth: 1 }} isAnimationActive animationDuration={700} />
                 </BarChart>
               </ResponsiveContainer>
             )}
           </div>
+
           <p className="text-[10px] text-white/40 mt-2 font-mono">UTM source captured at checkout. Untagged orders count as "direct".</p>
         </DashCard>
       </div>
