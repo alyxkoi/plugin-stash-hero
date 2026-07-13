@@ -1229,7 +1229,7 @@ select.input-glass option:checked, .select-glass option:checked {
   .recipe-stage { height: 560px; }
 }
 @media (max-width: 640px) {
-  .recipe-stage { height: 540px; }
+  .recipe-stage { height: auto; min-height: 520px; }
 }
 .recipe-slide {
   position: absolute;
@@ -1270,10 +1270,25 @@ select.input-glass option:checked, .select-glass option:checked {
   .recipe-slide[data-slot="1"] { transform: translate3d(240px, 18px, 0) scale(0.78); }
 }
 @media (max-width: 640px) {
-  .recipe-slide { width: 78vw; margin-left: -39vw; }
-  .recipe-slide[data-slot="-1"] { transform: translate3d(-66vw, 16px, 0) scale(0.74); opacity: 0.3; }
-  .recipe-slide[data-slot="1"] { transform: translate3d(66vw, 16px, 0) scale(0.74); opacity: 0.3; }
+  .recipe-carousel { padding: 0 1rem 1rem; }
+  .recipe-slide {
+    position: relative;
+    left: auto;
+    top: auto;
+    width: 100%;
+    margin-left: 0;
+  }
+  .recipe-slide[data-slot="-1"],
+  .recipe-slide[data-slot="1"] {
+    display: none;
+  }
+  .recipe-slide[data-slot="0"] {
+    transform: none;
+  }
+  .recipe-slide-card { padding: 1.1rem; }
+  .recipe-tiles-row { gap: 0.4rem; }
 }
+
 .recipe-slide-card {
   position: relative;
   padding: 1.5rem;
