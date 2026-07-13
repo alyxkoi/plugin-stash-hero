@@ -1186,12 +1186,10 @@ function ConsolePreviewCard({ product }: { product: Product }) {
     >
       <div className="console-preview-art" style={{ background: product.coverGradient }}>
         <div className="absolute inset-0 flex items-center justify-center text-center p-2">
-          <div>
-            <div className="label-mini !text-[0.55rem] mb-1">{product.maker}</div>
-            <div className="font-display text-base leading-tight">{product.name}</div>
-          </div>
+          <div className="font-display text-base leading-tight">{product.name}</div>
         </div>
       </div>
+
       <div className="font-mono text-[10px] tracking-[0.14em] uppercase text-white/60 truncate">
         {product.subType ?? product.category}
       </div>
