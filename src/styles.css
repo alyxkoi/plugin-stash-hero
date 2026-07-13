@@ -1238,10 +1238,11 @@ select.input-glass option:checked, .select-glass option:checked {
   width: 460px;
   margin-left: -230px;
   transition:
-    transform 620ms cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 480ms ease,
-    filter 480ms ease;
+    transform 380ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 320ms ease-out,
+    filter 320ms ease-out;
   will-change: transform, opacity;
+
 }
 .recipe-slide[data-slot="0"] {
   transform: translate3d(0, 0, 0) scale(1);
@@ -1270,20 +1271,30 @@ select.input-glass option:checked, .select-glass option:checked {
   .recipe-slide[data-slot="1"] { transform: translate3d(240px, 18px, 0) scale(0.78); }
 }
 @media (max-width: 640px) {
+  .recipe-stage { height: auto; min-height: 560px; }
   .recipe-carousel { padding: 0 1rem 1rem; }
   .recipe-slide {
-    position: relative;
-    left: auto;
-    top: auto;
     width: 100%;
+    left: 0;
     margin-left: 0;
-  }
-  .recipe-slide[data-slot="-1"],
-  .recipe-slide[data-slot="1"] {
-    display: none;
+    padding: 0 0.25rem;
   }
   .recipe-slide[data-slot="0"] {
-    transform: none;
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .recipe-slide[data-slot="-1"] {
+    transform: translate3d(-105%, 0, 0) scale(0.94);
+    opacity: 0;
+    pointer-events: none;
+    filter: none;
+  }
+  .recipe-slide[data-slot="1"] {
+    transform: translate3d(105%, 0, 0) scale(0.94);
+    opacity: 0;
+    pointer-events: none;
+    filter: none;
   }
   .recipe-slide-card { padding: 1.1rem; }
   .recipe-tiles-row { gap: 0.4rem; }
@@ -1317,8 +1328,19 @@ select.input-glass option:checked, .select-glass option:checked {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   gap: 0.6rem;
-  align-items: center;
+  align-items: stretch;
 }
+.recipe-tiles-row > .recipe-tile {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.5rem;
+  height: 100%;
+}
+.recipe-tiles-row > .recipe-symbol {
+  align-self: center;
+}
+
 .recipe-arrow-prev,
 .recipe-arrow-next {
   position: absolute;

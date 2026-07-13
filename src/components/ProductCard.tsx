@@ -37,10 +37,10 @@ export function ProductCard({ product, variant = "default", rank }: { product: P
             ) : (
               <div className="absolute inset-0 flex items-center justify-center p-4">
                 <div className="text-center">
-                  <div className="font-mono text-[10px] tracking-[0.2em] text-white/60 mb-1">{product.maker.toUpperCase()}</div>
                   <div className="font-black text-2xl leading-tight chrome-text">{product.name}</div>
                 </div>
               </div>
+
             )}
             {onSale && !product.isFree && (
               <div className="absolute top-2 right-2 px-2 py-1 rounded-md font-mono text-[10px] font-bold bg-[var(--accent-red)] text-white shadow-lg" title={sale?.name}>
