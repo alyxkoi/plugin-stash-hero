@@ -150,11 +150,18 @@ function Analytics() {
                     <stop offset="100%" stopColor="#FF003C" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
-                <XAxis dataKey="label" stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={false} />
-                <YAxis stroke="rgba(255,255,255,0.4)" fontSize={10} tickFormatter={v => `$${v}`} tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={{ background: "#1F0540", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, fontSize: 12 }} formatter={(v: number) => fmtMoney(v)} />
+                <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
+                <XAxis dataKey="label" stroke="rgba(255,255,255,0.55)" fontSize={10} tickLine={false} axisLine={false} tick={{ fill: "rgba(255,255,255,0.65)" }} />
+                <YAxis stroke="rgba(255,255,255,0.55)" fontSize={10} tickFormatter={v => `$${v}`} tickLine={false} axisLine={false} tick={{ fill: "rgba(255,255,255,0.65)" }} />
+                <Tooltip
+                  cursor={{ stroke: "rgba(255,31,92,0.55)", strokeWidth: 1, strokeDasharray: "3 3" }}
+                  contentStyle={{ background: "rgba(20,6,44,0.92)", border: "1px solid rgba(255,31,92,0.45)", borderRadius: 10, fontSize: 12, boxShadow: "0 8px 24px rgba(0,0,0,0.5), 0 0 20px rgba(255,0,60,0.25)", backdropFilter: "blur(10px)", color: "#fff" }}
+                  labelStyle={{ color: "rgba(255,255,255,0.7)", fontSize: 11 }}
+                  itemStyle={{ color: "#fff" }}
+                  formatter={(v: number) => fmtMoney(v)}
+                />
                 <Area type="monotone" dataKey="value" stroke="#FF003C" strokeWidth={2} fill="url(#r2)" isAnimationActive animationDuration={800} animationEasing="ease-out" />
+
               </AreaChart>
             </ResponsiveContainer>
           )}
