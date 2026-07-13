@@ -680,11 +680,9 @@ function RecipeTile({ product, className = "" }: { product: Product; className?:
           <img src={product.coverUrl} alt={product.name} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center text-center p-2">
-            <div>
-              <div className="label-mini !text-[0.55rem] mb-1">{product.maker}</div>
-              <div className="font-display text-base leading-tight">{product.name}</div>
-            </div>
+            <div className="font-display text-base leading-tight">{product.name}</div>
           </div>
+
         )}
       </div>
       <div className="flex items-center justify-between gap-2">
