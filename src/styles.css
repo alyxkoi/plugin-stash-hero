@@ -1349,6 +1349,10 @@ select.input-glass option:checked, .select-glass option:checked {
   position: relative;
   z-index: 4;
 }
+@media (max-width: 640px) {
+  .recipe-dots { margin-top: 1.75rem; }
+}
+
 .recipe-dot {
   width: 8px; height: 8px; border-radius: 9999px;
   background: rgba(255,255,255,0.18);
