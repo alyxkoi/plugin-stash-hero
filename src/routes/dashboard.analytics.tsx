@@ -19,6 +19,21 @@ function fmtMoney(n: number) {
   return `$${Number(n || 0).toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
 }
 
+const TOOLTIP_STYLE = {
+  background: "rgba(20,6,44,0.92)",
+  border: "1px solid rgba(255,31,92,0.45)",
+  borderRadius: 10,
+  fontSize: 12,
+  boxShadow: "0 8px 24px rgba(0,0,0,0.5), 0 0 20px rgba(255,0,60,0.25)",
+  backdropFilter: "blur(10px)",
+  color: "#fff",
+} as const;
+const TOOLTIP_LABEL_STYLE = { color: "rgba(255,255,255,0.7)", fontSize: 11 } as const;
+const TOOLTIP_ITEM_STYLE = { color: "#fff" } as const;
+const BAR_CURSOR = { fill: "rgba(255,31,92,0.14)" } as const;
+const AXIS_TICK = { fill: "rgba(255,255,255,0.65)" } as const;
+
+
 function rangeBounds(r: AnalyticsRange): { start: Date; end: Date } {
   const end = new Date();
   const start = new Date();
