@@ -19,6 +19,21 @@ function fmtMoney(n: number) {
   return `$${Number(n || 0).toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
 }
 
+const TOOLTIP_STYLE = {
+  background: "rgba(20,6,44,0.92)",
+  border: "1px solid rgba(255,31,92,0.45)",
+  borderRadius: 10,
+  fontSize: 12,
+  boxShadow: "0 8px 24px rgba(0,0,0,0.5), 0 0 20px rgba(255,0,60,0.25)",
+  backdropFilter: "blur(10px)",
+  color: "#fff",
+} as const;
+const TOOLTIP_LABEL_STYLE = { color: "rgba(255,255,255,0.7)", fontSize: 11 } as const;
+const TOOLTIP_ITEM_STYLE = { color: "#fff" } as const;
+const BAR_CURSOR = { fill: "rgba(255,31,92,0.14)" } as const;
+const AXIS_TICK = { fill: "rgba(255,255,255,0.65)" } as const;
+
+
 function rangeBounds(r: AnalyticsRange): { start: Date; end: Date } {
   const end = new Date();
   const start = new Date();
@@ -150,11 +165,18 @@ function Analytics() {
                     <stop offset="100%" stopColor="#FF003C" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
-                <XAxis dataKey="label" stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={false} />
-                <YAxis stroke="rgba(255,255,255,0.4)" fontSize={10} tickFormatter={v => `$${v}`} tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={{ background: "#1F0540", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, fontSize: 12 }} formatter={(v: number) => fmtMoney(v)} />
+                <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
+                <XAxis dataKey="label" stroke="rgba(255,255,255,0.55)" fontSize={10} tickLine={false} axisLine={false} tick={{ fill: "rgba(255,255,255,0.65)" }} />
+                <YAxis stroke="rgba(255,255,255,0.55)" fontSize={10} tickFormatter={v => `$${v}`} tickLine={false} axisLine={false} tick={{ fill: "rgba(255,255,255,0.65)" }} />
+                <Tooltip
+                  cursor={{ stroke: "rgba(255,31,92,0.55)", strokeWidth: 1, strokeDasharray: "3 3" }}
+                  contentStyle={{ background: "rgba(20,6,44,0.92)", border: "1px solid rgba(255,31,92,0.45)", borderRadius: 10, fontSize: 12, boxShadow: "0 8px 24px rgba(0,0,0,0.5), 0 0 20px rgba(255,0,60,0.25)", backdropFilter: "blur(10px)", color: "#fff" }}
+                  labelStyle={{ color: "rgba(255,255,255,0.7)", fontSize: 11 }}
+                  itemStyle={{ color: "#fff" }}
+                  formatter={(v: number) => fmtMoney(v)}
+                />
                 <Area type="monotone" dataKey="value" stroke="#FF003C" strokeWidth={2} fill="url(#r2)" isAnimationActive animationDuration={800} animationEasing="ease-out" />
+
               </AreaChart>
             </ResponsiveContainer>
           )}
@@ -193,11 +215,15 @@ function Analytics() {
             ) : (
               <ResponsiveContainer>
                 <PieChart>
-                  <Pie data={split} dataKey="value" innerRadius={50} outerRadius={80} paddingAngle={3} isAnimationActive animationDuration={700}>
+                  <Pie data={split} dataKey="value" innerRadius={50} outerRadius={80} paddingAngle={3} stroke="rgba(20,6,44,0.9)" strokeWidth={2} isAnimationActive animationDuration={700}>
                     <Cell fill="#FF003C" />
                     <Cell fill="#0E0BD1" />
                   </Pie>
-                  <Tooltip contentStyle={{ background: "#1F0540", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, fontSize: 12 }} />
+                  <Tooltip
+                    contentStyle={TOOLTIP_STYLE}
+                    labelStyle={TOOLTIP_LABEL_STYLE}
+                    itemStyle={TOOLTIP_ITEM_STYLE}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             )}
@@ -215,15 +241,22 @@ function Analytics() {
             ) : (
               <ResponsiveContainer>
                 <BarChart data={sources} layout="vertical" margin={{ left: 60 }}>
-                  <CartesianGrid stroke="rgba(255,255,255,0.05)" horizontal={false} />
-                  <XAxis type="number" stroke="rgba(255,255,255,0.4)" fontSize={10} />
-                  <YAxis dataKey="source" type="category" stroke="rgba(255,255,255,0.4)" fontSize={10} />
-                  <Tooltip contentStyle={{ background: "#1F0540", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, fontSize: 12 }} formatter={(v: number) => fmtMoney(v)} />
-                  <Bar dataKey="revenue" fill="#0E0BD1" radius={[0, 6, 6, 0]} isAnimationActive animationDuration={700} />
+                  <CartesianGrid stroke="rgba(255,255,255,0.06)" horizontal={false} />
+                  <XAxis type="number" stroke="rgba(255,255,255,0.55)" fontSize={10} tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                  <YAxis dataKey="source" type="category" stroke="rgba(255,255,255,0.55)" fontSize={10} tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                  <Tooltip
+                    cursor={BAR_CURSOR}
+                    contentStyle={TOOLTIP_STYLE}
+                    labelStyle={TOOLTIP_LABEL_STYLE}
+                    itemStyle={TOOLTIP_ITEM_STYLE}
+                    formatter={(v: number) => fmtMoney(v)}
+                  />
+                  <Bar dataKey="revenue" fill="#0E0BD1" radius={[0, 6, 6, 0]} activeBar={{ fill: "#FF1F5C", stroke: "#FF003C", strokeWidth: 1 }} isAnimationActive animationDuration={700} />
                 </BarChart>
               </ResponsiveContainer>
             )}
           </div>
+
           <p className="text-[10px] text-white/40 mt-2 font-mono">UTM source captured at checkout. Untagged orders count as "direct".</p>
         </DashCard>
       </div>
