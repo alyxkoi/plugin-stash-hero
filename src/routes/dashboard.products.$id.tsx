@@ -396,22 +396,53 @@ function EditProduct() {
               type="file"
               accept=".zip,application/zip,application/x-zip-compressed"
               hidden
-              onChange={e => { const f = e.target.files?.[0]; if (f) replaceZip(f); }}
+              onChange={e => {
+                const f = e.target.files?.[0];
+                e.target.value = "";
+                if (!f) return;
+                if (!/\.zip$/i.test(f.name)) { toast.error("Plugin file must be a .zip"); return; }
+                // Existing file → require explicit confirmation before replacing.
+                if (fileRow) setPendingReplaceFile(f);
+                else replaceZip(f);
+              }}
             />
-            <button
-              type="button"
-              disabled={zipUploading}
-              onClick={() => zipInputRef.current?.click()}
-              className="btn-ghost !text-xs !py-2 !px-4 inline-flex items-center gap-2 disabled:opacity-50"
-            >
-              <RefreshCw size={13} className={zipUploading ? "animate-spin" : ""} />
-              {zipUploading ? `Uploading… ${zipProgress}%` : (fileRow ? "Replace plugin file" : "Upload plugin file")}
-            </button>
+            <div className="flex items-center gap-3 flex-wrap">
+              <button
+                type="button"
+                disabled={zipUploading}
+                onClick={() => zipInputRef.current?.click()}
+                className="btn-ghost !text-xs !py-2 !px-4 inline-flex items-center gap-2 disabled:opacity-50"
+              >
+                <RefreshCw size={13} className={zipUploading ? "animate-spin" : ""} />
+                {zipUploading ? `Uploading… ${zipProgress}%` : (fileRow ? "Replace plugin file" : "Upload plugin file")}
+              </button>
+              {zipUploading && (
+                <button type="button" onClick={cancelUpload} className="text-[11px] text-white/60 hover:text-[var(--accent-red-glow)] underline">Cancel</button>
+              )}
+            </div>
+            {zipUploading && (
+              <div className="max-w-md h-1.5 bg-white/10 rounded overflow-hidden">
+                <div className="h-full bg-[var(--accent-red)] transition-all" style={{ width: `${zipProgress}%` }} />
+              </div>
+            )}
             <p className="text-[10px] text-white/40 font-mono">
-              Uploading a new file overwrites the current one — the old file is removed from storage automatically.
+              Up to 50GB · multipart upload · 8 parallel chunks · resumable per chunk. The old file stays live until the new upload completes and verifies — then it's deleted from storage.
             </p>
           </div>
         </DashCard>
+
+        {pendingReplaceFile && (
+          <ReplaceConfirmDialog
+            file={pendingReplaceFile}
+            currentFileName={fileRow?.zip_file_name ?? null}
+            onCancel={() => setPendingReplaceFile(null)}
+            onConfirm={() => {
+              const f = pendingReplaceFile;
+              setPendingReplaceFile(null);
+              if (f) replaceZip(f);
+            }}
+          />
+        )}
 
         <DashCard title="Pricing & status">
           <label className="flex items-start gap-3 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5 mb-4 cursor-pointer hover:bg-white/[0.05]">
