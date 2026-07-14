@@ -57,7 +57,7 @@ export const validateDiscount = createServerFn({ method: "POST" })
     const code = data.code.trim().toUpperCase();
     const { data: row } = await supabaseAdmin
       .from("discount_codes")
-      .select("code,type,value,status,expires_at,usage_limit,uses")
+      .select("id,code,type,value,status,expires_at,usage_limit,uses,scope,categories")
       .ilike("code", code)
       .maybeSingle();
 
@@ -69,11 +69,23 @@ export const validateDiscount = createServerFn({ method: "POST" })
     if (row.usage_limit != null && (row.uses ?? 0) >= (row.usage_limit as number)) {
       return { ok: false, error: "That code has reached its usage limit." };
     }
+    const scope = ((row as any).scope as "all" | "categories" | "selected" | undefined) ?? "all";
+    let productIds: string[] = [];
+    if (scope === "selected") {
+      const { data: links } = await (supabaseAdmin as any)
+        .from("discount_code_products")
+        .select("product_id")
+        .eq("discount_code_id", (row as any).id);
+      productIds = (links ?? []).map((r: any) => r.product_id as string);
+    }
     return {
       ok: true,
       code: row.code as string,
       type: row.type as "percent" | "fixed",
       value: Number(row.value),
+      scope,
+      categories: (((row as any).categories as string[]) ?? []).map((c) => c.toLowerCase()),
+      productIds,
     };
   });
 
