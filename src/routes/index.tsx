@@ -141,9 +141,6 @@ function Hero() {
 
       <div className="relative grid lg:grid-cols-2 gap-12 items-center min-h-[70vh]">
         <div>
-          <div className="label-mini mb-6">
-            <span className="text-red">Summer Tropical Steals</span> — active
-          </div>
           <h1
             className="font-display leading-[0.92] tracking-tight mb-6"
             style={{ fontSize: "clamp(3rem, 8vw, 6.5rem)" }}
@@ -389,7 +386,7 @@ function RotationCard({ product }: { product: Product }) {
         />
         {onSale && !product.isFree && badgePct > 0 && (
           <div className="absolute top-3 right-3 px-2 py-1 rounded-md font-mono text-[10px] font-bold bg-[var(--accent-red)] text-white shadow-lg">
-            {badgePct}% OFF
+            EXTRA {badgePct}% OFF
           </div>
         )}
       </div>
@@ -1228,14 +1225,24 @@ function ConsolePreviewCard({ product }: { product: Product }) {
 
 function SoundsOfTheDecade() {
   const { data: allProducts = [] } = usePublishedProducts();
-  const { data: bestsellerIds = [] } = useBestsellerIds(8);
-  const byId = new Map(allProducts.map((p) => [p.id!, p]));
+  const { data: bestsellerIds = [] } = useBestsellerIds(20);
+  const isInstrument = (p: Product) => (p.category ?? "").toString().toLowerCase() === "instruments";
+  const instruments = allProducts.filter(isInstrument);
+  const byId = new Map(instruments.map((p) => [p.id!, p]));
   const bestsellerProds = bestsellerIds.map((id) => byId.get(id)).filter(Boolean) as Product[];
-  const featuredList = allProducts.filter((p) => p.isFeatured);
-  const pool = bestsellerProds.length > 0 ? bestsellerProds : (featuredList.length > 0 ? featuredList : allProducts);
-  const featured = pool[0] ?? placeholder(0, { name: "FEATURED SOUND" });
-  const supportingReal = pool.filter((p) => p.slug !== featured.slug).slice(0, 3);
-  const supporting = supportingReal.length > 0 ? supportingReal : [placeholder(1), placeholder(2), placeholder(3)];
+  const featuredList = instruments.filter((p) => p.isFeatured);
+  const seen = new Set<string>();
+  const pool: Product[] = [];
+  for (const p of [...bestsellerProds, ...featuredList, ...instruments]) {
+    if (!p.slug || seen.has(p.slug)) continue;
+    seen.add(p.slug);
+    pool.push(p);
+  }
+  const featured = pool[0] ?? placeholder(0, { name: "FEATURED SOUND", category: "instruments" });
+  const supportingReal = pool.slice(1, 4);
+  const supporting = supportingReal.length > 0
+    ? supportingReal
+    : [placeholder(1, { category: "instruments" }), placeholder(2, { category: "instruments" }), placeholder(3, { category: "instruments" })];
 
 
   return (
