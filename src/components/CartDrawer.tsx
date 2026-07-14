@@ -42,11 +42,26 @@ export function CartDrawer() {
   const subtotal = priced.reduce((n, i) => n + i.unit * i.qty, 0);
   const retailTotal = priced.reduce((n, i) => n + i.retail * i.qty, 0);
   const saleSavings = priced.reduce((n, i) => n + (i.product.price - i.unit) * i.qty, 0);
+  // Discount only applies to items in scope.
+  const eligibleSubtotal = !discount
+    ? subtotal
+    : priced.reduce((n, i) => {
+        const scope = discount.scope ?? "all";
+        const pid = (i.product.id ?? "") as string;
+        const pcat = (i.product.category ?? "").toLowerCase();
+        const cats = (discount.categories ?? []).map((c) => c.toLowerCase());
+        const ids = discount.productIds ?? [];
+        const eligible =
+          scope === "all" ||
+          (scope === "categories" && !!pcat && cats.includes(pcat)) ||
+          (scope === "selected" && !!pid && ids.includes(pid));
+        return eligible ? n + i.unit * i.qty : n;
+      }, 0);
   const discountAmount = !discount
     ? 0
     : discount.type === "percent"
-      ? Math.min(subtotal, (subtotal * discount.value) / 100)
-      : Math.min(subtotal, discount.value);
+      ? Math.min(eligibleSubtotal, (eligibleSubtotal * discount.value) / 100)
+      : Math.min(eligibleSubtotal, discount.value);
   const total = Math.max(0, subtotal - discountAmount);
   const totalSavedVsRetail = Math.max(0, retailTotal - total);
   const itemCount = cart.reduce((n, i) => n + i.qty, 0);
@@ -59,7 +74,14 @@ export function CartDrawer() {
     try {
       const res = await validateDiscount({ data: { code: code.trim(), subtotal } });
       if ("ok" in res && res.ok) {
-        actions.setDiscount({ code: res.code, type: res.type, value: res.value });
+        actions.setDiscount({
+          code: res.code,
+          type: res.type,
+          value: res.value,
+          scope: res.scope,
+          categories: res.categories,
+          productIds: res.productIds,
+        });
         setCode("");
       } else {
         setCodeError((res as any).error ?? "That code isn't valid.");
