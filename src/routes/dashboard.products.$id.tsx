@@ -110,8 +110,11 @@ function EditProduct() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [typed, setTyped] = useState("");
   const zipInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
   const [pendingReplaceFile, setPendingReplaceFile] = useState<File | null>(null);
   const uploadHandleRef = useRef<MultipartHandle | null>(null);
+  const [coverDrag, setCoverDrag] = useState(false);
+  const [zipDrag, setZipDrag] = useState(false);
 
   useEffect(() => {
     if (!product) return;
@@ -306,12 +309,33 @@ function EditProduct() {
       <div className="max-w-4xl mx-auto pb-24 space-y-6">
         <DashCard title="Details">
           <div className="grid grid-cols-1 md:grid-cols-[8rem_1fr] gap-4">
-            <label className="block">
-              <input type="file" accept="image/*" hidden onChange={e => { const f = e.target.files?.[0]; if (f) uploadCover(f); }} />
+            <div
+              onDragOver={(e) => { e.preventDefault(); setCoverDrag(true); }}
+              onDragEnter={(e) => { e.preventDefault(); setCoverDrag(true); }}
+              onDragLeave={() => setCoverDrag(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setCoverDrag(false);
+                const f = e.dataTransfer.files?.[0];
+                if (!f) return;
+                if (!f.type.startsWith("image/")) { toast.error("Drop an image file"); return; }
+                uploadCover(f);
+              }}
+              onClick={() => coverInputRef.current?.click()}
+              className={`w-32 h-32 rounded-lg overflow-hidden border-2 border-dashed cursor-pointer relative transition-all ${coverDrag ? "border-[var(--accent-red-glow)] bg-[var(--accent-red)]/10 scale-[1.02]" : "border-white/20 hover:border-white/40"}`}
+              title="Click or drag an image to replace"
+            >
+              <input ref={coverInputRef} type="file" accept="image/*" hidden onChange={e => { const f = e.target.files?.[0]; if (f) uploadCover(f); if (coverInputRef.current) coverInputRef.current.value = ""; }} />
               {coverUrl
-                ? <img src={coverUrl} alt="cover" className="w-32 h-32 rounded-lg object-cover border border-white/10 cursor-pointer" />
-                : <div className="w-32 h-32 rounded-lg flex items-center justify-center text-[10px] text-white/60 cursor-pointer border border-dashed border-white/20" style={{ background: coverGradient || undefined }}>{coverUploading ? "Uploading…" : "Upload cover"}</div>}
-            </label>
+                ? <img src={coverUrl} alt="cover" className="w-full h-full object-cover" />
+                : <div className="w-full h-full flex items-center justify-center text-[10px] text-white/60 text-center px-2" style={{ background: coverGradient || undefined }}>{coverUploading ? "Uploading…" : "Drop image or click to upload"}</div>}
+              {coverDrag && (
+                <div className="absolute inset-0 flex items-center justify-center bg-[var(--accent-red)]/30 text-[10px] font-mono text-white pointer-events-none">Drop to replace</div>
+              )}
+              {coverUploading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/60 text-[10px] font-mono text-white">Uploading…</div>
+              )}
+            </div>
             <div className="space-y-3">
               <Field label="Name"><input value={name} onChange={e => setName(e.target.value)} className="ipt" /></Field>
               <Field label="Maker"><input value={maker} onChange={e => setMaker(e.target.value)} className="ipt" /></Field>
@@ -385,11 +409,33 @@ function EditProduct() {
         </DashCard>
 
         <DashCard title="Plugin file">
-          <div className="space-y-3">
+          <div
+            onDragOver={(e) => { e.preventDefault(); if (!zipUploading) setZipDrag(true); }}
+            onDragEnter={(e) => { e.preventDefault(); if (!zipUploading) setZipDrag(true); }}
+            onDragLeave={(e) => {
+              // Only clear when leaving the zone itself, not children
+              if (e.currentTarget === e.target) setZipDrag(false);
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              setZipDrag(false);
+              if (zipUploading) return;
+              const f = e.dataTransfer.files?.[0];
+              if (!f) return;
+              if (!/\.zip$/i.test(f.name)) { toast.error("Plugin file must be a .zip"); return; }
+              if (f.size > 50 * 1024 * 1024 * 1024) { toast.error("Max 50GB."); return; }
+              if (fileRow) setPendingReplaceFile(f);
+              else replaceZip(f);
+            }}
+            className={`space-y-3 rounded-lg border-2 border-dashed p-4 transition-all ${zipDrag ? "border-[var(--accent-red-glow)] bg-[var(--accent-red)]/10" : "border-white/15"}`}
+          >
             <div className="text-[11px] font-mono text-white/60">
               {fileRow?.zip_file_name
                 ? <>Current: <span className="text-white/90">{fileRow.zip_file_name}</span></>
-                : <span className="text-[var(--accent-red-glow)]">No file attached — upload one below.</span>}
+                : <span className="text-[var(--accent-red-glow)]">No file attached — drop a .zip or click below.</span>}
+            </div>
+            <div className={`text-xs font-mono ${zipDrag ? "text-[var(--accent-red-glow)]" : "text-white/50"}`}>
+              {zipDrag ? "Drop the .zip to replace" : "Drag & drop a .zip here, or use the button below"}
             </div>
             <input
               ref={zipInputRef}
@@ -401,7 +447,6 @@ function EditProduct() {
                 e.target.value = "";
                 if (!f) return;
                 if (!/\.zip$/i.test(f.name)) { toast.error("Plugin file must be a .zip"); return; }
-                // Existing file → require explicit confirmation before replacing.
                 if (fileRow) setPendingReplaceFile(f);
                 else replaceZip(f);
               }}

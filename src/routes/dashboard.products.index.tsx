@@ -17,12 +17,13 @@ type Row = {
   price: number; compare_at_price: number | null; status: ProductStatus;
   cover_url: string | null; cover_gradient: string | null; updated_at: string;
   supports_windows: boolean; supports_mac: boolean;
+  is_free: boolean | null;
 };
 
 async function fetchProducts(): Promise<Row[]> {
   const { data, error } = await supabase
     .from("products")
-    .select("id,slug,name,maker,category,price,compare_at_price,status,cover_url,cover_gradient,updated_at,supports_windows,supports_mac")
+    .select("id,slug,name,maker,category,price,compare_at_price,status,cover_url,cover_gradient,updated_at,supports_windows,supports_mac,is_free")
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   return (data ?? []) as Row[];
@@ -42,13 +43,13 @@ function ProductsPage() {
 
   const [q, setQ] = useState("");
   const [cat, setCat] = useState<string>("all");
-  const [status, setStatus] = useState<"all" | ProductStatus>("all");
+  const [status, setStatus] = useState<"all" | ProductStatus | "freebies">("all");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [showCats, setShowCats] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
 
-  async function updateProduct(id: string, patch: Partial<Row>, prev: Row) {
+  async function updateProduct(id: string, patch: Partial<Omit<Row, "is_free">>, prev: Row) {
     // Optimistic update
     queryClient.setQueryData<Row[]>(["dashboard-products"], (rows) =>
       (rows ?? []).map((r) => (r.id === id ? { ...r, ...patch } : r))
@@ -69,7 +70,8 @@ function ProductsPage() {
   const filtered = useMemo(() => products.filter(p => {
     if (q && !p.name.toLowerCase().includes(q.toLowerCase())) return false;
     if (cat !== "all" && p.category !== cat) return false;
-    if (status !== "all" && p.status !== status) return false;
+    if (status === "freebies") { if (!(p.is_free || Number(p.price) === 0)) return false; }
+    else if (status !== "all" && p.status !== status) return false;
     return true;
   }), [products, q, cat, status]);
 
@@ -89,7 +91,7 @@ function ProductsPage() {
         </div>
         <Select value={cat} onChange={(v) => { setCat(v); setPage(1); }} options={[{ value: "all", label: "All categories" }, ...productCategories.map(c => ({ value: c, label: c.charAt(0).toUpperCase()+c.slice(1) }))]} />
         <Select value={status} onChange={(v) => { setStatus(v as any); setPage(1); }} options={[
-          { value: "all", label: "All status" }, { value: "published", label: "Published" }, { value: "draft", label: "Draft" }, { value: "archived", label: "Archived" },
+          { value: "all", label: "All status" }, { value: "published", label: "Published" }, { value: "draft", label: "Draft" }, { value: "archived", label: "Archived" }, { value: "freebies", label: "Freebies (free)" },
         ]} />
         <button onClick={() => refetch()} className="btn-ghost !text-xs !py-2 !px-3">{isFetching ? "Refreshing…" : "Refresh"}</button>
         <button onClick={() => setShowCats(true)} className="btn-ghost !text-xs !py-2 !px-3 ml-auto">Manage categories</button>
@@ -143,7 +145,12 @@ function ProductsPage() {
                         : <div className="w-10 h-10 rounded-md" style={{ background: p.cover_gradient || "linear-gradient(135deg,#3a0a4a,#7b0a5a)" }} />}
                     </td>
                     <td className="px-2 py-2">
-                      <Link to={"/dashboard/products/$id" as any} params={{ id: p.id } as any} className="text-sm hover:text-[var(--accent-red-glow)]">{p.name}</Link>
+                      <div className="flex items-center gap-2">
+                        <Link to={"/dashboard/products/$id" as any} params={{ id: p.id } as any} className="text-sm hover:text-[var(--accent-red-glow)]">{p.name}</Link>
+                        {(p.is_free || Number(p.price) === 0) && (
+                          <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/50 text-emerald-300 tracking-wider">FREE</span>
+                        )}
+                      </div>
                       <div className="text-[10px] text-white/40">{p.maker}</div>
                     </td>
                     <td className="px-2 py-2">
