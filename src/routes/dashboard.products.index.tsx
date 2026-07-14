@@ -74,6 +74,11 @@ function ProductsPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [showCats, setShowCats] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
+  const [bulkConfirm, setBulkConfirm] = useState<null | "delete" | "archive">(null);
+  const [bulkBusy, setBulkBusy] = useState(false);
+
+  // Params passed through to the edit page so Save/Back can return here intact.
+  const editSearch = { q, cat, status, page } as const;
 
   // Preserve scroll position across product-edit navigation.
   useEffect(() => {
@@ -84,6 +89,7 @@ function ProductsPage() {
       sessionStorage.removeItem(SCROLL_KEY);
     }
   }, []);
+
   const rememberScroll = () => sessionStorage.setItem(SCROLL_KEY, String(window.scrollY));
 
   async function updateProduct(id: string, patch: Partial<Omit<Row, "is_free">>, prev: Row) {
@@ -103,6 +109,63 @@ function ProductsPage() {
     setTimeout(() => setSavedId((s) => (s === id ? null : s)), 1200);
     return true;
   }
+
+  async function bulkArchive() {
+    const ids = Array.from(selected);
+    if (!ids.length) return;
+    setBulkBusy(true);
+    const { error } = await supabase.from("products").update({ status: "archived" }).in("id", ids);
+    setBulkBusy(false);
+    setBulkConfirm(null);
+    if (error) { toast.error(`Archive failed: ${error.message}`); return; }
+    toast.success(`Archived ${ids.length} product${ids.length === 1 ? "" : "s"}.`);
+    setSelected(new Set());
+    await queryClient.invalidateQueries({ queryKey: ["dashboard-products"] });
+  }
+
+  async function bulkDelete() {
+    const ids = Array.from(selected);
+    if (!ids.length) return;
+    setBulkBusy(true);
+    try {
+      // 1. Gather every R2 object attached to these products before nuking DB rows.
+      const paths: string[] = [];
+      const targets = products.filter((p) => selected.has(p.id));
+      for (const p of targets) if (p.cover_url) paths.push(p.cover_url);
+      const { data: files } = await supabase
+        .from("product_files").select("product_id, zip_url").in("product_id", ids);
+      for (const r of (files ?? []) as Array<{ zip_url: string | null }>) {
+        if (r.zip_url) paths.push(r.zip_url);
+      }
+
+      // 2. Delete products (product_files cascade via FK).
+      const { error, data: deleted } = await supabase
+        .from("products").delete().in("id", ids).select("id, name");
+      if (error) { toast.error(`Delete failed: ${error.message}`); return; }
+
+      const deletedIds = new Set((deleted ?? []).map((d: any) => d.id));
+      const failed = targets.filter((p) => !deletedIds.has(p.id));
+
+      // 3. Clean R2 objects (best effort).
+      if (paths.length) {
+        try {
+          await supabase.functions.invoke("r2-delete-objects", { body: { paths } });
+        } catch (e) { console.warn("R2 delete threw:", e); }
+      }
+
+      if (failed.length) {
+        toast.error(`Couldn't delete: ${failed.map((f) => f.name).join(", ")}`);
+      } else {
+        toast.success(`Deleted ${ids.length} product${ids.length === 1 ? "" : "s"}.`);
+      }
+      setSelected(new Set());
+      await queryClient.invalidateQueries({ queryKey: ["dashboard-products"] });
+    } finally {
+      setBulkBusy(false);
+      setBulkConfirm(null);
+    }
+  }
+
 
   const filtered = useMemo(() => products.filter(p => {
     if (q && !p.name.toLowerCase().includes(q.toLowerCase())) return false;
@@ -139,10 +202,11 @@ function ProductsPage() {
           <div className="chromatic-edge" />
           <div className="relative z-10 flex items-center gap-3 w-full">
             <span className="text-xs font-mono text-white/70">{selected.size} selected</span>
-            <button className="btn-ghost !text-xs !py-1.5 !px-3">Archive selected</button>
-            <button className="btn-ghost !text-xs !py-1.5 !px-3 !border-[var(--accent-red)]/40 !text-[var(--accent-red-glow)]">Delete selected</button>
+            <button onClick={() => setBulkConfirm("archive")} disabled={bulkBusy} className="btn-ghost !text-xs !py-1.5 !px-3 disabled:opacity-50">Archive selected</button>
+            <button onClick={() => setBulkConfirm("delete")} disabled={bulkBusy} className="btn-ghost !text-xs !py-1.5 !px-3 !border-[var(--accent-red)]/40 !text-[var(--accent-red-glow)] disabled:opacity-50">Delete selected</button>
             <button onClick={() => setSelected(new Set())} className="ml-auto text-white/40 hover:text-white"><X size={14} /></button>
           </div>
+
         </div>
       )}
 
@@ -183,7 +247,7 @@ function ProductsPage() {
                     </td>
                     <td className="px-2 py-2">
                       <div className="flex items-center gap-2">
-                        <Link to={"/dashboard/products/$id" as any} params={{ id: p.id } as any} onClick={rememberScroll} className="text-sm hover:text-[var(--accent-red-glow)]">{p.name}</Link>
+                        <Link to={"/dashboard/products/$id" as any} params={{ id: p.id } as any} search={editSearch as any} onClick={rememberScroll} className="text-sm hover:text-[var(--accent-red-glow)]">{p.name}</Link>
                         {(p.is_free || Number(p.price) === 0) && (
                           <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/50 text-emerald-300 tracking-wider">FREE</span>
                         )}
@@ -205,7 +269,7 @@ function ProductsPage() {
                     <td className="px-2 py-2 text-right font-mono text-[10px] text-white/50">{relativeTime(p.updated_at)}</td>
                     <td className="px-2 py-2 text-right">
                       <div className="inline-flex gap-1">
-                        <Link to={"/dashboard/products/$id" as any} params={{ id: p.id } as any} onClick={rememberScroll} className="p-1.5 rounded hover:bg-white/10 text-white/60 hover:text-white"><Edit3 size={13} /></Link>
+                        <Link to={"/dashboard/products/$id" as any} params={{ id: p.id } as any} search={editSearch as any} onClick={rememberScroll} className="p-1.5 rounded hover:bg-white/10 text-white/60 hover:text-white"><Edit3 size={13} /></Link>
                         <button className="p-1.5 rounded hover:bg-white/10 text-white/60 hover:text-white"><Archive size={13} /></button>
                         <button className="p-1.5 rounded hover:bg-white/10 text-white/60 hover:text-[var(--accent-red-glow)]"><Trash2 size={13} /></button>
                       </div>
@@ -230,6 +294,35 @@ function ProductsPage() {
       </DashCard>
 
       {showCats && <CategoriesModal onClose={() => setShowCats(false)} />}
+
+      {bulkConfirm && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={() => !bulkBusy && setBulkConfirm(null)}>
+          <div className="glass-card p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <div className="chromatic-edge" />
+            <div className="relative z-10">
+              <h3 className="font-display text-lg mb-2">
+                {bulkConfirm === "delete" ? `Delete ${selected.size} product${selected.size === 1 ? "" : "s"}?` : `Archive ${selected.size} product${selected.size === 1 ? "" : "s"}?`}
+              </h3>
+              <p className="text-sm text-white/70 mb-5">
+                {bulkConfirm === "delete"
+                  ? "This can't be undone. Products and their plugin files & cover images will be permanently removed from storage."
+                  : "Archived products stay in the database but are hidden from the storefront. You can restore them later."}
+              </p>
+              <div className="flex gap-2 justify-end">
+                <button disabled={bulkBusy} onClick={() => setBulkConfirm(null)} className="btn-ghost !text-xs !py-2 !px-4">Cancel</button>
+                <button
+                  disabled={bulkBusy}
+                  onClick={() => bulkConfirm === "delete" ? bulkDelete() : bulkArchive()}
+                  className="btn-primary !text-xs !py-2 !px-4"
+                >
+                  {bulkBusy ? "Working…" : (bulkConfirm === "delete" ? "Delete" : "Archive")}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </DashboardShell>
   );
 }

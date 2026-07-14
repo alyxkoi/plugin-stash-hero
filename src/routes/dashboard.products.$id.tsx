@@ -1,4 +1,6 @@
 import { createFileRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
+import { zodValidator, fallback } from "@tanstack/zod-adapter";
+import { z } from "zod";
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { DashboardShell, DashCard } from "@/components/DashboardShell";
@@ -11,10 +13,21 @@ import { uploadZipMultipart, type MultipartHandle } from "@/lib/multipart-upload
 
 const FORMATS = ["VST", "VST3", "AU", "AAX"];
 
+// Search params carried through from the products list, so Save/Back returns
+// the user to the exact page, filter, and search they came from.
+const editSearchSchema = z.object({
+  q: fallback(z.string(), "").default(""),
+  cat: fallback(z.string(), "all").default("all"),
+  status: fallback(z.string(), "all").default("all"),
+  page: fallback(z.number().int(), 1).default(1),
+});
+
 export const Route = createFileRoute("/dashboard/products/$id")({
   head: () => ({ meta: [{ title: "Edit product — Plugin Warehouse" }] }),
+  validateSearch: zodValidator(editSearchSchema),
   component: EditProduct,
 });
+
 
 type Row = {
   id: string; slug: string; name: string; maker: string; category: string;
@@ -72,6 +85,9 @@ function formatBytes(n: number) {
 
 function EditProduct() {
   const { id } = useParams({ from: "/dashboard/products/$id" });
+  const returnSearch = Route.useSearch();
+  const backToList = () => navigate({ to: "/dashboard/products", search: returnSearch as any });
+
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: product, isLoading, error } = useQuery({
@@ -278,7 +294,7 @@ function EditProduct() {
 
       queryClient.invalidateQueries({ queryKey: ["dashboard-products"] });
       toast.success("Product saved.");
-      navigate({ to: "/dashboard/products" as any });
+      backToList();
     } catch (e: any) {
       toast.error(e.message || "Save failed");
     } finally { setSaving(false); }
@@ -302,7 +318,7 @@ function EditProduct() {
 
     queryClient.invalidateQueries({ queryKey: ["dashboard-products"] });
     toast.success("Product and files deleted.");
-    navigate({ to: "/dashboard/products" as any });
+    backToList();
   };
 
   return (
@@ -549,7 +565,7 @@ function EditProduct() {
       </div>
 
       <div className="fixed bottom-0 left-0 md:left-[220px] right-0 z-30 border-t border-white/10 bg-[#13002C]/95 backdrop-blur-md px-6 py-3 flex items-center gap-3">
-        <Link to="/dashboard/products" className="btn-ghost !text-xs !py-2 !px-4">Back</Link>
+        <Link to="/dashboard/products" search={returnSearch as any} className="btn-ghost !text-xs !py-2 !px-4">Back</Link>
         <button onClick={save} disabled={saving} className="btn-primary !text-xs !py-2 !px-6 ml-auto">{saving ? "Saving…" : "Save changes"}</button>
       </div>
 
