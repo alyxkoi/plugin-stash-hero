@@ -309,12 +309,33 @@ function EditProduct() {
       <div className="max-w-4xl mx-auto pb-24 space-y-6">
         <DashCard title="Details">
           <div className="grid grid-cols-1 md:grid-cols-[8rem_1fr] gap-4">
-            <label className="block">
-              <input type="file" accept="image/*" hidden onChange={e => { const f = e.target.files?.[0]; if (f) uploadCover(f); }} />
+            <div
+              onDragOver={(e) => { e.preventDefault(); setCoverDrag(true); }}
+              onDragEnter={(e) => { e.preventDefault(); setCoverDrag(true); }}
+              onDragLeave={() => setCoverDrag(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setCoverDrag(false);
+                const f = e.dataTransfer.files?.[0];
+                if (!f) return;
+                if (!f.type.startsWith("image/")) { toast.error("Drop an image file"); return; }
+                uploadCover(f);
+              }}
+              onClick={() => coverInputRef.current?.click()}
+              className={`w-32 h-32 rounded-lg overflow-hidden border-2 border-dashed cursor-pointer relative transition-all ${coverDrag ? "border-[var(--accent-red-glow)] bg-[var(--accent-red)]/10 scale-[1.02]" : "border-white/20 hover:border-white/40"}`}
+              title="Click or drag an image to replace"
+            >
+              <input ref={coverInputRef} type="file" accept="image/*" hidden onChange={e => { const f = e.target.files?.[0]; if (f) uploadCover(f); if (coverInputRef.current) coverInputRef.current.value = ""; }} />
               {coverUrl
-                ? <img src={coverUrl} alt="cover" className="w-32 h-32 rounded-lg object-cover border border-white/10 cursor-pointer" />
-                : <div className="w-32 h-32 rounded-lg flex items-center justify-center text-[10px] text-white/60 cursor-pointer border border-dashed border-white/20" style={{ background: coverGradient || undefined }}>{coverUploading ? "Uploading…" : "Upload cover"}</div>}
-            </label>
+                ? <img src={coverUrl} alt="cover" className="w-full h-full object-cover" />
+                : <div className="w-full h-full flex items-center justify-center text-[10px] text-white/60 text-center px-2" style={{ background: coverGradient || undefined }}>{coverUploading ? "Uploading…" : "Drop image or click to upload"}</div>}
+              {coverDrag && (
+                <div className="absolute inset-0 flex items-center justify-center bg-[var(--accent-red)]/30 text-[10px] font-mono text-white pointer-events-none">Drop to replace</div>
+              )}
+              {coverUploading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/60 text-[10px] font-mono text-white">Uploading…</div>
+              )}
+            </div>
             <div className="space-y-3">
               <Field label="Name"><input value={name} onChange={e => setName(e.target.value)} className="ipt" /></Field>
               <Field label="Maker"><input value={maker} onChange={e => setMaker(e.target.value)} className="ipt" /></Field>
