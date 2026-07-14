@@ -247,7 +247,7 @@ function ProductsPage() {
                     </td>
                     <td className="px-2 py-2">
                       <div className="flex items-center gap-2">
-                        <Link to={"/dashboard/products/$id" as any} params={{ id: p.id } as any} onClick={rememberScroll} className="text-sm hover:text-[var(--accent-red-glow)]">{p.name}</Link>
+                        <Link to={"/dashboard/products/$id" as any} params={{ id: p.id } as any} search={editSearch as any} onClick={rememberScroll} className="text-sm hover:text-[var(--accent-red-glow)]">{p.name}</Link>
                         {(p.is_free || Number(p.price) === 0) && (
                           <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/50 text-emerald-300 tracking-wider">FREE</span>
                         )}
@@ -269,7 +269,7 @@ function ProductsPage() {
                     <td className="px-2 py-2 text-right font-mono text-[10px] text-white/50">{relativeTime(p.updated_at)}</td>
                     <td className="px-2 py-2 text-right">
                       <div className="inline-flex gap-1">
-                        <Link to={"/dashboard/products/$id" as any} params={{ id: p.id } as any} onClick={rememberScroll} className="p-1.5 rounded hover:bg-white/10 text-white/60 hover:text-white"><Edit3 size={13} /></Link>
+                        <Link to={"/dashboard/products/$id" as any} params={{ id: p.id } as any} search={editSearch as any} onClick={rememberScroll} className="p-1.5 rounded hover:bg-white/10 text-white/60 hover:text-white"><Edit3 size={13} /></Link>
                         <button className="p-1.5 rounded hover:bg-white/10 text-white/60 hover:text-white"><Archive size={13} /></button>
                         <button className="p-1.5 rounded hover:bg-white/10 text-white/60 hover:text-[var(--accent-red-glow)]"><Trash2 size={13} /></button>
                       </div>
