@@ -77,8 +77,17 @@ export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageP
     let r: Product[] = [...ALL];
     if (selectedCats.length) {
       const wanted = new Set(selectedCats.map((c) => c.toLowerCase()));
-      r = r.filter((p) => wanted.has((p.category ?? "").toString().toLowerCase()));
+      // The "freebies" category is a virtual bucket: any published product
+      // marked is_free (or priced at $0) belongs here regardless of its
+      // real category (effects, instruments, etc.).
+      const freebiesOnly = wanted.has("freebies") && wanted.size === 1;
+      if (freebiesOnly) {
+        r = r.filter((p) => p.isFree || p.price === 0);
+      } else {
+        r = r.filter((p) => wanted.has((p.category ?? "").toString().toLowerCase()) || (wanted.has("freebies") && (p.isFree || p.price === 0)));
+      }
     }
+
     if (query) r = r.filter((p) => p.name.toLowerCase().includes(query.toLowerCase()) || p.maker.toLowerCase().includes(query.toLowerCase()));
     if (selectedFormats.length) r = r.filter((p) => p.formats.some((f) => selectedFormats.includes(f)));
     if (saleStatus === "sale") r = r.filter((p) => p.compareAtPrice && p.compareAtPrice > p.price);
