@@ -110,8 +110,11 @@ function EditProduct() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [typed, setTyped] = useState("");
   const zipInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
   const [pendingReplaceFile, setPendingReplaceFile] = useState<File | null>(null);
   const uploadHandleRef = useRef<MultipartHandle | null>(null);
+  const [coverDrag, setCoverDrag] = useState(false);
+  const [zipDrag, setZipDrag] = useState(false);
 
   useEffect(() => {
     if (!product) return;
