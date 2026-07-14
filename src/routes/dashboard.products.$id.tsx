@@ -278,6 +278,7 @@ function EditProduct() {
 
       queryClient.invalidateQueries({ queryKey: ["dashboard-products"] });
       toast.success("Product saved.");
+      navigate({ to: "/dashboard/products" as any });
     } catch (e: any) {
       toast.error(e.message || "Save failed");
     } finally { setSaving(false); }
