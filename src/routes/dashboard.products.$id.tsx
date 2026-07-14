@@ -168,27 +168,20 @@ function EditProduct() {
 
   const replaceZip = async (f: File) => {
     if (zipUploading) return;
-    if (f.size > 5 * 1024 * 1024 * 1024) { toast.error("Max 5GB via edit page. For larger files, use the New Product uploader."); return; }
+    if (!/\.zip$/i.test(f.name)) { toast.error("Plugin file must be a .zip"); return; }
+    if (f.size > 50 * 1024 * 1024 * 1024) { toast.error("Max 50GB."); return; }
     setZipUploading(true);
     setZipProgress(0);
     const oldKey = fileRow?.zip_url ?? null;
     try {
-      const { data, error } = await supabase.functions.invoke("r2-upload-url", {
-        body: { kind: "zip", filename: f.name, size: f.size, contentType: f.type || "application/zip" },
-      });
-      if (error || !data?.uploadUrl || !data?.objectKey) throw new Error(data?.error || error?.message || "Failed to get upload URL");
-      const newKey: string = data.objectKey;
+      // 1. Upload the new file FIRST via multipart. Old file stays intact
+      //    until the new file is verified — a failed upload never leaves the
+      //    product without a working download.
+      const handle = uploadZipMultipart(f, { onProgress: setZipProgress });
+      uploadHandleRef.current = handle;
+      const { objectKey: newKey } = await handle.promise;
 
-      await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open("PUT", data.uploadUrl);
-        xhr.upload.onprogress = (ev) => { if (ev.lengthComputable) setZipProgress(Math.round((ev.loaded / ev.total) * 100)); };
-        xhr.onload = () => (xhr.status >= 200 && xhr.status < 300) ? resolve() : reject(new Error(`Upload failed (${xhr.status})`));
-        xhr.onerror = () => reject(new Error("Network error during upload"));
-        xhr.send(f);
-      });
-
-      // Point product_files at the new key (upsert on product_id).
+      // 2. Point product_files at the new key (only after successful upload).
       if (fileRow) {
         const { error: uErr } = await supabase.from("product_files").update({
           zip_url: newKey, zip_file_name: f.name,
@@ -202,19 +195,42 @@ function EditProduct() {
       }
       await supabase.from("products").update({ file_size: formatBytes(f.size) }).eq("id", id);
 
-      // Delete the previous zip from R2 (fire-and-forget).
-      if (oldKey && oldKey !== newKey) void deleteR2([oldKey]);
+      // 3. NOW delete the previous zip from R2 — the DB already points at the
+      //    verified new file, so this is safe. Awaited so we can surface a
+      //    clear success message that also confirms the old file is gone.
+      let oldDeleted = false;
+      if (oldKey && oldKey !== newKey) {
+        try {
+          const { error: dErr } = await supabase.functions.invoke("r2-delete-objects", { body: { paths: [oldKey] } });
+          if (dErr) console.warn("R2 delete failed:", dErr.message);
+          else oldDeleted = true;
+        } catch (e) {
+          console.warn("R2 delete threw:", e);
+        }
+      }
 
       await refetchFile();
       queryClient.invalidateQueries({ queryKey: ["dashboard-products"] });
-      toast.success("Plugin file replaced.");
+      if (oldKey) {
+        toast.success(oldDeleted
+          ? "New plugin file is live. Old file deleted from storage."
+          : "New plugin file is live. Old file couldn't be removed from storage — it'll be swept later.");
+      } else {
+        toast.success("Plugin file uploaded.");
+      }
     } catch (e: any) {
       toast.error(e.message || "File replace failed");
     } finally {
+      uploadHandleRef.current = null;
       setZipUploading(false);
       setZipProgress(0);
       if (zipInputRef.current) zipInputRef.current.value = "";
     }
+  };
+
+  const cancelUpload = () => {
+    try { uploadHandleRef.current?.abort(); } catch { /* */ }
+    uploadHandleRef.current = null;
   };
 
   const generateDesc = async () => {
