@@ -91,7 +91,7 @@ function ProductsPage() {
         </div>
         <Select value={cat} onChange={(v) => { setCat(v); setPage(1); }} options={[{ value: "all", label: "All categories" }, ...productCategories.map(c => ({ value: c, label: c.charAt(0).toUpperCase()+c.slice(1) }))]} />
         <Select value={status} onChange={(v) => { setStatus(v as any); setPage(1); }} options={[
-          { value: "all", label: "All status" }, { value: "published", label: "Published" }, { value: "draft", label: "Draft" }, { value: "archived", label: "Archived" },
+          { value: "all", label: "All status" }, { value: "published", label: "Published" }, { value: "draft", label: "Draft" }, { value: "archived", label: "Archived" }, { value: "freebies", label: "Freebies (free)" },
         ]} />
         <button onClick={() => refetch()} className="btn-ghost !text-xs !py-2 !px-3">{isFetching ? "Refreshing…" : "Refresh"}</button>
         <button onClick={() => setShowCats(true)} className="btn-ghost !text-xs !py-2 !px-3 ml-auto">Manage categories</button>
