@@ -32,6 +32,8 @@ type Row = {
   is_free: boolean | null;
 };
 
+type ProductUpdatePatch = Partial<Omit<Row, "is_free">> & { is_free?: boolean };
+
 async function fetchProducts(): Promise<Row[]> {
   const { data, error } = await supabase
     .from("products")
@@ -92,8 +94,8 @@ function ProductsPage() {
 
   const rememberScroll = () => sessionStorage.setItem(SCROLL_KEY, String(window.scrollY));
 
-  async function updateProduct(id: string, patch: Partial<Row>, prev: Row) {
-    const normalizedPatch: Partial<Row> = { ...patch };
+  async function updateProduct(id: string, patch: ProductUpdatePatch, prev: Row) {
+    const normalizedPatch: ProductUpdatePatch = { ...patch };
     if (Object.prototype.hasOwnProperty.call(normalizedPatch, "price")) {
       normalizedPatch.is_free = Number(normalizedPatch.price) === 0;
       if (normalizedPatch.is_free) normalizedPatch.compare_at_price = null;
