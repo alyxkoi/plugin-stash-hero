@@ -1181,10 +1181,14 @@ function ConsolePreviewCard({ product }: { product: Product }) {
       tabIndex={0}
       onKeyDown={(e) => { if (e.key === "Enter") open(); }}
     >
-      <div className="console-preview-art" style={{ background: product.coverGradient }}>
-        <div className="absolute inset-0 flex items-center justify-center text-center p-2">
-          <div className="font-display text-base leading-tight">{product.name}</div>
-        </div>
+      <div className="console-preview-art relative overflow-hidden" style={{ background: product.coverGradient }}>
+        {product.coverUrl ? (
+          <img src={product.coverUrl} alt={product.name} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center text-center p-2">
+            <div className="font-display text-base leading-tight">{product.name}</div>
+          </div>
+        )}
       </div>
 
       <div className="font-mono text-[10px] tracking-[0.14em] uppercase text-white/60 truncate">
@@ -1277,7 +1281,11 @@ function FeaturedSoundCard({ product }: { product: Product }) {
       className="glass-card glass-card--heavy block relative overflow-hidden min-h-[420px]"
     >
       <div className="chromatic-edge" />
-      <div className="absolute inset-0" style={{ background: product.coverGradient }} />
+      <div className="absolute inset-0" style={{ background: product.coverGradient }}>
+        {product.coverUrl && (
+          <img src={product.coverUrl} alt={product.name} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+        )}
+      </div>
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
       <div
         className="absolute inset-0 glow-breathe pointer-events-none"
@@ -1341,9 +1349,13 @@ function SoundRowCard({ product }: { product: Product }) {
           className="w-24 h-24 shrink-0 rounded-xl overflow-hidden relative"
           style={{ background: product.coverGradient }}
         >
-          <div className="absolute inset-0 flex items-center justify-center text-center p-1">
-            <div className="font-display text-sm leading-tight">{product.name}</div>
-          </div>
+          {product.coverUrl ? (
+            <img src={product.coverUrl} alt={product.name} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center text-center p-1">
+              <div className="font-display text-sm leading-tight">{product.name}</div>
+            </div>
+          )}
         </Link>
         <div className="flex-1 min-w-0">
           <div className="label-mini mb-1">{product.maker}</div>
