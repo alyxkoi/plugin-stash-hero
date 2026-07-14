@@ -1,16 +1,28 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { zodValidator, fallback } from "@tanstack/zod-adapter";
+import { z } from "zod";
 import { DashboardShell, DashCard, StatusBadge } from "@/components/DashboardShell";
 import { productCategories, formatMoney, relativeTime, type ProductStatus } from "@/lib/dashboard-mock";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Search, Edit3, Archive, Trash2, X, Check } from "lucide-react";
 
+const searchSchema = z.object({
+  q: fallback(z.string(), "").default(""),
+  cat: fallback(z.string(), "all").default("all"),
+  status: fallback(z.string(), "all").default("all"),
+  page: fallback(z.number().int(), 1).default(1),
+});
+
 export const Route = createFileRoute("/dashboard/products/")({
   head: () => ({ meta: [{ title: "Products — Plugin Warehouse" }] }),
+  validateSearch: zodValidator(searchSchema),
   component: ProductsPage,
 });
+
+const SCROLL_KEY = "dashboard-products:scroll";
 
 type Row = {
   id: string; slug: string; name: string; maker: string; category: string;
@@ -41,13 +53,38 @@ function ProductsPage() {
     placeholderData: (prev) => prev,
   });
 
-  const [q, setQ] = useState("");
-  const [cat, setCat] = useState<string>("all");
-  const [status, setStatus] = useState<"all" | ProductStatus | "freebies">("all");
-  const [page, setPage] = useState(1);
+  const search = Route.useSearch();
+  const navigate = useNavigate({ from: Route.fullPath });
+  const q = search.q;
+  const cat = search.cat;
+  const status = search.status as "all" | ProductStatus | "freebies";
+  const page = search.page;
+
+  const setSearchParam = (patch: Partial<{ q: string; cat: string; status: string; page: number }>) => {
+    navigate({ search: (prev: any) => ({ ...prev, ...patch }), replace: true });
+  };
+  const setQ = (v: string) => setSearchParam({ q: v, page: 1 });
+  const setCat = (v: string) => setSearchParam({ cat: v, page: 1 });
+  const setStatus = (v: string) => setSearchParam({ status: v, page: 1 });
+  const setPage = (updater: number | ((p: number) => number)) => {
+    const next = typeof updater === "function" ? (updater as (p: number) => number)(page) : updater;
+    setSearchParam({ page: next });
+  };
+
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [showCats, setShowCats] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
+
+  // Preserve scroll position across product-edit navigation.
+  useEffect(() => {
+    const raw = sessionStorage.getItem(SCROLL_KEY);
+    if (raw) {
+      const y = parseInt(raw, 10);
+      if (!isNaN(y)) requestAnimationFrame(() => window.scrollTo(0, y));
+      sessionStorage.removeItem(SCROLL_KEY);
+    }
+  }, []);
+  const rememberScroll = () => sessionStorage.setItem(SCROLL_KEY, String(window.scrollY));
 
   async function updateProduct(id: string, patch: Partial<Omit<Row, "is_free">>, prev: Row) {
     // Optimistic update
@@ -146,7 +183,7 @@ function ProductsPage() {
                     </td>
                     <td className="px-2 py-2">
                       <div className="flex items-center gap-2">
-                        <Link to={"/dashboard/products/$id" as any} params={{ id: p.id } as any} className="text-sm hover:text-[var(--accent-red-glow)]">{p.name}</Link>
+                        <Link to={"/dashboard/products/$id" as any} params={{ id: p.id } as any} onClick={rememberScroll} className="text-sm hover:text-[var(--accent-red-glow)]">{p.name}</Link>
                         {(p.is_free || Number(p.price) === 0) && (
                           <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/50 text-emerald-300 tracking-wider">FREE</span>
                         )}
@@ -168,7 +205,7 @@ function ProductsPage() {
                     <td className="px-2 py-2 text-right font-mono text-[10px] text-white/50">{relativeTime(p.updated_at)}</td>
                     <td className="px-2 py-2 text-right">
                       <div className="inline-flex gap-1">
-                        <Link to={"/dashboard/products/$id" as any} params={{ id: p.id } as any} className="p-1.5 rounded hover:bg-white/10 text-white/60 hover:text-white"><Edit3 size={13} /></Link>
+                        <Link to={"/dashboard/products/$id" as any} params={{ id: p.id } as any} onClick={rememberScroll} className="p-1.5 rounded hover:bg-white/10 text-white/60 hover:text-white"><Edit3 size={13} /></Link>
                         <button className="p-1.5 rounded hover:bg-white/10 text-white/60 hover:text-white"><Archive size={13} /></button>
                         <button className="p-1.5 rounded hover:bg-white/10 text-white/60 hover:text-[var(--accent-red-glow)]"><Trash2 size={13} /></button>
                       </div>
