@@ -17,12 +17,13 @@ type Row = {
   price: number; compare_at_price: number | null; status: ProductStatus;
   cover_url: string | null; cover_gradient: string | null; updated_at: string;
   supports_windows: boolean; supports_mac: boolean;
+  is_free: boolean | null;
 };
 
 async function fetchProducts(): Promise<Row[]> {
   const { data, error } = await supabase
     .from("products")
-    .select("id,slug,name,maker,category,price,compare_at_price,status,cover_url,cover_gradient,updated_at,supports_windows,supports_mac")
+    .select("id,slug,name,maker,category,price,compare_at_price,status,cover_url,cover_gradient,updated_at,supports_windows,supports_mac,is_free")
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   return (data ?? []) as Row[];
