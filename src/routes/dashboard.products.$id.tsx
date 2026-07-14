@@ -5,8 +5,9 @@ import { DashboardShell, DashCard } from "@/components/DashboardShell";
 import { LibraryTypeField } from "@/components/LibraryTypeField";
 import { supabase } from "@/integrations/supabase/client";
 import { productCategories } from "@/lib/dashboard-mock";
-import { Upload, X, Sparkles, RefreshCw } from "lucide-react";
+import { Upload, X, Sparkles, RefreshCw, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { uploadZipMultipart, type MultipartHandle } from "@/lib/multipart-upload";
 
 const FORMATS = ["VST", "VST3", "AU", "AAX"];
 
