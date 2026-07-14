@@ -172,13 +172,45 @@ export type Database = {
         }
         Relationships: []
       }
+      discount_code_products: {
+        Row: {
+          discount_code_id: string
+          product_id: string
+        }
+        Insert: {
+          discount_code_id: string
+          product_id: string
+        }
+        Update: {
+          discount_code_id?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discount_code_products_discount_code_id_fkey"
+            columns: ["discount_code_id"]
+            isOneToOne: false
+            referencedRelation: "discount_codes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discount_code_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       discount_codes: {
         Row: {
           applies_to: string
+          categories: string[]
           code: string
           created_at: string
           expires_at: string | null
           id: string
+          scope: string
           status: Database["public"]["Enums"]["discount_status"]
           type: Database["public"]["Enums"]["discount_type"]
           updated_at: string
@@ -188,10 +220,12 @@ export type Database = {
         }
         Insert: {
           applies_to?: string
+          categories?: string[]
           code: string
           created_at?: string
           expires_at?: string | null
           id?: string
+          scope?: string
           status?: Database["public"]["Enums"]["discount_status"]
           type: Database["public"]["Enums"]["discount_type"]
           updated_at?: string
@@ -201,10 +235,12 @@ export type Database = {
         }
         Update: {
           applies_to?: string
+          categories?: string[]
           code?: string
           created_at?: string
           expires_at?: string | null
           id?: string
+          scope?: string
           status?: Database["public"]["Enums"]["discount_status"]
           type?: Database["public"]["Enums"]["discount_type"]
           updated_at?: string
