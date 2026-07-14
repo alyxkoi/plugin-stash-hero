@@ -202,10 +202,11 @@ function ProductsPage() {
           <div className="chromatic-edge" />
           <div className="relative z-10 flex items-center gap-3 w-full">
             <span className="text-xs font-mono text-white/70">{selected.size} selected</span>
-            <button className="btn-ghost !text-xs !py-1.5 !px-3">Archive selected</button>
-            <button className="btn-ghost !text-xs !py-1.5 !px-3 !border-[var(--accent-red)]/40 !text-[var(--accent-red-glow)]">Delete selected</button>
+            <button onClick={() => setBulkConfirm("archive")} disabled={bulkBusy} className="btn-ghost !text-xs !py-1.5 !px-3 disabled:opacity-50">Archive selected</button>
+            <button onClick={() => setBulkConfirm("delete")} disabled={bulkBusy} className="btn-ghost !text-xs !py-1.5 !px-3 !border-[var(--accent-red)]/40 !text-[var(--accent-red-glow)] disabled:opacity-50">Delete selected</button>
             <button onClick={() => setSelected(new Set())} className="ml-auto text-white/40 hover:text-white"><X size={14} /></button>
           </div>
+
         </div>
       )}
 
