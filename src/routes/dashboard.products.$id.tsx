@@ -294,7 +294,7 @@ function EditProduct() {
 
       queryClient.invalidateQueries({ queryKey: ["dashboard-products"] });
       toast.success("Product saved.");
-      navigate({ to: "/dashboard/products" as any });
+      backToList();
     } catch (e: any) {
       toast.error(e.message || "Save failed");
     } finally { setSaving(false); }
@@ -318,7 +318,7 @@ function EditProduct() {
 
     queryClient.invalidateQueries({ queryKey: ["dashboard-products"] });
     toast.success("Product and files deleted.");
-    navigate({ to: "/dashboard/products" as any });
+    backToList();
   };
 
   return (
@@ -565,7 +565,7 @@ function EditProduct() {
       </div>
 
       <div className="fixed bottom-0 left-0 md:left-[220px] right-0 z-30 border-t border-white/10 bg-[#13002C]/95 backdrop-blur-md px-6 py-3 flex items-center gap-3">
-        <Link to="/dashboard/products" className="btn-ghost !text-xs !py-2 !px-4">Back</Link>
+        <Link to="/dashboard/products" search={returnSearch as any} className="btn-ghost !text-xs !py-2 !px-4">Back</Link>
         <button onClick={save} disabled={saving} className="btn-primary !text-xs !py-2 !px-6 ml-auto">{saving ? "Saving…" : "Save changes"}</button>
       </div>
 
