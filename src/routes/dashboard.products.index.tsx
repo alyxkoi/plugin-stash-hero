@@ -294,6 +294,35 @@ function ProductsPage() {
       </DashCard>
 
       {showCats && <CategoriesModal onClose={() => setShowCats(false)} />}
+
+      {bulkConfirm && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={() => !bulkBusy && setBulkConfirm(null)}>
+          <div className="glass-card p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <div className="chromatic-edge" />
+            <div className="relative z-10">
+              <h3 className="font-display text-lg mb-2">
+                {bulkConfirm === "delete" ? `Delete ${selected.size} product${selected.size === 1 ? "" : "s"}?` : `Archive ${selected.size} product${selected.size === 1 ? "" : "s"}?`}
+              </h3>
+              <p className="text-sm text-white/70 mb-5">
+                {bulkConfirm === "delete"
+                  ? "This can't be undone. Products and their plugin files & cover images will be permanently removed from storage."
+                  : "Archived products stay in the database but are hidden from the storefront. You can restore them later."}
+              </p>
+              <div className="flex gap-2 justify-end">
+                <button disabled={bulkBusy} onClick={() => setBulkConfirm(null)} className="btn-ghost !text-xs !py-2 !px-4">Cancel</button>
+                <button
+                  disabled={bulkBusy}
+                  onClick={() => bulkConfirm === "delete" ? bulkDelete() : bulkArchive()}
+                  className="btn-primary !text-xs !py-2 !px-4"
+                >
+                  {bulkBusy ? "Working…" : (bulkConfirm === "delete" ? "Delete" : "Archive")}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </DashboardShell>
   );
 }
