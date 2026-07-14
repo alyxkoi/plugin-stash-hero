@@ -292,7 +292,7 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
         ui_mode: "embedded_page",
         return_url: `${data.returnUrl}?session_id={CHECKOUT_SESSION_ID}`,
         // Force card only; disables Link and any wallet auto-connect that was causing the CVV loop
-        payment_method_types: ["card"],
+        payment_method_types: ["card", "klarna", "affirm"],
         ...(email && { customer_email: email }),
         payment_intent_data: {
           description: items.length === 1
