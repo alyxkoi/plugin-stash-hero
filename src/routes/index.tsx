@@ -386,7 +386,7 @@ function RotationCard({ product }: { product: Product }) {
         />
         {onSale && !product.isFree && badgePct > 0 && (
           <div className="absolute top-3 right-3 px-2 py-1 rounded-md font-mono text-[10px] font-bold bg-[var(--accent-red)] text-white shadow-lg">
-            {badgePct}% OFF
+            EXTRA {badgePct}% OFF
           </div>
         )}
       </div>
