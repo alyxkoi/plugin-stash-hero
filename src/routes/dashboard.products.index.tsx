@@ -1,16 +1,28 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { zodValidator, fallback } from "@tanstack/zod-adapter";
+import { z } from "zod";
 import { DashboardShell, DashCard, StatusBadge } from "@/components/DashboardShell";
 import { productCategories, formatMoney, relativeTime, type ProductStatus } from "@/lib/dashboard-mock";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Search, Edit3, Archive, Trash2, X, Check } from "lucide-react";
 
+const searchSchema = z.object({
+  q: fallback(z.string(), "").default(""),
+  cat: fallback(z.string(), "all").default("all"),
+  status: fallback(z.string(), "all").default("all"),
+  page: fallback(z.number().int(), 1).default(1),
+});
+
 export const Route = createFileRoute("/dashboard/products/")({
   head: () => ({ meta: [{ title: "Products — Plugin Warehouse" }] }),
+  validateSearch: zodValidator(searchSchema),
   component: ProductsPage,
 });
+
+const SCROLL_KEY = "dashboard-products:scroll";
 
 type Row = {
   id: string; slug: string; name: string; maker: string; category: string;
