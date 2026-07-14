@@ -1,4 +1,6 @@
 import { createFileRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
+import { zodValidator, fallback } from "@tanstack/zod-adapter";
+import { z } from "zod";
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { DashboardShell, DashCard } from "@/components/DashboardShell";
@@ -11,10 +13,21 @@ import { uploadZipMultipart, type MultipartHandle } from "@/lib/multipart-upload
 
 const FORMATS = ["VST", "VST3", "AU", "AAX"];
 
+// Search params carried through from the products list, so Save/Back returns
+// the user to the exact page, filter, and search they came from.
+const editSearchSchema = z.object({
+  q: fallback(z.string(), "").default(""),
+  cat: fallback(z.string(), "all").default("all"),
+  status: fallback(z.string(), "all").default("all"),
+  page: fallback(z.number().int(), 1).default(1),
+});
+
 export const Route = createFileRoute("/dashboard/products/$id")({
   head: () => ({ meta: [{ title: "Edit product — Plugin Warehouse" }] }),
+  validateSearch: zodValidator(editSearchSchema),
   component: EditProduct,
 });
+
 
 type Row = {
   id: string; slug: string; name: string; maker: string; category: string;
