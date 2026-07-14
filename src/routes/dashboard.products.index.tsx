@@ -49,7 +49,7 @@ function ProductsPage() {
   const [showCats, setShowCats] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
 
-  async function updateProduct(id: string, patch: Record<string, any>, prev: Row) {
+  async function updateProduct(id: string, patch: Partial<Omit<Row, "is_free">>, prev: Row) {
     // Optimistic update
     queryClient.setQueryData<Row[]>(["dashboard-products"], (rows) =>
       (rows ?? []).map((r) => (r.id === id ? { ...r, ...patch } : r))
