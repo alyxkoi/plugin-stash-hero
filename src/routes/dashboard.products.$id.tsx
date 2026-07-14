@@ -409,11 +409,33 @@ function EditProduct() {
         </DashCard>
 
         <DashCard title="Plugin file">
-          <div className="space-y-3">
+          <div
+            onDragOver={(e) => { e.preventDefault(); if (!zipUploading) setZipDrag(true); }}
+            onDragEnter={(e) => { e.preventDefault(); if (!zipUploading) setZipDrag(true); }}
+            onDragLeave={(e) => {
+              // Only clear when leaving the zone itself, not children
+              if (e.currentTarget === e.target) setZipDrag(false);
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              setZipDrag(false);
+              if (zipUploading) return;
+              const f = e.dataTransfer.files?.[0];
+              if (!f) return;
+              if (!/\.zip$/i.test(f.name)) { toast.error("Plugin file must be a .zip"); return; }
+              if (f.size > 50 * 1024 * 1024 * 1024) { toast.error("Max 50GB."); return; }
+              if (fileRow) setPendingReplaceFile(f);
+              else replaceZip(f);
+            }}
+            className={`space-y-3 rounded-lg border-2 border-dashed p-4 transition-all ${zipDrag ? "border-[var(--accent-red-glow)] bg-[var(--accent-red)]/10" : "border-white/15"}`}
+          >
             <div className="text-[11px] font-mono text-white/60">
               {fileRow?.zip_file_name
                 ? <>Current: <span className="text-white/90">{fileRow.zip_file_name}</span></>
-                : <span className="text-[var(--accent-red-glow)]">No file attached — upload one below.</span>}
+                : <span className="text-[var(--accent-red-glow)]">No file attached — drop a .zip or click below.</span>}
+            </div>
+            <div className={`text-xs font-mono ${zipDrag ? "text-[var(--accent-red-glow)]" : "text-white/50"}`}>
+              {zipDrag ? "Drop the .zip to replace" : "Drag & drop a .zip here, or use the button below"}
             </div>
             <input
               ref={zipInputRef}
@@ -425,7 +447,6 @@ function EditProduct() {
                 e.target.value = "";
                 if (!f) return;
                 if (!/\.zip$/i.test(f.name)) { toast.error("Plugin file must be a .zip"); return; }
-                // Existing file → require explicit confirmation before replacing.
                 if (fileRow) setPendingReplaceFile(f);
                 else replaceZip(f);
               }}
