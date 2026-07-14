@@ -85,6 +85,9 @@ function formatBytes(n: number) {
 
 function EditProduct() {
   const { id } = useParams({ from: "/dashboard/products/$id" });
+  const returnSearch = Route.useSearch();
+  const backToList = () => navigate({ to: "/dashboard/products", search: returnSearch as any });
+
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: product, isLoading, error } = useQuery({
