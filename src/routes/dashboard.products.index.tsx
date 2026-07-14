@@ -74,6 +74,11 @@ function ProductsPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [showCats, setShowCats] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
+  const [bulkConfirm, setBulkConfirm] = useState<null | "delete" | "archive">(null);
+  const [bulkBusy, setBulkBusy] = useState(false);
+
+  // Params passed through to the edit page so Save/Back can return here intact.
+  const editSearch = { q, cat, status, page } as const;
 
   // Preserve scroll position across product-edit navigation.
   useEffect(() => {
@@ -84,6 +89,7 @@ function ProductsPage() {
       sessionStorage.removeItem(SCROLL_KEY);
     }
   }, []);
+
   const rememberScroll = () => sessionStorage.setItem(SCROLL_KEY, String(window.scrollY));
 
   async function updateProduct(id: string, patch: Partial<Omit<Row, "is_free">>, prev: Row) {
