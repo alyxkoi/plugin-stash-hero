@@ -70,7 +70,8 @@ function ProductsPage() {
   const filtered = useMemo(() => products.filter(p => {
     if (q && !p.name.toLowerCase().includes(q.toLowerCase())) return false;
     if (cat !== "all" && p.category !== cat) return false;
-    if (status !== "all" && p.status !== status) return false;
+    if (status === "freebies") { if (!(p.is_free || Number(p.price) === 0)) return false; }
+    else if (status !== "all" && p.status !== status) return false;
     return true;
   }), [products, q, cat, status]);
 
