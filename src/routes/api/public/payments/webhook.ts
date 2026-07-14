@@ -1,6 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { type StripeEnv, verifyWebhook } from "@/lib/stripe.server";
 import { finalizeOrder, type FulfillItem } from "@/lib/order-fulfill.server";
+import {
+  notifyTelegram,
+  formatSaleMessage,
+  formatFailureMessage,
+} from "@/lib/telegram-notify.server";
 
 async function handleCheckoutCompleted(session: any) {
   const sessionId = session.id as string;
@@ -19,7 +24,7 @@ async function handleCheckoutCompleted(session: any) {
   let items: FulfillItem[] = [];
   try { items = JSON.parse(meta.items_json ?? "[]"); } catch { items = []; }
 
-  await finalizeOrder({
+  const result = await finalizeOrder({
     sessionId,
     userId,
     guestEmail,
@@ -31,8 +36,36 @@ async function handleCheckoutCompleted(session: any) {
     items,
     stripePaymentIntentId: (session.payment_intent as string) ?? null,
   });
+
+  const itemCount = items.reduce((n, i) => n + (i.qty || 1), 0);
+  if (result) {
+    await notifyTelegram(formatSaleMessage(result.number, itemCount, totalCents));
+  }
 }
 
+async function handlePaymentFailed(intent: any) {
+  const meta = intent.metadata ?? {};
+  let items: FulfillItem[] = [];
+  try { items = JSON.parse(meta.items_json ?? "[]"); } catch { items = []; }
+  const itemCount = items.reduce((n, i) => n + (i.qty || 1), 0);
+  const totalCents = Number(meta.total_cents ?? intent.amount ?? 0);
+
+  // Orders are only created on success, so usually there's no order number here.
+  let orderNumber: string | null = null;
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await supabaseAdmin
+      .from("orders")
+      .select("number")
+      .eq("stripe_id", intent.id as string)
+      .maybeSingle();
+    if (data?.number) orderNumber = data.number as string;
+  } catch (e) {
+    console.error("[webhook] failed to look up order for failed intent", e);
+  }
+
+  await notifyTelegram(formatFailureMessage(orderNumber, itemCount, totalCents));
+}
 
 export const Route = createFileRoute("/api/public/payments/webhook")({
   server: {
@@ -48,6 +81,8 @@ export const Route = createFileRoute("/api/public/payments/webhook")({
           const event = await verifyWebhook(request, env);
           if (event.type === "checkout.session.completed") {
             await handleCheckoutCompleted(event.data.object);
+          } else if (event.type === "payment_intent.payment_failed") {
+            await handlePaymentFailed(event.data.object);
           } else {
             console.log("[webhook] unhandled:", event.type);
           }
