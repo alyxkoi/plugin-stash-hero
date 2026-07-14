@@ -53,13 +53,38 @@ function ProductsPage() {
     placeholderData: (prev) => prev,
   });
 
-  const [q, setQ] = useState("");
-  const [cat, setCat] = useState<string>("all");
-  const [status, setStatus] = useState<"all" | ProductStatus | "freebies">("all");
-  const [page, setPage] = useState(1);
+  const search = Route.useSearch();
+  const navigate = useNavigate({ from: Route.fullPath });
+  const q = search.q;
+  const cat = search.cat;
+  const status = search.status as "all" | ProductStatus | "freebies";
+  const page = search.page;
+
+  const setSearchParam = (patch: Partial<{ q: string; cat: string; status: string; page: number }>) => {
+    navigate({ search: (prev: any) => ({ ...prev, ...patch }), replace: true });
+  };
+  const setQ = (v: string) => setSearchParam({ q: v, page: 1 });
+  const setCat = (v: string) => setSearchParam({ cat: v, page: 1 });
+  const setStatus = (v: string) => setSearchParam({ status: v, page: 1 });
+  const setPage = (updater: number | ((p: number) => number)) => {
+    const next = typeof updater === "function" ? (updater as (p: number) => number)(page) : updater;
+    setSearchParam({ page: next });
+  };
+
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [showCats, setShowCats] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
+
+  // Preserve scroll position across product-edit navigation.
+  useEffect(() => {
+    const raw = sessionStorage.getItem(SCROLL_KEY);
+    if (raw) {
+      const y = parseInt(raw, 10);
+      if (!isNaN(y)) requestAnimationFrame(() => window.scrollTo(0, y));
+      sessionStorage.removeItem(SCROLL_KEY);
+    }
+  }, []);
+  const rememberScroll = () => sessionStorage.setItem(SCROLL_KEY, String(window.scrollY));
 
   async function updateProduct(id: string, patch: Partial<Omit<Row, "is_free">>, prev: Row) {
     // Optimistic update
