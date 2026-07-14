@@ -1181,10 +1181,14 @@ function ConsolePreviewCard({ product }: { product: Product }) {
       tabIndex={0}
       onKeyDown={(e) => { if (e.key === "Enter") open(); }}
     >
-      <div className="console-preview-art" style={{ background: product.coverGradient }}>
-        <div className="absolute inset-0 flex items-center justify-center text-center p-2">
-          <div className="font-display text-base leading-tight">{product.name}</div>
-        </div>
+      <div className="console-preview-art relative overflow-hidden" style={{ background: product.coverGradient }}>
+        {product.coverUrl ? (
+          <img src={product.coverUrl} alt={product.name} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center text-center p-2">
+            <div className="font-display text-base leading-tight">{product.name}</div>
+          </div>
+        )}
       </div>
 
       <div className="font-mono text-[10px] tracking-[0.14em] uppercase text-white/60 truncate">
