@@ -533,5 +533,42 @@ function Field({ label, children }: { label: React.ReactNode; children: React.Re
   return <label className="block"><span className="label-mini text-[10px] opacity-70 mb-1.5 block">{label}</span>{children}</label>;
 }
 
+function ReplaceConfirmDialog({
+  file, currentFileName, onCancel, onConfirm,
+}: { file: File; currentFileName: string | null; onCancel: () => void; onConfirm: () => void }) {
+  return (
+    <div className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-4" style={{ backdropFilter: "blur(6px)" }} onClick={onCancel}>
+      <div className="glass-card p-6 w-full max-w-md" onClick={e => e.stopPropagation()} style={{ background: "rgba(20,5,44,0.96)" }}>
+        <div className="chromatic-edge" />
+        <div className="relative z-10">
+          <div className="flex items-start gap-3 mb-3">
+            <AlertTriangle className="text-[var(--accent-red-glow)] mt-0.5 shrink-0" size={20} />
+            <div>
+              <h3 className="font-display text-lg">Replace plugin file?</h3>
+              <p className="text-[11px] font-mono text-white/50 mt-0.5">This can't be undone.</p>
+            </div>
+          </div>
+          <div className="text-sm text-white/80 space-y-2 mb-4">
+            <div>
+              You're about to replace{" "}
+              <span className="font-mono text-white/95 break-all">{currentFileName || "the current file"}</span>{" "}
+              with{" "}
+              <span className="font-mono text-[var(--accent-red-glow)] break-all">{file.name}</span>{" "}
+              <span className="text-white/50 font-mono text-xs">({formatBytes(file.size)})</span>.
+            </div>
+            <div className="text-[12px] text-white/60">
+              The old file will be permanently deleted from storage <strong>only after</strong> the new file uploads successfully. If the upload fails, your current file stays live.
+            </div>
+          </div>
+          <div className="flex gap-2 justify-end pt-3 border-t border-white/10">
+            <button onClick={onCancel} className="btn-ghost !text-xs !py-2 !px-4">Cancel</button>
+            <button onClick={onConfirm} className="btn-primary !text-xs !py-2 !px-4">Replace file</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Touch unused import to avoid linter trim
 void Upload;
