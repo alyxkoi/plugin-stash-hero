@@ -149,7 +149,7 @@ function EditProduct() {
     setStatus(product.status);
     setSupportsWindows(product.supports_windows ?? true);
     setSupportsMac(product.supports_mac ?? false);
-    setIsFree(!!product.is_free);
+    setIsFree(!!product.is_free || Number(product.price) === 0);
   }, [product]);
 
 
