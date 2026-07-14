@@ -110,6 +110,63 @@ function ProductsPage() {
     return true;
   }
 
+  async function bulkArchive() {
+    const ids = Array.from(selected);
+    if (!ids.length) return;
+    setBulkBusy(true);
+    const { error } = await supabase.from("products").update({ status: "archived" }).in("id", ids);
+    setBulkBusy(false);
+    setBulkConfirm(null);
+    if (error) { toast.error(`Archive failed: ${error.message}`); return; }
+    toast.success(`Archived ${ids.length} product${ids.length === 1 ? "" : "s"}.`);
+    setSelected(new Set());
+    await queryClient.invalidateQueries({ queryKey: ["dashboard-products"] });
+  }
+
+  async function bulkDelete() {
+    const ids = Array.from(selected);
+    if (!ids.length) return;
+    setBulkBusy(true);
+    try {
+      // 1. Gather every R2 object attached to these products before nuking DB rows.
+      const paths: string[] = [];
+      const targets = products.filter((p) => selected.has(p.id));
+      for (const p of targets) if (p.cover_url) paths.push(p.cover_url);
+      const { data: files } = await supabase
+        .from("product_files").select("product_id, zip_url").in("product_id", ids);
+      for (const r of (files ?? []) as Array<{ zip_url: string | null }>) {
+        if (r.zip_url) paths.push(r.zip_url);
+      }
+
+      // 2. Delete products (product_files cascade via FK).
+      const { error, data: deleted } = await supabase
+        .from("products").delete().in("id", ids).select("id, name");
+      if (error) { toast.error(`Delete failed: ${error.message}`); return; }
+
+      const deletedIds = new Set((deleted ?? []).map((d: any) => d.id));
+      const failed = targets.filter((p) => !deletedIds.has(p.id));
+
+      // 3. Clean R2 objects (best effort).
+      if (paths.length) {
+        try {
+          await supabase.functions.invoke("r2-delete-objects", { body: { paths } });
+        } catch (e) { console.warn("R2 delete threw:", e); }
+      }
+
+      if (failed.length) {
+        toast.error(`Couldn't delete: ${failed.map((f) => f.name).join(", ")}`);
+      } else {
+        toast.success(`Deleted ${ids.length} product${ids.length === 1 ? "" : "s"}.`);
+      }
+      setSelected(new Set());
+      await queryClient.invalidateQueries({ queryKey: ["dashboard-products"] });
+    } finally {
+      setBulkBusy(false);
+      setBulkConfirm(null);
+    }
+  }
+
+
   const filtered = useMemo(() => products.filter(p => {
     if (q && !p.name.toLowerCase().includes(q.toLowerCase())) return false;
     if (cat !== "all" && p.category !== cat) return false;
