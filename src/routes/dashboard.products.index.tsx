@@ -43,7 +43,7 @@ function ProductsPage() {
 
   const [q, setQ] = useState("");
   const [cat, setCat] = useState<string>("all");
-  const [status, setStatus] = useState<"all" | ProductStatus>("all");
+  const [status, setStatus] = useState<"all" | ProductStatus | "freebies">("all");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [showCats, setShowCats] = useState(false);
