@@ -5,8 +5,9 @@ import { DashboardShell, DashCard } from "@/components/DashboardShell";
 import { LibraryTypeField } from "@/components/LibraryTypeField";
 import { supabase } from "@/integrations/supabase/client";
 import { productCategories } from "@/lib/dashboard-mock";
-import { Upload, X, Sparkles, RefreshCw } from "lucide-react";
+import { Upload, X, Sparkles, RefreshCw, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { uploadZipMultipart, type MultipartHandle } from "@/lib/multipart-upload";
 
 const FORMATS = ["VST", "VST3", "AU", "AAX"];
 
@@ -109,6 +110,8 @@ function EditProduct() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [typed, setTyped] = useState("");
   const zipInputRef = useRef<HTMLInputElement>(null);
+  const [pendingReplaceFile, setPendingReplaceFile] = useState<File | null>(null);
+  const uploadHandleRef = useRef<MultipartHandle | null>(null);
 
   useEffect(() => {
     if (!product) return;
@@ -165,27 +168,20 @@ function EditProduct() {
 
   const replaceZip = async (f: File) => {
     if (zipUploading) return;
-    if (f.size > 5 * 1024 * 1024 * 1024) { toast.error("Max 5GB via edit page. For larger files, use the New Product uploader."); return; }
+    if (!/\.zip$/i.test(f.name)) { toast.error("Plugin file must be a .zip"); return; }
+    if (f.size > 50 * 1024 * 1024 * 1024) { toast.error("Max 50GB."); return; }
     setZipUploading(true);
     setZipProgress(0);
     const oldKey = fileRow?.zip_url ?? null;
     try {
-      const { data, error } = await supabase.functions.invoke("r2-upload-url", {
-        body: { kind: "zip", filename: f.name, size: f.size, contentType: f.type || "application/zip" },
-      });
-      if (error || !data?.uploadUrl || !data?.objectKey) throw new Error(data?.error || error?.message || "Failed to get upload URL");
-      const newKey: string = data.objectKey;
+      // 1. Upload the new file FIRST via multipart. Old file stays intact
+      //    until the new file is verified — a failed upload never leaves the
+      //    product without a working download.
+      const handle = uploadZipMultipart(f, { onProgress: setZipProgress });
+      uploadHandleRef.current = handle;
+      const { objectKey: newKey } = await handle.promise;
 
-      await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open("PUT", data.uploadUrl);
-        xhr.upload.onprogress = (ev) => { if (ev.lengthComputable) setZipProgress(Math.round((ev.loaded / ev.total) * 100)); };
-        xhr.onload = () => (xhr.status >= 200 && xhr.status < 300) ? resolve() : reject(new Error(`Upload failed (${xhr.status})`));
-        xhr.onerror = () => reject(new Error("Network error during upload"));
-        xhr.send(f);
-      });
-
-      // Point product_files at the new key (upsert on product_id).
+      // 2. Point product_files at the new key (only after successful upload).
       if (fileRow) {
         const { error: uErr } = await supabase.from("product_files").update({
           zip_url: newKey, zip_file_name: f.name,
@@ -199,19 +195,42 @@ function EditProduct() {
       }
       await supabase.from("products").update({ file_size: formatBytes(f.size) }).eq("id", id);
 
-      // Delete the previous zip from R2 (fire-and-forget).
-      if (oldKey && oldKey !== newKey) void deleteR2([oldKey]);
+      // 3. NOW delete the previous zip from R2 — the DB already points at the
+      //    verified new file, so this is safe. Awaited so we can surface a
+      //    clear success message that also confirms the old file is gone.
+      let oldDeleted = false;
+      if (oldKey && oldKey !== newKey) {
+        try {
+          const { error: dErr } = await supabase.functions.invoke("r2-delete-objects", { body: { paths: [oldKey] } });
+          if (dErr) console.warn("R2 delete failed:", dErr.message);
+          else oldDeleted = true;
+        } catch (e) {
+          console.warn("R2 delete threw:", e);
+        }
+      }
 
       await refetchFile();
       queryClient.invalidateQueries({ queryKey: ["dashboard-products"] });
-      toast.success("Plugin file replaced.");
+      if (oldKey) {
+        toast.success(oldDeleted
+          ? "New plugin file is live. Old file deleted from storage."
+          : "New plugin file is live. Old file couldn't be removed from storage — it'll be swept later.");
+      } else {
+        toast.success("Plugin file uploaded.");
+      }
     } catch (e: any) {
       toast.error(e.message || "File replace failed");
     } finally {
+      uploadHandleRef.current = null;
       setZipUploading(false);
       setZipProgress(0);
       if (zipInputRef.current) zipInputRef.current.value = "";
     }
+  };
+
+  const cancelUpload = () => {
+    try { uploadHandleRef.current?.abort(); } catch { /* */ }
+    uploadHandleRef.current = null;
   };
 
   const generateDesc = async () => {
@@ -377,22 +396,53 @@ function EditProduct() {
               type="file"
               accept=".zip,application/zip,application/x-zip-compressed"
               hidden
-              onChange={e => { const f = e.target.files?.[0]; if (f) replaceZip(f); }}
+              onChange={e => {
+                const f = e.target.files?.[0];
+                e.target.value = "";
+                if (!f) return;
+                if (!/\.zip$/i.test(f.name)) { toast.error("Plugin file must be a .zip"); return; }
+                // Existing file → require explicit confirmation before replacing.
+                if (fileRow) setPendingReplaceFile(f);
+                else replaceZip(f);
+              }}
             />
-            <button
-              type="button"
-              disabled={zipUploading}
-              onClick={() => zipInputRef.current?.click()}
-              className="btn-ghost !text-xs !py-2 !px-4 inline-flex items-center gap-2 disabled:opacity-50"
-            >
-              <RefreshCw size={13} className={zipUploading ? "animate-spin" : ""} />
-              {zipUploading ? `Uploading… ${zipProgress}%` : (fileRow ? "Replace plugin file" : "Upload plugin file")}
-            </button>
+            <div className="flex items-center gap-3 flex-wrap">
+              <button
+                type="button"
+                disabled={zipUploading}
+                onClick={() => zipInputRef.current?.click()}
+                className="btn-ghost !text-xs !py-2 !px-4 inline-flex items-center gap-2 disabled:opacity-50"
+              >
+                <RefreshCw size={13} className={zipUploading ? "animate-spin" : ""} />
+                {zipUploading ? `Uploading… ${zipProgress}%` : (fileRow ? "Replace plugin file" : "Upload plugin file")}
+              </button>
+              {zipUploading && (
+                <button type="button" onClick={cancelUpload} className="text-[11px] text-white/60 hover:text-[var(--accent-red-glow)] underline">Cancel</button>
+              )}
+            </div>
+            {zipUploading && (
+              <div className="max-w-md h-1.5 bg-white/10 rounded overflow-hidden">
+                <div className="h-full bg-[var(--accent-red)] transition-all" style={{ width: `${zipProgress}%` }} />
+              </div>
+            )}
             <p className="text-[10px] text-white/40 font-mono">
-              Uploading a new file overwrites the current one — the old file is removed from storage automatically.
+              Up to 50GB · multipart upload · 8 parallel chunks · resumable per chunk. The old file stays live until the new upload completes and verifies — then it's deleted from storage.
             </p>
           </div>
         </DashCard>
+
+        {pendingReplaceFile && (
+          <ReplaceConfirmDialog
+            file={pendingReplaceFile}
+            currentFileName={fileRow?.zip_file_name ?? null}
+            onCancel={() => setPendingReplaceFile(null)}
+            onConfirm={() => {
+              const f = pendingReplaceFile;
+              setPendingReplaceFile(null);
+              if (f) replaceZip(f);
+            }}
+          />
+        )}
 
         <DashCard title="Pricing & status">
           <label className="flex items-start gap-3 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5 mb-4 cursor-pointer hover:bg-white/[0.05]">
@@ -481,6 +531,43 @@ function EditProduct() {
 
 function Field({ label, children }: { label: React.ReactNode; children: React.ReactNode }) {
   return <label className="block"><span className="label-mini text-[10px] opacity-70 mb-1.5 block">{label}</span>{children}</label>;
+}
+
+function ReplaceConfirmDialog({
+  file, currentFileName, onCancel, onConfirm,
+}: { file: File; currentFileName: string | null; onCancel: () => void; onConfirm: () => void }) {
+  return (
+    <div className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-4" style={{ backdropFilter: "blur(6px)" }} onClick={onCancel}>
+      <div className="glass-card p-6 w-full max-w-md" onClick={e => e.stopPropagation()} style={{ background: "rgba(20,5,44,0.96)" }}>
+        <div className="chromatic-edge" />
+        <div className="relative z-10">
+          <div className="flex items-start gap-3 mb-3">
+            <AlertTriangle className="text-[var(--accent-red-glow)] mt-0.5 shrink-0" size={20} />
+            <div>
+              <h3 className="font-display text-lg">Replace plugin file?</h3>
+              <p className="text-[11px] font-mono text-white/50 mt-0.5">This can't be undone.</p>
+            </div>
+          </div>
+          <div className="text-sm text-white/80 space-y-2 mb-4">
+            <div>
+              You're about to replace{" "}
+              <span className="font-mono text-white/95 break-all">{currentFileName || "the current file"}</span>{" "}
+              with{" "}
+              <span className="font-mono text-[var(--accent-red-glow)] break-all">{file.name}</span>{" "}
+              <span className="text-white/50 font-mono text-xs">({formatBytes(file.size)})</span>.
+            </div>
+            <div className="text-[12px] text-white/60">
+              The old file will be permanently deleted from storage <strong>only after</strong> the new file uploads successfully. If the upload fails, your current file stays live.
+            </div>
+          </div>
+          <div className="flex gap-2 justify-end pt-3 border-t border-white/10">
+            <button onClick={onCancel} className="btn-ghost !text-xs !py-2 !px-4">Cancel</button>
+            <button onClick={onConfirm} className="btn-primary !text-xs !py-2 !px-4">Replace file</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // Touch unused import to avoid linter trim

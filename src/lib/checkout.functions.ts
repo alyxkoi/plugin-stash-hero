@@ -6,7 +6,15 @@ import { type StripeEnv, createStripeClient, getStripeErrorMessage } from "@/lib
 import { finalizeOrder, type FulfillItem } from "@/lib/order-fulfill.server";
 
 type DiscountResult =
-  | { ok: true; code: string; type: "percent" | "fixed"; value: number }
+  | {
+      ok: true;
+      code: string;
+      type: "percent" | "fixed";
+      value: number;
+      scope: "all" | "categories" | "selected";
+      categories: string[];
+      productIds: string[];
+    }
   | { ok: false; error: string };
 
 type CheckoutResult =
@@ -49,7 +57,7 @@ export const validateDiscount = createServerFn({ method: "POST" })
     const code = data.code.trim().toUpperCase();
     const { data: row } = await supabaseAdmin
       .from("discount_codes")
-      .select("code,type,value,status,expires_at,usage_limit,uses")
+      .select("id,code,type,value,status,expires_at,usage_limit,uses,scope,categories")
       .ilike("code", code)
       .maybeSingle();
 
@@ -61,11 +69,23 @@ export const validateDiscount = createServerFn({ method: "POST" })
     if (row.usage_limit != null && (row.uses ?? 0) >= (row.usage_limit as number)) {
       return { ok: false, error: "That code has reached its usage limit." };
     }
+    const scope = ((row as any).scope as "all" | "categories" | "selected" | undefined) ?? "all";
+    let productIds: string[] = [];
+    if (scope === "selected") {
+      const { data: links } = await (supabaseAdmin as any)
+        .from("discount_code_products")
+        .select("product_id")
+        .eq("discount_code_id", (row as any).id);
+      productIds = (links ?? []).map((r: any) => r.product_id as string);
+    }
     return {
       ok: true,
       code: row.code as string,
       type: row.type as "percent" | "fixed",
       value: Number(row.value),
+      scope,
+      categories: (((row as any).categories as string[]) ?? []).map((c) => c.toLowerCase()),
+      productIds,
     };
   });
 
@@ -165,18 +185,40 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
         const codeUpper = data.discountCode.trim().toUpperCase();
         const { data: dc } = await supabaseAdmin
           .from("discount_codes")
-          .select("code,type,value,status,expires_at,usage_limit,uses")
+          .select("id,code,type,value,status,expires_at,usage_limit,uses,scope,categories")
           .ilike("code", codeUpper)
           .maybeSingle();
         if (dc && dc.status === "active"
             && (!dc.expires_at || new Date(dc.expires_at as string).getTime() > Date.now())
             && (dc.usage_limit == null || (dc.uses ?? 0) < (dc.usage_limit as number))) {
-          if (dc.type === "percent") {
-            discountCents = Math.floor((subtotalCents * Number(dc.value)) / 100);
-          } else {
-            discountCents = Math.min(subtotalCents, Math.round(Number(dc.value) * 100));
+          const scope = ((dc as any).scope as "all" | "categories" | "selected" | undefined) ?? "all";
+          const codeCats = (((dc as any).categories as string[]) ?? []).map((c) => c.toLowerCase());
+          let allowedIds: Set<string> | null = null;
+          if (scope === "selected") {
+            const { data: links } = await (supabaseAdmin as any)
+              .from("discount_code_products")
+              .select("product_id")
+              .eq("discount_code_id", (dc as any).id);
+            allowedIds = new Set((links ?? []).map((r: any) => r.product_id as string));
           }
-          discountCode = dc.code as string;
+          // Compute the subtotal of items eligible for this code.
+          const eligibleCents = items.reduce((n, i) => {
+            const pid = i.product.id as string;
+            const pcat = ((i.product.category as string | null) ?? "").toLowerCase();
+            const eligible =
+              scope === "all" ||
+              (scope === "categories" && !!pcat && codeCats.includes(pcat)) ||
+              (scope === "selected" && !!allowedIds && allowedIds.has(pid));
+            return eligible ? n + Math.round(i.unitPrice * 100) * i.qty : n;
+          }, 0);
+          if (eligibleCents > 0) {
+            if (dc.type === "percent") {
+              discountCents = Math.floor((eligibleCents * Number(dc.value)) / 100);
+            } else {
+              discountCents = Math.min(eligibleCents, Math.round(Number(dc.value) * 100));
+            }
+            discountCode = dc.code as string;
+          }
         }
       }
 

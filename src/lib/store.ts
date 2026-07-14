@@ -1,7 +1,14 @@
 import { useSyncExternalStore } from "react";
 import type { Product } from "./mock-data";
 
-export type AppliedDiscount = { code: string; type: "percent" | "fixed"; value: number };
+export type AppliedDiscount = {
+  code: string;
+  type: "percent" | "fixed";
+  value: number;
+  scope?: "all" | "categories" | "selected";
+  categories?: string[];
+  productIds?: string[];
+};
 
 type State = {
   cart: { product: Product; qty: number }[];
