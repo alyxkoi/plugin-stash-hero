@@ -145,7 +145,12 @@ function ProductsPage() {
                         : <div className="w-10 h-10 rounded-md" style={{ background: p.cover_gradient || "linear-gradient(135deg,#3a0a4a,#7b0a5a)" }} />}
                     </td>
                     <td className="px-2 py-2">
-                      <Link to={"/dashboard/products/$id" as any} params={{ id: p.id } as any} className="text-sm hover:text-[var(--accent-red-glow)]">{p.name}</Link>
+                      <div className="flex items-center gap-2">
+                        <Link to={"/dashboard/products/$id" as any} params={{ id: p.id } as any} className="text-sm hover:text-[var(--accent-red-glow)]">{p.name}</Link>
+                        {(p.is_free || Number(p.price) === 0) && (
+                          <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/50 text-emerald-300 tracking-wider">FREE</span>
+                        )}
+                      </div>
                       <div className="text-[10px] text-white/40">{p.maker}</div>
                     </td>
                     <td className="px-2 py-2">
