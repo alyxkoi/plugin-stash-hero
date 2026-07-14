@@ -141,9 +141,6 @@ function Hero() {
 
       <div className="relative grid lg:grid-cols-2 gap-12 items-center min-h-[70vh]">
         <div>
-          <div className="label-mini mb-6">
-            <span className="text-red">Summer Tropical Steals</span> — active
-          </div>
           <h1
             className="font-display leading-[0.92] tracking-tight mb-6"
             style={{ fontSize: "clamp(3rem, 8vw, 6.5rem)" }}
