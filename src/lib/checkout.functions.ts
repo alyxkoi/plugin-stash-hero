@@ -6,7 +6,15 @@ import { type StripeEnv, createStripeClient, getStripeErrorMessage } from "@/lib
 import { finalizeOrder, type FulfillItem } from "@/lib/order-fulfill.server";
 
 type DiscountResult =
-  | { ok: true; code: string; type: "percent" | "fixed"; value: number }
+  | {
+      ok: true;
+      code: string;
+      type: "percent" | "fixed";
+      value: number;
+      scope: "all" | "categories" | "selected";
+      categories: string[];
+      productIds: string[];
+    }
   | { ok: false; error: string };
 
 type CheckoutResult =
