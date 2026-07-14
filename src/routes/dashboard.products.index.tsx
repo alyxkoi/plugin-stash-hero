@@ -92,12 +92,17 @@ function ProductsPage() {
 
   const rememberScroll = () => sessionStorage.setItem(SCROLL_KEY, String(window.scrollY));
 
-  async function updateProduct(id: string, patch: Partial<Omit<Row, "is_free">>, prev: Row) {
+  async function updateProduct(id: string, patch: Partial<Row>, prev: Row) {
+    const normalizedPatch: Partial<Row> = { ...patch };
+    if (Object.prototype.hasOwnProperty.call(normalizedPatch, "price")) {
+      normalizedPatch.is_free = Number(normalizedPatch.price) === 0;
+      if (normalizedPatch.is_free) normalizedPatch.compare_at_price = null;
+    }
     // Optimistic update
     queryClient.setQueryData<Row[]>(["dashboard-products"], (rows) =>
-      (rows ?? []).map((r) => (r.id === id ? { ...r, ...patch } : r))
+      (rows ?? []).map((r) => (r.id === id ? { ...r, ...normalizedPatch } : r))
     );
-    const { error } = await supabase.from("products").update(patch).eq("id", id);
+    const { error } = await supabase.from("products").update(normalizedPatch).eq("id", id);
     if (error) {
       queryClient.setQueryData<Row[]>(["dashboard-products"], (rows) =>
         (rows ?? []).map((r) => (r.id === id ? prev : r))
@@ -168,9 +173,11 @@ function ProductsPage() {
 
 
   const filtered = useMemo(() => products.filter(p => {
+    const freebie = p.is_free || Number(p.price) === 0;
     if (q && !p.name.toLowerCase().includes(q.toLowerCase())) return false;
-    if (cat !== "all" && p.category !== cat) return false;
-    if (status === "freebies") { if (!(p.is_free || Number(p.price) === 0)) return false; }
+    if (cat === "freebies") { if (!freebie) return false; }
+    else if (cat !== "all" && p.category !== cat) return false;
+    if (status === "freebies") { if (!freebie) return false; }
     else if (status !== "all" && p.status !== status) return false;
     return true;
   }), [products, q, cat, status]);
