@@ -40,9 +40,19 @@ function amzDate(d: Date) {
   return { amzDate: iso, dateStamp: iso.slice(0, 8) };
 }
 
-function uriEscapePath(path: string) {
-  return path.split("/").map(p => encodeURIComponent(p)).join("/");
+// AWS SigV4 requires percent-encoding of everything except RFC 3986 unreserved
+// chars (A-Z a-z 0-9 - _ . ~). encodeURIComponent leaves ! ' ( ) * unencoded,
+// which R2 re-encodes during verification and breaks the signature. This is
+// especially painful for response-content-disposition values containing
+// `filename*=UTF-8''...` (apostrophes) and quoted filenames.
+function awsEncode(s: string) {
+  return encodeURIComponent(s).replace(/[!'()*]/g, c => "%" + c.charCodeAt(0).toString(16).toUpperCase());
 }
+
+function uriEscapePath(path: string) {
+  return path.split("/").map(awsEncode).join("/");
+}
+
 
 async function signingKey(dateStamp: string) {
   const kDate    = await hmac(enc.encode("AWS4" + SECRET_KEY()), dateStamp);
