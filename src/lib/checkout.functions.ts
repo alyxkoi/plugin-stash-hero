@@ -307,11 +307,9 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
           subtotal_cents: String(subtotalCents),
           discount_cents: String(discountCents),
           total_cents: String(totalCents),
-          items_json: JSON.stringify(items.map((i) => ({
-            product_id: i.product.id, slug: i.product.slug, name: i.product.name,
-            price: Number(i.product.price), cover_gradient: i.product.cover_gradient,
-            cover_url: i.product.cover_url, qty: i.qty,
-          }))),
+          // Compact: "<uuid>:<qty>,<uuid>:<qty>". Webhook looks up full
+          // product details from the DB and unit prices from Stripe line_items.
+          items: items.map((i) => `${i.product.id}:${i.qty}`).join(","),
         },
       });
 
