@@ -107,11 +107,8 @@ function Hero() {
   const cover1 = useRef<HTMLDivElement>(null);
   const cover2 = useRef<HTMLDivElement>(null);
   const cover3 = useRef<HTMLDivElement>(null);
-  const heroPicks: Product[] = [
-    allProducts.find((p) => p.isFeatured) ?? allProducts[0] ?? placeholder(0),
-    allProducts.find((p) => p.isBestseller && p.slug !== allProducts[0]?.slug) ?? allProducts[1] ?? placeholder(1),
-    allProducts[2] ?? placeholder(2),
-  ];
+  const heroPicks: Product[] = pickDailyHeroProducts(allProducts);
+
 
   useEffect(() => {
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
