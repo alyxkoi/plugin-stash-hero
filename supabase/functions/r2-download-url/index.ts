@@ -78,7 +78,19 @@ Deno.serve(async (req) => {
 
     // 24h expiry — a 35GB download at ~5MB/s takes ~2h; give buyers plenty
     // of headroom to pause, resume, or complete over an average connection.
-    const url = await presign({ method: "GET", key: fileRow.zip_url, expiresIn: 24 * 3600 });
+    // Signed response-content-disposition forces the browser to save the file
+    // (cross-origin `<a download>` attributes are ignored) and preserves the
+    // original filename. Download streams directly from R2 — no edge proxy —
+    // so file size has no ceiling (2GB / worker limits do not apply).
+    const rawName = fileRow.zip_file_name ?? `plugin-${productId}.zip`;
+    const safeName = rawName.replace(/[\r\n"\\]/g, "_");
+    const url = await presign({
+      method: "GET",
+      key: fileRow.zip_url,
+      expiresIn: 24 * 3600,
+      responseContentDisposition: `attachment; filename="${safeName}"; filename*=UTF-8''${encodeURIComponent(rawName)}`,
+      responseContentType: "application/zip",
+    });
 
     if (downloadUserId) {
       await admin.from("library_downloads").insert({ user_id: downloadUserId, product_id: productId }).select().maybeSingle();

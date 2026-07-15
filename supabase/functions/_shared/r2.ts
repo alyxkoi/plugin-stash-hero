@@ -59,8 +59,11 @@ export async function presign(opts: {
   expiresIn?: number;        // seconds, default 900
   contentType?: string;      // accepted for backwards compatibility; not signed
   extraQuery?: Record<string, string>;
+  responseContentDisposition?: string; // e.g. `attachment; filename="foo.zip"`
+  responseContentType?: string;        // e.g. `application/zip`
 }) {
   const expiresIn = opts.expiresIn ?? 900;
+
   const now = new Date();
   const { amzDate: amz, dateStamp } = amzDate(now);
   const host = `${ACCOUNT_ID()}.r2.cloudflarestorage.com`;
@@ -75,6 +78,8 @@ export async function presign(opts: {
 
   const allParams: Record<string, string> = {
     ...(opts.extraQuery ?? {}),
+    ...(opts.responseContentDisposition ? { "response-content-disposition": opts.responseContentDisposition } : {}),
+    ...(opts.responseContentType ? { "response-content-type": opts.responseContentType } : {}),
     "X-Amz-Algorithm":  "AWS4-HMAC-SHA256",
     "X-Amz-Credential": credential,
     "X-Amz-Date":       amz,
