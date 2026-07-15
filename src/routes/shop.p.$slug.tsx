@@ -6,7 +6,7 @@ import type { Category, Product } from "@/lib/mock-data";
 import { SALE } from "@/lib/mock-data";
 import { GlassCard } from "@/components/GlassCard";
 import { ProductCard } from "@/components/ProductCard";
-import { actions } from "@/lib/store";
+import { actions, useStore } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
 import { useSavedIds, useToggleSaved } from "@/hooks/useSaved";
 import { useSalePricing } from "@/lib/sale-pricing";
