@@ -210,9 +210,23 @@ function ProductDetail() {
   );
 }
 
+function AddToCartButton({ product }: { product: Product }) {
+  const inCart = useStore((s) => s.cart.some((i) => i.product.slug === product.slug));
+  return (
+    <button
+      onClick={() => actions.addToCart(product)}
+      className="btn-primary w-full !py-4 !text-base mb-3 inline-flex items-center justify-center gap-2"
+      aria-label={inCart ? "Already in cart" : "Add to cart"}
+    >
+      {inCart ? <><Check className="w-5 h-5" /> In cart</> : <><ShoppingCart className="w-5 h-5" /> Add to cart</>}
+    </button>
+  );
+}
+
 function Pill({ children }: { children: React.ReactNode }) {
   return <span className="font-mono text-[10px] tracking-wider px-3 py-1 rounded-full border border-white/15 text-white/65">{children}</span>;
 }
+
 
 function Meta({ label, value }: { label: string; value: string }) {
   return (
