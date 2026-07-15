@@ -27,6 +27,7 @@ import { type Product } from "@/lib/mock-data";
 import { actions, useStore } from "@/lib/store";
 import { usePublishedProducts, useBestsellerIds } from "@/hooks/useProducts";
 import { useSalePricing } from "@/lib/sale-pricing";
+import { useActiveSale } from "@/hooks/useActiveSale";
 
 /* ============ PLACEHOLDER PRODUCTS ============
  * Used so every section keeps its layout, titles, and body copy even before
@@ -127,6 +128,8 @@ function Index() {
 
 function Hero() {
   const { data: allProducts = [] } = usePublishedProducts();
+  const { sale } = useActiveSale();
+  const salePct = sale?.discount_pct ?? 35;
   const cover1 = useRef<HTMLDivElement>(null);
   const cover2 = useRef<HTMLDivElement>(null);
   const cover3 = useRef<HTMLDivElement>(null);
@@ -207,14 +210,18 @@ function Hero() {
               className={`absolute ${c.pos} w-80 xl:w-96`}
               style={{ zIndex: c.z, transform: `rotate(${c.rot})` }}
             >
-              <div className="glass-card glass-card--heavy p-3 relative">
+              <Link
+                to="/shop/p/$slug"
+                params={{ slug: c.p.slug }}
+                className="group block glass-card glass-card--heavy p-3 relative transition-transform duration-300 hover:scale-[1.03]"
+              >
                 <div className="chromatic-edge" />
                 <div
-                  className="absolute inset-0 glow-breathe pointer-events-none rounded-3xl"
+                  className="absolute inset-0 pointer-events-none rounded-3xl opacity-30 group-hover:opacity-100 transition-opacity duration-500"
                   style={{
                     background:
-                      "radial-gradient(ellipse at center, rgba(255,0,60,0.6), transparent 70%)",
-                    filter: "blur(20px)",
+                      "radial-gradient(ellipse at center, rgba(255,0,60,0.85), transparent 70%)",
+                    filter: "blur(28px)",
                     zIndex: -1,
                   }}
                 />
@@ -233,10 +240,10 @@ function Hero() {
                     </div>
                   )}
                   <div className="absolute top-2 right-2 px-2 py-1 rounded-md font-mono text-[10px] font-bold bg-[var(--accent-red)] text-white">
-                    35% OFF
+                    EXTRA {salePct}% OFF
                   </div>
                 </div>
-              </div>
+              </Link>
             </div>
             );
           })}
@@ -288,9 +295,33 @@ function OnRotation() {
   const { data: bestsellerIds = [] } = useBestsellerIds(12);
   const byId = new Map(allProducts.map((p) => [p.id!, p]));
   const bestsellers = bestsellerIds.map((id) => byId.get(id)).filter(Boolean) as Product[];
-  const featured = allProducts.filter((p) => p.isFeatured);
-  const rest = allProducts.filter((p) => !bestsellerIds.includes(p.id!) && !p.isFeatured);
-  const source = [...bestsellers, ...featured, ...rest].slice(0, 8);
+
+  // Manual fallback while there isn't enough real sales data (need ≥6 bestsellers).
+  // Matched by name substring so slight catalog naming variations still resolve.
+  const MANUAL_PICKS: RegExp[] = [
+    /\bserum\s*2\b/i,
+    /omnisphere/i,
+    /valhalla\s+bundle/i,
+    /fabfilter.*bundle|fabfilter\s+complete/i,
+    /\bnexus\s*5\b/i,
+    /soundtoys\s+bundle/i,
+  ];
+  const manual: Product[] = MANUAL_PICKS
+    .map((rx) => allProducts.find((p) => rx.test(p.name)))
+    .filter(Boolean) as Product[];
+
+  let source: Product[];
+  if (bestsellers.length >= 6) {
+    // Real sales data: use it, top up with featured/rest to fill 8 tiles.
+    const featured = allProducts.filter((p) => p.isFeatured && !bestsellerIds.includes(p.id!));
+    const rest = allProducts.filter((p) => !bestsellerIds.includes(p.id!) && !p.isFeatured);
+    source = [...bestsellers, ...featured, ...rest].slice(0, 8);
+  } else {
+    // Not enough sales yet: manual 6 first, then top up.
+    const manualIds = new Set(manual.map((p) => p.id));
+    const rest = allProducts.filter((p) => !manualIds.has(p.id));
+    source = [...manual, ...rest].slice(0, 8);
+  }
   const list = source.length > 0 ? source : placeholderList(8);
   const [progress, setProgress] = useState(0);
   const wrapRef = useRef<HTMLDivElement>(null);
