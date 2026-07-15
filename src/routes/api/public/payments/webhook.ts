@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { type StripeEnv, verifyWebhook } from "@/lib/stripe.server";
+import { type StripeEnv, verifyWebhook, createStripeClient } from "@/lib/stripe.server";
 import { finalizeOrder, type FulfillItem } from "@/lib/order-fulfill.server";
 import {
   notifyTelegram,
@@ -7,7 +7,75 @@ import {
   formatFailureMessage,
 } from "@/lib/telegram-notify.server";
 
-async function handleCheckoutCompleted(session: any) {
+// Parse compact "uuid:qty,uuid:qty" metadata. Falls back to legacy items_json.
+function parseCompactItems(meta: Record<string, string>): Array<{ productId: string; qty: number }> {
+  const s = (meta.items as string | undefined) ?? "";
+  if (s) {
+    return s.split(",").map((part) => {
+      const [productId, qtyStr] = part.split(":");
+      return { productId, qty: Math.max(1, Number(qtyStr) || 1) };
+    }).filter((x) => x.productId);
+  }
+  // Legacy fallback
+  try {
+    const arr = JSON.parse(meta.items_json ?? "[]") as Array<{ product_id: string; qty: number }>;
+    return arr.map((x) => ({ productId: x.product_id, qty: x.qty || 1 }));
+  } catch {
+    return [];
+  }
+}
+
+async function resolveFulfillItems(
+  compact: Array<{ productId: string; qty: number }>,
+  sessionId: string,
+  env: StripeEnv,
+): Promise<FulfillItem[]> {
+  if (compact.length === 0) return [];
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: prodRows } = await supabaseAdmin
+    .from("products")
+    .select("id,slug,name,price,cover_gradient,cover_url")
+    .in("id", compact.map((c) => c.productId));
+  const byId = new Map((prodRows ?? []).map((p) => [p.id as string, p]));
+
+  // Pull unit prices from Stripe line_items (reflects sale + promo distribution).
+  const priceByProductId = new Map<string, number>();
+  try {
+    const stripe = createStripeClient(env);
+    const lines = await stripe.checkout.sessions.listLineItems(sessionId, {
+      limit: 100,
+      expand: ["data.price.product"],
+    });
+    for (const li of lines.data) {
+      const prod = li.price?.product as { metadata?: { product_id?: string } } | undefined;
+      const pid = prod?.metadata?.product_id;
+      if (pid && li.price?.unit_amount != null) {
+        priceByProductId.set(pid, li.price.unit_amount / 100);
+      }
+    }
+  } catch (e) {
+    console.error("[webhook] listLineItems failed, falling back to product price", e);
+  }
+
+  return compact
+    .map(({ productId, qty }) => {
+      const p = byId.get(productId);
+      if (!p) return null;
+      const price = priceByProductId.get(productId) ?? Number(p.price);
+      return {
+        product_id: productId,
+        slug: p.slug as string,
+        name: p.name as string,
+        price,
+        cover_gradient: (p.cover_gradient as string | null) ?? null,
+        cover_url: (p.cover_url as string | null) ?? null,
+        qty,
+      } as FulfillItem;
+    })
+    .filter((x): x is FulfillItem => !!x);
+}
+
+async function handleCheckoutCompleted(session: any, env: StripeEnv) {
   const sessionId = session.id as string;
   const meta = session.metadata ?? {};
   const userId: string | null = meta.userId || null;
@@ -21,8 +89,9 @@ async function handleCheckoutCompleted(session: any) {
   const subtotalCents = Number(meta.subtotal_cents ?? session.amount_subtotal ?? 0);
   const discountCents = Number(meta.discount_cents ?? 0);
   const totalCents = Number(meta.total_cents ?? session.amount_total ?? 0);
-  let items: FulfillItem[] = [];
-  try { items = JSON.parse(meta.items_json ?? "[]"); } catch { items = []; }
+
+  const compact = parseCompactItems(meta);
+  const items = await resolveFulfillItems(compact, sessionId, env);
 
   const result = await finalizeOrder({
     sessionId,
