@@ -40,9 +40,19 @@ function amzDate(d: Date) {
   return { amzDate: iso, dateStamp: iso.slice(0, 8) };
 }
 
-function uriEscapePath(path: string) {
-  return path.split("/").map(p => encodeURIComponent(p)).join("/");
+// AWS SigV4 requires percent-encoding of everything except RFC 3986 unreserved
+// chars (A-Z a-z 0-9 - _ . ~). encodeURIComponent leaves ! ' ( ) * unencoded,
+// which R2 re-encodes during verification and breaks the signature. This is
+// especially painful for response-content-disposition values containing
+// `filename*=UTF-8''...` (apostrophes) and quoted filenames.
+function awsEncode(s: string) {
+  return encodeURIComponent(s).replace(/[!'()*]/g, c => "%" + c.charCodeAt(0).toString(16).toUpperCase());
 }
+
+function uriEscapePath(path: string) {
+  return path.split("/").map(awsEncode).join("/");
+}
+
 
 async function signingKey(dateStamp: string) {
   const kDate    = await hmac(enc.encode("AWS4" + SECRET_KEY()), dateStamp);
@@ -87,7 +97,7 @@ export async function presign(opts: {
     "X-Amz-SignedHeaders": signedHeaders,
   };
   const sortedParams = Object.entries(allParams).sort(([a],[b]) => a < b ? -1 : 1);
-  const canonicalQuery = sortedParams.map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join("&");
+  const canonicalQuery = sortedParams.map(([k,v]) => `${awsEncode(k)}=${awsEncode(v)}`).join("&");
 
   const canonicalRequest = [
     opts.method,
@@ -202,7 +212,7 @@ export async function signRequest(opts: {
   const signedHeaders = signedHeadersList.join(";");
 
   const queryEntries = Object.entries(opts.query ?? {}).sort(([a],[b]) => a < b ? -1 : 1);
-  const canonicalQuery = queryEntries.map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join("&");
+  const canonicalQuery = queryEntries.map(([k,v]) => `${awsEncode(k)}=${awsEncode(v)}`).join("&");
 
   const canonicalRequest = [
     opts.method,
@@ -292,7 +302,7 @@ async function signListing(prefix: string) {
     ["list-type", "2"],
     ["prefix", prefix],
   ].sort(([a],[b]) => a < b ? -1 : 1);
-  const canonicalQuery = params.map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join("&");
+  const canonicalQuery = params.map(([k,v]) => `${awsEncode(k)}=${awsEncode(v)}`).join("&");
   const canonicalRequest = ["GET", canonicalUri, canonicalQuery, canonicalHeaders, signedHeaders, payloadHash].join("\n");
   const credentialScope = `${dateStamp}/${REGION}/${SERVICE}/aws4_request`;
   const stringToSign = ["AWS4-HMAC-SHA256", amz, credentialScope, await sha256Hex(canonicalRequest)].join("\n");
