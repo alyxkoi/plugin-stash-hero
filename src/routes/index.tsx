@@ -128,6 +128,8 @@ function Index() {
 
 function Hero() {
   const { data: allProducts = [] } = usePublishedProducts();
+  const { sale } = useActiveSale();
+  const salePct = sale?.discount_pct ?? 35;
   const cover1 = useRef<HTMLDivElement>(null);
   const cover2 = useRef<HTMLDivElement>(null);
   const cover3 = useRef<HTMLDivElement>(null);
