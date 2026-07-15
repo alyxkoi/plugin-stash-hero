@@ -39,8 +39,12 @@ export function useActiveSale() {
     load();
     // Re-check frequently and react to sale deletes/updates so banners disappear cleanly.
     const i = setInterval(load, 15_000);
+    // Unique per-mount channel name — reusing a single name across mounts
+    // (or across the two components that call this hook) throws
+    // "cannot add postgres_changes callbacks after subscribe()", which
+    // bubbles up to the root errorComponent as "Something went wrong".
     const channel = supabase
-      .channel("active-sale-refresh")
+      .channel(`active-sale-refresh-${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "sale_events" }, load)
       .subscribe();
     window.addEventListener("focus", load);
