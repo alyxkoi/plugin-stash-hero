@@ -28,7 +28,33 @@ export function Nav() {
     window.setTimeout(() => { setDrawerOpen(false); setDrawerClosing(false); }, 360);
   };
   const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQ, setSearchQ] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
+  const { data: allProducts = [] } = usePublishedProducts();
+
+  const suggestions = useMemo(() => {
+    const q = searchQ.trim().toLowerCase();
+    if (!q) return [];
+    const starts: typeof allProducts = [];
+    const contains: typeof allProducts = [];
+    for (const p of allProducts) {
+      const n = p.name.toLowerCase();
+      if (n.startsWith(q)) starts.push(p);
+      else if (n.includes(q) || p.maker.toLowerCase().includes(q)) contains.push(p);
+    }
+    return [...starts, ...contains].slice(0, 8);
+  }, [searchQ, allProducts]);
+
+  const closeSearch = () => { setSearchOpen(false); setSearchQ(""); };
+  const goToProduct = (slug: string) => { closeSearch(); navigate({ to: "/shop/p/$slug", params: { slug } }); };
+  const submitSearch = () => {
+    const q = searchQ.trim();
+    if (!q) return;
+    if (suggestions[0]) { goToProduct(suggestions[0].slug); return; }
+    closeSearch();
+    navigate({ to: "/search", search: { q } });
+  };
 
   useEffect(() => {
     const on = () => setScrolled(window.scrollY > 60);
