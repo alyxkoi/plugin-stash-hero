@@ -93,10 +93,9 @@ function LibraryCard({ item }: { item: OwnedProduct }) {
     const { data, error } = await supabase.functions.invoke("r2-download-url", { body: { productId: item.id } });
     setBusy(false);
     if (error || !data?.url) { toast.error(data?.error ?? error?.message ?? "Download failed"); return; }
-    // Direct browser -> R2 download via presigned URL. No proxy, no size limit.
-    // R2 returns Content-Disposition: attachment (signed), so the browser saves
-    // the file and does not navigate away.
-    window.location.href = data.url;
+    // Direct browser -> R2 via anchor navigation. No fetch, no blob, no memory
+    // cap — the browser streams the file straight from R2 to disk.
+    triggerAnchorDownload(data.url, data.filename ?? `${item.name}.zip`);
   };
 
   return (
