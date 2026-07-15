@@ -85,6 +85,15 @@ export function LibraryView() {
   );
 }
 
+function triggerAnchorDownload(url: string, filename: string) {
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
 function LibraryCard({ item }: { item: OwnedProduct }) {
   const [busy, setBusy] = useState(false);
 
