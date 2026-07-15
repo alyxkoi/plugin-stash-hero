@@ -63,6 +63,29 @@ const placeholder = (i = 0, overrides: Partial<Product> = {}): Product => ({
 const placeholderList = (n: number): Product[] =>
   Array.from({ length: n }, (_, i) => placeholder(i));
 
+/* Deterministic 24h rotation of 3 random hero products drawn from
+ * Effects / Instruments / Libraries / DAWs (never Software). */
+const HERO_ALLOWED = new Set(["effects", "instruments", "libraries", "daws"]);
+function pickDailyHeroProducts(all: Product[]): Product[] {
+  const pool = all.filter((p) => HERO_ALLOWED.has(p.category));
+  if (pool.length === 0) return [placeholder(0), placeholder(1), placeholder(2)];
+  // Seed = whole days since epoch (UTC). Rotates once every 24h.
+  let seed = Math.floor(Date.now() / 86_400_000) + 1;
+  const rand = () => {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    return seed / 0x100000000;
+  };
+  const arr = [...pool];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  const picks: Product[] = [];
+  for (let i = 0; i < 3; i++) picks.push(arr[i % arr.length] ?? placeholder(i));
+  return picks;
+}
+
+
 /* ============ ROUTE ============ */
 
 export const Route = createFileRoute("/")({
