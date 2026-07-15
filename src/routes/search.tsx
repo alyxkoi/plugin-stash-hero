@@ -21,12 +21,14 @@ function Search() {
     if (!qq) return allProducts;
     const starts: typeof allProducts = [];
     const contains: typeof allProducts = [];
+    const tagged: typeof allProducts = [];
     for (const p of allProducts) {
       const n = p.name.toLowerCase();
       if (n.startsWith(qq)) starts.push(p);
       else if (n.includes(qq) || p.maker.toLowerCase().includes(qq)) contains.push(p);
+      else if ((p.tags ?? []).some((t) => t.toLowerCase().includes(qq))) tagged.push(p);
     }
-    return [...starts, ...contains];
+    return [...starts, ...contains, ...tagged];
   }, [q, allProducts]);
 
   return (
