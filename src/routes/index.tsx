@@ -27,6 +27,7 @@ import { type Product } from "@/lib/mock-data";
 import { actions, useStore } from "@/lib/store";
 import { usePublishedProducts, useBestsellerIds } from "@/hooks/useProducts";
 import { useSalePricing } from "@/lib/sale-pricing";
+import { useActiveSale } from "@/hooks/useActiveSale";
 
 /* ============ PLACEHOLDER PRODUCTS ============
  * Used so every section keeps its layout, titles, and body copy even before
