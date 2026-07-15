@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Heart, ShoppingCart, Check } from "lucide-react";
 import type { Product } from "@/lib/mock-data";
-import { actions } from "@/lib/store";
+import { actions, useStore } from "@/lib/store";
 import { useSavedIds, useToggleSaved } from "@/hooks/useSaved";
 import { useSalePricing } from "@/lib/sale-pricing";
 
