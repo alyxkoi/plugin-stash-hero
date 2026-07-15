@@ -149,7 +149,7 @@ export const Route = createFileRoute("/api/public/payments/webhook")({
         try {
           const event = await verifyWebhook(request, env);
           if (event.type === "checkout.session.completed") {
-            await handleCheckoutCompleted(event.data.object);
+            await handleCheckoutCompleted(event.data.object, env);
           } else if (event.type === "payment_intent.payment_failed") {
             await handlePaymentFailed(event.data.object);
           } else {
