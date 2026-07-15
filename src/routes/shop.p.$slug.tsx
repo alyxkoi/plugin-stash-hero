@@ -145,7 +145,7 @@ function ProductDetail() {
             <div className="font-mono font-black" style={{ fontSize: "clamp(3rem, 5vw, 4.5rem)", lineHeight: 1 }}>{p.isFree ? "FREE" : `$${shown.toFixed(2)}`}</div>
           </div>
 
-          <button onClick={() => actions.addToCart(p)} className="btn-primary w-full !py-4 !text-base mb-3 inline-flex items-center justify-center gap-2"><ShoppingCart className="w-5 h-5" /> Add to cart</button>
+          <AddToCartButton product={p} />
           <div className="grid grid-cols-2 gap-3 mb-6">
             <button onClick={() => toggleSaved.mutate(p)} className="btn-ghost">
               <Heart className={`w-4 h-4 ${p.id && savedIds?.has(p.id) ? "fill-[var(--accent-red)] text-[var(--accent-red)]" : ""}`} />
