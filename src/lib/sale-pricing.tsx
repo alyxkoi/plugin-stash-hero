@@ -69,7 +69,7 @@ export function SalePricingProvider({ children }: { children: ReactNode }) {
     load();
     const i = setInterval(load, 15_000);
     const channel = supabase
-      .channel("sale-pricing-refresh")
+      .channel(`sale-pricing-refresh-${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "sale_events" }, load)
       .on("postgres_changes", { event: "*", schema: "public", table: "sale_event_products" }, load)
       .subscribe();
