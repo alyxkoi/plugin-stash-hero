@@ -38,13 +38,45 @@ export function Nav() {
     if (!q) return [];
     const starts: typeof allProducts = [];
     const contains: typeof allProducts = [];
+    const tagged: typeof allProducts = [];
+    const seen = new Set<string>();
     for (const p of allProducts) {
       const n = p.name.toLowerCase();
-      if (n.startsWith(q)) starts.push(p);
-      else if (n.includes(q) || p.maker.toLowerCase().includes(q)) contains.push(p);
+      const key = p.id ?? p.slug;
+      if (n.startsWith(q)) { starts.push(p); seen.add(key); }
+      else if (n.includes(q) || p.maker.toLowerCase().includes(q)) { contains.push(p); seen.add(key); }
+      else if ((p.tags ?? []).some((t) => t.toLowerCase().includes(q))) { tagged.push(p); seen.add(key); }
     }
-    return [...starts, ...contains].slice(0, 8);
+    return [...starts, ...contains, ...tagged].slice(0, 8);
   }, [searchQ, allProducts]);
+
+  // Rotating placeholder — mix real product names + category/type words
+  const placeholderPool = useMemo(() => {
+    const types = ["an EQ", "a reverb", "a compressor", "a synth", "a sampler", "some drums", "vocals", "a delay", "mastering"];
+    const names = allProducts.slice(0, 40).map((p) => p.name);
+    // shuffle-lite
+    const mix: string[] = [];
+    const n = Math.max(types.length, Math.min(names.length, 12));
+    for (let i = 0; i < n; i++) {
+      if (names[i]) mix.push(names[i]);
+      if (types[i]) mix.push(types[i]);
+    }
+    return mix.length ? mix : types;
+  }, [allProducts]);
+  const [phIdx, setPhIdx] = useState(0);
+  const [phVisible, setPhVisible] = useState(true);
+  useEffect(() => {
+    if (!searchOpen) return;
+    const id = window.setInterval(() => {
+      setPhVisible(false);
+      window.setTimeout(() => {
+        setPhIdx((i) => (i + 1) % placeholderPool.length);
+        setPhVisible(true);
+      }, 260);
+    }, 2000);
+    return () => window.clearInterval(id);
+  }, [searchOpen, placeholderPool.length]);
+  const placeholder = placeholderPool[phIdx] ?? "Serum";
 
   const closeSearch = () => { setSearchOpen(false); setSearchQ(""); };
   const goToProduct = (slug: string) => { closeSearch(); navigate({ to: "/shop/p/$slug", params: { slug } }); };
@@ -189,13 +221,24 @@ export function Nav() {
               className="flex items-center gap-3"
             >
               <Search className="w-5 h-5 text-white/55" />
-              <input
-                ref={searchRef}
-                value={searchQ}
-                onChange={(e) => setSearchQ(e.target.value)}
-                placeholder="What are you hunting?"
-                className="flex-1 bg-transparent outline-none text-lg md:text-2xl font-display tracking-wider placeholder:text-white/30"
-              />
+              <div className="relative flex-1">
+                {!searchQ && (
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0 flex items-center text-lg md:text-2xl font-display tracking-wider text-white/30 truncate transition-opacity duration-300"
+                    style={{ opacity: phVisible ? 1 : 0 }}
+                  >
+                    Try {placeholder}…
+                  </span>
+                )}
+                <input
+                  ref={searchRef}
+                  value={searchQ}
+                  onChange={(e) => setSearchQ(e.target.value)}
+                  aria-label="Search"
+                  className="w-full bg-transparent outline-none text-lg md:text-2xl font-display tracking-wider placeholder:text-white/30"
+                />
+              </div>
               <button type="button" onClick={closeSearch} aria-label="Close" className="p-2 rounded-full hover:bg-white/10">
                 <X className="w-5 h-5" />
               </button>
