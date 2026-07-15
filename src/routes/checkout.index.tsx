@@ -46,20 +46,27 @@ function CheckoutPage() {
       startedRef.current = false;
       return;
     }
-    const payload = {
-      items,
-      discountCode: discount?.code ?? null,
-      utmSource,
-      email: email ?? (user?.email ?? null),
-      returnUrl: `${window.location.origin}/checkout/return`,
-      environment: getStripeEnvironment(),
-    };
-    // One silent retry on transient network failures (aborted fetch, brief
-    // Worker cold-start). Anything else falls through to the visible error.
-    async function callOnce() {
-      return await createCheckoutSession({ data: payload });
-    }
     try {
+      let environment;
+      try {
+        environment = getStripeEnvironment();
+      } catch (envErr: any) {
+        setError(envErr?.message ?? "Payments are not configured for this build.");
+        setCreating(false);
+        startedRef.current = false;
+        return;
+      }
+      const payload = {
+        items,
+        discountCode: discount?.code ?? null,
+        utmSource,
+        email: email ?? (user?.email ?? null),
+        returnUrl: `${window.location.origin}/checkout/return`,
+        environment,
+      };
+      // One silent retry on transient network failures (aborted fetch, brief
+      // Worker cold-start). Anything else falls through to the visible error.
+      const callOnce = () => createCheckoutSession({ data: payload });
       let result;
       try {
         result = await callOnce();
@@ -70,6 +77,7 @@ function CheckoutPage() {
         await new Promise((r) => setTimeout(r, 600));
         result = await callOnce();
       }
+
       if ("error" in result) {
         setError(result.error);
         startedRef.current = false;
