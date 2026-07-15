@@ -169,7 +169,7 @@ export function Nav() {
       {searchOpen && (
         <motion.div
           className="fixed inset-0 z-[60]"
-          onClick={() => setSearchOpen(false)}
+          onClick={closeSearch}
           initial={reduce ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -184,25 +184,77 @@ export function Nav() {
             exit={{ opacity: 0, scale: 0.98, y: -8 }}
             transition={{ duration: reduce ? 0 : 0.22, ease: [0.19, 1, 0.22, 1] }}
           >
-            <div className="flex items-center gap-3">
+            <form
+              onSubmit={(e) => { e.preventDefault(); submitSearch(); }}
+              className="flex items-center gap-3"
+            >
               <Search className="w-5 h-5 text-white/55" />
               <input
                 ref={searchRef}
+                value={searchQ}
+                onChange={(e) => setSearchQ(e.target.value)}
                 placeholder="What are you hunting?"
                 className="flex-1 bg-transparent outline-none text-lg md:text-2xl font-display tracking-wider placeholder:text-white/30"
               />
-              <button onClick={() => setSearchOpen(false)} aria-label="Close" className="p-2 rounded-full hover:bg-white/10">
+              <button type="button" onClick={closeSearch} aria-label="Close" className="p-2 rounded-full hover:bg-white/10">
                 <X className="w-5 h-5" />
               </button>
-            </div>
-            <div className="mt-4 pt-4 border-t border-white/10">
-              <div className="label-mini mb-2">Suggestions</div>
-              <div className="flex flex-wrap gap-2">
-                {["Serum", "Pro-Q 4", "Ableton Live", "Omnisphere", "Free Plugins"].map(s => (
-                  <button key={s} onClick={() => setSearchOpen(false)} className="px-3 py-1.5 rounded-full border border-white/15 hover:border-[var(--accent-red)] hover:text-red text-sm transition">{s}</button>
-                ))}
+            </form>
+
+            {searchQ.trim() ? (
+              <div className="mt-4 pt-4 border-t border-white/10">
+                {suggestions.length === 0 ? (
+                  <div className="font-mono text-sm text-white/50 py-2">
+                    No plugins match "{searchQ}". Press Enter to search anyway.
+                  </div>
+                ) : (
+                  <ul className="flex flex-col -mx-2 max-h-[60vh] overflow-y-auto">
+                    {suggestions.map((p) => (
+                      <li key={p.id ?? p.slug}>
+                        <button
+                          type="button"
+                          onClick={() => goToProduct(p.slug)}
+                          className="w-full flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-white/8 transition text-left"
+                        >
+                          <div
+                            className="w-11 h-11 rounded-lg overflow-hidden shrink-0 border border-white/10"
+                            style={{ background: p.coverGradient }}
+                          >
+                            {p.coverUrl && (
+                              <img src={p.coverUrl} alt="" loading="lazy" className="w-full h-full object-cover" />
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="font-display text-base truncate">{p.name}</div>
+                            <div className="font-mono text-[10px] tracking-[0.15em] text-white/50 uppercase truncate">
+                              {p.maker} · {p.category}
+                            </div>
+                          </div>
+                          <div className="font-mono text-xs text-white/60 shrink-0">
+                            {p.isFree ? "FREE" : `$${Number(p.price).toFixed(2)}`}
+                          </div>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
-            </div>
+            ) : (
+              <div className="mt-4 pt-4 border-t border-white/10">
+                <div className="label-mini mb-2">Try</div>
+                <div className="flex flex-wrap gap-2">
+                  {["Serum", "Pro-Q 4", "Ableton Live", "Omnisphere", "Free Plugins"].map(s => (
+                    <button
+                      key={s}
+                      onClick={() => setSearchQ(s)}
+                      className="px-3 py-1.5 rounded-full border border-white/15 hover:border-[var(--accent-red)] hover:text-red text-sm transition"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </motion.div>
         </motion.div>
       )}
