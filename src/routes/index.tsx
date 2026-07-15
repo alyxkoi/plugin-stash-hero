@@ -210,14 +210,18 @@ function Hero() {
               className={`absolute ${c.pos} w-80 xl:w-96`}
               style={{ zIndex: c.z, transform: `rotate(${c.rot})` }}
             >
-              <div className="glass-card glass-card--heavy p-3 relative">
+              <Link
+                to="/shop/p/$slug"
+                params={{ slug: c.p.slug }}
+                className="group block glass-card glass-card--heavy p-3 relative transition-transform duration-300 hover:scale-[1.03]"
+              >
                 <div className="chromatic-edge" />
                 <div
-                  className="absolute inset-0 glow-breathe pointer-events-none rounded-3xl"
+                  className="absolute inset-0 pointer-events-none rounded-3xl opacity-30 group-hover:opacity-100 transition-opacity duration-500"
                   style={{
                     background:
-                      "radial-gradient(ellipse at center, rgba(255,0,60,0.6), transparent 70%)",
-                    filter: "blur(20px)",
+                      "radial-gradient(ellipse at center, rgba(255,0,60,0.85), transparent 70%)",
+                    filter: "blur(28px)",
                     zIndex: -1,
                   }}
                 />
@@ -236,10 +240,10 @@ function Hero() {
                     </div>
                   )}
                   <div className="absolute top-2 right-2 px-2 py-1 rounded-md font-mono text-[10px] font-bold bg-[var(--accent-red)] text-white">
-                    35% OFF
+                    EXTRA {salePct}% OFF
                   </div>
                 </div>
-              </div>
+              </Link>
             </div>
             );
           })}
