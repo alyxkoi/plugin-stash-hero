@@ -73,11 +73,15 @@ function CheckoutReturn() {
     triggerDownload(res.url, res.filename ?? `${name}.zip`);
   }
 
-  function triggerDownload(url: string, _filename: string) {
-    // Direct browser -> R2 via presigned URL. R2 returns Content-Disposition:
-    // attachment (signed), so the browser saves the file without navigating.
-    // No proxy/streaming through any edge function — no 2GB cap.
-    window.location.href = url;
+  function triggerDownload(url: string, filename: string) {
+    // Direct browser -> R2 via anchor navigation. No fetch/blob/createObjectURL —
+    // the browser streams straight from R2 to disk, so there is no 2GB memory cap.
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   }
 
   if (status === "invalid") {
