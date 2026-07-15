@@ -43,7 +43,7 @@ function mapRow(r: Row): Product {
 async function fetchPublished(): Promise<Product[]> {
   const { data, error } = await supabase
     .from("products")
-    .select("id,slug,name,maker,category,formats,daws,version,library_type,price,compare_at_price,description,cover_url,cover_gradient,is_free,is_featured,is_bestseller,updated_at,published_at")
+    .select("id,slug,name,maker,category,formats,daws,version,library_type,tags,price,compare_at_price,description,cover_url,cover_gradient,is_free,is_featured,is_bestseller,updated_at,published_at")
     .eq("status", "published")
     .order("published_at", { ascending: false });
   if (error) throw new Error(error.message);
