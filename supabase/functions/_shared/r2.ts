@@ -97,7 +97,7 @@ export async function presign(opts: {
     "X-Amz-SignedHeaders": signedHeaders,
   };
   const sortedParams = Object.entries(allParams).sort(([a],[b]) => a < b ? -1 : 1);
-  const canonicalQuery = sortedParams.map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join("&");
+  const canonicalQuery = sortedParams.map(([k,v]) => `${awsEncode(k)}=${awsEncode(v)}`).join("&");
 
   const canonicalRequest = [
     opts.method,
