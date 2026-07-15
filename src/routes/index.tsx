@@ -295,9 +295,33 @@ function OnRotation() {
   const { data: bestsellerIds = [] } = useBestsellerIds(12);
   const byId = new Map(allProducts.map((p) => [p.id!, p]));
   const bestsellers = bestsellerIds.map((id) => byId.get(id)).filter(Boolean) as Product[];
-  const featured = allProducts.filter((p) => p.isFeatured);
-  const rest = allProducts.filter((p) => !bestsellerIds.includes(p.id!) && !p.isFeatured);
-  const source = [...bestsellers, ...featured, ...rest].slice(0, 8);
+
+  // Manual fallback while there isn't enough real sales data (need ≥6 bestsellers).
+  // Matched by name substring so slight catalog naming variations still resolve.
+  const MANUAL_PICKS: RegExp[] = [
+    /\bserum\s*2\b/i,
+    /omnisphere/i,
+    /valhalla\s+bundle/i,
+    /fabfilter.*bundle|fabfilter\s+complete/i,
+    /\bnexus\s*5\b/i,
+    /soundtoys\s+bundle/i,
+  ];
+  const manual: Product[] = MANUAL_PICKS
+    .map((rx) => allProducts.find((p) => rx.test(p.name)))
+    .filter(Boolean) as Product[];
+
+  let source: Product[];
+  if (bestsellers.length >= 6) {
+    // Real sales data: use it, top up with featured/rest to fill 8 tiles.
+    const featured = allProducts.filter((p) => p.isFeatured && !bestsellerIds.includes(p.id!));
+    const rest = allProducts.filter((p) => !bestsellerIds.includes(p.id!) && !p.isFeatured);
+    source = [...bestsellers, ...featured, ...rest].slice(0, 8);
+  } else {
+    // Not enough sales yet: manual 6 first, then top up.
+    const manualIds = new Set(manual.map((p) => p.id));
+    const rest = allProducts.filter((p) => !manualIds.has(p.id));
+    source = [...manual, ...rest].slice(0, 8);
+  }
   const list = source.length > 0 ? source : placeholderList(8);
   const [progress, setProgress] = useState(0);
   const wrapRef = useRef<HTMLDivElement>(null);
