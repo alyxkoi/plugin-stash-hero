@@ -168,7 +168,7 @@ function Hero() {
             className="font-display leading-[0.92] tracking-tight mb-6"
             style={{ fontSize: "clamp(3rem, 8vw, 6.5rem)" }}
           >
-            <span className="block text-red">35% OFF.</span>
+            <span className="block text-red">EXTRA 25% OFF.</span>
             <span className="block">EVERYTHING.</span>
             <span className="block">
               UNTIL <span className="text-red">SEPT 22.</span>
