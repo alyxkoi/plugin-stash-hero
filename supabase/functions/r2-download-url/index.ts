@@ -4,7 +4,15 @@
 // includes the product.
 import { corsHeaders, adminClient, json } from "../_shared/auth.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { presign } from "../_shared/r2.ts";
+
+// Public custom domain mapped to the R2 bucket. Downloads go browser → R2
+// directly via this hostname — no presigning, no edge proxy, no size cap.
+const FILES_DOMAIN = "https://thepluginwarehousefiles.com";
+function customDownloadUrl(key: string) {
+  const clean = key.replace(/^\/+/, "");
+  return `${FILES_DOMAIN}/${clean.split("/").map(encodeURIComponent).join("/")}`;
+}
+
 
 async function resolveUser(req: Request) {
   const auth = req.headers.get("Authorization");
@@ -76,21 +84,11 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (fileErr || !fileRow?.zip_url) return json({ error: "Plugin file not found." }, 404);
 
-    // 24h expiry — a 35GB download at ~5MB/s takes ~2h; give buyers plenty
-    // of headroom to pause, resume, or complete over an average connection.
-    // Signed response-content-disposition forces the browser to save the file
-    // (cross-origin `<a download>` attributes are ignored) and preserves the
-    // original filename. Download streams directly from R2 — no edge proxy —
-    // so file size has no ceiling (2GB / worker limits do not apply).
-    const rawName = fileRow.zip_file_name ?? `plugin-${productId}.zip`;
-    const safeName = rawName.replace(/[\r\n"\\]/g, "_");
-    const url = await presign({
-      method: "GET",
-      key: fileRow.zip_url,
-      expiresIn: 24 * 3600,
-      responseContentDisposition: `attachment; filename="${safeName}"; filename*=UTF-8''${encodeURIComponent(rawName)}`,
-      responseContentType: "application/zip",
-    });
+    // Build a direct custom-domain URL from the stored object key. The bucket
+    // is served publicly at thepluginwarehousefiles.com, so the browser
+    // downloads straight from R2 with no size ceiling. Access is gated by
+    // the ownership check above — the URL is not exposed to non-buyers.
+    const url = customDownloadUrl(fileRow.zip_url);
 
     if (downloadUserId) {
       await admin.from("library_downloads").insert({ user_id: downloadUserId, product_id: productId }).select().maybeSingle();
@@ -103,3 +101,4 @@ Deno.serve(async (req) => {
     return json({ error: (e as Error).message ?? "Internal error" }, 500);
   }
 });
+
