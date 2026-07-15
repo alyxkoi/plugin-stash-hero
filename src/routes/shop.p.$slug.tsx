@@ -1,12 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { AlertTriangle, Heart, Share2, ShoppingCart } from "lucide-react";
+import { AlertTriangle, Check, Heart, Share2, ShoppingCart } from "lucide-react";
 
 import { useQuery } from "@tanstack/react-query";
 import type { Category, Product } from "@/lib/mock-data";
 import { SALE } from "@/lib/mock-data";
 import { GlassCard } from "@/components/GlassCard";
 import { ProductCard } from "@/components/ProductCard";
-import { actions } from "@/lib/store";
+import { actions, useStore } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
 import { useSavedIds, useToggleSaved } from "@/hooks/useSaved";
 import { useSalePricing } from "@/lib/sale-pricing";
@@ -145,7 +145,7 @@ function ProductDetail() {
             <div className="font-mono font-black" style={{ fontSize: "clamp(3rem, 5vw, 4.5rem)", lineHeight: 1 }}>{p.isFree ? "FREE" : `$${shown.toFixed(2)}`}</div>
           </div>
 
-          <button onClick={() => actions.addToCart(p)} className="btn-primary w-full !py-4 !text-base mb-3 inline-flex items-center justify-center gap-2"><ShoppingCart className="w-5 h-5" /> Add to cart</button>
+          <AddToCartButton product={p} />
           <div className="grid grid-cols-2 gap-3 mb-6">
             <button onClick={() => toggleSaved.mutate(p)} className="btn-ghost">
               <Heart className={`w-4 h-4 ${p.id && savedIds?.has(p.id) ? "fill-[var(--accent-red)] text-[var(--accent-red)]" : ""}`} />
@@ -210,9 +210,23 @@ function ProductDetail() {
   );
 }
 
+function AddToCartButton({ product }: { product: Product }) {
+  const inCart = useStore((s) => s.cart.some((i) => i.product.slug === product.slug));
+  return (
+    <button
+      onClick={() => actions.addToCart(product)}
+      className="btn-primary w-full !py-4 !text-base mb-3 inline-flex items-center justify-center gap-2"
+      aria-label={inCart ? "Already in cart" : "Add to cart"}
+    >
+      {inCart ? <><Check className="w-5 h-5" /> In cart</> : <><ShoppingCart className="w-5 h-5" /> Add to cart</>}
+    </button>
+  );
+}
+
 function Pill({ children }: { children: React.ReactNode }) {
   return <span className="font-mono text-[10px] tracking-wider px-3 py-1 rounded-full border border-white/15 text-white/65">{children}</span>;
 }
+
 
 function Meta({ label, value }: { label: string; value: string }) {
   return (

@@ -66,14 +66,18 @@ export const useStore = <T,>(selector: (s: State) => T): T => {
 
 export const actions = {
   addToCart(product: Product) {
+    // Digital goods: one copy per product, always qty 1. Adding a product
+    // that's already in the cart is a no-op (we still open the drawer so
+    // the buyer can see it's already there).
     const existing = state.cart.find((i) => i.product.slug === product.slug);
     if (existing) {
-      state = { ...state, cart: state.cart.map((i) => (i.product.slug === product.slug ? { ...i, qty: i.qty + 1 } : i)), cartOpen: true };
+      state = { ...state, cartOpen: true };
     } else {
       state = { ...state, cart: [...state.cart, { product, qty: 1 }], cartOpen: true };
     }
     emit();
   },
+
   removeFromCart(slug: string) {
     state = { ...state, cart: state.cart.filter((i) => i.product.slug !== slug) };
     emit();

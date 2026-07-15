@@ -310,18 +310,20 @@ function OnRotation() {
     .map((rx) => allProducts.find((p) => rx.test(p.name)))
     .filter(Boolean) as Product[];
 
+  // Manual curation stays in effect until we have enough real sales volume
+  // that "bestsellers" is meaningful (using a high floor so a handful of
+  // early test orders don't flip the section prematurely).
   let source: Product[];
-  if (bestsellers.length >= 6) {
-    // Real sales data: use it, top up with featured/rest to fill 8 tiles.
+  if (bestsellers.length >= 20) {
     const featured = allProducts.filter((p) => p.isFeatured && !bestsellerIds.includes(p.id!));
     const rest = allProducts.filter((p) => !bestsellerIds.includes(p.id!) && !p.isFeatured);
     source = [...bestsellers, ...featured, ...rest].slice(0, 8);
   } else {
-    // Not enough sales yet: manual 6 first, then top up.
     const manualIds = new Set(manual.map((p) => p.id));
     const rest = allProducts.filter((p) => !manualIds.has(p.id));
     source = [...manual, ...rest].slice(0, 8);
   }
+
   const list = source.length > 0 ? source : placeholderList(8);
   const [progress, setProgress] = useState(0);
   const wrapRef = useRef<HTMLDivElement>(null);
