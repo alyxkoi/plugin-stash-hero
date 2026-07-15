@@ -447,21 +447,16 @@ function RotationCard({ product }: { product: Product }) {
         {product.isFree ? "FREE" : `$${displayPrice.toFixed(2)}`}
       </div>
 
-      {/* Hover overlay reveals brand/tags/savings + favorite + view details */}
+      {/* Hover overlay reveals name + favorite + price/cart, compact */}
       <div className="rotation-overlay z-10" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-start justify-between gap-2 mb-2">
-          <div className="min-w-0">
-            <div className="font-mono text-[9px] tracking-[0.15em] text-[var(--accent-red-glow)] mb-1 truncate">
-              // {product.maker.toUpperCase()}
-            </div>
-            <h3 className="font-display text-lg leading-tight truncate">{product.name}</h3>
-          </div>
+        <div className="flex items-start justify-between gap-2 mb-1.5">
+          <h3 className="font-display text-lg leading-tight truncate min-w-0">{product.name}</h3>
           <button
             onClick={(e) => {
               e.stopPropagation();
               actions.toggleWishlist(product.slug);
             }}
-            className="p-1.5 rounded-full hover:bg-white/10 transition shrink-0"
+            className="p-1 rounded-full hover:bg-white/10 transition shrink-0 -mt-0.5"
             aria-label={wished ? "Remove from saved" : "Save"}
           >
             <Heart
@@ -470,16 +465,6 @@ function RotationCard({ product }: { product: Product }) {
           </button>
         </div>
 
-        <div className="flex flex-wrap gap-1 mb-2">
-          {product.formats.slice(0, 3).map((f) => (
-            <span
-              key={f}
-              className="font-mono text-[9px] tracking-wider px-1.5 py-0.5 rounded-full border border-white/15 text-white/70"
-            >
-              {f}
-            </span>
-          ))}
-        </div>
 
         <div className="flex items-end justify-between gap-2">
           <div className="min-w-0">
