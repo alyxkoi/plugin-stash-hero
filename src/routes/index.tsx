@@ -794,7 +794,11 @@ function BrowseTheVault() {
   const reduce = useReducedMotion();
   const active = VAULT_TABS.find((t) => t.slug === activeSlug) ?? VAULT_TABS[3];
   const { data: allProducts = [] } = usePublishedProducts();
-  const previews = allProducts.filter((p) => p.category === active.slug).slice(0, 3);
+  const previews = (active.slug === "freebies"
+    ? allProducts.filter((p) => p.isFree || p.price === 0)
+    : allProducts.filter((p) => p.category === active.slug)
+  ).slice(0, 3);
+
 
   const onTabKey = (e: React.KeyboardEvent, i: number) => {
     if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
