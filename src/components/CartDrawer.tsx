@@ -91,12 +91,22 @@ export function CartDrawer() {
     } finally { setApplying(false); }
   }
 
+  // Ensure the CHECKOUT button never stays stuck in "OPENING CHECKOUT…" if
+  // the user closes/reopens the drawer or navigation is interrupted.
+  useEffect(() => {
+    if (!open && goingToCheckout) {
+      const t = setTimeout(() => setGoingToCheckout(false), 800);
+      return () => clearTimeout(t);
+    }
+  }, [open, goingToCheckout]);
+
   function goCheckout() {
     if (goingToCheckout) return;
     setGoingToCheckout(true);
     actions.closeCart();
     navigate({ to: "/checkout" });
   }
+
 
   return (
     <AnimatePresence>
