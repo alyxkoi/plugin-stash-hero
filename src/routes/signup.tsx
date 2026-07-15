@@ -75,6 +75,7 @@ function SignupPage() {
         <Field label="EMAIL" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
         <PasswordField label="PASSWORD" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
         <PasswordField label="CONFIRM PASSWORD" required minLength={6} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+        <div className="text-[11px] font-mono text-white/50 -mt-2 mb-3">{PASSWORD_RULE_MESSAGE}</div>
         <label className="flex items-center gap-2 text-sm text-white/70 mb-5">
           <input type="checkbox" checked={marketing} onChange={(e) => setMarketing(e.target.checked)} className="accent-[var(--accent-red)]" /> Email me new drops, sales, and producer-only deals.
         </label>
