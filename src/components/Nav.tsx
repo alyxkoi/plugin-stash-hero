@@ -221,13 +221,24 @@ export function Nav() {
               className="flex items-center gap-3"
             >
               <Search className="w-5 h-5 text-white/55" />
-              <input
-                ref={searchRef}
-                value={searchQ}
-                onChange={(e) => setSearchQ(e.target.value)}
-                placeholder="What are you hunting?"
-                className="flex-1 bg-transparent outline-none text-lg md:text-2xl font-display tracking-wider placeholder:text-white/30"
-              />
+              <div className="relative flex-1">
+                {!searchQ && (
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0 flex items-center text-lg md:text-2xl font-display tracking-wider text-white/30 truncate transition-opacity duration-300"
+                    style={{ opacity: phVisible ? 1 : 0 }}
+                  >
+                    Try {placeholder}…
+                  </span>
+                )}
+                <input
+                  ref={searchRef}
+                  value={searchQ}
+                  onChange={(e) => setSearchQ(e.target.value)}
+                  aria-label="Search"
+                  className="w-full bg-transparent outline-none text-lg md:text-2xl font-display tracking-wider placeholder:text-white/30"
+                />
+              </div>
               <button type="button" onClick={closeSearch} aria-label="Close" className="p-2 rounded-full hover:bg-white/10">
                 <X className="w-5 h-5" />
               </button>
