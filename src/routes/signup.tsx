@@ -3,6 +3,7 @@ import { useState } from "react";
 import { AuthLayout, Field, PasswordField } from "@/components/AuthLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
+import { validatePassword, PASSWORD_RULE_MESSAGE } from "@/lib/password";
 
 export const Route = createFileRoute("/signup")({
   head: () => ({ meta: [{ title: "Create Account — Plugin Warehouse" }] }),
@@ -21,7 +22,8 @@ function SignupPage() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (password.length < 6) { setError("Password must be at least 6 characters."); return; }
+    const pwErr = validatePassword(password);
+    if (pwErr) { setError(pwErr); return; }
     if (password !== confirmPassword) { setError("Passwords don't match."); return; }
     setBusy(true);
     const { data, error } = await supabase.auth.signUp({
