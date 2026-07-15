@@ -1,9 +1,10 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { Search, ShoppingCart, User, Heart, ChevronDown, Menu, X, Piano, Waves, BookOpen, AudioLines, AppWindow, Gift } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useStore, actions } from "@/lib/store";
 import { categories } from "@/lib/mock-data";
+import { usePublishedProducts } from "@/hooks/useProducts";
 import logo from "@/assets/logo.png";
 
 const catIcons: Record<string, typeof Piano> = {
