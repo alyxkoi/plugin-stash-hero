@@ -46,17 +46,30 @@ function CheckoutPage() {
       startedRef.current = false;
       return;
     }
+    const payload = {
+      items,
+      discountCode: discount?.code ?? null,
+      utmSource,
+      email: email ?? (user?.email ?? null),
+      returnUrl: `${window.location.origin}/checkout/return`,
+      environment: getStripeEnvironment(),
+    };
+    // One silent retry on transient network failures (aborted fetch, brief
+    // Worker cold-start). Anything else falls through to the visible error.
+    async function callOnce() {
+      return await createCheckoutSession({ data: payload });
+    }
     try {
-      const result = await createCheckoutSession({
-        data: {
-          items,
-          discountCode: discount?.code ?? null,
-          utmSource,
-          email: email ?? (user?.email ?? null),
-          returnUrl: `${window.location.origin}/checkout/return`,
-          environment: getStripeEnvironment(),
-        },
-      });
+      let result;
+      try {
+        result = await callOnce();
+      } catch (netErr: any) {
+        const msg = String(netErr?.message ?? "");
+        const looksNetwork = msg.includes("Failed to fetch") || msg.includes("NetworkError") || msg.includes("Load failed") || netErr?.name === "TypeError";
+        if (!looksNetwork) throw netErr;
+        await new Promise((r) => setTimeout(r, 600));
+        result = await callOnce();
+      }
       if ("error" in result) {
         setError(result.error);
         startedRef.current = false;
@@ -68,12 +81,17 @@ function CheckoutPage() {
       }
 
     } catch (e: any) {
-      setError(e?.message ?? "Failed to start checkout.");
+      const raw = String(e?.message ?? "");
+      const friendly = raw.includes("Failed to fetch") || raw.includes("NetworkError") || raw.includes("Load failed")
+        ? "Couldn't reach the checkout service. This is usually a network hiccup or a browser extension (ad-blocker, privacy shield) blocking the request. Try disabling extensions or a different browser, then retry."
+        : raw || "Failed to start checkout.";
+      setError(friendly);
       startedRef.current = false;
     } finally {
       setCreating(false);
     }
   }
+
 
   // Auto-start for logged-in users
   useEffect(() => {
