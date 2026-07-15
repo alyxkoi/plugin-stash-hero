@@ -58,14 +58,18 @@ export const Route = createFileRoute("/sale/$slug")({
 
 function SaleEvent() {
   const { sale } = Route.useLoaderData();
-  const endsAt = new Date(sale.end_at).getTime();
-  const [remaining, setRemaining] = useState(endsAt - Date.now());
+  // Perpetual countdown: starts at 2d 22h, counts down to 1d, then resets.
+  const START_MS = (2 * 24 + 22) * 3600_000; // 70h
+  const FLOOR_MS = 24 * 3600_000; // 24h
+  const CYCLE_MS = START_MS - FLOOR_MS; // 46h
+  const computeRemaining = () => START_MS - (Date.now() % CYCLE_MS);
+  const [remaining, setRemaining] = useState(computeRemaining);
   useEffect(() => {
-    const i = setInterval(() => setRemaining(endsAt - Date.now()), 1000);
+    const i = setInterval(() => setRemaining(computeRemaining()), 1000);
     return () => clearInterval(i);
-  }, [endsAt]);
+  }, []);
 
-  const expired = remaining <= 0;
+  const expired = false;
   const d = Math.max(0, Math.floor(remaining / 86400000));
   const h = Math.max(0, Math.floor((remaining % 86400000) / 3600000));
   const m = Math.max(0, Math.floor((remaining % 3600000) / 60000));
