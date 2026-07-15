@@ -1,7 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import logo from "@/assets/logo-dashboard.webp";
 import { supabase } from "@/integrations/supabase/client";
+import { sendPasswordResetEmail } from "@/lib/auth-email.functions";
 
 export const Route = createFileRoute("/dashboard/login")({
   head: () => ({ meta: [{ title: "Dashboard access — Plugin Warehouse" }] }),
@@ -56,15 +58,18 @@ function DashboardLogin() {
   };
 
 
+  const sendReset = useServerFn(sendPasswordResetEmail);
   const onRecover = async () => {
     setError(null);
     if (!recoverEmail) { setError("Enter a recovery email."); return; }
-    const { error } = await supabase.auth.resetPasswordForEmail(recoverEmail.trim(), {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    if (error) setError(error.message);
-    else alert("If that email matches an admin account, a reset link is on its way.");
+    try {
+      await sendReset({ data: { email: recoverEmail.trim(), redirectTo: `${window.location.origin}/reset-password` } });
+      alert("If that email matches an admin account, a reset link is on its way.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not send reset email.");
+    }
   };
+
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12 relative" style={{ background: "var(--bg-base)" }}>

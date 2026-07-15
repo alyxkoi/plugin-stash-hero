@@ -2,6 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Eye, EyeOff, HelpCircle, Mail, Ticket, ExternalLink } from "lucide-react";
 import { mockUser, library } from "@/lib/account-data";
+import { supabase } from "@/integrations/supabase/client";
+import { validatePassword, PASSWORD_RULE_MESSAGE } from "@/lib/password";
+import { useAuth } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/account/settings")({
   head: () => ({ meta: [{ title: "Settings — Plugin Warehouse" }] }),
@@ -93,14 +96,45 @@ function ProfileSection() {
 }
 
 function PasswordSection() {
+  const { user } = useAuth();
   const [editing, setEditing] = useState(false);
   const [show, setShow] = useState(false);
+  const [current, setCurrent] = useState("");
   const [pw, setPw] = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [busy, setBusy] = useState(false);
   const strength = pw.length < 6 ? 0 : pw.length < 10 ? 1 : 2;
   const strLabel = ["Weak", "Decent", "Strong"][strength];
   const strColor = ["bg-[var(--accent-red-glow)]", "bg-amber-400", "bg-emerald-400"][strength];
 
-  if (mockUser.oauth === "google") {
+  const isGoogle = user?.app_metadata?.provider === "google";
+
+  const reset = () => {
+    setEditing(false); setCurrent(""); setPw(""); setConfirmPw("");
+    setError(null); setSuccess(false);
+  };
+
+  const submit = async () => {
+    setError(null); setSuccess(false);
+    if (!user?.email) { setError("You must be signed in."); return; }
+    const v = validatePassword(pw);
+    if (v) { setError(v); return; }
+    if (pw !== confirmPw) { setError("Passwords don't match."); return; }
+    setBusy(true);
+    // Verify current password by re-authenticating.
+    const { error: signInErr } = await supabase.auth.signInWithPassword({ email: user.email, password: current });
+    if (signInErr) { setBusy(false); setError("Current password is incorrect."); return; }
+    const { error: updErr } = await supabase.auth.updateUser({ password: pw });
+    setBusy(false);
+    if (updErr) { setError(updErr.message); return; }
+    setSuccess(true);
+    setCurrent(""); setPw(""); setConfirmPw("");
+    setTimeout(() => { setEditing(false); setSuccess(false); }, 1500);
+  };
+
+  if (isGoogle) {
     return (
       <Panel id="password" title="PASSWORD">
         <div className="flex items-center gap-3 text-white/75">
@@ -115,16 +149,15 @@ function PasswordSection() {
       {!editing ? (
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           <button onClick={() => setEditing(true)} className="btn-ghost !text-xs">CHANGE PASSWORD →</button>
-          <div className="label-mini">Last changed {mockUser.passwordLastChanged}</div>
         </div>
       ) : (
         <div className="space-y-4 max-w-md">
-          <Field label="CURRENT PASSWORD" type="password" />
+          <Field label="CURRENT PASSWORD" type="password" value={current} onChange={(e) => setCurrent(e.target.value)} />
           <label className="block">
             <div className="font-mono text-[10px] tracking-[0.18em] text-white/55 mb-2">NEW PASSWORD</div>
             <div className="relative">
               <input type={show ? "text" : "password"} value={pw} onChange={(e) => setPw(e.target.value)} className="input-glass pr-12" />
-              <button onClick={() => setShow(s => !s)} aria-label={show ? "Hide password" : "Show password"} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/55 hover:text-white">
+              <button type="button" onClick={() => setShow(s => !s)} aria-label={show ? "Hide password" : "Show password"} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/55 hover:text-white">
                 {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
@@ -135,10 +168,13 @@ function PasswordSection() {
               </div>
             )}
           </label>
-          <Field label="CONFIRM NEW PASSWORD" type="password" />
+          <Field label="CONFIRM NEW PASSWORD" type="password" value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} />
+          <div className="font-mono text-[11px] text-white/55">{PASSWORD_RULE_MESSAGE}</div>
+          {error && <div className="text-xs text-[var(--accent-red-glow)] font-mono">{error}</div>}
+          {success && <div className="text-xs text-emerald-400 font-mono">Password updated.</div>}
           <div className="flex justify-end gap-3 pt-2">
-            <button onClick={() => setEditing(false)} className="btn-ghost !text-xs">CANCEL</button>
-            <button className="btn-primary !text-xs">UPDATE PASSWORD</button>
+            <button type="button" onClick={reset} className="btn-ghost !text-xs">CANCEL</button>
+            <button type="button" onClick={submit} disabled={busy} className="btn-primary !text-xs disabled:opacity-60">{busy ? "UPDATING…" : "UPDATE PASSWORD"}</button>
           </div>
         </div>
       )}
