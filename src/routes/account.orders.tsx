@@ -88,13 +88,17 @@ function OrderCard({ order }: { order: Order }) {
   const statusColor = order.status === "completed" ? "bg-[var(--accent-red)]/85"
     : order.status === "refunded" ? "bg-white/15" : "bg-amber-500/70";
 
-  async function download(productId: string | null, _name: string) {
+  async function download(productId: string | null, name: string) {
     if (!productId) { toast.error("Missing product id"); return; }
     const { data, error } = await supabase.functions.invoke("r2-download-url", { body: { productId } });
     if (error || !data?.url) { toast.error(data?.error ?? error?.message ?? "Download failed"); return; }
-    // Direct browser -> R2 via presigned URL. Signed Content-Disposition:
-    // attachment forces save. No fetch/blob — no in-memory buffering, no 2GB cap.
-    window.location.href = data.url;
+    // Direct browser -> R2 via anchor navigation. No fetch/blob — no 2GB memory cap.
+    const a = document.createElement("a");
+    a.href = data.url;
+    a.download = data.filename ?? `${name}.zip`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   }
 
   return (
