@@ -176,7 +176,7 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
         .filter((x): x is { product: NonNullable<ReturnType<typeof byId.get>>; qty: number; unitPrice: number } => !!x);
 
       const subtotalCents = items.reduce((n, i) => n + Math.round(i.unitPrice * 100) * i.qty, 0);
-      if (subtotalCents <= 0) return { error: "Cart total must be greater than zero." };
+      if (subtotalCents < 0) return { error: "Cart total is invalid." };
 
       // Promo code (applied on top of any sale-event pricing already baked into unitPrice)
       let discountCents = 0;
