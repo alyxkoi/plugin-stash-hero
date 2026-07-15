@@ -86,10 +86,12 @@ export function ProductCard({ product, variant = "default", rank }: { product: P
             <button
               onClick={() => actions.addToCart(product)}
               className="btn-primary !py-2 !px-3"
-              aria-label="Add to cart"
+              aria-label={inCart ? "Already in cart" : "Add to cart"}
+              title={inCart ? "Already in your cart" : "Add to cart"}
             >
-              <ShoppingCart className="w-4 h-4" strokeWidth={2.2} />
+              {inCart ? <Check className="w-4 h-4" strokeWidth={2.2} /> : <ShoppingCart className="w-4 h-4" strokeWidth={2.2} />}
             </button>
+
           </div>
         </div>
       </div>
