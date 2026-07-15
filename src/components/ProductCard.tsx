@@ -9,6 +9,8 @@ export function ProductCard({ product, variant = "default", rank }: { product: P
   const { data: savedIds } = useSavedIds();
   const toggleSaved = useToggleSaved();
   const saved = !!(product.id && savedIds?.has(product.id));
+  const inCart = useStore((s) => s.cart.some((i) => i.product.slug === product.slug));
+
 
   const { finalPrice, pct, sale } = useSalePricing(product);
   const hasCompareAt = !!(product.compareAtPrice && product.compareAtPrice > product.price);
