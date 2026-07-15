@@ -4,7 +4,15 @@
 // includes the product.
 import { corsHeaders, adminClient, json } from "../_shared/auth.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { presign } from "../_shared/r2.ts";
+
+// Public custom domain mapped to the R2 bucket. Downloads go browser → R2
+// directly via this hostname — no presigning, no edge proxy, no size cap.
+const FILES_DOMAIN = "https://thepluginwarehousefiles.com";
+function customDownloadUrl(key: string) {
+  const clean = key.replace(/^\/+/, "");
+  return `${FILES_DOMAIN}/${clean.split("/").map(encodeURIComponent).join("/")}`;
+}
+
 
 async function resolveUser(req: Request) {
   const auth = req.headers.get("Authorization");
