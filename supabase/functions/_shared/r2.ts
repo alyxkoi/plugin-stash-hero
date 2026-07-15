@@ -78,6 +78,8 @@ export async function presign(opts: {
 
   const allParams: Record<string, string> = {
     ...(opts.extraQuery ?? {}),
+    ...(opts.responseContentDisposition ? { "response-content-disposition": opts.responseContentDisposition } : {}),
+    ...(opts.responseContentType ? { "response-content-type": opts.responseContentType } : {}),
     "X-Amz-Algorithm":  "AWS4-HMAC-SHA256",
     "X-Amz-Credential": credential,
     "X-Amz-Date":       amz,
