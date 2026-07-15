@@ -36,6 +36,7 @@ function mapRow(r: Row): Product {
     isFree: !!r.is_free,
     isFeatured: !!r.is_featured,
     isBestseller: !!r.is_bestseller,
+    tags: r.tags ?? [],
   };
 }
 
