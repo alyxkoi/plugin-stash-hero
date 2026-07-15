@@ -244,7 +244,7 @@ export function Nav() {
               </button>
             </form>
 
-            {searchQ.trim() ? (
+            {searchQ.trim() && (
               <div className="mt-4 pt-4 border-t border-white/10">
                 {suggestions.length === 0 ? (
                   <div className="font-mono text-sm text-white/50 py-2">
@@ -281,21 +281,6 @@ export function Nav() {
                     ))}
                   </ul>
                 )}
-              </div>
-            ) : (
-              <div className="mt-4 pt-4 border-t border-white/10">
-                <div className="label-mini mb-2">Try</div>
-                <div className="flex flex-wrap gap-2">
-                  {["Serum", "Pro-Q 4", "Ableton Live", "Omnisphere", "Free Plugins"].map(s => (
-                    <button
-                      key={s}
-                      onClick={() => setSearchQ(s)}
-                      className="px-3 py-1.5 rounded-full border border-white/15 hover:border-[var(--accent-red)] hover:text-red text-sm transition"
-                    >
-                      {s}
-                    </button>
-                  ))}
-                </div>
               </div>
             )}
           </motion.div>
