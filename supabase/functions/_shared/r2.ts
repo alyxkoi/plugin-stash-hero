@@ -212,7 +212,7 @@ export async function signRequest(opts: {
   const signedHeaders = signedHeadersList.join(";");
 
   const queryEntries = Object.entries(opts.query ?? {}).sort(([a],[b]) => a < b ? -1 : 1);
-  const canonicalQuery = queryEntries.map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join("&");
+  const canonicalQuery = queryEntries.map(([k,v]) => `${awsEncode(k)}=${awsEncode(v)}`).join("&");
 
   const canonicalRequest = [
     opts.method,
@@ -302,7 +302,7 @@ async function signListing(prefix: string) {
     ["list-type", "2"],
     ["prefix", prefix],
   ].sort(([a],[b]) => a < b ? -1 : 1);
-  const canonicalQuery = params.map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join("&");
+  const canonicalQuery = params.map(([k,v]) => `${awsEncode(k)}=${awsEncode(v)}`).join("&");
   const canonicalRequest = ["GET", canonicalUri, canonicalQuery, canonicalHeaders, signedHeaders, payloadHash].join("\n");
   const credentialScope = `${dateStamp}/${REGION}/${SERVICE}/aws4_request`;
   const stringToSign = ["AWS4-HMAC-SHA256", amz, credentialScope, await sha256Hex(canonicalRequest)].join("\n");
