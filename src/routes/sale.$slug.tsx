@@ -71,24 +71,74 @@ function SaleEvent() {
   const m = Math.max(0, Math.floor((remaining % 3600000) / 60000));
   const s = Math.max(0, Math.floor((remaining % 60000) / 1000));
   const urgent = remaining < 86400000;
-  const color = sale.theme_color || "#ff003c";
-  const headline = sale.headline || `${sale.discount_pct}% OFF. ${sale.name.toUpperCase()}.`;
-  const sub = sale.subheadline || "Limited time. Shop the sale.";
-  const eyebrow = `${sale.name.toUpperCase()} — ${expired ? "ENDED" : "ACTIVE"}`;
+  const accent = "#FF2D6E";
+  const pct = sale.discount_pct ?? 35;
+  const headline = `GAME ON. ${pct}% OFF EVERYTHING.`;
+  const sub = "Pro plugins at knockout prices. Every team. Every sound. Until the final whistle.";
+  const eyebrow = `WORLD CUP SALE — ${expired ? "ENDED" : "ACTIVE"}`;
 
   const spotlight = products.filter((p) => p.isFeatured).slice(0, 4);
 
   return (
     <div>
-      <section className="relative px-4 md:px-12 py-16 md:py-24 overflow-hidden">
+      <section className="relative px-4 md:px-12 py-16 md:py-24 overflow-hidden" style={{ background: "#13002C" }}>
+        {/* Stadium floodlight glow */}
         <div
           className="absolute inset-0 pointer-events-none"
-          style={{ background: `radial-gradient(ellipse 70% 80% at 30% 20%, ${color}44, transparent 60%), radial-gradient(ellipse 60% 70% at 80% 80%, #2B28FF33, transparent 60%)` }}
+          style={{
+            background: `radial-gradient(ellipse 60% 70% at 20% 10%, ${accent}55, transparent 60%), radial-gradient(ellipse 50% 60% at 90% 90%, #2B28FF44, transparent 65%), radial-gradient(ellipse 80% 40% at 50% 0%, #ffffff18, transparent 70%)`,
+          }}
         />
+        {/* Faint pitch lines */}
+        <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-[0.09]" preserveAspectRatio="none" viewBox="0 0 100 100">
+          <line x1="50" y1="0" x2="50" y2="100" stroke="white" strokeWidth="0.15" />
+          <circle cx="50" cy="50" r="12" stroke="white" strokeWidth="0.15" fill="none" />
+          <rect x="0" y="30" width="18" height="40" stroke="white" strokeWidth="0.15" fill="none" />
+          <rect x="82" y="30" width="18" height="40" stroke="white" strokeWidth="0.15" fill="none" />
+        </svg>
+        {/* Diagonal speed streaks */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <div
+              key={i}
+              className="absolute h-[2px] opacity-40"
+              style={{
+                top: `${10 + i * 15}%`,
+                left: "-10%",
+                width: "120%",
+                background: `linear-gradient(90deg, transparent, ${i % 2 === 0 ? accent : "#2B28FF"}${i % 2 === 0 ? "aa" : "66"}, transparent)`,
+                transform: `rotate(-8deg)`,
+                filter: "blur(1px)",
+              }}
+            />
+          ))}
+        </div>
+        {/* Flag color accent bar */}
+        <div className="absolute top-0 left-0 right-0 h-[3px] pointer-events-none" style={{ background: `linear-gradient(90deg, ${accent}, #FFD84A, #00C46A, #2B28FF, ${accent})`, opacity: 0.75 }} />
+        {/* Equalizer bars — bottom right, sound + energy nod */}
+        <div className="absolute bottom-6 right-6 hidden md:flex items-end gap-1 pointer-events-none opacity-70">
+          {[14, 28, 42, 22, 36, 50, 30, 18, 44, 26, 38, 20].map((barH, i) => (
+            <div
+              key={i}
+              className="w-[3px] rounded-full animate-pulse"
+              style={{
+                height: `${barH}px`,
+                background: `linear-gradient(180deg, ${accent}, #2B28FF)`,
+                animationDelay: `${i * 0.12}s`,
+                animationDuration: `${1 + (i % 3) * 0.3}s`,
+                boxShadow: `0 0 6px ${accent}88`,
+              }}
+            />
+          ))}
+        </div>
+
         <div className="relative grid lg:grid-cols-2 gap-12 items-center min-h-[70vh]">
           <div>
-            <div className="font-mono text-xs tracking-[0.2em] mb-6" style={{ color }}>{eyebrow}</div>
-            <h1 className="font-black chrome-text leading-[0.92] mb-6" style={{ fontSize: "clamp(3rem, 7vw, 6rem)" }}>{headline}</h1>
+            <div className="font-mono text-xs tracking-[0.2em] mb-6 flex items-center gap-2" style={{ color: accent }}>
+              <span className="inline-block w-2 h-2 rounded-full animate-pulse" style={{ background: accent, boxShadow: `0 0 10px ${accent}` }} />
+              {eyebrow}
+            </div>
+            <h1 className="font-black chrome-text leading-[0.92] mb-6" style={{ fontSize: "clamp(3rem, 7vw, 6rem)", textShadow: `0 0 40px ${accent}55` }}>{headline}</h1>
             <p className="text-white/70 text-lg mb-6 max-w-xl">{sub}</p>
             {expired ? (
               <div className="inline-block font-mono font-bold text-xl mb-8 px-5 py-3 rounded-2xl border border-white/15 bg-white/5 text-white/60">
@@ -97,9 +147,9 @@ function SaleEvent() {
             ) : (
               <div
                 className={`inline-block font-mono font-bold text-xl md:text-2xl mb-8 px-5 py-3 rounded-2xl border ${urgent ? "" : "border-white/15 bg-white/5"}`}
-                style={urgent ? { borderColor: color, background: `${color}26`, color } : undefined}
+                style={urgent ? { borderColor: accent, background: `${accent}26`, color: accent } : undefined}
               >
-                ENDS IN: {d}D {String(h).padStart(2, "0")}H {String(m).padStart(2, "0")}M {String(s).padStart(2, "0")}S
+                FINAL WHISTLE IN: {d}D {String(h).padStart(2, "0")}H {String(m).padStart(2, "0")}M {String(s).padStart(2, "0")}S
               </div>
             )}
             <div className="flex gap-3 flex-wrap">
@@ -117,8 +167,8 @@ function SaleEvent() {
                       <div className="font-mono text-[10px] text-white/60">{p.maker.toUpperCase()}</div>
                       <div className="font-black text-2xl chrome-text">{p.name}</div>
                     </div>
-                    <div className="absolute top-2 right-2 px-2 py-1 rounded-md font-mono text-[10px] font-bold text-white" style={{ background: color }}>
-                      {sale.discount_pct}% OFF
+                    <div className="absolute top-2 right-2 px-2 py-1 rounded-md font-mono text-[10px] font-bold text-white" style={{ background: accent, boxShadow: `0 0 12px ${accent}` }}>
+                      {pct}% OFF
                     </div>
                   </div>
                 </div>
