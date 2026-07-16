@@ -35,7 +35,7 @@ export function ProductCard({ product, variant = "default", rank }: { product: P
         <Link to="/shop/p/$slug" params={{ slug: product.slug }} className="block">
           <div className="relative aspect-square rounded-2xl overflow-hidden mb-4" style={{ background: product.coverGradient }}>
             {product.coverUrl ? (
-              <img src={product.coverUrl} alt={product.name} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+              <img src={product.coverUrl} alt={`${product.maker ? `${product.maker} ` : ""}${product.name} plugin cover`} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center p-4">
                 <div className="text-center">
