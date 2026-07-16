@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { toast } from "sonner";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { GlassCard } from "@/components/GlassCard";
@@ -1653,6 +1654,30 @@ function Difference() {
 /* ============ NEWSLETTER ============ */
 
 function Newsletter() {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "done">("idle");
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (status === "loading") return;
+    setStatus("loading");
+    try {
+      const { subscribeNewsletter } = await import("@/lib/newsletter.functions");
+      const res = await subscribeNewsletter({ data: { email: email.trim(), source: "homepage" } });
+      if (res.ok) {
+        setStatus("done");
+        setEmail("");
+        toast.success("You're on the list.");
+      } else {
+        setStatus("idle");
+        toast.error(res.error);
+      }
+    } catch (err) {
+      setStatus("idle");
+      toast.error((err as Error).message ?? "Something went wrong.");
+    }
+  };
+
   return (
     <section className="px-4 md:px-12 py-16 md:py-24">
       <div className="max-w-2xl mx-auto">
@@ -1663,20 +1688,27 @@ function Newsletter() {
           <p className="text-white/75 mb-8">
             Plug in before everyone else. New tools, early deals, and producer-ready drops.
           </p>
-          <form
-            className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
-            onSubmit={(e) => e.preventDefault()}
-          >
-            <input
-              type="email"
-              placeholder="you@email.com"
-              className="input-glass flex-1"
-              required
-            />
-            <button type="submit" className="btn-primary">
-              SUBSCRIBE →
-            </button>
-          </form>
+          {status === "done" ? (
+            <p className="font-mono text-sm text-white/80">✓ SUBSCRIBED. WATCH YOUR INBOX.</p>
+          ) : (
+            <form
+              className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
+              onSubmit={onSubmit}
+            >
+              <input
+                type="email"
+                placeholder="you@email.com"
+                className="input-glass flex-1"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={status === "loading"}
+              />
+              <button type="submit" className="btn-primary" disabled={status === "loading"}>
+                {status === "loading" ? "..." : "SUBSCRIBE →"}
+              </button>
+            </form>
+          )}
         </GlassCard>
       </div>
     </section>
