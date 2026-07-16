@@ -13,7 +13,6 @@ export const Route = createFileRoute("/privacy-policy")({
         { property: "og:title", content: title },
         { property: "og:description", content: desc },
         { property: "og:url", content: url },
-        { name: "robots", content: "noindex" },
       ],
       links: [{ rel: "canonical", href: url }],
     };
