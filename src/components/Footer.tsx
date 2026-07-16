@@ -1,4 +1,6 @@
 import { Link } from "@tanstack/react-router";
+import { useState } from "react";
+import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 
 export function Footer() {
@@ -10,7 +12,8 @@ export function Footer() {
           <div className="flex flex-col md:flex-row md:items-start md:gap-12 gap-8">
             <div className="md:max-w-xs">
               <img src={logo} alt="Plugin Warehouse" className="h-10 w-auto object-contain mb-3" style={{ filter: "drop-shadow(0 2px 12px rgba(255,0,60,0.35))" }} />
-              <p className="text-xs text-white/60 max-w-xs">Pro-tier creative software at a fraction of the price. Yours forever.</p>
+              <p className="text-xs text-white/60 max-w-xs mb-4">Pro-tier creative software at a fraction of the price. Yours forever.</p>
+              <FooterSubscribe />
             </div>
 
             <div className="grid grid-cols-3 gap-6 md:gap-10 flex-1 md:justify-items-end md:text-right">
@@ -66,5 +69,62 @@ function FooterCol({ title, links }: { title: string; links: { to: string; label
         ))}
       </ul>
     </div>
+  );
+}
+
+function FooterSubscribe() {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "done">("idle");
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (status === "loading") return;
+    const trimmed = email.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      toast.error("Enter a valid email.");
+      return;
+    }
+    setStatus("loading");
+    try {
+      const { subscribeNewsletter } = await import("@/lib/newsletter.functions");
+      const res = await subscribeNewsletter({ data: { email: trimmed, source: "footer" } });
+      if (res.ok) {
+        setStatus("done");
+        setEmail("");
+        toast.success("You're on the list.");
+      } else {
+        setStatus("idle");
+        toast.error(res.error);
+      }
+    } catch {
+      setStatus("idle");
+      toast.error("Couldn't subscribe. Try again.");
+    }
+  };
+
+  if (status === "done") {
+    return <p className="font-mono text-[10px] text-white/70">✓ SUBSCRIBED. WATCH YOUR INBOX.</p>;
+  }
+  return (
+    <form onSubmit={onSubmit} className="flex gap-2">
+      <input
+        type="email"
+        required
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="you@email.com"
+        maxLength={255}
+        aria-label="Email address"
+        className="flex-1 min-w-0 bg-white/5 border border-white/15 rounded-md px-3 py-2 text-xs text-white placeholder:text-white/40 outline-none focus:border-[var(--accent-red)]"
+        disabled={status === "loading"}
+      />
+      <button
+        type="submit"
+        disabled={status === "loading"}
+        className="btn-primary !text-[10px] !py-2 !px-3 whitespace-nowrap disabled:opacity-60"
+      >
+        {status === "loading" ? "..." : "SUBSCRIBE"}
+      </button>
+    </form>
   );
 }

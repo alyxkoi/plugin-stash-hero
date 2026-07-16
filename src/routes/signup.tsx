@@ -49,14 +49,23 @@ function SignupPage() {
       return;
     }
     if (data.session) {
+      syncSignupToMailchimp(email.trim());
       navigate({ to: "/account" });
       return;
     }
     // No session but user created — sign them in immediately (email confirmation is off).
     const { error: signInErr } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
     if (signInErr) { setError(signInErr.message); return; }
+    syncSignupToMailchimp(email.trim());
     navigate({ to: "/account" });
   };
+
+  // Fire-and-forget Mailchimp sync — never blocks or breaks signup.
+  function syncSignupToMailchimp(addr: string) {
+    import("@/lib/newsletter.functions")
+      .then(({ subscribeCustomer }) => subscribeCustomer({ data: { email: addr, source: "signup" } }))
+      .catch((e) => console.warn("[mailchimp] signup sync failed", e));
+  }
 
   const onGoogle = async () => {
     setError(null);
