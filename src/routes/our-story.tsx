@@ -2,7 +2,21 @@ import { createFileRoute } from "@tanstack/react-router";
 import { StaticPage } from "@/components/StaticPage";
 
 export const Route = createFileRoute("/our-story")({
-  head: () => ({ meta: [{ title: "Our Story — Plugin Warehouse" }] }),
+  head: () => {
+    const title = "Our Story — Plugin Warehouse";
+    const desc = "Why Plugin Warehouse exists: we bulk-license direct, cut out the middleman, and pass real savings to producers who actually make music.";
+    const url = "https://www.thepluginwarehouse.com/our-story";
+    return {
+      meta: [
+        { title },
+        { name: "description", content: desc },
+        { property: "og:title", content: title },
+        { property: "og:description", content: desc },
+        { property: "og:url", content: url },
+      ],
+      links: [{ rel: "canonical", href: url }],
+    };
+  },
   component: () => (
     <StaticPage
       eyebrow="THE WAREHOUSE STORY"
