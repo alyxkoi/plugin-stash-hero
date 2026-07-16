@@ -246,7 +246,7 @@ function Hero() {
                   style={{ background: c.p.coverGradient }}
                 >
                   {c.p.coverUrl ? (
-                    <img src={c.p.coverUrl} alt={c.p.name} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+                    <img src={c.p.coverUrl} alt={`${c.p.maker ? `${c.p.maker} ` : ""}${c.p.name} plugin cover`} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="text-center">
@@ -439,7 +439,7 @@ function RotationCard({ product }: { product: Product }) {
       <div className="chromatic-edge" />
       <div className="rotation-artwork" style={{ background: product.coverGradient }}>
         {product.coverUrl ? (
-          <img src={product.coverUrl} alt={product.name} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+          <img src={product.coverUrl} alt={`${product.maker ? `${product.maker} ` : ""}${product.name} plugin cover`} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center p-4 text-center">
             <div className="font-display text-3xl leading-tight">{product.name}</div>
@@ -726,7 +726,7 @@ function RecipeTile({ product, className = "" }: { product: Product; className?:
         style={{ background: product.coverGradient }}
       >
         {product.coverUrl ? (
-          <img src={product.coverUrl} alt={product.name} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+          <img src={product.coverUrl} alt={`${product.maker ? `${product.maker} ` : ""}${product.name} plugin cover`} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center text-center p-2">
             <div className="font-display text-base leading-tight">{product.name}</div>
@@ -1241,7 +1241,7 @@ function ConsolePreviewCard({ product }: { product: Product }) {
     >
       <div className="console-preview-art relative overflow-hidden" style={{ background: product.coverGradient }}>
         {product.coverUrl ? (
-          <img src={product.coverUrl} alt={product.name} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+          <img src={product.coverUrl} alt={`${product.maker ? `${product.maker} ` : ""}${product.name} plugin cover`} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center text-center p-2">
             <div className="font-display text-base leading-tight">{product.name}</div>
@@ -1341,7 +1341,7 @@ function FeaturedSoundCard({ product }: { product: Product }) {
       <div className="chromatic-edge" />
       <div className="absolute inset-0" style={{ background: product.coverGradient }}>
         {product.coverUrl && (
-          <img src={product.coverUrl} alt={product.name} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+          <img src={product.coverUrl} alt={`${product.maker ? `${product.maker} ` : ""}${product.name} plugin cover`} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
         )}
       </div>
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
@@ -1408,7 +1408,7 @@ function SoundRowCard({ product }: { product: Product }) {
           style={{ background: product.coverGradient }}
         >
           {product.coverUrl ? (
-            <img src={product.coverUrl} alt={product.name} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+            <img src={product.coverUrl} alt={`${product.maker ? `${product.maker} ` : ""}${product.name} plugin cover`} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center text-center p-1">
               <div className="font-display text-sm leading-tight">{product.name}</div>
@@ -1515,7 +1515,7 @@ function PluginOfTheWeek() {
                 style={{ background: featured.coverGradient }}
               >
                 {featured.coverUrl ? (
-                  <img src={featured.coverUrl} alt={featured.name} className="absolute inset-0 w-full h-full object-cover" />
+                  <img src={featured.coverUrl} alt={`${featured.maker ? `${featured.maker} ` : ""}${featured.name} plugin cover`} className="absolute inset-0 w-full h-full object-cover" />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center text-center">
                     <div>
