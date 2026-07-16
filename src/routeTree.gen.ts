@@ -17,6 +17,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as OurStoryRouteImport } from './routes/our-story'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -93,6 +94,11 @@ const OurStoryRoute = OurStoryRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
+  id: '/llms.txt',
+  path: '/llms.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
@@ -290,6 +296,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRouteWithChildren
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/llms.txt': typeof LlmsDottxtRoute
   '/login': typeof LoginRoute
   '/our-story': typeof OurStoryRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
@@ -335,6 +342,7 @@ export interface FileRoutesByTo {
   '/contact-us': typeof ContactUsRoute
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/llms.txt': typeof LlmsDottxtRoute
   '/login': typeof LoginRoute
   '/our-story': typeof OurStoryRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
@@ -383,6 +391,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRouteWithChildren
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/llms.txt': typeof LlmsDottxtRoute
   '/login': typeof LoginRoute
   '/our-story': typeof OurStoryRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
@@ -432,6 +441,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/faq'
     | '/forgot-password'
+    | '/llms.txt'
     | '/login'
     | '/our-story'
     | '/privacy-policy'
@@ -477,6 +487,7 @@ export interface FileRouteTypes {
     | '/contact-us'
     | '/faq'
     | '/forgot-password'
+    | '/llms.txt'
     | '/login'
     | '/our-story'
     | '/privacy-policy'
@@ -524,6 +535,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/faq'
     | '/forgot-password'
+    | '/llms.txt'
     | '/login'
     | '/our-story'
     | '/privacy-policy'
@@ -572,6 +584,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRouteWithChildren
   FaqRoute: typeof FaqRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
+  LlmsDottxtRoute: typeof LlmsDottxtRoute
   LoginRoute: typeof LoginRoute
   OurStoryRoute: typeof OurStoryRoute
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
@@ -647,6 +660,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/llms.txt': {
+      id: '/llms.txt'
+      path: '/llms.txt'
+      fullPath: '/llms.txt'
+      preLoaderRoute: typeof LlmsDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forgot-password': {
@@ -990,6 +1010,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRouteWithChildren,
   FaqRoute: FaqRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
+  LlmsDottxtRoute: LlmsDottxtRoute,
   LoginRoute: LoginRoute,
   OurStoryRoute: OurStoryRoute,
   PrivacyPolicyRoute: PrivacyPolicyRoute,
