@@ -176,7 +176,11 @@ function Hero() {
 
       <div className="relative grid lg:grid-cols-2 gap-12 items-center min-h-[70vh]">
         <div>
-          <h1
+          <h1 className="sr-only">
+            Plugin Warehouse — Pro audio plugins, instruments and sample libraries at a fraction of retail
+          </h1>
+          <p
+            aria-hidden="true"
             className="font-display leading-[0.92] tracking-tight mb-6"
             style={{ fontSize: "clamp(3rem, 8vw, 6.5rem)" }}
           >
@@ -185,7 +189,7 @@ function Hero() {
             <span className="block">
               UNTIL <span className="text-red">SEPT 22.</span>
             </span>
-          </h1>
+          </p>
           <p className="text-lg md:text-xl text-white/80 max-w-xl mb-4 leading-relaxed">
             Get your plugins at a <span className="text-red">fraction of retail</span>. Build your
             sound before the drop.
