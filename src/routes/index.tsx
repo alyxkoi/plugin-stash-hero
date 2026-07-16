@@ -152,6 +152,17 @@ function Hero() {
 
   return (
     <section className="relative px-4 md:px-6 pt-4 pb-12 md:pb-24 overflow-hidden">
+      <video
+        className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+        src="https://ovhpoysgvuupqydprsjx.supabase.co/storage/v1/object/public/imagesvideos//pwh%20hero%20video.mp4"
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="auto"
+        aria-hidden="true"
+      />
+      <div className="absolute inset-0 pointer-events-none bg-black/50" />
       <div className="absolute inset-0 pointer-events-none opacity-50">
         <div
           className="absolute inset-0"
@@ -161,6 +172,7 @@ function Hero() {
           }}
         />
       </div>
+
 
       <div className="relative grid lg:grid-cols-2 gap-12 items-center min-h-[70vh]">
         <div>
