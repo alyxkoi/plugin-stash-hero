@@ -98,10 +98,10 @@ export const Route = createFileRoute("/")({
         content:
           "A curated vault of pro-tier plugins, instruments, and sample libraries. Instant access. Yours forever.",
       },
-      { property: "og:title", content: "Plugin Warehouse" },
+      { property: "og:title", content: "Plugin Warehouse — Pro plugins at a fraction of the price" },
       {
         property: "og:description",
-        content: "Pro-tier plugins at a fraction of the price. Curated for producers.",
+        content: "A curated vault of pro-tier plugins, instruments, and sample libraries. Instant access. Yours forever.",
       },
     ],
   }),
