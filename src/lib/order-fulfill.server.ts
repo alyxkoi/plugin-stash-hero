@@ -5,6 +5,7 @@
 
 import { sendEmail, FROM_ORDERS } from "@/lib/resend.server";
 import { renderOrderConfirmation } from "@/lib/email-templates.server";
+import { subscribeToMailchimp } from "@/lib/mailchimp.server";
 
 export type FulfillItem = {
   product_id: string;
@@ -138,6 +139,13 @@ export async function finalizeOrder(input: FulfillInput): Promise<{ orderId: str
       text: rendered.text,
     });
     if (send.error) console.error("[fulfill] order email send failed:", send.error);
+  }
+
+  // Add buyer to Mailchimp audience with a "customer" tag. Non-fatal.
+  if (recipient) {
+    subscribeToMailchimp({ email: recipient, tags: ["customer"] }).catch((e) =>
+      console.error("[fulfill] mailchimp sync failed:", e),
+    );
   }
 
   return { orderId, number };
