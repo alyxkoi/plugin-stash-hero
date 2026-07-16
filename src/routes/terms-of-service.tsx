@@ -2,7 +2,21 @@ import { createFileRoute } from "@tanstack/react-router";
 import { StaticPage } from "@/components/StaticPage";
 
 export const Route = createFileRoute("/terms-of-service")({
-  head: () => ({ meta: [{ title: "Terms of Service — Plugin Warehouse" }] }),
+  head: () => {
+    const title = "Terms of Service — Plugin Warehouse";
+    const desc = "Educational preset licensing terms, digital delivery policy, refund rules and acceptable use for the Plugin Warehouse site.";
+    const url = "https://www.thepluginwarehouse.com/terms-of-service";
+    return {
+      meta: [
+        { title },
+        { name: "description", content: desc },
+        { property: "og:title", content: title },
+        { property: "og:description", content: desc },
+        { property: "og:url", content: url },
+      ],
+      links: [{ rel: "canonical", href: url }],
+    };
+  },
   component: () => (
     <StaticPage
       eyebrow="LAST UPDATED: MAY 2026"

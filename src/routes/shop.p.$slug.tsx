@@ -11,8 +11,41 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSavedIds, useToggleSaved } from "@/hooks/useSaved";
 import { useSalePricing } from "@/lib/sale-pricing";
 
+async function fetchProductMeta(slug: string) {
+  const { data } = await supabase
+    .from("products")
+    .select("name,maker,tagline,description,category,cover_url")
+    .eq("slug", slug)
+    .eq("status", "published")
+    .maybeSingle();
+  return data as { name: string; maker: string | null; tagline: string | null; description: string | null; category: string; cover_url: string | null } | null;
+}
+
 export const Route = createFileRoute("/shop/p/$slug")({
-  head: ({ params }) => ({ meta: [{ title: `${params.slug} — Plugin Warehouse` }] }),
+  loader: async ({ params }) => ({ meta: await fetchProductMeta(params.slug) }),
+  head: ({ params, loaderData }) => {
+    const m = loaderData?.meta;
+    const title = m ? `${m.maker ? `${m.maker} ` : ""}${m.name} — Plugin Warehouse` : `${params.slug} — Plugin Warehouse`;
+    const rawDesc = m?.tagline || m?.description || "";
+    const clean = rawDesc.replace(/\s+/g, " ").trim();
+    const desc = clean
+      ? (clean.length > 158 ? `${clean.slice(0, 155)}...` : clean)
+      : `${m?.name ?? params.slug} — pro audio ${m?.category ?? "plugin"} at a fraction of retail. Instant download. Lifetime license.`;
+    const url = `https://www.thepluginwarehouse.com/shop/p/${params.slug}`;
+    const meta: Array<Record<string, string>> = [
+      { title },
+      { name: "description", content: desc },
+      { property: "og:title", content: title },
+      { property: "og:description", content: desc },
+      { property: "og:type", content: "product" },
+      { property: "og:url", content: url },
+    ];
+    if (m?.cover_url) {
+      meta.push({ property: "og:image", content: m.cover_url });
+      meta.push({ name: "twitter:image", content: m.cover_url });
+    }
+    return { meta, links: [{ rel: "canonical", href: url }] };
+  },
   component: ProductDetail,
 });
 
