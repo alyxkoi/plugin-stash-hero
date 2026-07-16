@@ -13,7 +13,13 @@ export const subscribeNewsletter = createServerFn({ method: "POST" })
     const tags = ["newsletter"];
     if (data.source) tags.push(data.source);
     const res = await subscribeToMailchimp({ email: data.email, tags });
-    if (!res.ok) return { ok: false as const, error: "Couldn't subscribe you right now. Try again." };
+    if (!res.ok) {
+      const msg =
+        res.status === 400
+          ? "That email looks invalid. Double-check and try again."
+          : "Couldn't subscribe you right now. Try again.";
+      return { ok: false as const, error: msg };
+    }
     return { ok: true as const };
   });
 
