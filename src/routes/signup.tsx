@@ -49,6 +49,7 @@ function SignupPage() {
       return;
     }
     if (data.session) {
+      syncSignupToMailchimp(email.trim());
       navigate({ to: "/account" });
       return;
     }
