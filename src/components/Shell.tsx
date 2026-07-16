@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { Nav } from "./Nav";
 import { Footer } from "./Footer";
 import { CartDrawer } from "./CartDrawer";
+import { MysteryGiftPopup } from "./MysteryGiftPopup";
 import { useCartSync } from "@/hooks/useCartSync";
 import { SalePricingProvider } from "@/lib/sale-pricing";
 
