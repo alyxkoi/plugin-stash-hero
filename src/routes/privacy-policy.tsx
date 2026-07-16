@@ -2,7 +2,22 @@ import { createFileRoute } from "@tanstack/react-router";
 import { StaticPage } from "@/components/StaticPage";
 
 export const Route = createFileRoute("/privacy-policy")({
-  head: () => ({ meta: [{ title: "Privacy Policy — Plugin Warehouse" }] }),
+  head: () => {
+    const title = "Privacy Policy — Plugin Warehouse";
+    const desc = "How Plugin Warehouse handles your account information, purchases and downloads, and the educational scope of the presets provided.";
+    const url = "https://www.thepluginwarehouse.com/privacy-policy";
+    return {
+      meta: [
+        { title },
+        { name: "description", content: desc },
+        { property: "og:title", content: title },
+        { property: "og:description", content: desc },
+        { property: "og:url", content: url },
+        { name: "robots", content: "noindex" },
+      ],
+      links: [{ rel: "canonical", href: url }],
+    };
+  },
   component: () => (
     <StaticPage
       eyebrow="LAST UPDATED: MAY 2026"
