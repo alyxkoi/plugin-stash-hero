@@ -36,12 +36,21 @@ const FAQS: FaqGroup[] = [
 ];
 
 export const Route = createFileRoute("/faq")({
-  head: () => ({
-    meta: [
-      { title: "FAQ — Plugin Warehouse" },
-      { name: "description", content: "Answers to common questions about downloads, DAW compatibility, installation, and refunds." },
-    ],
-  }),
+  head: () => {
+    const title = "FAQ — Plugin Warehouse";
+    const desc = "Answers to common questions about Plugin Warehouse downloads, DAW compatibility, installation on Mac and PC, refunds and support.";
+    const url = "https://www.thepluginwarehouse.com/faq";
+    return {
+      meta: [
+        { title },
+        { name: "description", content: desc },
+        { property: "og:title", content: title },
+        { property: "og:description", content: desc },
+        { property: "og:url", content: url },
+      ],
+      links: [{ rel: "canonical", href: url }],
+    };
+  },
   component: FaqPage,
 });
 
