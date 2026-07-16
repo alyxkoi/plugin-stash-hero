@@ -86,6 +86,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:description", content: "A curated vault of pro-tier plugins, instruments, and sample libraries. Instant access. Yours forever." },
       { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/E3zniLYNF9bYMEA8iYs6337JUNZ2/social-images/social-1784165136214-PWH_Logo_Main.webp" },
       { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/E3zniLYNF9bYMEA8iYs6337JUNZ2/social-images/social-1784165136214-PWH_Logo_Main.webp" },
+      { name: "google-site-verification", content: "PU1Q5L07BtWGs0aqThZAlNRR0UP7C_3zpkwh1Sg8ttw" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
