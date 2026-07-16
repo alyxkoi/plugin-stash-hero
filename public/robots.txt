@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /account
+Disallow: /checkout
+Disallow: /dashboard
+Disallow: /library/
+Disallow: /api/
+
+Sitemap: https://www.thepluginwarehouse.com/sitemap.xml
