@@ -32,6 +32,7 @@ export function Footer() {
               ]} />
               <FooterCol title="BRAND" links={[
                 { to: "/our-story", label: "Our Story" },
+                { to: "/blog", label: "Blog" },
                 { to: "/privacy-policy", label: "Privacy" },
                 { to: "/terms-of-service", label: "Terms" },
               ]} />
