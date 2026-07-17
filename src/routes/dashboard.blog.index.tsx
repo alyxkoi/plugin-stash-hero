@@ -32,7 +32,7 @@ function BlogAdmin() {
   async function togglePublish(id: string, next: boolean) {
     const patch: Record<string, unknown> = { published: next };
     if (next) patch.published_at = new Date().toISOString();
-    const { error } = await supabase.from("blog_posts").update(patch).eq("id", id);
+    const { error } = await supabase.from("blog_posts").update(patch as any).eq("id", id);
     if (error) return toast.error(error.message);
     toast.success(next ? "Published." : "Moved to draft.");
     qc.invalidateQueries({ queryKey: ["dashboard-blog-posts"] });
@@ -43,7 +43,7 @@ function BlogAdmin() {
     <DashboardShell
       title="Blog"
       action={
-        <button className="btn-primary" onClick={() => navigate({ to: "/dashboard/blog/$id" as any, params: { id: "new" } })}>
+        <button className="btn-primary" onClick={() => navigate({ to: "/dashboard/blog/$id" as any, params: { id: "new" } as any })}>
           <Plus size={14} /> New post
         </button>
       }

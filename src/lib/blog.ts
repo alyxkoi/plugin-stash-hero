@@ -37,7 +37,7 @@ export async function fetchPostBySlug(slug: string): Promise<BlogPost | null> {
     .eq("published", true)
     .maybeSingle();
   if (error) throw new Error(error.message);
-  return (data as BlogPost) ?? null;
+  return (data as unknown as BlogPost) ?? null;
 }
 
 export async function fetchAllPostsAdmin(): Promise<BlogPost[]> {
@@ -56,7 +56,7 @@ export async function fetchPostByIdAdmin(id: string): Promise<BlogPost | null> {
     .eq("id", id)
     .maybeSingle();
   if (error) throw new Error(error.message);
-  return (data as BlogPost) ?? null;
+  return (data as unknown as BlogPost) ?? null;
 }
 
 marked.setOptions({ gfm: true, breaks: false });

@@ -111,14 +111,14 @@ function BlogEditor() {
 
     try {
       if (isNew) {
-        const { data, error } = await supabase.from("blog_posts").insert(payload).select("id").single();
+        const { data, error } = await supabase.from("blog_posts").insert(payload as any).select("id").single();
         if (error) throw error;
         toast.success("Post created.");
         qc.invalidateQueries({ queryKey: ["dashboard-blog-posts"] });
         qc.invalidateQueries({ queryKey: ["blog-posts-public"] });
-        navigate({ to: "/dashboard/blog/$id" as any, params: { id: data!.id }, replace: true });
+        navigate({ to: "/dashboard/blog/$id" as any, params: { id: (data as any).id } as any, replace: true });
       } else {
-        const { error } = await supabase.from("blog_posts").update(payload).eq("id", id);
+        const { error } = await supabase.from("blog_posts").update(payload as any).eq("id", id);
         if (error) throw error;
         setForm((f) => ({ ...f, published: shouldPublish }));
         toast.success("Saved.");

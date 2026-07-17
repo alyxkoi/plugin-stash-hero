@@ -6,7 +6,7 @@ const URL = "https://www.thepluginwarehouse.com/blog";
 const TITLE = "The Warehouse Blog — Producer Guides & Real Talk on Plugin Pricing";
 const DESC = "Straight-talk guides on building a pro studio for cheap, plugin pricing that isn't a scam, and the tools that actually matter. From Plugin Warehouse.";
 
-export const Route = createFileRoute("/blog")({
+export const Route = createFileRoute("/blog/")({
   head: () => ({
     meta: [
       { title: TITLE },

@@ -28,6 +28,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShopIndexRouteImport } from './routes/shop.index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
 import { Route as CheckoutIndexRouteImport } from './routes/checkout.index'
+import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as AccountIndexRouteImport } from './routes/account.index'
 import { Route as ShopCategoryRouteImport } from './routes/shop.$category'
 import { Route as SaleSlugRouteImport } from './routes/sale.$slug'
@@ -37,6 +38,7 @@ import { Route as DashboardMarketingRouteImport } from './routes/dashboard.marke
 import { Route as DashboardLoginRouteImport } from './routes/dashboard.login'
 import { Route as DashboardAnalyticsRouteImport } from './routes/dashboard.analytics'
 import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
+import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as AccountSettingsRouteImport } from './routes/account.settings'
 import { Route as AccountSavedRouteImport } from './routes/account.saved'
 import { Route as AccountOrdersRouteImport } from './routes/account.orders'
@@ -45,6 +47,7 @@ import { Route as DashboardSalesIndexRouteImport } from './routes/dashboard.sale
 import { Route as DashboardProductsIndexRouteImport } from './routes/dashboard.products.index'
 import { Route as DashboardOrdersIndexRouteImport } from './routes/dashboard.orders.index'
 import { Route as DashboardCustomersIndexRouteImport } from './routes/dashboard.customers.index'
+import { Route as DashboardBlogIndexRouteImport } from './routes/dashboard.blog.index'
 import { Route as ShopPSlugRouteImport } from './routes/shop.p.$slug'
 import { Route as DashboardSalesNewRouteImport } from './routes/dashboard.sales.new'
 import { Route as DashboardSalesIdRouteImport } from './routes/dashboard.sales.$id'
@@ -52,6 +55,7 @@ import { Route as DashboardProductsNewRouteImport } from './routes/dashboard.pro
 import { Route as DashboardProductsIdRouteImport } from './routes/dashboard.products.$id'
 import { Route as DashboardOrdersIdRouteImport } from './routes/dashboard.orders.$id'
 import { Route as DashboardCustomersIdRouteImport } from './routes/dashboard.customers.$id'
+import { Route as DashboardBlogIdRouteImport } from './routes/dashboard.blog.$id'
 import { Route as ApiPublicDownloadRouteImport } from './routes/api/public/download'
 import { Route as AccountOrdersIdRouteImport } from './routes/account.orders.$id'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
@@ -151,6 +155,11 @@ const CheckoutIndexRoute = CheckoutIndexRouteImport.update({
   path: '/checkout/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BlogIndexRoute = BlogIndexRouteImport.update({
+  id: '/blog/',
+  path: '/blog/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AccountIndexRoute = AccountIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -196,6 +205,11 @@ const CheckoutReturnRoute = CheckoutReturnRouteImport.update({
   path: '/checkout/return',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BlogSlugRoute = BlogSlugRouteImport.update({
+  id: '/blog/$slug',
+  path: '/blog/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AccountSettingsRoute = AccountSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -236,6 +250,11 @@ const DashboardCustomersIndexRoute = DashboardCustomersIndexRouteImport.update({
   path: '/customers/',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardBlogIndexRoute = DashboardBlogIndexRouteImport.update({
+  id: '/blog/',
+  path: '/blog/',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const ShopPSlugRoute = ShopPSlugRouteImport.update({
   id: '/shop/p/$slug',
   path: '/shop/p/$slug',
@@ -269,6 +288,11 @@ const DashboardOrdersIdRoute = DashboardOrdersIdRouteImport.update({
 const DashboardCustomersIdRoute = DashboardCustomersIdRouteImport.update({
   id: '/customers/$id',
   path: '/customers/$id',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardBlogIdRoute = DashboardBlogIdRouteImport.update({
+  id: '/blog/$id',
+  path: '/blog/$id',
   getParentRoute: () => DashboardRoute,
 } as any)
 const ApiPublicDownloadRoute = ApiPublicDownloadRouteImport.update({
@@ -309,6 +333,7 @@ export interface FileRoutesByFullPath {
   '/account/orders': typeof AccountOrdersRouteWithChildren
   '/account/saved': typeof AccountSavedRoute
   '/account/settings': typeof AccountSettingsRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
   '/dashboard/login': typeof DashboardLoginRoute
@@ -318,11 +343,13 @@ export interface FileRoutesByFullPath {
   '/sale/$slug': typeof SaleSlugRoute
   '/shop/$category': typeof ShopCategoryRoute
   '/account/': typeof AccountIndexRoute
+  '/blog/': typeof BlogIndexRoute
   '/checkout/': typeof CheckoutIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/account/orders/$id': typeof AccountOrdersIdRoute
   '/api/public/download': typeof ApiPublicDownloadRoute
+  '/dashboard/blog/$id': typeof DashboardBlogIdRoute
   '/dashboard/customers/$id': typeof DashboardCustomersIdRoute
   '/dashboard/orders/$id': typeof DashboardOrdersIdRoute
   '/dashboard/products/$id': typeof DashboardProductsIdRoute
@@ -330,6 +357,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/sales/$id': typeof DashboardSalesIdRoute
   '/dashboard/sales/new': typeof DashboardSalesNewRoute
   '/shop/p/$slug': typeof ShopPSlugRoute
+  '/dashboard/blog/': typeof DashboardBlogIndexRoute
   '/dashboard/customers/': typeof DashboardCustomersIndexRoute
   '/dashboard/orders/': typeof DashboardOrdersIndexRoute
   '/dashboard/products/': typeof DashboardProductsIndexRoute
@@ -355,6 +383,7 @@ export interface FileRoutesByTo {
   '/account/orders': typeof AccountOrdersRouteWithChildren
   '/account/saved': typeof AccountSavedRoute
   '/account/settings': typeof AccountSettingsRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
   '/dashboard/login': typeof DashboardLoginRoute
@@ -364,11 +393,13 @@ export interface FileRoutesByTo {
   '/sale/$slug': typeof SaleSlugRoute
   '/shop/$category': typeof ShopCategoryRoute
   '/account': typeof AccountIndexRoute
+  '/blog': typeof BlogIndexRoute
   '/checkout': typeof CheckoutIndexRoute
   '/dashboard': typeof DashboardIndexRoute
   '/shop': typeof ShopIndexRoute
   '/account/orders/$id': typeof AccountOrdersIdRoute
   '/api/public/download': typeof ApiPublicDownloadRoute
+  '/dashboard/blog/$id': typeof DashboardBlogIdRoute
   '/dashboard/customers/$id': typeof DashboardCustomersIdRoute
   '/dashboard/orders/$id': typeof DashboardOrdersIdRoute
   '/dashboard/products/$id': typeof DashboardProductsIdRoute
@@ -376,6 +407,7 @@ export interface FileRoutesByTo {
   '/dashboard/sales/$id': typeof DashboardSalesIdRoute
   '/dashboard/sales/new': typeof DashboardSalesNewRoute
   '/shop/p/$slug': typeof ShopPSlugRoute
+  '/dashboard/blog': typeof DashboardBlogIndexRoute
   '/dashboard/customers': typeof DashboardCustomersIndexRoute
   '/dashboard/orders': typeof DashboardOrdersIndexRoute
   '/dashboard/products': typeof DashboardProductsIndexRoute
@@ -404,6 +436,7 @@ export interface FileRoutesById {
   '/account/orders': typeof AccountOrdersRouteWithChildren
   '/account/saved': typeof AccountSavedRoute
   '/account/settings': typeof AccountSettingsRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
   '/dashboard/login': typeof DashboardLoginRoute
@@ -413,11 +446,13 @@ export interface FileRoutesById {
   '/sale/$slug': typeof SaleSlugRoute
   '/shop/$category': typeof ShopCategoryRoute
   '/account/': typeof AccountIndexRoute
+  '/blog/': typeof BlogIndexRoute
   '/checkout/': typeof CheckoutIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/account/orders/$id': typeof AccountOrdersIdRoute
   '/api/public/download': typeof ApiPublicDownloadRoute
+  '/dashboard/blog/$id': typeof DashboardBlogIdRoute
   '/dashboard/customers/$id': typeof DashboardCustomersIdRoute
   '/dashboard/orders/$id': typeof DashboardOrdersIdRoute
   '/dashboard/products/$id': typeof DashboardProductsIdRoute
@@ -425,6 +460,7 @@ export interface FileRoutesById {
   '/dashboard/sales/$id': typeof DashboardSalesIdRoute
   '/dashboard/sales/new': typeof DashboardSalesNewRoute
   '/shop/p/$slug': typeof ShopPSlugRoute
+  '/dashboard/blog/': typeof DashboardBlogIndexRoute
   '/dashboard/customers/': typeof DashboardCustomersIndexRoute
   '/dashboard/orders/': typeof DashboardOrdersIndexRoute
   '/dashboard/products/': typeof DashboardProductsIndexRoute
@@ -454,6 +490,7 @@ export interface FileRouteTypes {
     | '/account/orders'
     | '/account/saved'
     | '/account/settings'
+    | '/blog/$slug'
     | '/checkout/return'
     | '/dashboard/analytics'
     | '/dashboard/login'
@@ -463,11 +500,13 @@ export interface FileRouteTypes {
     | '/sale/$slug'
     | '/shop/$category'
     | '/account/'
+    | '/blog/'
     | '/checkout/'
     | '/dashboard/'
     | '/shop/'
     | '/account/orders/$id'
     | '/api/public/download'
+    | '/dashboard/blog/$id'
     | '/dashboard/customers/$id'
     | '/dashboard/orders/$id'
     | '/dashboard/products/$id'
@@ -475,6 +514,7 @@ export interface FileRouteTypes {
     | '/dashboard/sales/$id'
     | '/dashboard/sales/new'
     | '/shop/p/$slug'
+    | '/dashboard/blog/'
     | '/dashboard/customers/'
     | '/dashboard/orders/'
     | '/dashboard/products/'
@@ -500,6 +540,7 @@ export interface FileRouteTypes {
     | '/account/orders'
     | '/account/saved'
     | '/account/settings'
+    | '/blog/$slug'
     | '/checkout/return'
     | '/dashboard/analytics'
     | '/dashboard/login'
@@ -509,11 +550,13 @@ export interface FileRouteTypes {
     | '/sale/$slug'
     | '/shop/$category'
     | '/account'
+    | '/blog'
     | '/checkout'
     | '/dashboard'
     | '/shop'
     | '/account/orders/$id'
     | '/api/public/download'
+    | '/dashboard/blog/$id'
     | '/dashboard/customers/$id'
     | '/dashboard/orders/$id'
     | '/dashboard/products/$id'
@@ -521,6 +564,7 @@ export interface FileRouteTypes {
     | '/dashboard/sales/$id'
     | '/dashboard/sales/new'
     | '/shop/p/$slug'
+    | '/dashboard/blog'
     | '/dashboard/customers'
     | '/dashboard/orders'
     | '/dashboard/products'
@@ -548,6 +592,7 @@ export interface FileRouteTypes {
     | '/account/orders'
     | '/account/saved'
     | '/account/settings'
+    | '/blog/$slug'
     | '/checkout/return'
     | '/dashboard/analytics'
     | '/dashboard/login'
@@ -557,11 +602,13 @@ export interface FileRouteTypes {
     | '/sale/$slug'
     | '/shop/$category'
     | '/account/'
+    | '/blog/'
     | '/checkout/'
     | '/dashboard/'
     | '/shop/'
     | '/account/orders/$id'
     | '/api/public/download'
+    | '/dashboard/blog/$id'
     | '/dashboard/customers/$id'
     | '/dashboard/orders/$id'
     | '/dashboard/products/$id'
@@ -569,6 +616,7 @@ export interface FileRouteTypes {
     | '/dashboard/sales/$id'
     | '/dashboard/sales/new'
     | '/shop/p/$slug'
+    | '/dashboard/blog/'
     | '/dashboard/customers/'
     | '/dashboard/orders/'
     | '/dashboard/products/'
@@ -593,10 +641,12 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsOfServiceRoute: typeof TermsOfServiceRoute
+  BlogSlugRoute: typeof BlogSlugRoute
   CheckoutReturnRoute: typeof CheckoutReturnRoute
   LibraryTokenRoute: typeof LibraryTokenRoute
   SaleSlugRoute: typeof SaleSlugRoute
   ShopCategoryRoute: typeof ShopCategoryRoute
+  BlogIndexRoute: typeof BlogIndexRoute
   CheckoutIndexRoute: typeof CheckoutIndexRoute
   ShopIndexRoute: typeof ShopIndexRoute
   ApiPublicDownloadRoute: typeof ApiPublicDownloadRoute
@@ -739,6 +789,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CheckoutIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/blog/': {
+      id: '/blog/'
+      path: '/blog'
+      fullPath: '/blog/'
+      preLoaderRoute: typeof BlogIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/account/': {
       id: '/account/'
       path: '/'
@@ -802,6 +859,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CheckoutReturnRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/blog/$slug': {
+      id: '/blog/$slug'
+      path: '/blog/$slug'
+      fullPath: '/blog/$slug'
+      preLoaderRoute: typeof BlogSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/account/settings': {
       id: '/account/settings'
       path: '/settings'
@@ -858,6 +922,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardCustomersIndexRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/blog/': {
+      id: '/dashboard/blog/'
+      path: '/blog'
+      fullPath: '/dashboard/blog/'
+      preLoaderRoute: typeof DashboardBlogIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/shop/p/$slug': {
       id: '/shop/p/$slug'
       path: '/shop/p/$slug'
@@ -905,6 +976,13 @@ declare module '@tanstack/react-router' {
       path: '/customers/$id'
       fullPath: '/dashboard/customers/$id'
       preLoaderRoute: typeof DashboardCustomersIdRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/blog/$id': {
+      id: '/dashboard/blog/$id'
+      path: '/blog/$id'
+      fullPath: '/dashboard/blog/$id'
+      preLoaderRoute: typeof DashboardBlogIdRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/api/public/download': {
@@ -968,12 +1046,14 @@ interface DashboardRouteChildren {
   DashboardMarketingRoute: typeof DashboardMarketingRoute
   DashboardSettingsRoute: typeof DashboardSettingsRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
+  DashboardBlogIdRoute: typeof DashboardBlogIdRoute
   DashboardCustomersIdRoute: typeof DashboardCustomersIdRoute
   DashboardOrdersIdRoute: typeof DashboardOrdersIdRoute
   DashboardProductsIdRoute: typeof DashboardProductsIdRoute
   DashboardProductsNewRoute: typeof DashboardProductsNewRoute
   DashboardSalesIdRoute: typeof DashboardSalesIdRoute
   DashboardSalesNewRoute: typeof DashboardSalesNewRoute
+  DashboardBlogIndexRoute: typeof DashboardBlogIndexRoute
   DashboardCustomersIndexRoute: typeof DashboardCustomersIndexRoute
   DashboardOrdersIndexRoute: typeof DashboardOrdersIndexRoute
   DashboardProductsIndexRoute: typeof DashboardProductsIndexRoute
@@ -986,12 +1066,14 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardMarketingRoute: DashboardMarketingRoute,
   DashboardSettingsRoute: DashboardSettingsRoute,
   DashboardIndexRoute: DashboardIndexRoute,
+  DashboardBlogIdRoute: DashboardBlogIdRoute,
   DashboardCustomersIdRoute: DashboardCustomersIdRoute,
   DashboardOrdersIdRoute: DashboardOrdersIdRoute,
   DashboardProductsIdRoute: DashboardProductsIdRoute,
   DashboardProductsNewRoute: DashboardProductsNewRoute,
   DashboardSalesIdRoute: DashboardSalesIdRoute,
   DashboardSalesNewRoute: DashboardSalesNewRoute,
+  DashboardBlogIndexRoute: DashboardBlogIndexRoute,
   DashboardCustomersIndexRoute: DashboardCustomersIndexRoute,
   DashboardOrdersIndexRoute: DashboardOrdersIndexRoute,
   DashboardProductsIndexRoute: DashboardProductsIndexRoute,
@@ -1019,10 +1101,12 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsOfServiceRoute: TermsOfServiceRoute,
+  BlogSlugRoute: BlogSlugRoute,
   CheckoutReturnRoute: CheckoutReturnRoute,
   LibraryTokenRoute: LibraryTokenRoute,
   SaleSlugRoute: SaleSlugRoute,
   ShopCategoryRoute: ShopCategoryRoute,
+  BlogIndexRoute: BlogIndexRoute,
   CheckoutIndexRoute: CheckoutIndexRoute,
   ShopIndexRoute: ShopIndexRoute,
   ApiPublicDownloadRoute: ApiPublicDownloadRoute,
