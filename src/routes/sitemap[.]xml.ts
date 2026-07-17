@@ -30,9 +30,10 @@ export const Route = createFileRoute("/sitemap.xml")({
           { path: "/signup", changefreq: "yearly", priority: "0.3" },
         ];
 
-        for (const c of ["software", "instruments", "libraries", "daws", "effects"]) {
+        for (const c of ["instruments", "effects", "libraries", "daws", "software", "freebies"]) {
           entries.push({ path: `/shop/${c}`, changefreq: "weekly", priority: "0.8" });
         }
+
 
         try {
           const key = process.env.SUPABASE_PUBLISHABLE_KEY!;
