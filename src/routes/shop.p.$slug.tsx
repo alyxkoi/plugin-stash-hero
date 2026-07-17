@@ -14,12 +14,14 @@ import { useSalePricing } from "@/lib/sale-pricing";
 async function fetchProductMeta(slug: string) {
   const { data } = await supabase
     .from("products")
-    .select("name,maker,tagline,description,category,cover_url")
+    .select("name,maker,tagline,description,category,cover_url,price,is_free")
     .eq("slug", slug)
     .eq("status", "published")
     .maybeSingle();
-  return data as { name: string; maker: string | null; tagline: string | null; description: string | null; category: string; cover_url: string | null } | null;
+  return data as { name: string; maker: string | null; tagline: string | null; description: string | null; category: string; cover_url: string | null; price: number | null; is_free: boolean | null } | null;
 }
+
+
 
 export const Route = createFileRoute("/shop/p/$slug")({
   loader: async ({ params }) => ({ meta: await fetchProductMeta(params.slug) }),
