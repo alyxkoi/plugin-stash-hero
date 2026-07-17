@@ -14,11 +14,23 @@ import { useSalePricing } from "@/lib/sale-pricing";
 async function fetchProductMeta(slug: string) {
   const { data } = await supabase
     .from("products")
-    .select("name,maker,tagline,description,category,cover_url,price,is_free")
+    .select("name,maker,tagline,description,category,cover_url,price,compare_at_price,is_free,seo_title,seo_description")
     .eq("slug", slug)
     .eq("status", "published")
     .maybeSingle();
-  return data as { name: string; maker: string | null; tagline: string | null; description: string | null; category: string; cover_url: string | null; price: number | null; is_free: boolean | null } | null;
+  return data as {
+    name: string;
+    maker: string | null;
+    tagline: string | null;
+    description: string | null;
+    category: string;
+    cover_url: string | null;
+    price: number | null;
+    compare_at_price: number | null;
+    is_free: boolean | null;
+    seo_title: string | null;
+    seo_description: string | null;
+  } | null;
 }
 
 
@@ -27,13 +39,33 @@ export const Route = createFileRoute("/shop/p/$slug")({
   loader: async ({ params }) => ({ meta: await fetchProductMeta(params.slug) }),
   head: ({ params, loaderData }) => {
     const m = loaderData?.meta;
-    const title = m ? `${m.maker ? `${m.maker} ` : ""}${m.name} — Plugin Warehouse` : `${params.slug} — Plugin Warehouse`;
-    const rawDesc = m?.tagline || m?.description || "";
-    const clean = rawDesc.replace(/\s+/g, " ").trim();
-    const desc = clean
-      ? (clean.length > 158 ? `${clean.slice(0, 155)}...` : clean)
-      : `${m?.name ?? params.slug} — pro audio ${m?.category ?? "plugin"} at a fraction of retail. Instant download. Lifetime license.`;
     const url = `https://www.thepluginwarehouse.com/shop/p/${params.slug}`;
+
+    // ----- Title: SEO override, else "{Name} | Up to {discount}% Off | Plugin Warehouse" -----
+    const price = m?.is_free ? 0 : Number(m?.price ?? 0);
+    const compare = Number(m?.compare_at_price ?? 0);
+    const discountPct =
+      compare > 0 && price > 0 && compare > price
+        ? Math.round(((compare - price) / compare) * 100)
+        : 0;
+    const autoTitle = m
+      ? discountPct > 0
+        ? `${m.name} | Up to ${discountPct}% Off | Plugin Warehouse`
+        : `${m.name} | Plugin Warehouse`
+      : `${params.slug} | Plugin Warehouse`;
+    const title = (m?.seo_title?.trim()) || autoTitle;
+
+    // ----- Description: SEO override, else first ~155 chars of description -----
+    const clean = (m?.description || m?.tagline || "").replace(/\s+/g, " ").trim();
+    const autoDesc = clean
+      ? clean.length > 155
+        ? `${clean.slice(0, 152).trimEnd()}...`
+        : clean
+      : m
+        ? `${m.name} — pro audio ${m.category ?? "plugin"} at a fraction of retail. Instant download. Lifetime license.`
+        : "Pro audio plugin at a fraction of retail. Instant download. Lifetime license.";
+    const desc = (m?.seo_description?.trim()) || autoDesc;
+
     const meta: Array<Record<string, string>> = [
       { title },
       { name: "description", content: desc },
@@ -41,12 +73,14 @@ export const Route = createFileRoute("/shop/p/$slug")({
       { property: "og:description", content: desc },
       { property: "og:type", content: "product" },
       { property: "og:url", content: url },
+      { name: "twitter:title", content: title },
+      { name: "twitter:description", content: desc },
     ];
     if (m?.cover_url) {
       meta.push({ property: "og:image", content: m.cover_url });
+      meta.push({ property: "og:image:alt", content: `${m.name} plugin cover` });
       meta.push({ name: "twitter:image", content: m.cover_url });
     }
-    const price = m?.is_free ? 0 : Number(m?.price ?? 0);
     const productLd = m
       ? {
           "@context": "https://schema.org",
@@ -77,6 +111,7 @@ export const Route = createFileRoute("/shop/p/$slug")({
   },
   component: ProductDetail,
 });
+
 
 type Row = {
   id: string;
