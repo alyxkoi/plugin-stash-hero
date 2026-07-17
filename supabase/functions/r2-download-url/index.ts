@@ -4,14 +4,8 @@
 // includes the product.
 import { corsHeaders, adminClient, json } from "../_shared/auth.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { presign } from "../_shared/r2.ts";
 
-// Public custom domain mapped to the R2 bucket. Downloads go browser → R2
-// directly via this hostname — no presigning, no edge proxy, no size cap.
-const FILES_DOMAIN = "https://thepluginwarehousefiles.com";
-function customDownloadUrl(key: string) {
-  const clean = key.replace(/^\/+/, "");
-  return `${FILES_DOMAIN}/${clean.split("/").map(encodeURIComponent).join("/")}`;
-}
 
 
 async function resolveUser(req: Request) {
@@ -84,11 +78,19 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (fileErr || !fileRow?.zip_url) return json({ error: "Plugin file not found." }, 404);
 
-    // Build a direct custom-domain URL from the stored object key. The bucket
-    // is served publicly at thepluginwarehousefiles.com, so the browser
-    // downloads straight from R2 with no size ceiling. Access is gated by
-    // the ownership check above — the URL is not exposed to non-buyers.
-    const url = customDownloadUrl(fileRow.zip_url);
+    // Short-lived presigned GET URL from R2's S3 endpoint. The file lives in
+    // a private bucket path; access is gated by the ownership check above and
+    // the URL expires within an hour, so plugin zips cannot be downloaded by
+    // guessing a public custom-domain URL from public product metadata.
+    const filename = fileRow.zip_file_name || fileRow.zip_url.split("/").pop() || "download.zip";
+    const url = await presign({
+      method: "GET",
+      key: fileRow.zip_url,
+      expiresIn: 3600,
+      responseContentDisposition: `attachment; filename="${filename.replace(/"/g, "")}"`,
+      responseContentType: "application/zip",
+    });
+
 
     if (downloadUserId) {
       await admin.from("library_downloads").insert({ user_id: downloadUserId, product_id: productId }).select().maybeSingle();
