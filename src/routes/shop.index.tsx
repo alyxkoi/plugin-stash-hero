@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ShopPage } from "@/components/ShopPage";
 
-const TITLE = "The Warehouse — Every Plugin, Every Category";
-const DESC = "Browse the full Plugin Warehouse catalog: synths, effects, sample libraries, DAWs and creative software — pro-tier titles at a fraction of retail.";
+const TITLE = "Shop All Plugins | Cheap VST Plugins & Bundles | Plugin Warehouse";
+const DESC = "Browse every plugin in the vault. Synths, effects, mixing and mastering tools at deep discounts. The pro tools you want without the retail markup.";
 const URL = "https://www.thepluginwarehouse.com/shop";
 
 export const Route = createFileRoute("/shop/")({
@@ -13,6 +13,9 @@ export const Route = createFileRoute("/shop/")({
       { property: "og:title", content: TITLE },
       { property: "og:description", content: DESC },
       { property: "og:url", content: URL },
+      { property: "og:type", content: "website" },
+      { name: "twitter:title", content: TITLE },
+      { name: "twitter:description", content: DESC },
     ],
     links: [{ rel: "canonical", href: URL }],
   }),
