@@ -38,6 +38,7 @@ type Row = {
   cover_url: string | null; cover_gradient: string | null;
   supports_windows: boolean; supports_mac: boolean;
   is_free: boolean | null;
+  seo_title: string | null; seo_description: string | null;
 };
 
 type FileRow = { zip_url: string; zip_file_name: string | null };
@@ -45,13 +46,14 @@ type FileRow = { zip_url: string; zip_file_name: string | null };
 async function fetchProduct(id: string): Promise<Row | null> {
   const { data, error } = await supabase
     .from("products")
-    .select("id,slug,name,maker,category,description,tags,formats,version,library_type,price,compare_at_price,status,cover_url,cover_gradient,supports_windows,supports_mac,is_free")
+    .select("id,slug,name,maker,category,description,tags,formats,version,library_type,price,compare_at_price,status,cover_url,cover_gradient,supports_windows,supports_mac,is_free,seo_title,seo_description")
     .eq("id", id)
     .maybeSingle();
 
   if (error) throw new Error(error.message);
   return data as Row | null;
 }
+
 
 async function fetchProductFile(id: string): Promise<FileRow | null> {
   const { data, error } = await supabase
@@ -117,6 +119,9 @@ function EditProduct() {
   const [supportsWindows, setSupportsWindows] = useState(true);
   const [supportsMac, setSupportsMac] = useState(false);
   const [isFree, setIsFree] = useState(false);
+  const [seoTitle, setSeoTitle] = useState("");
+  const [seoDescription, setSeoDescription] = useState("");
+
 
   const [coverUploading, setCoverUploading] = useState(false);
   const [zipUploading, setZipUploading] = useState(false);
@@ -150,7 +155,10 @@ function EditProduct() {
     setSupportsWindows(product.supports_windows ?? true);
     setSupportsMac(product.supports_mac ?? false);
     setIsFree(!!product.is_free || Number(product.price) === 0);
+    setSeoTitle(product.seo_title || "");
+    setSeoDescription(product.seo_description || "");
   }, [product]);
+
 
 
   if (isLoading) {
