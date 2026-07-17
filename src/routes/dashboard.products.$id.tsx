@@ -565,6 +565,34 @@ function EditProduct() {
           {coverUrl && <div className="text-[10px] text-white/40 mt-1 font-mono break-all">cover_url: {coverUrl}</div>}
         </DashCard>
 
+        <DashCard title="SEO overrides (optional)">
+          <p className="text-[11px] text-white/50 font-mono mb-4">
+            Leave blank to auto-generate. Title falls back to <span className="text-white/70">"{name || "{Product Name}"} | Up to X% Off | Plugin Warehouse"</span>, description falls back to the first ~155 characters of the product description.
+          </p>
+          <div className="space-y-3">
+            <Field label={<>SEO title <span className="text-white/40 font-mono text-[10px]">({seoTitle.length}/60 recommended)</span></>}>
+              <input
+                value={seoTitle}
+                onChange={e => setSeoTitle(e.target.value)}
+                maxLength={120}
+                placeholder="Leave blank to auto-generate"
+                className="ipt"
+              />
+            </Field>
+            <Field label={<>SEO description <span className="text-white/40 font-mono text-[10px]">({seoDescription.length}/160 recommended)</span></>}>
+              <textarea
+                value={seoDescription}
+                onChange={e => setSeoDescription(e.target.value)}
+                maxLength={320}
+                rows={3}
+                placeholder="Leave blank to use the first ~155 characters of the description"
+                className="ipt resize-none"
+              />
+            </Field>
+          </div>
+        </DashCard>
+
+
         <div className="glass-card p-5 border !border-[var(--accent-red)]/40">
           <div className="chromatic-edge" />
           <div className="relative z-10">
