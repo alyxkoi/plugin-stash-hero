@@ -296,7 +296,10 @@ function EditProduct() {
         supports_windows: isLibrary ? false : supportsWindows,
         supports_mac: isLibrary ? false : supportsMac,
         is_free: isFree || effectivePrice === 0,
+        seo_title: seoTitle.trim() || null,
+        seo_description: seoDescription.trim() || null,
         published_at: status === "published" ? new Date().toISOString() : null,
+
       }).eq("id", id);
       if (upErr) throw new Error(upErr.message);
 
