@@ -43,18 +43,29 @@ export const Route = createFileRoute("/sale/$slug")({
     if (!sale) throw notFound();
     return { sale };
   },
-  head: ({ loaderData }) => {
-    if (!loaderData) return { meta: [{ title: "Sale — Plugin Warehouse" }] };
-    const s = loaderData.sale;
+  head: ({ params, loaderData }) => {
+    const TITLE = "Plugin Deals | Up to 90% Off Pro VST Plugins | Plugin Warehouse";
+    const DESC = "The best plugin deals online. Pro synths, effects, and bundles at knockout prices. Stack extra savings on already discounted plugins. Limited time.";
+    const url = `https://www.thepluginwarehouse.com/sale/${params.slug}`;
+    const title = loaderData?.sale ? `${loaderData.sale.name} | Plugin Warehouse` : TITLE;
+    const desc = loaderData?.sale?.subheadline || DESC;
     return {
       meta: [
-        { title: `${s.name} — Plugin Warehouse` },
-        { name: "description", content: s.subheadline ?? `${s.discount_pct}% off. Limited time.` },
+        { title },
+        { name: "description", content: desc },
+        { property: "og:title", content: title },
+        { property: "og:description", content: desc },
+        { property: "og:url", content: url },
+        { property: "og:type", content: "website" },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: desc },
       ],
+      links: [{ rel: "canonical", href: url }],
     };
   },
   component: SaleEvent,
 });
+
 
 function SaleEvent() {
   const { sale } = Route.useLoaderData();

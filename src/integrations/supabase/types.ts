@@ -499,6 +499,8 @@ export type Database = {
           name: string
           price: number
           published_at: string | null
+          seo_description: string | null
+          seo_title: string | null
           slug: string
           status: Database["public"]["Enums"]["product_status"]
           sub_type: string | null
@@ -529,6 +531,8 @@ export type Database = {
           name: string
           price?: number
           published_at?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
           slug: string
           status?: Database["public"]["Enums"]["product_status"]
           sub_type?: string | null
@@ -559,6 +563,8 @@ export type Database = {
           name?: string
           price?: number
           published_at?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
           slug?: string
           status?: Database["public"]["Enums"]["product_status"]
           sub_type?: string | null

@@ -91,53 +91,57 @@ function pickDailyHeroProducts(all: Product[]): Product[] {
 /* ============ ROUTE ============ */
 
 export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "Plugin Warehouse — Pro plugins at a fraction of the price" },
-      {
-        name: "description",
-        content:
-          "A curated vault of pro-tier plugins, instruments, and sample libraries. Instant access. Yours forever.",
-      },
-      { property: "og:title", content: "Plugin Warehouse — Pro plugins at a fraction of the price" },
-      {
-        property: "og:description",
-        content: "A curated vault of pro-tier plugins, instruments, and sample libraries. Instant access. Yours forever.",
-      },
-    ],
-    scripts: [
-      {
-        type: "application/ld+json",
-        children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@graph": [
-            {
-              "@type": "Organization",
-              "@id": "https://www.thepluginwarehouse.com/#organization",
-              name: "Plugin Warehouse",
-              url: "https://www.thepluginwarehouse.com/",
-              logo: "https://storage.googleapis.com/gpt-engineer-file-uploads/E3zniLYNF9bYMEA8iYs6337JUNZ2/social-images/social-1784165136214-PWH_Logo_Main.webp",
-            },
-            {
-              "@type": "WebSite",
-              "@id": "https://www.thepluginwarehouse.com/#website",
-              name: "Plugin Warehouse",
-              url: "https://www.thepluginwarehouse.com/",
-              publisher: { "@id": "https://www.thepluginwarehouse.com/#organization" },
-              potentialAction: {
-                "@type": "SearchAction",
-                target: "https://www.thepluginwarehouse.com/search?q={search_term_string}",
-                "query-input": "required name=search_term_string",
+  head: () => {
+    const TITLE = "Plugin Warehouse | Pro Music Plugins at up to 90% Off Retail";
+    const DESC = "Pro plugins, sample libraries, and creative tools at a fraction of retail. Build your studio for less. Serum, Omnisphere, FabFilter and more, up to 90% off.";
+    const URL = "https://www.thepluginwarehouse.com/";
+    return {
+      meta: [
+        { title: TITLE },
+        { name: "description", content: DESC },
+        { property: "og:title", content: TITLE },
+        { property: "og:description", content: DESC },
+        { property: "og:url", content: URL },
+        { property: "og:type", content: "website" },
+        { name: "twitter:title", content: TITLE },
+        { name: "twitter:description", content: DESC },
+      ],
+      links: [{ rel: "canonical", href: URL }],
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@graph": [
+              {
+                "@type": "Organization",
+                "@id": "https://www.thepluginwarehouse.com/#organization",
+                name: "Plugin Warehouse",
+                url: "https://www.thepluginwarehouse.com/",
+                logo: "https://storage.googleapis.com/gpt-engineer-file-uploads/E3zniLYNF9bYMEA8iYs6337JUNZ2/social-images/social-1784165136214-PWH_Logo_Main.webp",
               },
-            },
-          ],
-        }),
-      },
-    ],
-  }),
+              {
+                "@type": "WebSite",
+                "@id": "https://www.thepluginwarehouse.com/#website",
+                name: "Plugin Warehouse",
+                url: "https://www.thepluginwarehouse.com/",
+                publisher: { "@id": "https://www.thepluginwarehouse.com/#organization" },
+                potentialAction: {
+                  "@type": "SearchAction",
+                  target: "https://www.thepluginwarehouse.com/search?q={search_term_string}",
+                  "query-input": "required name=search_term_string",
+                },
+              },
+            ],
+          }),
+        },
+      ],
+    };
+  },
 
   component: Index,
 });
+
 
 function Index() {
   return (
