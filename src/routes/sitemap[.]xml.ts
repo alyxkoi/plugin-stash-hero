@@ -19,6 +19,7 @@ export const Route = createFileRoute("/sitemap.xml")({
         const entries: SitemapEntry[] = [
           { path: "/", changefreq: "daily", priority: "1.0" },
           { path: "/shop", changefreq: "daily", priority: "0.9" },
+          { path: "/blog", changefreq: "weekly", priority: "0.7" },
           { path: "/search", changefreq: "weekly", priority: "0.5" },
           { path: "/our-story", changefreq: "monthly", priority: "0.6" },
           { path: "/faq", changefreq: "monthly", priority: "0.6" },
@@ -61,6 +62,14 @@ export const Route = createFileRoute("/sitemap.xml")({
             .eq("status", "active");
           for (const s of sales ?? []) {
             if (s.slug) entries.push({ path: `/sale/${s.slug}`, lastmod: s.updated_at?.slice(0, 10), changefreq: "daily", priority: "0.8" });
+          }
+
+          const { data: posts } = await supabase
+            .from("blog_posts")
+            .select("slug, updated_at")
+            .eq("published", true);
+          for (const b of (posts as { slug: string | null; updated_at: string | null }[] | null) ?? []) {
+            if (b.slug) entries.push({ path: `/blog/${b.slug}`, lastmod: b.updated_at?.slice(0, 10), changefreq: "monthly", priority: "0.6" });
           }
         } catch {
           // If DB is unreachable, still serve the static entries.
