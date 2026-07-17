@@ -14,12 +14,14 @@ import { useSalePricing } from "@/lib/sale-pricing";
 async function fetchProductMeta(slug: string) {
   const { data } = await supabase
     .from("products")
-    .select("name,maker,tagline,description,category,cover_url")
+    .select("name,maker,tagline,description,category,cover_url,price,is_free")
     .eq("slug", slug)
     .eq("status", "published")
     .maybeSingle();
-  return data as { name: string; maker: string | null; tagline: string | null; description: string | null; category: string; cover_url: string | null } | null;
+  return data as { name: string; maker: string | null; tagline: string | null; description: string | null; category: string; cover_url: string | null; price: number | null; is_free: boolean | null } | null;
 }
+
+
 
 export const Route = createFileRoute("/shop/p/$slug")({
   loader: async ({ params }) => ({ meta: await fetchProductMeta(params.slug) }),
@@ -44,7 +46,34 @@ export const Route = createFileRoute("/shop/p/$slug")({
       meta.push({ property: "og:image", content: m.cover_url });
       meta.push({ name: "twitter:image", content: m.cover_url });
     }
-    return { meta, links: [{ rel: "canonical", href: url }] };
+    const price = m?.is_free ? 0 : Number(m?.price ?? 0);
+    const productLd = m
+      ? {
+          "@context": "https://schema.org",
+          "@type": "Product",
+          name: m.name,
+          description: clean || desc,
+          ...(m.maker ? { brand: { "@type": "Brand", name: m.maker } } : {}),
+          ...(m.cover_url ? { image: m.cover_url } : {}),
+          category: m.category,
+          url,
+          offers: {
+            "@type": "Offer",
+            price: price.toFixed(2),
+            priceCurrency: "USD",
+            availability: "https://schema.org/InStock",
+            url,
+            itemCondition: "https://schema.org/NewCondition",
+          },
+        }
+      : null;
+    return {
+      meta,
+      links: [{ rel: "canonical", href: url }],
+      ...(productLd
+        ? { scripts: [{ type: "application/ld+json", children: JSON.stringify(productLd) }] }
+        : {}),
+    };
   },
   component: ProductDetail,
 });

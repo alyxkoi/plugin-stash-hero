@@ -40,6 +40,17 @@ export const Route = createFileRoute("/faq")({
     const title = "FAQ — Plugin Warehouse";
     const desc = "Answers to common questions about Plugin Warehouse downloads, DAW compatibility, installation on Mac and PC, refunds and support.";
     const url = "https://www.thepluginwarehouse.com/faq";
+    const faqLd = {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: FAQS.flatMap((g) =>
+        g.items.map((i) => ({
+          "@type": "Question",
+          name: i.q,
+          acceptedAnswer: { "@type": "Answer", text: i.a },
+        })),
+      ),
+    };
     return {
       meta: [
         { title },
@@ -49,6 +60,7 @@ export const Route = createFileRoute("/faq")({
         { property: "og:url", content: url },
       ],
       links: [{ rel: "canonical", href: url }],
+      scripts: [{ type: "application/ld+json", children: JSON.stringify(faqLd) }],
     };
   },
   component: FaqPage,

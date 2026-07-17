@@ -105,7 +105,37 @@ export const Route = createFileRoute("/")({
         content: "A curated vault of pro-tier plugins, instruments, and sample libraries. Instant access. Yours forever.",
       },
     ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              "@id": "https://www.thepluginwarehouse.com/#organization",
+              name: "Plugin Warehouse",
+              url: "https://www.thepluginwarehouse.com/",
+              logo: "https://storage.googleapis.com/gpt-engineer-file-uploads/E3zniLYNF9bYMEA8iYs6337JUNZ2/social-images/social-1784165136214-PWH_Logo_Main.webp",
+            },
+            {
+              "@type": "WebSite",
+              "@id": "https://www.thepluginwarehouse.com/#website",
+              name: "Plugin Warehouse",
+              url: "https://www.thepluginwarehouse.com/",
+              publisher: { "@id": "https://www.thepluginwarehouse.com/#organization" },
+              potentialAction: {
+                "@type": "SearchAction",
+                target: "https://www.thepluginwarehouse.com/search?q={search_term_string}",
+                "query-input": "required name=search_term_string",
+              },
+            },
+          ],
+        }),
+      },
+    ],
   }),
+
   component: Index,
 });
 
