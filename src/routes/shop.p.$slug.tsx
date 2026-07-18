@@ -255,13 +255,22 @@ function ProductDetail() {
 
           {(() => {
             const isLib = p.category === "libraries";
+            const plats = p.platforms ?? [];
+            const platformLabel = plats.length === 0
+              ? "—"
+              : (plats.includes("mac") && plats.includes("windows"))
+                ? "Mac / Windows"
+                : plats.includes("mac") ? "Mac" : "Windows";
+            const showPlatform = !isLib;
             const cells = 1 + (p.fileSize ? 1 : 0) + (isLib ? 0 : 1) + 1;
             const colClass = cells >= 4 ? "md:grid-cols-4" : cells === 3 ? "md:grid-cols-3" : "md:grid-cols-2";
             return (
               <div className={`grid grid-cols-2 ${colClass} gap-3 mb-6`}>
                 {isLib && p.libraryType
                   ? <Meta label="LIBRARY TYPE" value={p.libraryType} />
-                  : <Meta label="VERSION" value={p.version} />}
+                  : showPlatform
+                    ? <Meta label="PLATFORM" value={platformLabel} />
+                    : <Meta label="VERSION" value={p.version} />}
                 {p.fileSize && <Meta label="FILE SIZE" value={p.fileSize} />}
                 {!isLib && <Meta label="FORMATS" value={p.formats.slice(0, 2).join(" / ") || "—"} />}
                 <Meta label="UPDATED" value={p.updated} />
