@@ -117,6 +117,7 @@ type Row = {
   id: string;
   slug: string; name: string; maker: string; category: string;
   formats: string[] | null; daws: string[] | null; version: string | null; library_type: string | null;
+  platforms: string[] | null;
   price: number; compare_at_price: number | null; description: string | null;
   tagline?: string | null;
   cover_url: string | null; cover_gradient: string | null;
@@ -144,6 +145,7 @@ function toProduct(r: Row): Product {
     coverGradient: r.cover_gradient ?? "linear-gradient(135deg,#3a0a4a,#7b0a5a)",
     coverUrl: r.cover_url,
     isFree: !!r.is_free,
+    platforms: r.platforms ?? [],
   };
 }
 
