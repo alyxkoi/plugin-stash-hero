@@ -133,7 +133,7 @@ export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageP
           <GlassCard variant="subtle" className="p-5">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-black uppercase tracking-wider text-base m-0">FILTERS</h2>
-              <button onClick={() => { setSelectedCats(category ? [category] : []); setSelectedFormats([]); setSaleStatus("all"); setQuery(""); setPriceSort("none"); }} className="text-xs text-white/50 hover:text-white">CLEAR</button>
+              <button onClick={() => { setSelectedCats(category ? [category] : []); setSelectedFormats([]); setSelectedPlatforms([]); setSaleStatus("all"); setQuery(""); setPriceSort("none"); }} className="text-xs text-white/50 hover:text-white">CLEAR</button>
             </div>
             <input className="input-glass mb-5" placeholder={`Search within ${category || "warehouse"}`} value={query} onChange={(e) => setQuery(e.target.value)} />
 
