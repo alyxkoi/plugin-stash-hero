@@ -28,6 +28,7 @@ export interface Product {
   isFeatured?: boolean;
   isFree?: boolean;
   tags?: string[];
+  platforms?: string[];
 }
 
 export const products: Product[] = [];
