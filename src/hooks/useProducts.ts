@@ -8,6 +8,7 @@ type Row = {
   formats: string[] | null; daws: string[] | null; version: string | null;
   library_type: string | null;
   tags: string[] | null;
+  platforms: string[] | null;
   price: number; compare_at_price: number | null; description: string | null;
   cover_url: string | null; cover_gradient: string | null;
   is_free: boolean | null; is_featured: boolean | null; is_bestseller: boolean | null;
