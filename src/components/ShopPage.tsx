@@ -110,13 +110,14 @@ export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageP
       });
     }
     return r;
-  }, [ALL, query, selectedCats, selectedFormats, saleStatus, priceSort]);
+  }, [ALL, query, selectedCats, selectedFormats, selectedPlatforms, saleStatus, priceSort]);
 
   const togglePill = <T,>(list: T[], v: T, set: (l: T[]) => void) =>
     set(list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
 
   const showFormat = !initialOnSale && !["software", "freebies"].includes(category || "");
-  const resultMotionKey = `${query}|${selectedCats.join(",")}|${selectedFormats.join(",")}|${saleStatus}|${priceSort}`;
+  const showPlatform = !["software", "libraries"].includes(category || "");
+  const resultMotionKey = `${query}|${selectedCats.join(",")}|${selectedFormats.join(",")}|${selectedPlatforms.join(",")}|${saleStatus}|${priceSort}`;
 
   return (
     <div>
