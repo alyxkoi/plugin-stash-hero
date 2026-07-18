@@ -117,6 +117,7 @@ type Row = {
   id: string;
   slug: string; name: string; maker: string; category: string;
   formats: string[] | null; daws: string[] | null; version: string | null; library_type: string | null;
+  platforms: string[] | null;
   price: number; compare_at_price: number | null; description: string | null;
   tagline?: string | null;
   cover_url: string | null; cover_gradient: string | null;
@@ -144,11 +145,12 @@ function toProduct(r: Row): Product {
     coverGradient: r.cover_gradient ?? "linear-gradient(135deg,#3a0a4a,#7b0a5a)",
     coverUrl: r.cover_url,
     isFree: !!r.is_free,
+    platforms: r.platforms ?? [],
   };
 }
 
 async function fetchBySlug(slug: string): Promise<{ product: Product | null; related: Product[] }> {
-  const cols = "id,slug,name,maker,category,formats,daws,version,library_type,price,compare_at_price,description,tagline,cover_url,cover_gradient,is_free,updated_at,file_size";
+  const cols = "id,slug,name,maker,category,formats,daws,version,library_type,platforms,price,compare_at_price,description,tagline,cover_url,cover_gradient,is_free,updated_at,file_size";
 
   const { data, error } = await supabase
     .from("products")
@@ -253,13 +255,22 @@ function ProductDetail() {
 
           {(() => {
             const isLib = p.category === "libraries";
+            const plats = p.platforms ?? [];
+            const platformLabel = plats.length === 0
+              ? "—"
+              : (plats.includes("mac") && plats.includes("windows"))
+                ? "Mac / Windows"
+                : plats.includes("mac") ? "Mac" : "Windows";
+            const showPlatform = !isLib;
             const cells = 1 + (p.fileSize ? 1 : 0) + (isLib ? 0 : 1) + 1;
             const colClass = cells >= 4 ? "md:grid-cols-4" : cells === 3 ? "md:grid-cols-3" : "md:grid-cols-2";
             return (
               <div className={`grid grid-cols-2 ${colClass} gap-3 mb-6`}>
                 {isLib && p.libraryType
                   ? <Meta label="LIBRARY TYPE" value={p.libraryType} />
-                  : <Meta label="VERSION" value={p.version} />}
+                  : showPlatform
+                    ? <Meta label="PLATFORM" value={platformLabel} />
+                    : <Meta label="VERSION" value={p.version} />}
                 {p.fileSize && <Meta label="FILE SIZE" value={p.fileSize} />}
                 {!isLib && <Meta label="FORMATS" value={p.formats.slice(0, 2).join(" / ") || "—"} />}
                 <Meta label="UPDATED" value={p.updated} />

@@ -497,6 +497,7 @@ export type Database = {
           library_type: string | null
           maker: string
           name: string
+          platforms: string[]
           price: number
           published_at: string | null
           seo_description: string | null
@@ -529,6 +530,7 @@ export type Database = {
           library_type?: string | null
           maker: string
           name: string
+          platforms?: string[]
           price?: number
           published_at?: string | null
           seo_description?: string | null
@@ -561,6 +563,7 @@ export type Database = {
           library_type?: string | null
           maker?: string
           name?: string
+          platforms?: string[]
           price?: number
           published_at?: string | null
           seo_description?: string | null

@@ -410,8 +410,13 @@ function EditProduct() {
                 </Field>
               )}
               {category !== "libraries" && (
-                <Field label="Operating system">
-                  <div className="flex flex-wrap gap-2">
+                <Field label={<>
+                  Platforms
+                  <span className="ml-2 font-mono text-[10px] text-white/40 normal-case tracking-normal">
+                    detected from uploaded file · toggle to override
+                  </span>
+                </>}>
+                  <div className="flex flex-wrap gap-2 items-center">
                     <label className={`inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-md border font-mono cursor-pointer ${supportsWindows ? "bg-[var(--accent-red)]/15 border-[var(--accent-red)]/60" : "bg-white/5 border-white/15 text-white/70"}`}>
                       <input type="checkbox" checked={supportsWindows} onChange={e => setSupportsWindows(e.target.checked)} className="accent-[var(--accent-red)]" />
                       Windows
@@ -429,6 +434,9 @@ function EditProduct() {
                       }} className="accent-[var(--accent-red)]" />
                       Mac
                     </label>
+                    <span className="text-[10px] font-mono text-white/50 ml-1">
+                      → {supportsMac && supportsWindows ? "Mac / Windows" : supportsMac ? "Mac" : supportsWindows ? "Windows" : "none"}
+                    </span>
                   </div>
                 </Field>
               )}

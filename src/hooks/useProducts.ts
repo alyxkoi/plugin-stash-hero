@@ -8,6 +8,7 @@ type Row = {
   formats: string[] | null; daws: string[] | null; version: string | null;
   library_type: string | null;
   tags: string[] | null;
+  platforms: string[] | null;
   price: number; compare_at_price: number | null; description: string | null;
   cover_url: string | null; cover_gradient: string | null;
   is_free: boolean | null; is_featured: boolean | null; is_bestseller: boolean | null;
@@ -37,13 +38,14 @@ function mapRow(r: Row): Product {
     isFeatured: !!r.is_featured,
     isBestseller: !!r.is_bestseller,
     tags: r.tags ?? [],
+    platforms: r.platforms ?? [],
   };
 }
 
 async function fetchPublished(): Promise<Product[]> {
   const { data, error } = await supabase
     .from("products")
-    .select("id,slug,name,maker,category,formats,daws,version,library_type,tags,price,compare_at_price,description,cover_url,cover_gradient,is_free,is_featured,is_bestseller,updated_at,published_at")
+    .select("id,slug,name,maker,category,formats,daws,version,library_type,tags,platforms,price,compare_at_price,description,cover_url,cover_gradient,is_free,is_featured,is_bestseller,updated_at,published_at")
     .eq("status", "published")
     .order("published_at", { ascending: false });
   if (error) throw new Error(error.message);

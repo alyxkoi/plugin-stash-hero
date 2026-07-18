@@ -11,6 +11,7 @@ type Row = {
   id: string;
   slug: string; name: string; maker: string; category: string;
   formats: string[] | null; daws: string[] | null; version: string | null;
+  platforms: string[] | null;
   price: number; compare_at_price: number | null; description: string | null;
   cover_url: string | null; cover_gradient: string | null;
   is_free: boolean | null; updated_at: string;
@@ -19,7 +20,7 @@ type Row = {
 async function fetchPublished(): Promise<Product[]> {
   const { data, error } = await supabase
     .from("products")
-    .select("id,slug,name,maker,category,formats,daws,version,price,compare_at_price,description,cover_url,cover_gradient,is_free,updated_at")
+    .select("id,slug,name,maker,category,formats,daws,version,platforms,price,compare_at_price,description,cover_url,cover_gradient,is_free,updated_at")
     .eq("status", "published")
     .order("published_at", { ascending: false });
   if (error) throw new Error(error.message);
@@ -41,6 +42,7 @@ async function fetchPublished(): Promise<Product[]> {
     coverGradient: r.cover_gradient ?? "linear-gradient(135deg,#3a0a4a,#7b0a5a)",
     coverUrl: r.cover_url,
     isFree: !!r.is_free,
+    platforms: r.platforms ?? [],
   }));
 }
 
@@ -56,6 +58,7 @@ export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageP
   const [query, setQuery] = useState("");
   const [selectedCats, setSelectedCats] = useState<Category[]>(category ? [category] : []);
   const [selectedFormats, setSelectedFormats] = useState<string[]>([]);
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [saleStatus, setSaleStatus] = useState<"all" | "sale" | "free">(initialOnSale ? "sale" : "all");
   const [priceSort, setPriceSort] = useState<"none" | "low" | "high">("none");
   const reduce = useReducedMotion();
@@ -90,6 +93,7 @@ export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageP
 
     if (query) r = r.filter((p) => p.name.toLowerCase().includes(query.toLowerCase()) || p.maker.toLowerCase().includes(query.toLowerCase()));
     if (selectedFormats.length) r = r.filter((p) => p.formats.some((f) => selectedFormats.includes(f)));
+    if (selectedPlatforms.length) r = r.filter((p) => (p.platforms ?? []).some((pl) => selectedPlatforms.includes(pl)));
     if (saleStatus === "sale") r = r.filter((p) => p.compareAtPrice && p.compareAtPrice > p.price);
     if (saleStatus === "free") r = r.filter((p) => p.isFree);
 
@@ -106,13 +110,14 @@ export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageP
       });
     }
     return r;
-  }, [ALL, query, selectedCats, selectedFormats, saleStatus, priceSort]);
+  }, [ALL, query, selectedCats, selectedFormats, selectedPlatforms, saleStatus, priceSort]);
 
   const togglePill = <T,>(list: T[], v: T, set: (l: T[]) => void) =>
     set(list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
 
   const showFormat = !initialOnSale && !["software", "freebies"].includes(category || "");
-  const resultMotionKey = `${query}|${selectedCats.join(",")}|${selectedFormats.join(",")}|${saleStatus}|${priceSort}`;
+  const showPlatform = !["software", "libraries"].includes(category || "");
+  const resultMotionKey = `${query}|${selectedCats.join(",")}|${selectedFormats.join(",")}|${selectedPlatforms.join(",")}|${saleStatus}|${priceSort}`;
 
   return (
     <div>
@@ -128,7 +133,7 @@ export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageP
           <GlassCard variant="subtle" className="p-5">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-black uppercase tracking-wider text-base m-0">FILTERS</h2>
-              <button onClick={() => { setSelectedCats(category ? [category] : []); setSelectedFormats([]); setSaleStatus("all"); setQuery(""); setPriceSort("none"); }} className="text-xs text-white/50 hover:text-white">CLEAR</button>
+              <button onClick={() => { setSelectedCats(category ? [category] : []); setSelectedFormats([]); setSelectedPlatforms([]); setSaleStatus("all"); setQuery(""); setPriceSort("none"); }} className="text-xs text-white/50 hover:text-white">CLEAR</button>
             </div>
             <input className="input-glass mb-5" placeholder={`Search within ${category || "warehouse"}`} value={query} onChange={(e) => setQuery(e.target.value)} />
 
@@ -149,6 +154,16 @@ export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageP
             {showFormat && (
               <FilterGroup title="Format">
                 <PillGroup options={allFormats} selected={selectedFormats} onToggle={(v) => togglePill(selectedFormats, v, setSelectedFormats)} />
+              </FilterGroup>
+            )}
+
+            {showPlatform && (
+              <FilterGroup title="Compatibility">
+                <PillGroup
+                  options={["Mac", "Windows"]}
+                  selected={selectedPlatforms.map((p) => p === "mac" ? "Mac" : "Windows")}
+                  onToggle={(v) => togglePill(selectedPlatforms, v.toLowerCase(), setSelectedPlatforms)}
+                />
               </FilterGroup>
             )}
 
@@ -196,7 +211,7 @@ export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageP
                 <GlassCard className="p-12 text-center">
                   <h3 className="font-black text-3xl mb-2">NOTHING IN THIS COMBO.</h3>
                   <p className="text-white/60 mb-6">Loosen up the filters.</p>
-                  <button onClick={() => { setSelectedFormats([]); setSaleStatus("all"); setQuery(""); setPriceSort("none"); }} className="btn-ghost">CLEAR FILTERS</button>
+                  <button onClick={() => { setSelectedFormats([]); setSelectedPlatforms([]); setSaleStatus("all"); setQuery(""); setPriceSort("none"); }} className="btn-ghost">CLEAR FILTERS</button>
                 </GlassCard>
               ) : (
                 <div className="grid grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
