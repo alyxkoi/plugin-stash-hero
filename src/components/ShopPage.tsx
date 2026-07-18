@@ -93,6 +93,7 @@ export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageP
 
     if (query) r = r.filter((p) => p.name.toLowerCase().includes(query.toLowerCase()) || p.maker.toLowerCase().includes(query.toLowerCase()));
     if (selectedFormats.length) r = r.filter((p) => p.formats.some((f) => selectedFormats.includes(f)));
+    if (selectedPlatforms.length) r = r.filter((p) => (p.platforms ?? []).some((pl) => selectedPlatforms.includes(pl)));
     if (saleStatus === "sale") r = r.filter((p) => p.compareAtPrice && p.compareAtPrice > p.price);
     if (saleStatus === "free") r = r.filter((p) => p.isFree);
 
