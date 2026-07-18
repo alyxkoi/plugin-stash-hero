@@ -211,7 +211,7 @@ export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageP
                 <GlassCard className="p-12 text-center">
                   <h3 className="font-black text-3xl mb-2">NOTHING IN THIS COMBO.</h3>
                   <p className="text-white/60 mb-6">Loosen up the filters.</p>
-                  <button onClick={() => { setSelectedFormats([]); setSaleStatus("all"); setQuery(""); setPriceSort("none"); }} className="btn-ghost">CLEAR FILTERS</button>
+                  <button onClick={() => { setSelectedFormats([]); setSelectedPlatforms([]); setSaleStatus("all"); setQuery(""); setPriceSort("none"); }} className="btn-ghost">CLEAR FILTERS</button>
                 </GlassCard>
               ) : (
                 <div className="grid grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
