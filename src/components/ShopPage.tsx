@@ -157,6 +157,16 @@ export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageP
               </FilterGroup>
             )}
 
+            {showPlatform && (
+              <FilterGroup title="Compatibility">
+                <PillGroup
+                  options={["Mac", "Windows"]}
+                  selected={selectedPlatforms.map((p) => p === "mac" ? "Mac" : "Windows")}
+                  onToggle={(v) => togglePill(selectedPlatforms, v.toLowerCase(), setSelectedPlatforms)}
+                />
+              </FilterGroup>
+            )}
+
             <FilterGroup title="Sale Status">
               <div className="flex gap-1 p-1 rounded-full bg-white/5 border border-white/10">
                 {(["all", "sale", "free"] as const).map((s) => (
