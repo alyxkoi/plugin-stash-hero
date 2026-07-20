@@ -98,6 +98,100 @@ export type Database = {
         }
         Relationships: []
       }
+      campaign_link_clicks: {
+        Row: {
+          created_at: string
+          id: number
+          link_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          link_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          link_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_link_clicks_link_id_fkey"
+            columns: ["link_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_link_groups: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      campaign_links: {
+        Row: {
+          archived_at: string | null
+          code: string
+          created_at: string
+          destination_path: string
+          group_id: string | null
+          id: string
+          label: string
+          updated_at: string
+          utm_campaign: string | null
+          utm_source: string
+        }
+        Insert: {
+          archived_at?: string | null
+          code: string
+          created_at?: string
+          destination_path?: string
+          group_id?: string | null
+          id?: string
+          label: string
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_source: string
+        }
+        Update: {
+          archived_at?: string | null
+          code?: string
+          created_at?: string
+          destination_path?: string
+          group_id?: string | null
+          id?: string
+          label?: string
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_links_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_link_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaigns: {
         Row: {
           click_rate: number
@@ -397,6 +491,7 @@ export type Database = {
           total: number
           updated_at: string
           user_id: string | null
+          utm_campaign: string | null
           utm_source: string | null
         }
         Insert: {
@@ -417,6 +512,7 @@ export type Database = {
           total?: number
           updated_at?: string
           user_id?: string | null
+          utm_campaign?: string | null
           utm_source?: string | null
         }
         Update: {
@@ -437,6 +533,7 @@ export type Database = {
           total?: number
           updated_at?: string
           user_id?: string | null
+          utm_campaign?: string | null
           utm_source?: string | null
         }
         Relationships: [
