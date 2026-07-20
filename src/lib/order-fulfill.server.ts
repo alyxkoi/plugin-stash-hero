@@ -92,6 +92,20 @@ export async function finalizeOrder(input: FulfillInput): Promise<{ orderId: str
     );
     const { error: itemsErr } = await supabaseAdmin.from("order_items").insert(rows);
     if (itemsErr) console.error("[fulfill] order_items insert failed", itemsErr);
+
+    // Seed per-user file-update acknowledgements so newly purchased products
+    // never show an "updated" badge until the next actual file replacement.
+    if (input.userId) {
+      const ackRows = input.items
+        .filter((it) => it.product_id)
+        .map((it) => ({ user_id: input.userId!, product_id: it.product_id, acknowledged_at: new Date().toISOString() }));
+      if (ackRows.length > 0) {
+        const { error: ackErr } = await supabaseAdmin
+          .from("product_file_acknowledgements")
+          .upsert(ackRows, { onConflict: "user_id,product_id" });
+        if (ackErr) console.error("[fulfill] ack seed failed", ackErr);
+      }
+    }
   }
 
   if (input.discountCode) {

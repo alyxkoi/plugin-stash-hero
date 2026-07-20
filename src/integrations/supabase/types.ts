@@ -446,9 +446,36 @@ export type Database = {
           },
         ]
       }
+      product_file_acknowledgements: {
+        Row: {
+          acknowledged_at: string
+          product_id: string
+          user_id: string
+        }
+        Insert: {
+          acknowledged_at?: string
+          product_id: string
+          user_id: string
+        }
+        Update: {
+          acknowledged_at?: string
+          product_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_file_acknowledgements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_files: {
         Row: {
           created_at: string
+          file_updated_at: string
           product_id: string
           updated_at: string
           zip_file_name: string | null
@@ -456,6 +483,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          file_updated_at?: string
           product_id: string
           updated_at?: string
           zip_file_name?: string | null
@@ -463,6 +491,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          file_updated_at?: string
           product_id?: string
           updated_at?: string
           zip_file_name?: string | null
@@ -781,10 +810,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      acknowledge_product_files: {
+        Args: { _product_ids: string[] }
+        Returns: undefined
+      }
       get_bestseller_product_ids: {
         Args: { _limit?: number }
         Returns: {
           orders: number
+          product_id: string
+        }[]
+      }
+      get_my_product_file_updates: {
+        Args: never
+        Returns: {
+          acknowledged_at: string
+          file_updated_at: string
           product_id: string
         }[]
       }

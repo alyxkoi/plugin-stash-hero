@@ -27,6 +27,18 @@ function OrdersPage() {
   const [query, setQuery] = useState("");
   const [orders, setOrders] = useState<Order[]>([]);
   const [ready, setReady] = useState(false);
+  const [updatedProductIds, setUpdatedProductIds] = useState<Set<string>>(new Set());
+
+  const refreshUpdates = async () => {
+    const { data } = await (supabase as any).rpc("get_my_product_file_updates");
+    const s = new Set<string>();
+    for (const r of (data ?? []) as Array<{ product_id: string; file_updated_at: string; acknowledged_at: string | null }>) {
+      if (!r.acknowledged_at || new Date(r.file_updated_at) > new Date(r.acknowledged_at)) {
+        s.add(r.product_id);
+      }
+    }
+    setUpdatedProductIds(s);
+  };
 
   useEffect(() => {
     if (loading) return;
@@ -38,9 +50,21 @@ function OrdersPage() {
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
       setOrders((data ?? []) as any);
+      await refreshUpdates();
       setReady(true);
     })();
   }, [user, loading]);
+
+  const acknowledgeProducts = async (productIds: string[]) => {
+    const toAck = productIds.filter((id) => updatedProductIds.has(id));
+    if (toAck.length === 0) return;
+    await (supabase as any).rpc("acknowledge_product_files", { _product_ids: toAck });
+    setUpdatedProductIds((prev) => {
+      const next = new Set(prev);
+      toAck.forEach((id) => next.delete(id));
+      return next;
+    });
+  };
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -58,6 +82,7 @@ function OrdersPage() {
   };
 
   if (!ready) return <div className="p-8 text-white/60">Loading your orders…</div>;
+
 
   return (
     <div className="space-y-8">
@@ -106,19 +131,35 @@ function OrdersPage() {
         </GlassCard>
       ) : (
         <div className="space-y-4">
-          {filtered.map(o => <OrderCard key={o.id} order={o} />)}
+          {filtered.map(o => (
+            <OrderCard
+              key={o.id}
+              order={o}
+              updatedProductIds={updatedProductIds}
+              onOpen={() => acknowledgeProducts(o.order_items.map(i => i.product_id).filter((x): x is string => !!x))}
+            />
+          ))}
         </div>
       )}
     </div>
   );
 }
 
-function OrderCard({ order }: { order: Order }) {
+function OrderCard({ order, updatedProductIds, onOpen }: { order: Order; updatedProductIds: Set<string>; onOpen: () => void }) {
   const [open, setOpen] = useState(false);
   const date = new Date(order.created_at);
   const items = order.order_items ?? [];
   const statusColor = order.status === "completed" ? "bg-[var(--accent-red)]/85"
     : order.status === "refunded" ? "bg-white/15" : "bg-amber-500/70";
+  const orderHasUpdate = items.some(i => i.product_id && updatedProductIds.has(i.product_id));
+
+  const toggle = () => {
+    setOpen((prev) => {
+      const next = !prev;
+      if (next && orderHasUpdate) onOpen();
+      return next;
+    });
+  };
 
   async function download(productId: string | null, name: string) {
     if (!productId) { toast.error("Missing product id"); return; }
@@ -136,17 +177,29 @@ function OrderCard({ order }: { order: Order }) {
     <div className="glass-card overflow-hidden">
       <div className="chromatic-edge" /><div className="glass-noise" />
       <div className="relative z-10">
-        <button onClick={() => setOpen(o => !o)} className="w-full text-left p-5 md:p-6 flex items-center gap-4 md:gap-6 hover:bg-white/[0.02] transition">
+        <button onClick={toggle} className="w-full text-left p-5 md:p-6 flex items-center gap-4 md:gap-6 hover:bg-white/[0.02] transition">
+
           <div className="md:w-32 shrink-0">
             <div className="font-black text-2xl md:text-3xl leading-none chrome-text">{date.toLocaleString("en-US", { month: "short", day: "numeric" }).toUpperCase()}</div>
             <div className="font-mono text-[11px] text-white/55 mt-1">{date.getFullYear()}</div>
           </div>
           <div className="flex-1 min-w-0">
-            <div className="label-mini mb-2">Order {order.number}</div>
+            <div className="label-mini mb-2 flex items-center gap-2">
+              <span>Order {order.number}</span>
+              {orderHasUpdate && (
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#FF003C]/15 border border-[#FF003C]/50 text-[#FF6A88] font-mono text-[9px] tracking-[0.16em] font-bold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#FF003C] shadow-[0_0_6px_#FF003C]" />
+                  UPDATED
+                </span>
+              )}
+            </div>
             <div className="flex items-center mb-2">
               {items.slice(0, 4).map((it, i) => (
                 <div key={it.id} className="w-9 h-9 rounded-lg border border-white/20 -ml-3 first:ml-0 shadow-md overflow-hidden relative" style={{ background: it.cover_gradient ?? "#333", zIndex: 10 - i }}>
                   {it.cover_url && <img src={it.cover_url} alt="" className="absolute inset-0 w-full h-full object-cover" />}
+                  {it.product_id && updatedProductIds.has(it.product_id) && (
+                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#FF003C] border border-black shadow-[0_0_6px_#FF003C]" />
+                  )}
                 </div>
               ))}
               {items.length > 4 && <div className="ml-2 px-2 py-0.5 rounded-full text-[10px] font-mono border border-white/20 bg-white/[0.04]">+{items.length - 4}</div>}
@@ -163,20 +216,31 @@ function OrderCard({ order }: { order: Order }) {
         {open && (
           <div className="border-t border-white/10 p-5 md:p-6 space-y-6">
             <ul className="divide-y divide-white/8">
-              {items.map(it => (
+              {items.map(it => {
+                const hasUpdate = !!(it.product_id && updatedProductIds.has(it.product_id));
+                return (
                 <li key={it.id} className="py-4 flex items-center gap-4">
                   <div className="w-14 h-14 rounded-xl border border-white/15 shrink-0 overflow-hidden relative" style={{ background: it.cover_gradient ?? "#333" }}>
                     {it.cover_url && <img src={it.cover_url} alt={it.name} className="absolute inset-0 w-full h-full object-cover" />}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-bold truncate">{it.name}</div>
+                    <div className="font-bold truncate flex items-center gap-2">
+                      <span className="truncate">{it.name}</span>
+                      {hasUpdate && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#FF003C]/15 border border-[#FF003C]/50 text-[#FF6A88] font-mono text-[9px] tracking-[0.16em] font-bold shrink-0">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#FF003C] shadow-[0_0_6px_#FF003C]" />
+                          UPDATED
+                        </span>
+                      )}
+                    </div>
                     <div className="font-mono text-[10px] text-white/55 mt-1">${Number(it.price).toFixed(2)}</div>
                   </div>
                   <button onClick={() => download(it.product_id, it.name)} className="btn-primary !text-xs !py-2 !px-4 inline-flex items-center gap-1.5">
                     <Download className="w-3.5 h-3.5" /> Download
                   </button>
                 </li>
-              ))}
+                );
+              })}
               {/* Universal installation guide — appears on every order for every customer */}
               <li className="py-4 flex items-center gap-4">
                 <div className="w-14 h-14 rounded-xl border border-[var(--accent-red)]/40 shrink-0 flex items-center justify-center bg-[var(--accent-red)]/10">
