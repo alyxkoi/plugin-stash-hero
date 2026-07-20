@@ -169,9 +169,6 @@ export function Nav() {
               <Link to="/account" aria-label="Account" className="p-2.5 rounded-full hover:bg-white/5 transition">
                 <User className="w-5 h-5" />
               </Link>
-              <Link to="/account/saved" aria-label="Wishlist" className="p-2.5 rounded-full hover:bg-white/5 transition">
-                <Heart className="w-5 h-5" />
-              </Link>
               <button onClick={() => actions.openCart()} className="relative p-2.5 rounded-full hover:bg-white/5 transition" aria-label={count ? `Cart (${count})` : "Cart"}>
                 <ShoppingCart className="w-5 h-5" />
                 {count > 0 && (
@@ -368,10 +365,6 @@ export function Nav() {
                   <Link to="/account" onClick={closeDrawer} className="drawer-item">
                     <User className="drawer-item-icon" strokeWidth={1.4} />
                     <span className="drawer-item-label">Account</span>
-                  </Link>
-                  <Link to="/account/saved" onClick={closeDrawer} className="drawer-item">
-                    <Heart className="drawer-item-icon" strokeWidth={1.4} />
-                    <span className="drawer-item-label">Wishlist</span>
                   </Link>
                   <button
                     onClick={() => { closeDrawer(); actions.openCart(); }}

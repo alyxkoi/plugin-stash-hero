@@ -1,10 +1,13 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Search, ChevronDown, Download } from "lucide-react";
+import { Search, ChevronDown, Download, FileText, LogOut } from "lucide-react";
 import { GlassCard } from "@/components/GlassCard";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth, signOut } from "@/hooks/useAuth";
 import { toast } from "sonner";
+
+const INSTALL_GUIDE_URL =
+  "https://thepluginwarehousefiles.com/other%20files/the_plugin_warehouse_installation_guide.pdf";
 
 type Item = { id: string; product_id: string | null; product_slug: string | null; name: string; price: number; cover_gradient: string | null; cover_url: string | null };
 type Order = {
@@ -20,6 +23,7 @@ export const Route = createFileRoute("/account/orders")({
 
 function OrdersPage() {
   const { user, loading } = useAuth();
+  const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [orders, setOrders] = useState<Order[]>([]);
   const [ready, setReady] = useState(false);
@@ -48,15 +52,43 @@ function OrdersPage() {
 
   const totalSpent = orders.filter(o => o.status === "completed").reduce((n, o) => n + Number(o.total), 0);
 
+  const onSignOut = async () => {
+    await signOut();
+    navigate({ to: "/" });
+  };
+
   if (!ready) return <div className="p-8 text-white/60">Loading your orders…</div>;
 
   return (
     <div className="space-y-8">
-      <header>
-        <h1 className="font-display text-[clamp(2.25rem,5vw,4rem)] leading-[0.95] tracking-tight">YOUR ORDERS</h1>
-        <div className="mt-4 label-mini flex flex-wrap gap-3">
-          <span>{orders.length} ORDERS</span><span className="text-white/25">·</span>
-          <span>${totalSpent.toFixed(2)} TOTAL</span>
+      <header className="flex flex-col md:flex-row md:items-end md:justify-between gap-5">
+        <div>
+          <h1 className="font-display text-[clamp(2.25rem,5vw,4rem)] leading-[0.95] tracking-tight">YOUR ORDERS</h1>
+          <div className="mt-4 label-mini flex flex-wrap gap-3">
+            <span>{orders.length} ORDERS</span><span className="text-white/25">·</span>
+            <span>${totalSpent.toFixed(2)} TOTAL</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <a
+            href={INSTALL_GUIDE_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="glass-card px-4 h-11 rounded-full inline-flex items-center gap-2 border border-[var(--accent-red)]/50 hover:border-[var(--accent-red)] transition group"
+          >
+            <span className="chromatic-edge" />
+            <span className="relative z-10 flex items-center gap-2">
+              <FileText className="w-4 h-4 text-[var(--accent-red-glow)]" strokeWidth={1.7} />
+              <span className="font-mono text-[11px] tracking-[0.14em] text-white/90 group-hover:text-white">DOWNLOAD INSTRUCTIONS</span>
+            </span>
+          </a>
+          <button
+            onClick={onSignOut}
+            className="px-4 h-11 rounded-full inline-flex items-center gap-2 border border-white/12 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/25 transition"
+          >
+            <LogOut className="w-4 h-4 text-white/70" strokeWidth={1.7} />
+            <span className="font-mono text-[11px] tracking-[0.14em] text-white/80">SIGN OUT</span>
+          </button>
         </div>
       </header>
 
@@ -92,7 +124,6 @@ function OrderCard({ order }: { order: Order }) {
     if (!productId) { toast.error("Missing product id"); return; }
     const { data, error } = await supabase.functions.invoke("r2-download-url", { body: { productId } });
     if (error || !data?.url) { toast.error(data?.error ?? error?.message ?? "Download failed"); return; }
-    // Direct browser -> R2 via anchor navigation. No fetch/blob — no 2GB memory cap.
     const a = document.createElement("a");
     a.href = data.url;
     a.download = data.filename ?? `${name}.zip`;
@@ -146,6 +177,24 @@ function OrderCard({ order }: { order: Order }) {
                   </button>
                 </li>
               ))}
+              {/* Universal installation guide — appears on every order for every customer */}
+              <li className="py-4 flex items-center gap-4">
+                <div className="w-14 h-14 rounded-xl border border-[var(--accent-red)]/40 shrink-0 flex items-center justify-center bg-[var(--accent-red)]/10">
+                  <FileText className="w-6 h-6 text-[var(--accent-red-glow)]" strokeWidth={1.6} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold truncate">Installation Guide (PDF)</div>
+                  <div className="font-mono text-[10px] text-white/55 mt-1 tracking-wider">INCLUDED WITH EVERY ORDER</div>
+                </div>
+                <a
+                  href={INSTALL_GUIDE_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn-ghost !text-xs !py-2 !px-4 inline-flex items-center gap-1.5 border-[var(--accent-red)]/50 hover:border-[var(--accent-red)]"
+                >
+                  <Download className="w-3.5 h-3.5" /> Guide
+                </a>
+              </li>
             </ul>
             <div className="glass-card glass-card--subtle p-4">
               <div className="chromatic-edge" /><div className="relative z-10 space-y-2 text-sm">
