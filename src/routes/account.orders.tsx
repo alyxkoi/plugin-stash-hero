@@ -131,7 +131,14 @@ function OrdersPage() {
         </GlassCard>
       ) : (
         <div className="space-y-4">
-          {filtered.map(o => <OrderCard key={o.id} order={o} />)}
+          {filtered.map(o => (
+            <OrderCard
+              key={o.id}
+              order={o}
+              updatedProductIds={updatedProductIds}
+              onOpen={() => acknowledgeProducts(o.order_items.map(i => i.product_id).filter((x): x is string => !!x))}
+            />
+          ))}
         </div>
       )}
     </div>
