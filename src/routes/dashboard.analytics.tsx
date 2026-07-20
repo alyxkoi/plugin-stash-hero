@@ -308,9 +308,20 @@ function Analytics() {
             ) : (
               <ResponsiveContainer>
                 <PieChart>
-                  <Pie data={split} dataKey="value" innerRadius={50} outerRadius={80} paddingAngle={3} stroke="rgba(20,6,44,0.9)" strokeWidth={2} isAnimationActive animationDuration={700}>
-                    <Cell fill="#FF003C" />
-                    <Cell fill="#0E0BD1" />
+                  <Pie
+                    data={split}
+                    dataKey="value"
+                    innerRadius={52}
+                    outerRadius={84}
+                    paddingAngle={3}
+                    stroke="rgba(20,6,44,0.9)"
+                    strokeWidth={2}
+                    isAnimationActive
+                    animationDuration={700}
+                    style={{ filter: "url(#pw-glow)" }}
+                  >
+                    <Cell fill="url(#pw-red-grad)" />
+                    <Cell fill="url(#pw-blue-grad)" />
                   </Pie>
                   <Tooltip
                     contentStyle={TOOLTIP_STYLE}
@@ -319,6 +330,7 @@ function Analytics() {
                   />
                 </PieChart>
               </ResponsiveContainer>
+
             )}
           </div>
           <div className="flex justify-center gap-4 text-xs">
@@ -344,7 +356,16 @@ function Analytics() {
                     itemStyle={TOOLTIP_ITEM_STYLE}
                     formatter={(v: number) => fmtMoney(v)}
                   />
-                  <Bar dataKey="revenue" fill="#0E0BD1" radius={[0, 6, 6, 0]} activeBar={{ fill: "#FF1F5C", stroke: "#FF003C", strokeWidth: 1 }} isAnimationActive animationDuration={700} />
+                  <Bar
+                    dataKey="revenue"
+                    fill="url(#pw-blue-grad)"
+                    radius={[0, 6, 6, 0]}
+                    activeBar={{ fill: "url(#pw-red-grad)", stroke: "#FF003C", strokeWidth: 1 }}
+                    isAnimationActive
+                    animationDuration={700}
+                    style={{ filter: "url(#pw-glow)" }}
+                  />
+
                 </BarChart>
               </ResponsiveContainer>
             )}
