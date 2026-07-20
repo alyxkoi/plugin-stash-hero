@@ -389,6 +389,7 @@ export type Database = {
           id: string
           number: string
           refund_reason: string | null
+          sale_id: string | null
           status: Database["public"]["Enums"]["order_status"]
           stripe_id: string | null
           stripe_session_id: string | null
@@ -408,6 +409,7 @@ export type Database = {
           id?: string
           number: string
           refund_reason?: string | null
+          sale_id?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           stripe_id?: string | null
           stripe_session_id?: string | null
@@ -427,6 +429,7 @@ export type Database = {
           id?: string
           number?: string
           refund_reason?: string | null
+          sale_id?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           stripe_id?: string | null
           stripe_session_id?: string | null
@@ -442,6 +445,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sale_events"
             referencedColumns: ["id"]
           },
         ]
