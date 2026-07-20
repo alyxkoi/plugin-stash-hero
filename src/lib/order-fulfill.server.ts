@@ -53,6 +53,22 @@ export async function finalizeOrder(input: FulfillInput): Promise<{ orderId: str
     }
   }
 
+  // Find the sale event active at this moment so revenue attributes correctly.
+  let activeSaleId: string | null = null;
+  {
+    const nowIso = new Date().toISOString();
+    const { data: activeSale } = await supabaseAdmin
+      .from("sale_events")
+      .select("id")
+      .neq("status", "draft")
+      .lte("start_at", nowIso)
+      .gte("end_at", nowIso)
+      .order("start_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    activeSaleId = (activeSale?.id as string | undefined) ?? null;
+  }
+
   const { data: inserted, error: orderErr } = await supabaseAdmin
     .from("orders")
     .insert({
@@ -67,9 +83,11 @@ export async function finalizeOrder(input: FulfillInput): Promise<{ orderId: str
       status: "completed",
       stripe_id: input.stripePaymentIntentId ?? null,
       stripe_session_id: input.sessionId,
-    })
+      sale_id: activeSaleId,
+    } as any)
     .select("id")
     .maybeSingle();
+
 
   if (orderErr || !inserted) {
     console.error("[fulfill] order insert failed", orderErr);
