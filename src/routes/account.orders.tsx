@@ -58,7 +58,7 @@ function OrdersPage() {
   const acknowledgeProducts = async (productIds: string[]) => {
     const toAck = productIds.filter((id) => updatedProductIds.has(id));
     if (toAck.length === 0) return;
-    await supabase.rpc("acknowledge_product_files", { _product_ids: toAck });
+    await (supabase as any).rpc("acknowledge_product_files", { _product_ids: toAck });
     setUpdatedProductIds((prev) => {
       const next = new Set(prev);
       toAck.forEach((id) => next.delete(id));
