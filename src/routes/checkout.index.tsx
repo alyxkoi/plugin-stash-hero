@@ -69,11 +69,13 @@ function CheckoutPage() {
       const payload = {
         items,
         discountCode: discount?.code ?? null,
-        utmSource,
+        utmSource: utm.source,
+        utmCampaign: utm.campaign,
         email: email ?? (user?.email ?? null),
         returnUrl: `${window.location.origin}/checkout/return`,
         environment,
       };
+
       // One silent retry on transient network failures (aborted fetch, brief
       // Worker cold-start). Anything else falls through to the visible error.
       const callOnce = () => createCheckoutSession({ data: payload });
