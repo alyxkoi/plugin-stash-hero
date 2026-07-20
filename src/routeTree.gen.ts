@@ -37,6 +37,7 @@ import { Route as GoCodeRouteImport } from './routes/go.$code'
 import { Route as DashboardSettingsRouteImport } from './routes/dashboard.settings'
 import { Route as DashboardMarketingRouteImport } from './routes/dashboard.marketing'
 import { Route as DashboardLoginRouteImport } from './routes/dashboard.login'
+import { Route as DashboardCampaignLinksRouteImport } from './routes/dashboard.campaign-links'
 import { Route as DashboardAnalyticsRouteImport } from './routes/dashboard.analytics'
 import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
@@ -195,6 +196,11 @@ const DashboardLoginRoute = DashboardLoginRouteImport.update({
   path: '/login',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardCampaignLinksRoute = DashboardCampaignLinksRouteImport.update({
+  id: '/campaign-links',
+  path: '/campaign-links',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardAnalyticsRoute = DashboardAnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
@@ -303,6 +309,7 @@ export interface FileRoutesByFullPath {
   '/blog/$slug': typeof BlogSlugRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
+  '/dashboard/campaign-links': typeof DashboardCampaignLinksRoute
   '/dashboard/login': typeof DashboardLoginRoute
   '/dashboard/marketing': typeof DashboardMarketingRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
@@ -348,6 +355,7 @@ export interface FileRoutesByTo {
   '/blog/$slug': typeof BlogSlugRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
+  '/dashboard/campaign-links': typeof DashboardCampaignLinksRoute
   '/dashboard/login': typeof DashboardLoginRoute
   '/dashboard/marketing': typeof DashboardMarketingRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
@@ -396,6 +404,7 @@ export interface FileRoutesById {
   '/blog/$slug': typeof BlogSlugRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
+  '/dashboard/campaign-links': typeof DashboardCampaignLinksRoute
   '/dashboard/login': typeof DashboardLoginRoute
   '/dashboard/marketing': typeof DashboardMarketingRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
@@ -445,6 +454,7 @@ export interface FileRouteTypes {
     | '/blog/$slug'
     | '/checkout/return'
     | '/dashboard/analytics'
+    | '/dashboard/campaign-links'
     | '/dashboard/login'
     | '/dashboard/marketing'
     | '/dashboard/settings'
@@ -490,6 +500,7 @@ export interface FileRouteTypes {
     | '/blog/$slug'
     | '/checkout/return'
     | '/dashboard/analytics'
+    | '/dashboard/campaign-links'
     | '/dashboard/login'
     | '/dashboard/marketing'
     | '/dashboard/settings'
@@ -537,6 +548,7 @@ export interface FileRouteTypes {
     | '/blog/$slug'
     | '/checkout/return'
     | '/dashboard/analytics'
+    | '/dashboard/campaign-links'
     | '/dashboard/login'
     | '/dashboard/marketing'
     | '/dashboard/settings'
@@ -793,6 +805,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardLoginRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/campaign-links': {
+      id: '/dashboard/campaign-links'
+      path: '/campaign-links'
+      fullPath: '/dashboard/campaign-links'
+      preLoaderRoute: typeof DashboardCampaignLinksRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/analytics': {
       id: '/dashboard/analytics'
       path: '/analytics'
@@ -930,6 +949,7 @@ const AccountRouteWithChildren =
 
 interface DashboardRouteChildren {
   DashboardAnalyticsRoute: typeof DashboardAnalyticsRoute
+  DashboardCampaignLinksRoute: typeof DashboardCampaignLinksRoute
   DashboardLoginRoute: typeof DashboardLoginRoute
   DashboardMarketingRoute: typeof DashboardMarketingRoute
   DashboardSettingsRoute: typeof DashboardSettingsRoute
@@ -948,6 +968,7 @@ interface DashboardRouteChildren {
 
 const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardAnalyticsRoute: DashboardAnalyticsRoute,
+  DashboardCampaignLinksRoute: DashboardCampaignLinksRoute,
   DashboardLoginRoute: DashboardLoginRoute,
   DashboardMarketingRoute: DashboardMarketingRoute,
   DashboardSettingsRoute: DashboardSettingsRoute,

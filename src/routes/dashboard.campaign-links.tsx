@@ -41,11 +41,12 @@ function CampaignLinksPage() {
   }, []);
 
   const reload = async () => {
+    const anySb = supabase as any;
     const [g, l, c, o] = await Promise.all([
-      supabase.from("campaign_link_groups").select("id,name,archived_at").order("created_at", { ascending: true }),
-      supabase.from("campaign_links").select("id,group_id,label,code,utm_source,utm_campaign,destination_path,archived_at").order("created_at", { ascending: false }),
-      supabase.from("campaign_link_clicks").select("link_id"),
-      supabase.from("orders").select("utm_source, utm_campaign").eq("status", "completed"),
+      anySb.from("campaign_link_groups").select("id,name,archived_at").order("created_at", { ascending: true }),
+      anySb.from("campaign_links").select("id,group_id,label,code,utm_source,utm_campaign,destination_path,archived_at").order("created_at", { ascending: false }),
+      anySb.from("campaign_link_clicks").select("link_id"),
+      anySb.from("orders").select("utm_source, utm_campaign").eq("status", "completed"),
     ]);
     setGroups((g.data ?? []) as Group[]);
     setLinks((l.data ?? []) as LinkRow[]);
@@ -62,6 +63,7 @@ function CampaignLinksPage() {
     setPurchases(orderAgg);
     setLoading(false);
   };
+
 
   useEffect(() => { void reload(); }, []);
 
