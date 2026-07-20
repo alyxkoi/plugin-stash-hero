@@ -161,6 +161,30 @@ function Analytics() {
     return [...map.entries()].map(([source, revenue]) => ({ source, revenue })).sort((a, b) => b.revenue - a.revenue).slice(0, 8);
   }, [inRange]);
 
+  // Per-sale performance: real money captured (post-discount order totals) grouped by sale_id.
+  const salePerf = useMemo(() => {
+    const totals = new Map<string, { orders: number; revenue: number }>();
+    for (const o of orders) {
+      if (o.status !== "completed" || !o.sale_id) continue;
+      const cur = totals.get(o.sale_id) ?? { orders: 0, revenue: 0 };
+      cur.orders += 1;
+      cur.revenue += Number(o.total || 0);
+      totals.set(o.sale_id, cur);
+    }
+    return sales
+      .map((s) => {
+        const t = totals.get(s.id) ?? { orders: 0, revenue: 0 };
+        return {
+          ...s,
+          orders: t.orders,
+          revenue: t.revenue,
+          liveStatus: deriveSaleStatus(s.start_at, s.end_at, s.status, now),
+        };
+      })
+      .sort((a, b) => new Date(b.start_at).getTime() - new Date(a.start_at).getTime());
+  }, [orders, sales, now]);
+
+
   const split = useMemo(() => {
     // Group orders by customer within range. First-order in range = "new", later = "returning".
     const perCust = new Map<string, number>();
