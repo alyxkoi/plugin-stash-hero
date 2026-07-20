@@ -145,12 +145,21 @@ function OrdersPage() {
   );
 }
 
-function OrderCard({ order }: { order: Order }) {
+function OrderCard({ order, updatedProductIds, onOpen }: { order: Order; updatedProductIds: Set<string>; onOpen: () => void }) {
   const [open, setOpen] = useState(false);
   const date = new Date(order.created_at);
   const items = order.order_items ?? [];
   const statusColor = order.status === "completed" ? "bg-[var(--accent-red)]/85"
     : order.status === "refunded" ? "bg-white/15" : "bg-amber-500/70";
+  const orderHasUpdate = items.some(i => i.product_id && updatedProductIds.has(i.product_id));
+
+  const toggle = () => {
+    setOpen((prev) => {
+      const next = !prev;
+      if (next && orderHasUpdate) onOpen();
+      return next;
+    });
+  };
 
   async function download(productId: string | null, name: string) {
     if (!productId) { toast.error("Missing product id"); return; }
@@ -168,7 +177,8 @@ function OrderCard({ order }: { order: Order }) {
     <div className="glass-card overflow-hidden">
       <div className="chromatic-edge" /><div className="glass-noise" />
       <div className="relative z-10">
-        <button onClick={() => setOpen(o => !o)} className="w-full text-left p-5 md:p-6 flex items-center gap-4 md:gap-6 hover:bg-white/[0.02] transition">
+        <button onClick={toggle} className="w-full text-left p-5 md:p-6 flex items-center gap-4 md:gap-6 hover:bg-white/[0.02] transition">
+
           <div className="md:w-32 shrink-0">
             <div className="font-black text-2xl md:text-3xl leading-none chrome-text">{date.toLocaleString("en-US", { month: "short", day: "numeric" }).toUpperCase()}</div>
             <div className="font-mono text-[11px] text-white/55 mt-1">{date.getFullYear()}</div>
