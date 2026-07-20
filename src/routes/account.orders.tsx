@@ -30,7 +30,7 @@ function OrdersPage() {
   const [updatedProductIds, setUpdatedProductIds] = useState<Set<string>>(new Set());
 
   const refreshUpdates = async () => {
-    const { data } = await supabase.rpc("get_my_product_file_updates");
+    const { data } = await (supabase as any).rpc("get_my_product_file_updates");
     const s = new Set<string>();
     for (const r of (data ?? []) as Array<{ product_id: string; file_updated_at: string; acknowledged_at: string | null }>) {
       if (!r.acknowledged_at || new Date(r.file_updated_at) > new Date(r.acknowledged_at)) {
