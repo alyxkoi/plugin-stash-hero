@@ -17,32 +17,37 @@ type SaleRow = {
   status: string;
 };
 
-const LEGACY: Record<string, SaleRow> = {
-  "summer-steals": {
-    id: "legacy-summer",
-    name: "Summer Tropical Steals",
-    slug: "summer-steals",
-    headline: "SUMMER STEALS. 35% OFF.",
-    subheadline: "Pro plugins at tropical prices. Until the sun sets on Sept 22.",
-    discount_pct: 35,
-    theme_color: "#ff003c",
-    start_at: new Date(0).toISOString(),
-    end_at: new Date(Date.now() + 30 * 86400_000).toISOString(),
-    status: "active",
-  },
+// Slug aliases: URLs already sent to subscribers must keep working permanently.
+// Each alias resolves to the current target slug in the DB.
+const SLUG_ALIASES: Record<string, string> = {
+  "summer-steals": "world-cup-sale",
 };
 
 export const Route = createFileRoute("/sale/$slug")({
   loader: async ({ params }) => {
+    const targetSlug = SLUG_ALIASES[params.slug] ?? params.slug;
     const { data } = await supabase
       .from("sale_events")
       .select("id, name, slug, headline, subheadline, discount_pct, theme_color, start_at, end_at, status")
-      .eq("slug", params.slug)
+      .eq("slug", targetSlug)
       .maybeSingle();
-    const sale = (data as SaleRow) ?? LEGACY[params.slug] ?? null;
+    // Fallback: if the aliased target is missing, keep the old URL alive by
+    // showing the most-recent non-draft sale rather than 404-ing subscribers.
+    let sale = data as SaleRow | null;
+    if (!sale && SLUG_ALIASES[params.slug]) {
+      const { data: fallback } = await supabase
+        .from("sale_events")
+        .select("id, name, slug, headline, subheadline, discount_pct, theme_color, start_at, end_at, status")
+        .neq("status", "draft")
+        .order("start_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      sale = (fallback as SaleRow) ?? null;
+    }
     if (!sale) throw notFound();
     return { sale };
   },
+
   head: ({ params, loaderData }) => {
     const TITLE = "Plugin Deals | Up to 90% Off Pro VST Plugins | Plugin Warehouse";
     const DESC = "The best plugin deals online. Pro synths, effects, and bundles at knockout prices. Stack extra savings on already discounted plugins. Limited time.";
