@@ -61,7 +61,9 @@ export function Shell() {
       <Footer />
       <CartDrawer />
       <CartSync />
+      <UtmSync />
       <MysteryGiftPopup />
+
     </SalePricingProvider>
   );
 }
