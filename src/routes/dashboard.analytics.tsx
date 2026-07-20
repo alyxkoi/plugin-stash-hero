@@ -1,9 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { DashboardShell, DashCard, StatCard } from "@/components/DashboardShell";
-import { saleEvents, type AnalyticsRange, RANGE_LABEL } from "@/lib/dashboard-mock";
+import { type AnalyticsRange, RANGE_LABEL } from "@/lib/dashboard-mock";
 import { ResponsiveContainer, AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip, BarChart, Bar, PieChart, Pie, Cell } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
+import { deriveSaleStatus, formatInSaleTimeZone } from "@/lib/sale-time";
+
 
 export const Route = createFileRoute("/dashboard/analytics")({
   head: () => ({ meta: [{ title: "Analytics — Plugin Warehouse" }] }),
@@ -57,8 +59,21 @@ type OrderRow = {
   created_at: string;
   customer_id: string | null;
   utm_source: string | null;
+  sale_id: string | null;
   order_items: { name: string; price: number; product_id: string | null; cover_gradient: string | null }[];
 };
+
+type SaleEventRow = {
+  id: string;
+  name: string;
+  slug: string;
+  discount_pct: number;
+  theme_color: string | null;
+  start_at: string;
+  end_at: string;
+  status: string;
+};
+
 
 function RangePills({ value, onChange }: { value: AnalyticsRange; onChange: (r: AnalyticsRange) => void }) {
   return (
