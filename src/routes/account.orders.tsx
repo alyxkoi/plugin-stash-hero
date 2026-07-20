@@ -216,20 +216,31 @@ function OrderCard({ order, updatedProductIds, onOpen }: { order: Order; updated
         {open && (
           <div className="border-t border-white/10 p-5 md:p-6 space-y-6">
             <ul className="divide-y divide-white/8">
-              {items.map(it => (
+              {items.map(it => {
+                const hasUpdate = !!(it.product_id && updatedProductIds.has(it.product_id));
+                return (
                 <li key={it.id} className="py-4 flex items-center gap-4">
                   <div className="w-14 h-14 rounded-xl border border-white/15 shrink-0 overflow-hidden relative" style={{ background: it.cover_gradient ?? "#333" }}>
                     {it.cover_url && <img src={it.cover_url} alt={it.name} className="absolute inset-0 w-full h-full object-cover" />}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-bold truncate">{it.name}</div>
+                    <div className="font-bold truncate flex items-center gap-2">
+                      <span className="truncate">{it.name}</span>
+                      {hasUpdate && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#FF003C]/15 border border-[#FF003C]/50 text-[#FF6A88] font-mono text-[9px] tracking-[0.16em] font-bold shrink-0">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#FF003C] shadow-[0_0_6px_#FF003C]" />
+                          UPDATED
+                        </span>
+                      )}
+                    </div>
                     <div className="font-mono text-[10px] text-white/55 mt-1">${Number(it.price).toFixed(2)}</div>
                   </div>
                   <button onClick={() => download(it.product_id, it.name)} className="btn-primary !text-xs !py-2 !px-4 inline-flex items-center gap-1.5">
                     <Download className="w-3.5 h-3.5" /> Download
                   </button>
                 </li>
-              ))}
+                );
+              })}
               {/* Universal installation guide — appears on every order for every customer */}
               <li className="py-4 flex items-center gap-4">
                 <div className="w-14 h-14 rounded-xl border border-[var(--accent-red)]/40 shrink-0 flex items-center justify-center bg-[var(--accent-red)]/10">
