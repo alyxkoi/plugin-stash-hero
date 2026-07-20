@@ -91,18 +91,34 @@ function RangePills({ value, onChange }: { value: AnalyticsRange; onChange: (r: 
 function Analytics() {
   const [range, setRange] = useState<AnalyticsRange>("30d");
   const [orders, setOrders] = useState<OrderRow[]>([]);
+  const [sales, setSales] = useState<SaleEventRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const t = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => window.clearInterval(t);
+  }, []);
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
-        .from("orders")
-        .select("id, total, status, created_at, customer_id, utm_source, order_items(name, price, product_id, cover_gradient)")
-        .order("created_at", { ascending: false })
-        .limit(5000);
-      setOrders((data ?? []) as any);
+      const [{ data: ordersData }, { data: salesData }] = await Promise.all([
+        supabase
+          .from("orders")
+          .select("id, total, status, created_at, customer_id, utm_source, sale_id, order_items(name, price, product_id, cover_gradient)")
+          .order("created_at", { ascending: false })
+          .limit(5000),
+        supabase
+          .from("sale_events")
+          .select("id, name, slug, discount_pct, theme_color, start_at, end_at, status")
+          .neq("status", "draft")
+          .order("start_at", { ascending: false }),
+      ]);
+      setOrders((ordersData ?? []) as any);
+      setSales((salesData ?? []) as any);
       setLoading(false);
     })();
+
   }, []);
 
   const { start, end } = useMemo(() => rangeBounds(range), [range]);
