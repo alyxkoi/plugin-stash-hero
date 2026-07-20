@@ -7,7 +7,7 @@ import { DashboardShell, DashCard } from "@/components/DashboardShell";
 import { LibraryTypeField } from "@/components/LibraryTypeField";
 import { supabase } from "@/integrations/supabase/client";
 import { productCategories } from "@/lib/dashboard-mock";
-import { Upload, X, Sparkles, RefreshCw, AlertTriangle } from "lucide-react";
+import { Upload, X, Sparkles, RefreshCw, AlertTriangle, Download } from "lucide-react";
 import { toast } from "sonner";
 import { uploadZipMultipart, type MultipartHandle } from "@/lib/multipart-upload";
 
@@ -497,6 +497,30 @@ function EditProduct() {
                 <RefreshCw size={13} className={zipUploading ? "animate-spin" : ""} />
                 {zipUploading ? `Uploading… ${zipProgress}%` : (fileRow ? "Replace plugin file" : "Upload plugin file")}
               </button>
+              {fileRow?.zip_url && !zipUploading && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const t = toast.loading("Preparing download…");
+                    try {
+                      const { data, error } = await supabase.functions.invoke("r2-download-url", { body: { productId: id } });
+                      if (error || !data?.url) throw new Error(data?.error ?? error?.message ?? "Download failed");
+                      const a = document.createElement("a");
+                      a.href = data.url;
+                      a.download = data.filename ?? fileRow.zip_file_name ?? "download.zip";
+                      document.body.appendChild(a);
+                      a.click();
+                      a.remove();
+                      toast.success("Download started", { id: t });
+                    } catch (e) {
+                      toast.error((e as Error).message, { id: t });
+                    }
+                  }}
+                  className="btn-ghost !text-xs !py-2 !px-4 inline-flex items-center gap-2"
+                >
+                  <Download size={13} /> Download file
+                </button>
+              )}
               {zipUploading && (
                 <button type="button" onClick={cancelUpload} className="text-[11px] text-white/60 hover:text-[var(--accent-red-glow)] underline">Cancel</button>
               )}
