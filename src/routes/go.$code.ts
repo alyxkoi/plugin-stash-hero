@@ -19,7 +19,7 @@ export const Route = createFileRoute("/go/$code")({
         }
         // Fire-and-log; a click-log failure must not block the redirect.
         try {
-          await supabaseAdmin.from("campaign_link_clicks").insert({ link_id: link.id as string });
+          await (supabaseAdmin as any).from("campaign_link_clicks").insert({ link_id: link.id as string });
         } catch { /* ignore */ }
 
         let dest = (link.destination_path as string) || "/";
