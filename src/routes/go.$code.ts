@@ -9,7 +9,7 @@ export const Route = createFileRoute("/go/$code")({
     handlers: {
       GET: async ({ params }) => {
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const { data: link } = await supabaseAdmin
+        const { data: link } = await (supabaseAdmin as any)
           .from("campaign_links")
           .select("id, utm_source, utm_campaign, destination_path")
           .eq("code", params.code)

@@ -211,7 +211,7 @@ function CreateLinkForm({ groups, onCreated }: { groups: Group[]; onCreated: () 
     // Retry a couple of times on the unlikely code collision.
     for (let attempt = 0; attempt < 4; attempt++) {
       const code = generateShareCode();
-      const { error } = await supabase.from("campaign_links").insert({
+      const { error } = await (supabase as any).from("campaign_links").insert({
         label: label.trim(),
         code,
         utm_source: sourceSlug,
@@ -273,7 +273,7 @@ function CreateGroupForm({ onCreated }: { onCreated: () => void | Promise<void> 
           e.preventDefault();
           if (!name.trim()) return;
           setBusy(true);
-          const { error } = await supabase.from("campaign_link_groups").insert({ name: name.trim() } as any);
+          const { error } = await (supabase as any).from("campaign_link_groups").insert({ name: name.trim() } as any);
           setBusy(false);
           if (!error) { setName(""); void onCreated(); }
         }}
@@ -294,13 +294,13 @@ function GroupActions({ group, onChanged }: { group: Group; onChanged: () => voi
     const next = prompt("Rename group", group.name);
     if (!next || !next.trim()) return;
     setBusy(true);
-    await supabase.from("campaign_link_groups").update({ name: next.trim() } as any).eq("id", group.id);
+    await (supabase as any).from("campaign_link_groups").update({ name: next.trim() } as any).eq("id", group.id);
     setBusy(false);
     void onChanged();
   };
   const toggleArchive = async () => {
     setBusy(true);
-    await supabase.from("campaign_link_groups").update({ archived_at: group.archived_at ? null : new Date().toISOString() } as any).eq("id", group.id);
+    await (supabase as any).from("campaign_link_groups").update({ archived_at: group.archived_at ? null : new Date().toISOString() } as any).eq("id", group.id);
     setBusy(false);
     void onChanged();
   };
@@ -330,14 +330,14 @@ function LinkRowItem({
 
   const archive = async () => {
     setBusy(true);
-    await supabase.from("campaign_links").update({ archived_at: link.archived_at ? null : new Date().toISOString() } as any).eq("id", link.id);
+    await (supabase as any).from("campaign_links").update({ archived_at: link.archived_at ? null : new Date().toISOString() } as any).eq("id", link.id);
     setBusy(false);
     void onChanged();
   };
 
   const moveTo = async (id: string) => {
     setBusy(true);
-    await supabase.from("campaign_links").update({ group_id: id || null } as any).eq("id", link.id);
+    await (supabase as any).from("campaign_links").update({ group_id: id || null } as any).eq("id", link.id);
     setBusy(false);
     void onChanged();
   };
