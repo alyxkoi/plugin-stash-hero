@@ -39,15 +39,11 @@ import { Route as DashboardLoginRouteImport } from './routes/dashboard.login'
 import { Route as DashboardAnalyticsRouteImport } from './routes/dashboard.analytics'
 import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
-import { Route as AccountSettingsRouteImport } from './routes/account.settings'
-import { Route as AccountSavedRouteImport } from './routes/account.saved'
 import { Route as AccountOrdersRouteImport } from './routes/account.orders'
-import { Route as AccountLibraryRouteImport } from './routes/account.library'
 import { Route as DashboardSalesIndexRouteImport } from './routes/dashboard.sales.index'
 import { Route as DashboardProductsIndexRouteImport } from './routes/dashboard.products.index'
 import { Route as DashboardOrdersIndexRouteImport } from './routes/dashboard.orders.index'
 import { Route as DashboardCustomersIndexRouteImport } from './routes/dashboard.customers.index'
-import { Route as DashboardBlogIndexRouteImport } from './routes/dashboard.blog.index'
 import { Route as ShopPSlugRouteImport } from './routes/shop.p.$slug'
 import { Route as DashboardSalesNewRouteImport } from './routes/dashboard.sales.new'
 import { Route as DashboardSalesIdRouteImport } from './routes/dashboard.sales.$id'
@@ -55,9 +51,7 @@ import { Route as DashboardProductsNewRouteImport } from './routes/dashboard.pro
 import { Route as DashboardProductsIdRouteImport } from './routes/dashboard.products.$id'
 import { Route as DashboardOrdersIdRouteImport } from './routes/dashboard.orders.$id'
 import { Route as DashboardCustomersIdRouteImport } from './routes/dashboard.customers.$id'
-import { Route as DashboardBlogIdRouteImport } from './routes/dashboard.blog.$id'
 import { Route as ApiPublicDownloadRouteImport } from './routes/api/public/download'
-import { Route as AccountOrdersIdRouteImport } from './routes/account.orders.$id'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 
 const TermsOfServiceRoute = TermsOfServiceRouteImport.update({
@@ -210,24 +204,9 @@ const BlogSlugRoute = BlogSlugRouteImport.update({
   path: '/blog/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AccountSettingsRoute = AccountSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => AccountRoute,
-} as any)
-const AccountSavedRoute = AccountSavedRouteImport.update({
-  id: '/saved',
-  path: '/saved',
-  getParentRoute: () => AccountRoute,
-} as any)
 const AccountOrdersRoute = AccountOrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
-  getParentRoute: () => AccountRoute,
-} as any)
-const AccountLibraryRoute = AccountLibraryRouteImport.update({
-  id: '/library',
-  path: '/library',
   getParentRoute: () => AccountRoute,
 } as any)
 const DashboardSalesIndexRoute = DashboardSalesIndexRouteImport.update({
@@ -248,11 +227,6 @@ const DashboardOrdersIndexRoute = DashboardOrdersIndexRouteImport.update({
 const DashboardCustomersIndexRoute = DashboardCustomersIndexRouteImport.update({
   id: '/customers/',
   path: '/customers/',
-  getParentRoute: () => DashboardRoute,
-} as any)
-const DashboardBlogIndexRoute = DashboardBlogIndexRouteImport.update({
-  id: '/blog/',
-  path: '/blog/',
   getParentRoute: () => DashboardRoute,
 } as any)
 const ShopPSlugRoute = ShopPSlugRouteImport.update({
@@ -290,20 +264,10 @@ const DashboardCustomersIdRoute = DashboardCustomersIdRouteImport.update({
   path: '/customers/$id',
   getParentRoute: () => DashboardRoute,
 } as any)
-const DashboardBlogIdRoute = DashboardBlogIdRouteImport.update({
-  id: '/blog/$id',
-  path: '/blog/$id',
-  getParentRoute: () => DashboardRoute,
-} as any)
 const ApiPublicDownloadRoute = ApiPublicDownloadRouteImport.update({
   id: '/api/public/download',
   path: '/api/public/download',
   getParentRoute: () => rootRouteImport,
-} as any)
-const AccountOrdersIdRoute = AccountOrdersIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => AccountOrdersRoute,
 } as any)
 const ApiPublicPaymentsWebhookRoute =
   ApiPublicPaymentsWebhookRouteImport.update({
@@ -329,10 +293,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms-of-service': typeof TermsOfServiceRoute
-  '/account/library': typeof AccountLibraryRoute
-  '/account/orders': typeof AccountOrdersRouteWithChildren
-  '/account/saved': typeof AccountSavedRoute
-  '/account/settings': typeof AccountSettingsRoute
+  '/account/orders': typeof AccountOrdersRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
@@ -347,9 +308,7 @@ export interface FileRoutesByFullPath {
   '/checkout/': typeof CheckoutIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/shop/': typeof ShopIndexRoute
-  '/account/orders/$id': typeof AccountOrdersIdRoute
   '/api/public/download': typeof ApiPublicDownloadRoute
-  '/dashboard/blog/$id': typeof DashboardBlogIdRoute
   '/dashboard/customers/$id': typeof DashboardCustomersIdRoute
   '/dashboard/orders/$id': typeof DashboardOrdersIdRoute
   '/dashboard/products/$id': typeof DashboardProductsIdRoute
@@ -357,7 +316,6 @@ export interface FileRoutesByFullPath {
   '/dashboard/sales/$id': typeof DashboardSalesIdRoute
   '/dashboard/sales/new': typeof DashboardSalesNewRoute
   '/shop/p/$slug': typeof ShopPSlugRoute
-  '/dashboard/blog/': typeof DashboardBlogIndexRoute
   '/dashboard/customers/': typeof DashboardCustomersIndexRoute
   '/dashboard/orders/': typeof DashboardOrdersIndexRoute
   '/dashboard/products/': typeof DashboardProductsIndexRoute
@@ -379,10 +337,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms-of-service': typeof TermsOfServiceRoute
-  '/account/library': typeof AccountLibraryRoute
-  '/account/orders': typeof AccountOrdersRouteWithChildren
-  '/account/saved': typeof AccountSavedRoute
-  '/account/settings': typeof AccountSettingsRoute
+  '/account/orders': typeof AccountOrdersRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
@@ -397,9 +352,7 @@ export interface FileRoutesByTo {
   '/checkout': typeof CheckoutIndexRoute
   '/dashboard': typeof DashboardIndexRoute
   '/shop': typeof ShopIndexRoute
-  '/account/orders/$id': typeof AccountOrdersIdRoute
   '/api/public/download': typeof ApiPublicDownloadRoute
-  '/dashboard/blog/$id': typeof DashboardBlogIdRoute
   '/dashboard/customers/$id': typeof DashboardCustomersIdRoute
   '/dashboard/orders/$id': typeof DashboardOrdersIdRoute
   '/dashboard/products/$id': typeof DashboardProductsIdRoute
@@ -407,7 +360,6 @@ export interface FileRoutesByTo {
   '/dashboard/sales/$id': typeof DashboardSalesIdRoute
   '/dashboard/sales/new': typeof DashboardSalesNewRoute
   '/shop/p/$slug': typeof ShopPSlugRoute
-  '/dashboard/blog': typeof DashboardBlogIndexRoute
   '/dashboard/customers': typeof DashboardCustomersIndexRoute
   '/dashboard/orders': typeof DashboardOrdersIndexRoute
   '/dashboard/products': typeof DashboardProductsIndexRoute
@@ -432,10 +384,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms-of-service': typeof TermsOfServiceRoute
-  '/account/library': typeof AccountLibraryRoute
-  '/account/orders': typeof AccountOrdersRouteWithChildren
-  '/account/saved': typeof AccountSavedRoute
-  '/account/settings': typeof AccountSettingsRoute
+  '/account/orders': typeof AccountOrdersRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
@@ -450,9 +399,7 @@ export interface FileRoutesById {
   '/checkout/': typeof CheckoutIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/shop/': typeof ShopIndexRoute
-  '/account/orders/$id': typeof AccountOrdersIdRoute
   '/api/public/download': typeof ApiPublicDownloadRoute
-  '/dashboard/blog/$id': typeof DashboardBlogIdRoute
   '/dashboard/customers/$id': typeof DashboardCustomersIdRoute
   '/dashboard/orders/$id': typeof DashboardOrdersIdRoute
   '/dashboard/products/$id': typeof DashboardProductsIdRoute
@@ -460,7 +407,6 @@ export interface FileRoutesById {
   '/dashboard/sales/$id': typeof DashboardSalesIdRoute
   '/dashboard/sales/new': typeof DashboardSalesNewRoute
   '/shop/p/$slug': typeof ShopPSlugRoute
-  '/dashboard/blog/': typeof DashboardBlogIndexRoute
   '/dashboard/customers/': typeof DashboardCustomersIndexRoute
   '/dashboard/orders/': typeof DashboardOrdersIndexRoute
   '/dashboard/products/': typeof DashboardProductsIndexRoute
@@ -486,10 +432,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/sitemap.xml'
     | '/terms-of-service'
-    | '/account/library'
     | '/account/orders'
-    | '/account/saved'
-    | '/account/settings'
     | '/blog/$slug'
     | '/checkout/return'
     | '/dashboard/analytics'
@@ -504,9 +447,7 @@ export interface FileRouteTypes {
     | '/checkout/'
     | '/dashboard/'
     | '/shop/'
-    | '/account/orders/$id'
     | '/api/public/download'
-    | '/dashboard/blog/$id'
     | '/dashboard/customers/$id'
     | '/dashboard/orders/$id'
     | '/dashboard/products/$id'
@@ -514,7 +455,6 @@ export interface FileRouteTypes {
     | '/dashboard/sales/$id'
     | '/dashboard/sales/new'
     | '/shop/p/$slug'
-    | '/dashboard/blog/'
     | '/dashboard/customers/'
     | '/dashboard/orders/'
     | '/dashboard/products/'
@@ -536,10 +476,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/sitemap.xml'
     | '/terms-of-service'
-    | '/account/library'
     | '/account/orders'
-    | '/account/saved'
-    | '/account/settings'
     | '/blog/$slug'
     | '/checkout/return'
     | '/dashboard/analytics'
@@ -554,9 +491,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/dashboard'
     | '/shop'
-    | '/account/orders/$id'
     | '/api/public/download'
-    | '/dashboard/blog/$id'
     | '/dashboard/customers/$id'
     | '/dashboard/orders/$id'
     | '/dashboard/products/$id'
@@ -564,7 +499,6 @@ export interface FileRouteTypes {
     | '/dashboard/sales/$id'
     | '/dashboard/sales/new'
     | '/shop/p/$slug'
-    | '/dashboard/blog'
     | '/dashboard/customers'
     | '/dashboard/orders'
     | '/dashboard/products'
@@ -588,10 +522,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/sitemap.xml'
     | '/terms-of-service'
-    | '/account/library'
     | '/account/orders'
-    | '/account/saved'
-    | '/account/settings'
     | '/blog/$slug'
     | '/checkout/return'
     | '/dashboard/analytics'
@@ -606,9 +537,7 @@ export interface FileRouteTypes {
     | '/checkout/'
     | '/dashboard/'
     | '/shop/'
-    | '/account/orders/$id'
     | '/api/public/download'
-    | '/dashboard/blog/$id'
     | '/dashboard/customers/$id'
     | '/dashboard/orders/$id'
     | '/dashboard/products/$id'
@@ -616,7 +545,6 @@ export interface FileRouteTypes {
     | '/dashboard/sales/$id'
     | '/dashboard/sales/new'
     | '/shop/p/$slug'
-    | '/dashboard/blog/'
     | '/dashboard/customers/'
     | '/dashboard/orders/'
     | '/dashboard/products/'
@@ -866,32 +794,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/account/settings': {
-      id: '/account/settings'
-      path: '/settings'
-      fullPath: '/account/settings'
-      preLoaderRoute: typeof AccountSettingsRouteImport
-      parentRoute: typeof AccountRoute
-    }
-    '/account/saved': {
-      id: '/account/saved'
-      path: '/saved'
-      fullPath: '/account/saved'
-      preLoaderRoute: typeof AccountSavedRouteImport
-      parentRoute: typeof AccountRoute
-    }
     '/account/orders': {
       id: '/account/orders'
       path: '/orders'
       fullPath: '/account/orders'
       preLoaderRoute: typeof AccountOrdersRouteImport
-      parentRoute: typeof AccountRoute
-    }
-    '/account/library': {
-      id: '/account/library'
-      path: '/library'
-      fullPath: '/account/library'
-      preLoaderRoute: typeof AccountLibraryRouteImport
       parentRoute: typeof AccountRoute
     }
     '/dashboard/sales/': {
@@ -920,13 +827,6 @@ declare module '@tanstack/react-router' {
       path: '/customers'
       fullPath: '/dashboard/customers/'
       preLoaderRoute: typeof DashboardCustomersIndexRouteImport
-      parentRoute: typeof DashboardRoute
-    }
-    '/dashboard/blog/': {
-      id: '/dashboard/blog/'
-      path: '/blog'
-      fullPath: '/dashboard/blog/'
-      preLoaderRoute: typeof DashboardBlogIndexRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/shop/p/$slug': {
@@ -978,26 +878,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardCustomersIdRouteImport
       parentRoute: typeof DashboardRoute
     }
-    '/dashboard/blog/$id': {
-      id: '/dashboard/blog/$id'
-      path: '/blog/$id'
-      fullPath: '/dashboard/blog/$id'
-      preLoaderRoute: typeof DashboardBlogIdRouteImport
-      parentRoute: typeof DashboardRoute
-    }
     '/api/public/download': {
       id: '/api/public/download'
       path: '/api/public/download'
       fullPath: '/api/public/download'
       preLoaderRoute: typeof ApiPublicDownloadRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/account/orders/$id': {
-      id: '/account/orders/$id'
-      path: '/$id'
-      fullPath: '/account/orders/$id'
-      preLoaderRoute: typeof AccountOrdersIdRouteImport
-      parentRoute: typeof AccountOrdersRoute
     }
     '/api/public/payments/webhook': {
       id: '/api/public/payments/webhook'
@@ -1009,31 +895,13 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AccountOrdersRouteChildren {
-  AccountOrdersIdRoute: typeof AccountOrdersIdRoute
-}
-
-const AccountOrdersRouteChildren: AccountOrdersRouteChildren = {
-  AccountOrdersIdRoute: AccountOrdersIdRoute,
-}
-
-const AccountOrdersRouteWithChildren = AccountOrdersRoute._addFileChildren(
-  AccountOrdersRouteChildren,
-)
-
 interface AccountRouteChildren {
-  AccountLibraryRoute: typeof AccountLibraryRoute
-  AccountOrdersRoute: typeof AccountOrdersRouteWithChildren
-  AccountSavedRoute: typeof AccountSavedRoute
-  AccountSettingsRoute: typeof AccountSettingsRoute
+  AccountOrdersRoute: typeof AccountOrdersRoute
   AccountIndexRoute: typeof AccountIndexRoute
 }
 
 const AccountRouteChildren: AccountRouteChildren = {
-  AccountLibraryRoute: AccountLibraryRoute,
-  AccountOrdersRoute: AccountOrdersRouteWithChildren,
-  AccountSavedRoute: AccountSavedRoute,
-  AccountSettingsRoute: AccountSettingsRoute,
+  AccountOrdersRoute: AccountOrdersRoute,
   AccountIndexRoute: AccountIndexRoute,
 }
 
@@ -1046,14 +914,12 @@ interface DashboardRouteChildren {
   DashboardMarketingRoute: typeof DashboardMarketingRoute
   DashboardSettingsRoute: typeof DashboardSettingsRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
-  DashboardBlogIdRoute: typeof DashboardBlogIdRoute
   DashboardCustomersIdRoute: typeof DashboardCustomersIdRoute
   DashboardOrdersIdRoute: typeof DashboardOrdersIdRoute
   DashboardProductsIdRoute: typeof DashboardProductsIdRoute
   DashboardProductsNewRoute: typeof DashboardProductsNewRoute
   DashboardSalesIdRoute: typeof DashboardSalesIdRoute
   DashboardSalesNewRoute: typeof DashboardSalesNewRoute
-  DashboardBlogIndexRoute: typeof DashboardBlogIndexRoute
   DashboardCustomersIndexRoute: typeof DashboardCustomersIndexRoute
   DashboardOrdersIndexRoute: typeof DashboardOrdersIndexRoute
   DashboardProductsIndexRoute: typeof DashboardProductsIndexRoute
@@ -1066,14 +932,12 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardMarketingRoute: DashboardMarketingRoute,
   DashboardSettingsRoute: DashboardSettingsRoute,
   DashboardIndexRoute: DashboardIndexRoute,
-  DashboardBlogIdRoute: DashboardBlogIdRoute,
   DashboardCustomersIdRoute: DashboardCustomersIdRoute,
   DashboardOrdersIdRoute: DashboardOrdersIdRoute,
   DashboardProductsIdRoute: DashboardProductsIdRoute,
   DashboardProductsNewRoute: DashboardProductsNewRoute,
   DashboardSalesIdRoute: DashboardSalesIdRoute,
   DashboardSalesNewRoute: DashboardSalesNewRoute,
-  DashboardBlogIndexRoute: DashboardBlogIndexRoute,
   DashboardCustomersIndexRoute: DashboardCustomersIndexRoute,
   DashboardOrdersIndexRoute: DashboardOrdersIndexRoute,
   DashboardProductsIndexRoute: DashboardProductsIndexRoute,
@@ -1116,13 +980,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
