@@ -292,31 +292,69 @@ function Analytics() {
         </DashCard>
       </div>
 
-      <DashCard title="Sale events">
-        <table className="w-full text-sm">
-          <thead className="text-[10px] uppercase tracking-wider text-white/40">
-            <tr>
-              <th className="text-left py-2">Event</th>
-              <th className="text-left py-2 px-3">Dates</th>
-              <th className="text-right py-2">Discount</th>
-              <th className="text-right py-2">Revenue</th>
-            </tr>
-          </thead>
-          <tbody>
-            {saleEvents.length === 0 && (
-              <tr><td colSpan={4} className="py-6 text-center text-xs text-white/40 font-mono">No sale events yet.</td></tr>
-            )}
-            {saleEvents.map(s => (
-              <tr key={s.id} className="border-t border-white/5">
-                <td className="py-2">{s.name}</td>
-                <td className="py-2 px-3 text-[10px] font-mono text-white/50">{new Date(s.startAt).toLocaleDateString()} – {new Date(s.endAt).toLocaleDateString()}</td>
-                <td className="py-2 text-right font-mono text-xs">{s.discountPct}%</td>
-                <td className="py-2 text-right font-mono text-xs">{s.revenue ? fmtMoney(s.revenue) : "—"}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <DashCard title="Sale performance">
+        {salePerf.length === 0 ? (
+          <div className="py-8 text-center text-xs text-white/40 font-mono">
+            {loading ? "Loading…" : "No sale events yet."}
+          </div>
+        ) : (
+          <div
+            className="grid grid-cols-1 md:grid-cols-2 gap-3 overflow-y-auto pr-1"
+            style={{ maxHeight: "calc(6 * 5.5rem + 1rem)" }}
+          >
+            {salePerf.map((s) => {
+              const isActive = s.liveStatus === "active";
+              const accent = s.theme_color || "#FF003C";
+              return (
+                <div
+                  key={s.id}
+                  className="relative rounded-lg border p-3 transition-colors"
+                  style={{
+                    borderColor: isActive ? accent + "88" : "rgba(255,255,255,0.08)",
+                    background: isActive
+                      ? `linear-gradient(135deg, ${accent}18, rgba(25,7,55,0.6))`
+                      : "rgba(255,255,255,0.02)",
+                    boxShadow: isActive ? `0 0 24px ${accent}22` : "none",
+                  }}
+                >
+                  <div className="flex items-start justify-between gap-2 mb-1.5">
+                    <div className="min-w-0">
+                      <div className="text-sm text-white truncate font-medium">{s.name}</div>
+                      <div className="text-[10px] font-mono text-white/45 mt-0.5">
+                        {formatInSaleTimeZone(s.start_at, { year: undefined })} — {formatInSaleTimeZone(s.end_at, { year: undefined })}
+                      </div>
+                    </div>
+                    <span
+                      className="text-[9px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded shrink-0"
+                      style={{
+                        background: isActive ? "#FF003C" : "rgba(255,255,255,0.08)",
+                        color: isActive ? "#fff" : "rgba(255,255,255,0.55)",
+                      }}
+                    >
+                      {isActive ? "Active" : s.liveStatus === "scheduled" ? "Scheduled" : "Ended"}
+                    </span>
+                  </div>
+                  <div className="flex items-baseline gap-4 pt-1.5 border-t border-white/5">
+                    <div>
+                      <div className="text-[9px] font-mono uppercase tracking-wider text-white/40">Purchases</div>
+                      <div className="font-mono text-sm text-white">{s.orders}</div>
+                    </div>
+                    <div>
+                      <div className="text-[9px] font-mono uppercase tracking-wider text-white/40">Revenue</div>
+                      <div className="font-mono text-sm" style={{ color: isActive ? accent : "#fff" }}>{fmtMoney(s.revenue)}</div>
+                    </div>
+                    <div className="ml-auto text-right">
+                      <div className="text-[9px] font-mono uppercase tracking-wider text-white/40">Discount</div>
+                      <div className="font-mono text-sm text-white/70">{s.discount_pct}%</div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </DashCard>
+
     </DashboardShell>
   );
 }
