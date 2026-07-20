@@ -27,6 +27,18 @@ function OrdersPage() {
   const [query, setQuery] = useState("");
   const [orders, setOrders] = useState<Order[]>([]);
   const [ready, setReady] = useState(false);
+  const [updatedProductIds, setUpdatedProductIds] = useState<Set<string>>(new Set());
+
+  const refreshUpdates = async () => {
+    const { data } = await supabase.rpc("get_my_product_file_updates");
+    const s = new Set<string>();
+    for (const r of (data ?? []) as Array<{ product_id: string; file_updated_at: string; acknowledged_at: string | null }>) {
+      if (!r.acknowledged_at || new Date(r.file_updated_at) > new Date(r.acknowledged_at)) {
+        s.add(r.product_id);
+      }
+    }
+    setUpdatedProductIds(s);
+  };
 
   useEffect(() => {
     if (loading) return;
@@ -38,9 +50,21 @@ function OrdersPage() {
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
       setOrders((data ?? []) as any);
+      await refreshUpdates();
       setReady(true);
     })();
   }, [user, loading]);
+
+  const acknowledgeProducts = async (productIds: string[]) => {
+    const toAck = productIds.filter((id) => updatedProductIds.has(id));
+    if (toAck.length === 0) return;
+    await supabase.rpc("acknowledge_product_files", { _product_ids: toAck });
+    setUpdatedProductIds((prev) => {
+      const next = new Set(prev);
+      toAck.forEach((id) => next.delete(id));
+      return next;
+    });
+  };
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -58,6 +82,7 @@ function OrdersPage() {
   };
 
   if (!ready) return <div className="p-8 text-white/60">Loading your orders…</div>;
+
 
   return (
     <div className="space-y-8">
