@@ -1,10 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { DashboardShell, DashCard, StatCard } from "@/components/DashboardShell";
 import { type AnalyticsRange, RANGE_LABEL } from "@/lib/dashboard-mock";
 import { ResponsiveContainer, AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip, BarChart, Bar, PieChart, Pie, Cell } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { deriveSaleStatus, formatInSaleTimeZone } from "@/lib/sale-time";
+
 
 
 export const Route = createFileRoute("/dashboard/analytics")({
@@ -200,12 +201,49 @@ function Analytics() {
   }, [inRange]);
 
   return (
-    <DashboardShell title="Analytics" action={<RangePills value={range} onChange={setRange} />}>
+    <DashboardShell
+      title="Analytics"
+      action={
+        <div className="flex items-center gap-2">
+          <Link
+            to="/dashboard/campaign-links"
+            className="text-[10px] font-mono uppercase tracking-wider text-white/70 hover:text-white border border-white/10 hover:border-white/25 rounded px-2.5 py-1 transition-colors"
+          >
+            Campaign Links →
+          </Link>
+          <RangePills value={range} onChange={setRange} />
+        </div>
+      }
+    >
+      {/* Shared SVG defs for chart gradients + soft-glow filter used below. */}
+      <svg width="0" height="0" style={{ position: "absolute" }} aria-hidden>
+        <defs>
+          <linearGradient id="pw-red-grad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#FF6188" />
+            <stop offset="55%" stopColor="#FF003C" />
+            <stop offset="100%" stopColor="#8A0022" />
+          </linearGradient>
+          <linearGradient id="pw-blue-grad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#5B58FF" />
+            <stop offset="60%" stopColor="#0E0BD1" />
+            <stop offset="100%" stopColor="#050380" />
+          </linearGradient>
+          <filter id="pw-glow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+            <feMerge>
+              <feMergeNode in="coloredBlur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+      </svg>
+
       <div key={`kpi-${range}`} className="dash-page grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <StatCard label={`Revenue · ${RANGE_LABEL[range]}`} value={fmtMoney(rev)} />
         <StatCard label="Avg order value" value={fmtMoney(aov)} />
         <StatCard label="Refund rate" value={`${refundRate}%`} />
       </div>
+
 
       <DashCard title="Revenue" action={<RangePills value={range} onChange={setRange} />} className="mb-6">
         <div key={`rev-${range}`} className="dash-page h-72">
