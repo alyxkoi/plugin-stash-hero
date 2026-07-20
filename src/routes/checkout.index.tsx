@@ -5,6 +5,7 @@ import { getStripe, getStripeEnvironment } from "@/lib/stripe";
 import { createCheckoutSession } from "@/lib/checkout.functions";
 import { useAuth } from "@/hooks/useAuth";
 import { useStore } from "@/lib/store";
+import { readStoredUtm } from "@/hooks/useUtmCapture";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 
 export const Route = createFileRoute("/checkout/")({
@@ -18,10 +19,19 @@ function CheckoutPage() {
   const discount = useStore((s) => s.discount);
   const navigate = useNavigate();
 
-  const utmSource = useMemo(() => {
-    if (typeof window === "undefined") return null;
-    return new URLSearchParams(window.location.search).get("utm_source");
+  // Prefer live URL params on the checkout page itself, but fall back to
+  // the first-touch UTM stored on landing so attribution isn't lost when
+  // a visitor browses several pages before checking out.
+  const utm = useMemo(() => {
+    if (typeof window === "undefined") return { source: null as string | null, campaign: null as string | null };
+    const q = new URLSearchParams(window.location.search);
+    const stored = readStoredUtm();
+    return {
+      source: q.get("utm_source") || stored?.utm_source || null,
+      campaign: q.get("utm_campaign") || stored?.utm_campaign || null,
+    };
   }, []);
+
 
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -59,11 +69,13 @@ function CheckoutPage() {
       const payload = {
         items,
         discountCode: discount?.code ?? null,
-        utmSource,
+        utmSource: utm.source,
+        utmCampaign: utm.campaign,
         email: email ?? (user?.email ?? null),
         returnUrl: `${window.location.origin}/checkout/return`,
         environment,
       };
+
       // One silent retry on transient network failures (aborted fetch, brief
       // Worker cold-start). Anything else falls through to the visible error.
       const callOnce = () => createCheckoutSession({ data: payload });

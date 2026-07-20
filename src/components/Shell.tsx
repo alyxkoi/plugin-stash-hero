@@ -6,12 +6,19 @@ import { Footer } from "./Footer";
 import { CartDrawer } from "./CartDrawer";
 import { MysteryGiftPopup } from "./MysteryGiftPopup";
 import { useCartSync } from "@/hooks/useCartSync";
+import { useUtmCapture } from "@/hooks/useUtmCapture";
 import { SalePricingProvider } from "@/lib/sale-pricing";
 
 function CartSync() {
   useCartSync();
   return null;
 }
+
+function UtmSync() {
+  useUtmCapture();
+  return null;
+}
+
 
 export function Shell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -54,7 +61,9 @@ export function Shell() {
       <Footer />
       <CartDrawer />
       <CartSync />
+      <UtmSync />
       <MysteryGiftPopup />
+
     </SalePricingProvider>
   );
 }

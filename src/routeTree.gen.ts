@@ -33,9 +33,11 @@ import { Route as AccountIndexRouteImport } from './routes/account.index'
 import { Route as ShopCategoryRouteImport } from './routes/shop.$category'
 import { Route as SaleSlugRouteImport } from './routes/sale.$slug'
 import { Route as LibraryTokenRouteImport } from './routes/library.$token'
+import { Route as GoCodeRouteImport } from './routes/go.$code'
 import { Route as DashboardSettingsRouteImport } from './routes/dashboard.settings'
 import { Route as DashboardMarketingRouteImport } from './routes/dashboard.marketing'
 import { Route as DashboardLoginRouteImport } from './routes/dashboard.login'
+import { Route as DashboardCampaignLinksRouteImport } from './routes/dashboard.campaign-links'
 import { Route as DashboardAnalyticsRouteImport } from './routes/dashboard.analytics'
 import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
@@ -174,6 +176,11 @@ const LibraryTokenRoute = LibraryTokenRouteImport.update({
   path: '/library/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GoCodeRoute = GoCodeRouteImport.update({
+  id: '/go/$code',
+  path: '/go/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardSettingsRoute = DashboardSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -187,6 +194,11 @@ const DashboardMarketingRoute = DashboardMarketingRouteImport.update({
 const DashboardLoginRoute = DashboardLoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardCampaignLinksRoute = DashboardCampaignLinksRouteImport.update({
+  id: '/campaign-links',
+  path: '/campaign-links',
   getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardAnalyticsRoute = DashboardAnalyticsRouteImport.update({
@@ -297,9 +309,11 @@ export interface FileRoutesByFullPath {
   '/blog/$slug': typeof BlogSlugRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
+  '/dashboard/campaign-links': typeof DashboardCampaignLinksRoute
   '/dashboard/login': typeof DashboardLoginRoute
   '/dashboard/marketing': typeof DashboardMarketingRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
+  '/go/$code': typeof GoCodeRoute
   '/library/$token': typeof LibraryTokenRoute
   '/sale/$slug': typeof SaleSlugRoute
   '/shop/$category': typeof ShopCategoryRoute
@@ -341,9 +355,11 @@ export interface FileRoutesByTo {
   '/blog/$slug': typeof BlogSlugRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
+  '/dashboard/campaign-links': typeof DashboardCampaignLinksRoute
   '/dashboard/login': typeof DashboardLoginRoute
   '/dashboard/marketing': typeof DashboardMarketingRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
+  '/go/$code': typeof GoCodeRoute
   '/library/$token': typeof LibraryTokenRoute
   '/sale/$slug': typeof SaleSlugRoute
   '/shop/$category': typeof ShopCategoryRoute
@@ -388,9 +404,11 @@ export interface FileRoutesById {
   '/blog/$slug': typeof BlogSlugRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
+  '/dashboard/campaign-links': typeof DashboardCampaignLinksRoute
   '/dashboard/login': typeof DashboardLoginRoute
   '/dashboard/marketing': typeof DashboardMarketingRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
+  '/go/$code': typeof GoCodeRoute
   '/library/$token': typeof LibraryTokenRoute
   '/sale/$slug': typeof SaleSlugRoute
   '/shop/$category': typeof ShopCategoryRoute
@@ -436,9 +454,11 @@ export interface FileRouteTypes {
     | '/blog/$slug'
     | '/checkout/return'
     | '/dashboard/analytics'
+    | '/dashboard/campaign-links'
     | '/dashboard/login'
     | '/dashboard/marketing'
     | '/dashboard/settings'
+    | '/go/$code'
     | '/library/$token'
     | '/sale/$slug'
     | '/shop/$category'
@@ -480,9 +500,11 @@ export interface FileRouteTypes {
     | '/blog/$slug'
     | '/checkout/return'
     | '/dashboard/analytics'
+    | '/dashboard/campaign-links'
     | '/dashboard/login'
     | '/dashboard/marketing'
     | '/dashboard/settings'
+    | '/go/$code'
     | '/library/$token'
     | '/sale/$slug'
     | '/shop/$category'
@@ -526,9 +548,11 @@ export interface FileRouteTypes {
     | '/blog/$slug'
     | '/checkout/return'
     | '/dashboard/analytics'
+    | '/dashboard/campaign-links'
     | '/dashboard/login'
     | '/dashboard/marketing'
     | '/dashboard/settings'
+    | '/go/$code'
     | '/library/$token'
     | '/sale/$slug'
     | '/shop/$category'
@@ -571,6 +595,7 @@ export interface RootRouteChildren {
   TermsOfServiceRoute: typeof TermsOfServiceRoute
   BlogSlugRoute: typeof BlogSlugRoute
   CheckoutReturnRoute: typeof CheckoutReturnRoute
+  GoCodeRoute: typeof GoCodeRoute
   LibraryTokenRoute: typeof LibraryTokenRoute
   SaleSlugRoute: typeof SaleSlugRoute
   ShopCategoryRoute: typeof ShopCategoryRoute
@@ -752,6 +777,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LibraryTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/go/$code': {
+      id: '/go/$code'
+      path: '/go/$code'
+      fullPath: '/go/$code'
+      preLoaderRoute: typeof GoCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard/settings': {
       id: '/dashboard/settings'
       path: '/settings'
@@ -771,6 +803,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/dashboard/login'
       preLoaderRoute: typeof DashboardLoginRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/campaign-links': {
+      id: '/dashboard/campaign-links'
+      path: '/campaign-links'
+      fullPath: '/dashboard/campaign-links'
+      preLoaderRoute: typeof DashboardCampaignLinksRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/dashboard/analytics': {
@@ -910,6 +949,7 @@ const AccountRouteWithChildren =
 
 interface DashboardRouteChildren {
   DashboardAnalyticsRoute: typeof DashboardAnalyticsRoute
+  DashboardCampaignLinksRoute: typeof DashboardCampaignLinksRoute
   DashboardLoginRoute: typeof DashboardLoginRoute
   DashboardMarketingRoute: typeof DashboardMarketingRoute
   DashboardSettingsRoute: typeof DashboardSettingsRoute
@@ -928,6 +968,7 @@ interface DashboardRouteChildren {
 
 const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardAnalyticsRoute: DashboardAnalyticsRoute,
+  DashboardCampaignLinksRoute: DashboardCampaignLinksRoute,
   DashboardLoginRoute: DashboardLoginRoute,
   DashboardMarketingRoute: DashboardMarketingRoute,
   DashboardSettingsRoute: DashboardSettingsRoute,
@@ -967,6 +1008,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsOfServiceRoute: TermsOfServiceRoute,
   BlogSlugRoute: BlogSlugRoute,
   CheckoutReturnRoute: CheckoutReturnRoute,
+  GoCodeRoute: GoCodeRoute,
   LibraryTokenRoute: LibraryTokenRoute,
   SaleSlugRoute: SaleSlugRoute,
   ShopCategoryRoute: ShopCategoryRoute,
