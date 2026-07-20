@@ -86,6 +86,7 @@ async function handleCheckoutCompleted(session: any, env: StripeEnv) {
     null;
   const discountCode: string | null = meta.discount_code || null;
   const utmSource: string | null = meta.utm_source || null;
+  const utmCampaign: string | null = meta.utm_campaign || null;
   const subtotalCents = Number(meta.subtotal_cents ?? session.amount_subtotal ?? 0);
   const discountCents = Number(meta.discount_cents ?? 0);
   const totalCents = Number(meta.total_cents ?? session.amount_total ?? 0);
@@ -99,12 +100,14 @@ async function handleCheckoutCompleted(session: any, env: StripeEnv) {
     guestEmail,
     discountCode,
     utmSource,
+    utmCampaign,
     subtotalCents,
     discountCents,
     totalCents,
     items,
     stripePaymentIntentId: (session.payment_intent as string) ?? null,
   });
+
 
   const itemCount = items.reduce((n, i) => n + (i.qty || 1), 0);
   if (result) {

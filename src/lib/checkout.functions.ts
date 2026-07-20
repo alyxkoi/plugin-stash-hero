@@ -96,6 +96,7 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
     items: ItemInput[];
     discountCode?: string | null;
     utmSource?: string | null;
+    utmCampaign?: string | null;
     email?: string | null;
     returnUrl: string;
     environment: StripeEnv;
@@ -108,6 +109,7 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
     if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) throw new Error("Invalid email");
     return data;
   })
+
   .handler(async ({ data }): Promise<CheckoutResult> => {
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -245,12 +247,14 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
           guestEmail: userId ? guestEmail : guestEmail,
           discountCode,
           utmSource: data.utmSource ?? null,
+          utmCampaign: data.utmCampaign ?? null,
           subtotalCents,
           discountCents,
           totalCents,
           items: fulfillItems,
           stripePaymentIntentId: null,
         });
+
         if (!finalized) return { error: "Could not complete free order." };
         return { freeSessionId };
       }
@@ -307,6 +311,7 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
           guest_email: userId ? "" : (email ?? ""),
           discount_code: discountCode ?? "",
           utm_source: data.utmSource ?? "",
+          utm_campaign: data.utmCampaign ?? "",
           subtotal_cents: String(subtotalCents),
           discount_cents: String(discountCents),
           total_cents: String(totalCents),
@@ -314,6 +319,7 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
           // product details from the DB and unit prices from Stripe line_items.
           items: items.map((i) => `${i.product.id}:${i.qty}`).join(","),
         },
+
       });
 
       return { clientSecret: session.client_secret ?? "" };

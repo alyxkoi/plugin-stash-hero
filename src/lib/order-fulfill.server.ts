@@ -23,12 +23,14 @@ export type FulfillInput = {
   guestEmail: string | null;
   discountCode: string | null;
   utmSource: string | null;
+  utmCampaign?: string | null;
   subtotalCents: number;
   discountCents: number;
   totalCents: number;
   items: FulfillItem[];
   stripePaymentIntentId?: string | null;
 };
+
 
 export async function finalizeOrder(input: FulfillInput): Promise<{ orderId: string; number: string } | null> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -80,6 +82,7 @@ export async function finalizeOrder(input: FulfillInput): Promise<{ orderId: str
       total: input.totalCents / 100,
       discount_code: input.discountCode,
       utm_source: input.utmSource,
+      utm_campaign: input.utmCampaign ?? null,
       status: "completed",
       stripe_id: input.stripePaymentIntentId ?? null,
       stripe_session_id: input.sessionId,
@@ -87,6 +90,7 @@ export async function finalizeOrder(input: FulfillInput): Promise<{ orderId: str
     } as any)
     .select("id")
     .maybeSingle();
+
 
 
   if (orderErr || !inserted) {
