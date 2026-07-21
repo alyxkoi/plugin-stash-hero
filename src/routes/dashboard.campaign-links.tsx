@@ -762,6 +762,16 @@ function LinkRowItem({
     void onChanged();
   };
 
+  const resetClicks = async () => {
+    if (!confirm(`Reset click count for "${link.label}"? Historical clicks will be permanently deleted.`)) return;
+    setBusy(true);
+    const { data, error } = await (supabase as any).rpc("reset_campaign_link_clicks", { _link_id: link.id });
+    setBusy(false); setOpen(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`Reset ${data ?? 0} click record${data === 1 ? "" : "s"}.`);
+    void onChanged();
+  };
+
   return (
     <>
       <div
