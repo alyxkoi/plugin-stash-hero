@@ -158,10 +158,15 @@ function Analytics() {
     const map = new Map<string, number>();
     for (const o of inRange) {
       const s = (o.utm_source || "direct").toLowerCase();
-      map.set(s, (map.get(s) ?? 0) + Number(o.total || 0));
+      map.set(s, (map.get(s) ?? 0) + 1);
     }
-    return [...map.entries()].map(([source, revenue]) => ({ source, revenue })).sort((a, b) => b.revenue - a.revenue).slice(0, 8);
+    return [...map.entries()]
+      .map(([source, count]) => ({ source, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 4);
   }, [inRange]);
+  const sourcesMax = Math.max(1, ...sources.map(s => s.count));
+
 
   // Per-sale performance: real money captured (post-discount order totals) grouped by sale_id.
   const salePerf = useMemo(() => {
