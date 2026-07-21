@@ -17,7 +17,13 @@ export function useAuth(): AuthState {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let lastCheckedUid: string | null | undefined = undefined;
+
     const checkAdmin = (uid: string | undefined) => {
+      // Skip re-check if user identity hasn't changed (prevents flicker on
+      // TOKEN_REFRESHED / window refocus events).
+      if (uid === lastCheckedUid) return;
+      lastCheckedUid = uid ?? null;
       setAdminReady(false);
       if (!uid) { setIsAdmin(false); setAdminReady(true); return; }
       // defer to avoid auth callback deadlock
@@ -33,7 +39,13 @@ export function useAuth(): AuthState {
       }, 0);
     };
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
+      // Ignore silent token refreshes and user metadata updates — they must
+      // not remount gated views or reset form state.
+      if (event === "TOKEN_REFRESHED" || event === "USER_UPDATED") {
+        setSession(s);
+        return;
+      }
       setSession(s);
       checkAdmin(s?.user?.id);
     });
