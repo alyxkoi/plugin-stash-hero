@@ -207,7 +207,7 @@ function Analytics() {
         <div className="flex items-center gap-2">
           <Link
             to="/dashboard/campaign-links"
-            className="text-[10px] font-mono uppercase tracking-wider text-white/70 hover:text-white border border-white/10 hover:border-white/25 rounded px-2.5 py-1 transition-colors"
+            className="btn-primary !py-2 !px-4 !min-h-0 text-[11px]"
           >
             Campaign Links →
           </Link>

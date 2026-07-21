@@ -73,7 +73,12 @@ function DashboardChromeRoot({ initialTitle, initialAction, children }: { initia
     navigate({ to: "/dashboard/login" as any });
   };
 
-  const activeIdx = NAV.findIndex(n => n.exact ? pathname === n.to : pathname.startsWith(n.to));
+  // Treat sub-tools of Analytics (e.g. Campaign Links) as still being under Analytics
+  // so the active indicator stays anchored and doesn't jump.
+  const effectivePath = pathname.startsWith("/dashboard/campaign-links")
+    ? "/dashboard/analytics"
+    : pathname;
+  const activeIdx = NAV.findIndex(n => n.exact ? effectivePath === n.to : effectivePath.startsWith(n.to));
   const routeTitle = activeIdx >= 0 ? NAV[activeIdx].label : page.title;
   const displayTitle = page.title === initialTitle ? routeTitle : page.title;
   const ITEM_H = 40;
@@ -115,7 +120,7 @@ function DashboardChromeRoot({ initialTitle, initialAction, children }: { initia
               <span className="nav-glow-blob" style={{ top: glowTop, height: ITEM_H }} />
               <span className="nav-glow" style={{ top: glowTop + 8, height: ITEM_H - 16 }} />
               {NAV.map((n) => {
-                const active = n.exact ? pathname === n.to : pathname.startsWith(n.to);
+                const active = n.exact ? effectivePath === n.to : effectivePath.startsWith(n.to);
                 const Icon = n.icon;
                 return (
                   <Link key={n.to} to={n.to as any} className={`group relative flex items-center gap-3 px-3 rounded-lg transition-colors duration-300 ${active ? "text-[var(--accent-red)]" : "text-white/70 hover:text-white"}`} style={{ height: ITEM_H }}>
@@ -189,7 +194,7 @@ function DashboardChromeRoot({ initialTitle, initialAction, children }: { initia
         <div ref={trackRef} className="dashboard-bottom-track">
           <span className="bottom-nav-glow" style={{ left: glowRect.left, width: glowRect.width }} />
           {NAV.map((n, i) => {
-            const active = n.exact ? pathname === n.to : pathname.startsWith(n.to);
+            const active = n.exact ? effectivePath === n.to : effectivePath.startsWith(n.to);
             const Icon = n.icon;
             return (
               <Link
