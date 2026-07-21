@@ -120,7 +120,7 @@ function DashboardChromeRoot({ initialTitle, initialAction, children }: { initia
               <span className="nav-glow-blob" style={{ top: glowTop, height: ITEM_H }} />
               <span className="nav-glow" style={{ top: glowTop + 8, height: ITEM_H - 16 }} />
               {NAV.map((n) => {
-                const active = n.exact ? pathname === n.to : pathname.startsWith(n.to);
+                const active = n.exact ? effectivePath === n.to : effectivePath.startsWith(n.to);
                 const Icon = n.icon;
                 return (
                   <Link key={n.to} to={n.to as any} className={`group relative flex items-center gap-3 px-3 rounded-lg transition-colors duration-300 ${active ? "text-[var(--accent-red)]" : "text-white/70 hover:text-white"}`} style={{ height: ITEM_H }}>
