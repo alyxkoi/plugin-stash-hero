@@ -853,9 +853,9 @@ function EditLinkDialog({
         <div className="font-display text-base tracking-wide text-white">Edit link</div>
         <Field label="Link Name"><input value={label} onChange={(e) => setLabel(e.target.value)} className={inputCls} /></Field>
         <Field label="Group">
-          <select value={groupId} onChange={(e) => setGroupId(e.target.value)} className={inputCls}>
-            <option value="">— No group —</option>
-            {activeGroups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+          <select value={groupId} onChange={(e) => setGroupId(e.target.value)} className={selectCls}>
+            <option value="" style={{ background: "#190737", color: "#C9BEDD" }}>— No group —</option>
+            {activeGroups.map((g) => <option key={g.id} value={g.id} style={{ background: "#190737", color: "#C9BEDD" }}>{g.name}</option>)}
           </select>
         </Field>
         <Field label="Sends To"><input value={dest} onChange={(e) => setDest(e.target.value)} className={inputCls} /></Field>
