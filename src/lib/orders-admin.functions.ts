@@ -58,7 +58,8 @@ function prettyType(t: string): string {
 
 async function fetchStripeDetails(stripePaymentIntentId: string | null, stripeSessionId: string | null): Promise<{ payment: AdminOrderDetail["payment"]; phone: string | null; email: string | null; name: string | null }> {
   if (!stripePaymentIntentId && !stripeSessionId) return { payment: null, phone: null, email: null, name: null };
-  const { createStripeClient, type StripeEnv } = await import("@/lib/stripe.server");
+  const { createStripeClient } = await import("@/lib/stripe.server");
+  type StripeEnv = "sandbox" | "live";
   const envs: StripeEnv[] = ["live", "sandbox"];
   for (const env of envs) {
     try {
