@@ -49,6 +49,7 @@ function Overview() {
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [customers, setCustomers] = useState<CustomerLite[]>([]);
   const [loading, setLoading] = useState(true);
+  const [openOrderId, setOpenOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -153,8 +154,8 @@ function Overview() {
                     const label = cust?.name || cust?.email || o.guest_email || "Guest";
                     const ini = initialsFrom(cust?.name ?? null, cust?.email || o.guest_email || "?");
                     return (
-                      <tr key={o.id} className="border-t border-white/5 hover:bg-white/[0.03]">
-                        <td className="px-2 py-3 font-mono text-xs"><Link to={"/dashboard/orders/$id" as any} params={{ id: o.id } as any} className="hover:text-[var(--accent-red-glow)]">{o.number}</Link></td>
+                      <tr key={o.id} onClick={() => setOpenOrderId(o.id)} className="border-t border-white/5 hover:bg-white/[0.03] cursor-pointer">
+                        <td className="px-2 py-3 font-mono text-xs text-white hover:text-[var(--accent-red-glow)]">{o.number}</td>
                         <td className="px-2 py-3">
                           <div className="flex items-center gap-2">
                             <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[var(--accent-red)] to-[var(--accent-blue)] flex items-center justify-center text-[9px] font-bold">{ini}</div>
@@ -204,6 +205,8 @@ function Overview() {
         <QuickTile icon={<Tag size={18} />} title="Create sale event" to="/dashboard/sales/new" />
         <QuickTile icon={<Ticket size={18} />} title="Generate discount code" to="/dashboard/marketing" />
       </div>
+
+      <OrderDrawer open={!!openOrderId} orderId={openOrderId} onClose={() => setOpenOrderId(null)} />
     </DashboardShell>
   );
 }
