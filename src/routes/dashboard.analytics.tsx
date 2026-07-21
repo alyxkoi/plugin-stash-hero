@@ -246,10 +246,9 @@ function Analytics() {
         </defs>
       </svg>
 
-      <div key={`kpi-${range}`} className="dash-page grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div key={`kpi-${range}`} className="dash-page grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         <StatCard label={`Revenue · ${RANGE_LABEL[range]}`} value={fmtMoney(rev)} />
         <StatCard label="Avg order value" value={fmtMoney(aov)} />
-        <StatCard label="Refund rate" value={`${refundRate}%`} />
       </div>
 
 
