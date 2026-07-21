@@ -11,7 +11,7 @@ export const Route = createFileRoute("/go/$code")({
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data: link } = await (supabaseAdmin as any)
           .from("campaign_links")
-          .select("id, utm_source, utm_campaign, destination_path")
+          .select("id, utm_source, utm_campaign, utm_content, destination_path")
           .eq("code", params.code)
           .maybeSingle();
         if (!link) {
