@@ -41,7 +41,9 @@ import { Route as DashboardCampaignLinksRouteImport } from './routes/dashboard.c
 import { Route as DashboardAnalyticsRouteImport } from './routes/dashboard.analytics'
 import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
+import { Route as AccountPluginsRouteImport } from './routes/account.plugins'
 import { Route as AccountOrdersRouteImport } from './routes/account.orders'
+import { Route as AccountContactRouteImport } from './routes/account.contact'
 import { Route as DashboardSalesIndexRouteImport } from './routes/dashboard.sales.index'
 import { Route as DashboardProductsIndexRouteImport } from './routes/dashboard.products.index'
 import { Route as DashboardOrdersIndexRouteImport } from './routes/dashboard.orders.index'
@@ -216,9 +218,19 @@ const BlogSlugRoute = BlogSlugRouteImport.update({
   path: '/blog/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountPluginsRoute = AccountPluginsRouteImport.update({
+  id: '/plugins',
+  path: '/plugins',
+  getParentRoute: () => AccountRoute,
+} as any)
 const AccountOrdersRoute = AccountOrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
+  getParentRoute: () => AccountRoute,
+} as any)
+const AccountContactRoute = AccountContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
   getParentRoute: () => AccountRoute,
 } as any)
 const DashboardSalesIndexRoute = DashboardSalesIndexRouteImport.update({
@@ -305,7 +317,9 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms-of-service': typeof TermsOfServiceRoute
+  '/account/contact': typeof AccountContactRoute
   '/account/orders': typeof AccountOrdersRoute
+  '/account/plugins': typeof AccountPluginsRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
@@ -351,7 +365,9 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms-of-service': typeof TermsOfServiceRoute
+  '/account/contact': typeof AccountContactRoute
   '/account/orders': typeof AccountOrdersRoute
+  '/account/plugins': typeof AccountPluginsRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
@@ -400,7 +416,9 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms-of-service': typeof TermsOfServiceRoute
+  '/account/contact': typeof AccountContactRoute
   '/account/orders': typeof AccountOrdersRoute
+  '/account/plugins': typeof AccountPluginsRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
@@ -450,7 +468,9 @@ export interface FileRouteTypes {
     | '/signup'
     | '/sitemap.xml'
     | '/terms-of-service'
+    | '/account/contact'
     | '/account/orders'
+    | '/account/plugins'
     | '/blog/$slug'
     | '/checkout/return'
     | '/dashboard/analytics'
@@ -496,7 +516,9 @@ export interface FileRouteTypes {
     | '/signup'
     | '/sitemap.xml'
     | '/terms-of-service'
+    | '/account/contact'
     | '/account/orders'
+    | '/account/plugins'
     | '/blog/$slug'
     | '/checkout/return'
     | '/dashboard/analytics'
@@ -544,7 +566,9 @@ export interface FileRouteTypes {
     | '/signup'
     | '/sitemap.xml'
     | '/terms-of-service'
+    | '/account/contact'
     | '/account/orders'
+    | '/account/plugins'
     | '/blog/$slug'
     | '/checkout/return'
     | '/dashboard/analytics'
@@ -833,11 +857,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/account/plugins': {
+      id: '/account/plugins'
+      path: '/plugins'
+      fullPath: '/account/plugins'
+      preLoaderRoute: typeof AccountPluginsRouteImport
+      parentRoute: typeof AccountRoute
+    }
     '/account/orders': {
       id: '/account/orders'
       path: '/orders'
       fullPath: '/account/orders'
       preLoaderRoute: typeof AccountOrdersRouteImport
+      parentRoute: typeof AccountRoute
+    }
+    '/account/contact': {
+      id: '/account/contact'
+      path: '/contact'
+      fullPath: '/account/contact'
+      preLoaderRoute: typeof AccountContactRouteImport
       parentRoute: typeof AccountRoute
     }
     '/dashboard/sales/': {
@@ -935,12 +973,16 @@ declare module '@tanstack/react-router' {
 }
 
 interface AccountRouteChildren {
+  AccountContactRoute: typeof AccountContactRoute
   AccountOrdersRoute: typeof AccountOrdersRoute
+  AccountPluginsRoute: typeof AccountPluginsRoute
   AccountIndexRoute: typeof AccountIndexRoute
 }
 
 const AccountRouteChildren: AccountRouteChildren = {
+  AccountContactRoute: AccountContactRoute,
   AccountOrdersRoute: AccountOrdersRoute,
+  AccountPluginsRoute: AccountPluginsRoute,
   AccountIndexRoute: AccountIndexRoute,
 }
 
