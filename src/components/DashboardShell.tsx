@@ -73,7 +73,12 @@ function DashboardChromeRoot({ initialTitle, initialAction, children }: { initia
     navigate({ to: "/dashboard/login" as any });
   };
 
-  const activeIdx = NAV.findIndex(n => n.exact ? pathname === n.to : pathname.startsWith(n.to));
+  // Treat sub-tools of Analytics (e.g. Campaign Links) as still being under Analytics
+  // so the active indicator stays anchored and doesn't jump.
+  const effectivePath = pathname.startsWith("/dashboard/campaign-links")
+    ? "/dashboard/analytics"
+    : pathname;
+  const activeIdx = NAV.findIndex(n => n.exact ? effectivePath === n.to : effectivePath.startsWith(n.to));
   const routeTitle = activeIdx >= 0 ? NAV[activeIdx].label : page.title;
   const displayTitle = page.title === initialTitle ? routeTitle : page.title;
   const ITEM_H = 40;
