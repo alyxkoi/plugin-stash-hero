@@ -67,7 +67,7 @@ function CampaignLinksPage() {
   const [links, setLinks] = useState<LinkRow[]>([]);
   const [clicks, setClicks] = useState<ClickAgg>(new Map());
   const [purchases, setPurchases] = useState<OrderAgg>(new Map());
-  const [loading, setLoading] = useState(true);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
 
   const reload = async () => {
@@ -97,7 +97,7 @@ function CampaignLinksPage() {
       orderAgg.set(k, (orderAgg.get(k) ?? 0) + 1);
     }
     setPurchases(orderAgg);
-    setLoading(false);
+    setHasLoadedOnce(true);
   };
 
   useEffect(() => { void reload(); }, []);
@@ -246,7 +246,7 @@ function CampaignLinksPage() {
         </button>
       </div>
 
-      {loading ? (
+      {!hasLoadedOnce ? (
         <DashCard><div className="py-8 text-center text-xs text-white/40 font-mono">Loading…</div></DashCard>
       ) : (
         <div className="space-y-3">
@@ -350,14 +350,37 @@ function CreateLinkForm({
   onCreated: () => void | Promise<void>;
   onGroupCreated: () => void | Promise<void>;
 }) {
-  const [label, setLabel] = useState("");
-  const [dest, setDest] = useState("/");
-  const [groupId, setGroupId] = useState<string>("");
-  const [showAdvanced, setShowAdvanced] = useState(false);
-  const [utmSourceOverride, setUtmSourceOverride] = useState<string | null>(null);
-  const [utmCampaignOverride, setUtmCampaignOverride] = useState<string | null>(null);
-  const [utmContentOverride, setUtmContentOverride] = useState<string | null>(null);
+  const DRAFT_KEY = "cl_draft_v1";
+  type Draft = {
+    label: string; dest: string; groupId: string; showAdvanced: boolean;
+    utmSourceOverride: string | null; utmCampaignOverride: string | null; utmContentOverride: string | null;
+  };
+  const readDraft = (): Draft | null => {
+    if (typeof window === "undefined") return null;
+    try { const raw = localStorage.getItem(DRAFT_KEY); return raw ? JSON.parse(raw) as Draft : null; } catch { return null; }
+  };
+  const initial = readDraft();
+
+  const [label, setLabel] = useState(initial?.label ?? "");
+  const [dest, setDest] = useState(initial?.dest ?? "/");
+  const [groupId, setGroupId] = useState<string>(initial?.groupId ?? "");
+  const [showAdvanced, setShowAdvanced] = useState(initial?.showAdvanced ?? false);
+  const [utmSourceOverride, setUtmSourceOverride] = useState<string | null>(initial?.utmSourceOverride ?? null);
+  const [utmCampaignOverride, setUtmCampaignOverride] = useState<string | null>(initial?.utmCampaignOverride ?? null);
+  const [utmContentOverride, setUtmContentOverride] = useState<string | null>(initial?.utmContentOverride ?? null);
   const [busy, setBusy] = useState(false);
+
+  // Persist draft on every change so window-refocus remounts (or accidental
+  // navigation) never wipe typed values.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const isDirty =
+      label !== "" || dest !== "/" || groupId !== "" || showAdvanced ||
+      utmSourceOverride !== null || utmCampaignOverride !== null || utmContentOverride !== null;
+    if (!isDirty) { localStorage.removeItem(DRAFT_KEY); return; }
+    const draft: Draft = { label, dest, groupId, showAdvanced, utmSourceOverride, utmCampaignOverride, utmContentOverride };
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); } catch { /* quota */ }
+  }, [label, dest, groupId, showAdvanced, utmSourceOverride, utmCampaignOverride, utmContentOverride]);
 
   // Inline "+ New group" mini-form (opened from dropdown).
   const [showNewGroup, setShowNewGroup] = useState(false);
@@ -395,6 +418,7 @@ function CreateLinkForm({
     setLabel(""); setDest("/"); setGroupId("");
     setUtmSourceOverride(null); setUtmCampaignOverride(null); setUtmContentOverride(null);
     setShowAdvanced(false);
+    if (typeof window !== "undefined") { try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ } }
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -448,11 +472,11 @@ function CreateLinkForm({
                 setShowNewGroup(false);
                 setGroupId(v);
               }}
-              className={`${inputCls} flex-1`}
+              className={`${selectCls} flex-1`}
             >
-              <option value="">— No group —</option>
-              {activeGroups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
-              <option value="__new__">+ New group…</option>
+              <option value="" style={{ background: "#190737", color: "#C9BEDD" }}>— No group —</option>
+              {activeGroups.map((g) => <option key={g.id} value={g.id} style={{ background: "#190737", color: "#C9BEDD" }}>{g.name}</option>)}
+              <option value="__new__" style={{ background: "#190737", color: "#C9BEDD" }}>+ New group…</option>
             </select>
           </div>
           {showNewGroup && (
@@ -829,9 +853,9 @@ function EditLinkDialog({
         <div className="font-display text-base tracking-wide text-white">Edit link</div>
         <Field label="Link Name"><input value={label} onChange={(e) => setLabel(e.target.value)} className={inputCls} /></Field>
         <Field label="Group">
-          <select value={groupId} onChange={(e) => setGroupId(e.target.value)} className={inputCls}>
-            <option value="">— No group —</option>
-            {activeGroups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+          <select value={groupId} onChange={(e) => setGroupId(e.target.value)} className={selectCls}>
+            <option value="" style={{ background: "#190737", color: "#C9BEDD" }}>— No group —</option>
+            {activeGroups.map((g) => <option key={g.id} value={g.id} style={{ background: "#190737", color: "#C9BEDD" }}>{g.name}</option>)}
           </select>
         </Field>
         <Field label="Sends To"><input value={dest} onChange={(e) => setDest(e.target.value)} className={inputCls} /></Field>
@@ -875,6 +899,8 @@ function useOutsideClose(ref: React.RefObject<HTMLElement | null>, onClose: () =
 
 const inputCls =
   "w-full rounded-md bg-white/5 border border-white/10 focus:border-[var(--accent-red)] focus:outline-none text-sm text-white px-3 py-2 font-mono placeholder:text-white/30";
+const selectCls =
+  "w-full rounded-md bg-[#190737] border border-white/10 focus:border-[var(--accent-red)] focus:outline-none text-sm text-[#C9BEDD] px-3 py-2 font-mono [color-scheme:dark] appearance-none";
 const actionCls =
   "inline-flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider text-white/70 hover:text-white border border-white/10 hover:border-white/25 rounded px-2 py-1 transition-colors disabled:opacity-50";
 
