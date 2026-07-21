@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { ChevronDown, Copy as CopyIcon, MoreHorizontal, GripVertical } from "lucide-react";
 import { DashboardShell, DashCard } from "@/components/DashboardShell";
@@ -618,8 +619,7 @@ function GroupActions({ group, onChanged }: { group: Group; onChanged: () => voi
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-  useOutsideClose(menuRef, () => setOpen(false));
+  const btnRef = useRef<HTMLButtonElement>(null);
 
   const toggleArchive = async () => {
     setBusy(true);
@@ -653,18 +653,16 @@ function GroupActions({ group, onChanged }: { group: Group; onChanged: () => voi
   };
 
   return (
-    <div className="relative shrink-0" ref={menuRef}>
-      <button onClick={() => setOpen((v) => !v)} disabled={busy} className={actionCls} aria-label="Group actions">
+    <div className="relative shrink-0">
+      <button ref={btnRef} onClick={() => setOpen((v) => !v)} disabled={busy} className={actionCls} aria-label="Group actions">
         <MoreHorizontal size={14} />
       </button>
-      {open && (
-        <div className="absolute right-0 top-full mt-1 w-48 rounded-md border border-white/10 bg-[#160432] shadow-xl z-30 py-1">
-          <MenuItem onClick={() => { setOpen(false); setEditing(true); }}>Rename / edit</MenuItem>
-          <MenuItem onClick={toggleArchive}>{group.archived_at ? "Restore" : "Archive"}</MenuItem>
-          <MenuItem onClick={resetClicks}>Reset click count</MenuItem>
-          <MenuItem danger onClick={hardDelete}>Delete permanently</MenuItem>
-        </div>
-      )}
+      <PortalMenu anchorRef={btnRef} open={open} onClose={() => setOpen(false)} width={192}>
+        <MenuItem onClick={() => { setOpen(false); setEditing(true); }}>Rename / edit</MenuItem>
+        <MenuItem onClick={toggleArchive}>{group.archived_at ? "Restore" : "Archive"}</MenuItem>
+        <MenuItem onClick={resetClicks}>Reset click count</MenuItem>
+        <MenuItem danger onClick={hardDelete}>Delete permanently</MenuItem>
+      </PortalMenu>
       {editing && (
         <EditGroupDialog group={group} onClose={() => setEditing(false)} onSaved={onChanged} />
       )}
@@ -733,8 +731,7 @@ function LinkRowItem({
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [dragOver, setDragOver] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-  useOutsideClose(menuRef, () => setOpen(false));
+  const btnRef = useRef<HTMLButtonElement>(null);
 
   const clicks = stats?.clicks ?? 0;
   const purchases = stats?.purchases ?? 0;
@@ -811,19 +808,17 @@ function LinkRowItem({
           <span><span className="text-white/40">PUR</span> {purchases}</span>
           <span><span className="text-white/40">CV</span> {conv}%</span>
         </div>
-        <div className="relative shrink-0" ref={menuRef}>
-          <button onClick={() => setOpen((v) => !v)} disabled={busy} className={actionCls} aria-label="Link actions">
+        <div className="relative shrink-0">
+          <button ref={btnRef} onClick={() => setOpen((v) => !v)} disabled={busy} className={actionCls} aria-label="Link actions">
             <MoreHorizontal size={14} />
           </button>
-          {open && (
-            <div className="absolute right-0 top-full mt-1 w-48 rounded-md border border-white/10 bg-[#160432] shadow-xl z-30 py-1">
-              <MenuItem onClick={() => { setOpen(false); onCopy(link.code); }}>Copy URL</MenuItem>
-              <MenuItem onClick={() => { setOpen(false); setEditing(true); }}>Edit</MenuItem>
-              <MenuItem onClick={archive}>{link.archived_at ? "Restore" : "Archive"}</MenuItem>
-              <MenuItem onClick={resetClicks}>Reset click count</MenuItem>
-              <MenuItem danger onClick={hardDelete}>Delete permanently</MenuItem>
-            </div>
-          )}
+          <PortalMenu anchorRef={btnRef} open={open} onClose={() => setOpen(false)} width={192}>
+            <MenuItem onClick={() => { setOpen(false); onCopy(link.code); }}>Copy URL</MenuItem>
+            <MenuItem onClick={() => { setOpen(false); setEditing(true); }}>Edit</MenuItem>
+            <MenuItem onClick={archive}>{link.archived_at ? "Restore" : "Archive"}</MenuItem>
+            <MenuItem onClick={resetClicks}>Reset click count</MenuItem>
+            <MenuItem danger onClick={hardDelete}>Delete permanently</MenuItem>
+          </PortalMenu>
         </div>
       </div>
       {editing && (
@@ -902,10 +897,96 @@ function MenuItem({ children, onClick, danger }: { children: React.ReactNode; on
   return (
     <button
       onClick={onClick}
-      className={`w-full text-left px-3 py-1.5 text-[11px] font-mono uppercase tracking-wider transition-colors ${danger ? "text-[var(--accent-red)] hover:bg-[var(--accent-red)]/10" : "text-white/80 hover:bg-white/5 hover:text-white"}`}
+      className={`w-full text-left px-3 py-2 text-[11px] font-mono uppercase tracking-wider transition-colors ${danger ? "text-[var(--accent-red)] hover:bg-[var(--accent-red)]/15" : "text-[#C9BEDD] hover:bg-white/8 hover:text-white"}`}
     >
       {children}
     </button>
+  );
+}
+
+/**
+ * PortalMenu — renders a floating menu into document.body so it is never
+ * clipped by parent overflow. Auto-flips upward when there's not enough
+ * room below the trigger. Opaque #190737 surface.
+ */
+function PortalMenu({
+  anchorRef,
+  open,
+  onClose,
+  width = 192,
+  children,
+}: {
+  anchorRef: React.RefObject<HTMLElement | null>;
+  open: boolean;
+  onClose: () => void;
+  width?: number;
+  children: React.ReactNode;
+}) {
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number; placeAbove: boolean } | null>(null);
+
+  useLayoutEffect(() => {
+    if (!open || !anchorRef.current) return;
+    const update = () => {
+      const el = anchorRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const menuH = menuRef.current?.offsetHeight ?? 200;
+      const vh = window.innerHeight;
+      const spaceBelow = vh - r.bottom;
+      const placeAbove = spaceBelow < menuH + 12 && r.top > menuH + 12;
+      const top = placeAbove ? r.top - menuH - 4 : r.bottom + 4;
+      const left = Math.max(8, Math.min(window.innerWidth - width - 8, r.right - width));
+      setPos({ top, left, placeAbove });
+    };
+    update();
+    // Re-measure after first paint to account for menu height
+    const raf = requestAnimationFrame(update);
+    window.addEventListener("scroll", update, true);
+    window.addEventListener("resize", update);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", update, true);
+      window.removeEventListener("resize", update);
+    };
+  }, [open, anchorRef, width]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (menuRef.current?.contains(t)) return;
+      if (anchorRef.current?.contains(t)) return;
+      onClose();
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open, onClose, anchorRef]);
+
+  if (!open || typeof document === "undefined") return null;
+  return createPortal(
+    <div
+      ref={menuRef}
+      role="menu"
+      style={{
+        position: "fixed",
+        top: pos?.top ?? -9999,
+        left: pos?.left ?? -9999,
+        width,
+        zIndex: 9999,
+        background: "#190737",
+        opacity: pos ? 1 : 0,
+      }}
+      className="rounded-md border border-white/15 shadow-2xl shadow-black/60 py-1"
+    >
+      {children}
+    </div>,
+    document.body,
   );
 }
 
