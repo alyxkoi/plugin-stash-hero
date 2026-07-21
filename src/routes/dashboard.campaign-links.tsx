@@ -472,11 +472,11 @@ function CreateLinkForm({
                 setShowNewGroup(false);
                 setGroupId(v);
               }}
-              className={`${inputCls} flex-1`}
+              className={`${selectCls} flex-1`}
             >
-              <option value="">— No group —</option>
-              {activeGroups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
-              <option value="__new__">+ New group…</option>
+              <option value="" style={{ background: "#190737", color: "#C9BEDD" }}>— No group —</option>
+              {activeGroups.map((g) => <option key={g.id} value={g.id} style={{ background: "#190737", color: "#C9BEDD" }}>{g.name}</option>)}
+              <option value="__new__" style={{ background: "#190737", color: "#C9BEDD" }}>+ New group…</option>
             </select>
           </div>
           {showNewGroup && (
