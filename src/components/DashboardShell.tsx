@@ -10,11 +10,11 @@ import { useAuth, signOut } from "@/hooks/useAuth";
 
 const NAV: { to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean }[] = [
   { to: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
-  { to: "/dashboard/products", label: "Products", icon: Package },
   { to: "/dashboard/orders", label: "Orders", icon: ShoppingBag },
-  { to: "/dashboard/sales", label: "Sales", icon: Tag },
+  { to: "/dashboard/products", label: "Products", icon: Package },
   { to: "/dashboard/customers", label: "Customers", icon: Users },
   { to: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
+  { to: "/dashboard/sales", label: "Sales", icon: Tag },
   { to: "/dashboard/marketing", label: "Marketing", icon: Megaphone },
   { to: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
