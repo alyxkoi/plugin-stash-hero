@@ -816,10 +816,11 @@ function LinkRowItem({
             <MoreHorizontal size={14} />
           </button>
           {open && (
-            <div className="absolute right-0 top-full mt-1 w-40 rounded-md border border-white/10 bg-[#160432] shadow-xl z-30 py-1">
+            <div className="absolute right-0 top-full mt-1 w-48 rounded-md border border-white/10 bg-[#160432] shadow-xl z-30 py-1">
               <MenuItem onClick={() => { setOpen(false); onCopy(link.code); }}>Copy URL</MenuItem>
               <MenuItem onClick={() => { setOpen(false); setEditing(true); }}>Edit</MenuItem>
               <MenuItem onClick={archive}>{link.archived_at ? "Restore" : "Archive"}</MenuItem>
+              <MenuItem onClick={resetClicks}>Reset click count</MenuItem>
               <MenuItem danger onClick={hardDelete}>Delete permanently</MenuItem>
             </div>
           )}
