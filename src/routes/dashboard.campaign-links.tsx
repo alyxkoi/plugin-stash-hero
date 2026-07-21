@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { ChevronDown, Copy as CopyIcon, MoreHorizontal, GripVertical } from "lucide-react";
 import { DashboardShell, DashCard } from "@/components/DashboardShell";
