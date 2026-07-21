@@ -352,38 +352,27 @@ function Analytics() {
         </DashCard>
 
         <DashCard title="Where customers come from" action={<RangePills value={range} onChange={setRange} />}>
-          <div key={`src-${range}`} className="dash-page h-64">
+          <div key={`src-${range}`} className="dash-page">
             {sources.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-xs text-white/40 font-mono">No tracked sources in this range.</div>
+              <div className="h-32 flex items-center justify-center text-xs text-white/40 font-mono">No tracked sources in this range.</div>
             ) : (
-              <ResponsiveContainer>
-                <BarChart data={sources} layout="vertical" margin={{ left: 60 }}>
-                  <CartesianGrid stroke="rgba(255,255,255,0.06)" horizontal={false} />
-                  <XAxis type="number" stroke="rgba(255,255,255,0.55)" fontSize={10} tick={AXIS_TICK} axisLine={false} tickLine={false} />
-                  <YAxis dataKey="source" type="category" stroke="rgba(255,255,255,0.55)" fontSize={10} tick={AXIS_TICK} axisLine={false} tickLine={false} />
-                  <Tooltip
-                    cursor={BAR_CURSOR}
-                    contentStyle={TOOLTIP_STYLE}
-                    labelStyle={TOOLTIP_LABEL_STYLE}
-                    itemStyle={TOOLTIP_ITEM_STYLE}
-                    formatter={(v: number) => fmtMoney(v)}
-                  />
-                  <Bar
-                    dataKey="revenue"
-                    fill="url(#pw-blue-grad)"
-                    radius={[0, 6, 6, 0]}
-                    activeBar={{ fill: "url(#pw-red-grad)", stroke: "#FF003C", strokeWidth: 1 }}
-                    isAnimationActive
-                    animationDuration={700}
-                    style={{ filter: "url(#pw-glow)" }}
-                  />
-
-                </BarChart>
-              </ResponsiveContainer>
+              <ul className="space-y-3">
+                {sources.map((s) => {
+                  const pct = Math.max(6, Math.round((s.count / sourcesMax) * 100));
+                  return (
+                    <li key={s.source} className="flex items-center gap-3">
+                      <div className="w-20 shrink-0 text-[11px] font-mono uppercase tracking-wider text-white/70 truncate">{s.source}</div>
+                      <div className="flex-1 h-3 rounded-full bg-white/5 overflow-hidden">
+                        <div className="h-full rounded-full bar-fill" style={{ width: `${pct}%` }} />
+                      </div>
+                      <div className="w-10 shrink-0 text-right font-mono text-[11px] text-white">{s.count}</div>
+                    </li>
+                  );
+                })}
+              </ul>
             )}
           </div>
-
-          <p className="text-[10px] text-white/40 mt-2 font-mono">UTM source captured at checkout. Untagged orders count as "direct".</p>
+          <p className="text-[10px] text-white/40 mt-3 font-mono">UTM source captured at checkout. Untagged orders count as "direct".</p>
         </DashCard>
       </div>
 
