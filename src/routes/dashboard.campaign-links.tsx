@@ -619,8 +619,7 @@ function GroupActions({ group, onChanged }: { group: Group; onChanged: () => voi
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-  useOutsideClose(menuRef, () => setOpen(false));
+  const btnRef = useRef<HTMLButtonElement>(null);
 
   const toggleArchive = async () => {
     setBusy(true);
@@ -654,18 +653,16 @@ function GroupActions({ group, onChanged }: { group: Group; onChanged: () => voi
   };
 
   return (
-    <div className="relative shrink-0" ref={menuRef}>
-      <button onClick={() => setOpen((v) => !v)} disabled={busy} className={actionCls} aria-label="Group actions">
+    <div className="relative shrink-0">
+      <button ref={btnRef} onClick={() => setOpen((v) => !v)} disabled={busy} className={actionCls} aria-label="Group actions">
         <MoreHorizontal size={14} />
       </button>
-      {open && (
-        <div className="absolute right-0 top-full mt-1 w-48 rounded-md border border-white/10 bg-[#160432] shadow-xl z-30 py-1">
-          <MenuItem onClick={() => { setOpen(false); setEditing(true); }}>Rename / edit</MenuItem>
-          <MenuItem onClick={toggleArchive}>{group.archived_at ? "Restore" : "Archive"}</MenuItem>
-          <MenuItem onClick={resetClicks}>Reset click count</MenuItem>
-          <MenuItem danger onClick={hardDelete}>Delete permanently</MenuItem>
-        </div>
-      )}
+      <PortalMenu anchorRef={btnRef} open={open} onClose={() => setOpen(false)} width={192}>
+        <MenuItem onClick={() => { setOpen(false); setEditing(true); }}>Rename / edit</MenuItem>
+        <MenuItem onClick={toggleArchive}>{group.archived_at ? "Restore" : "Archive"}</MenuItem>
+        <MenuItem onClick={resetClicks}>Reset click count</MenuItem>
+        <MenuItem danger onClick={hardDelete}>Delete permanently</MenuItem>
+      </PortalMenu>
       {editing && (
         <EditGroupDialog group={group} onClose={() => setEditing(false)} onSaved={onChanged} />
       )}
