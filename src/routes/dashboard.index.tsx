@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { DashboardShell, DashCard, StatCard, StatusBadge } from "@/components/DashboardShell";
+import { OrderDrawer } from "@/components/AdminDrawers";
 import { Plus, Tag, Ticket } from "lucide-react";
 import { ResponsiveContainer, Tooltip, XAxis, YAxis, Area, AreaChart, CartesianGrid } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
