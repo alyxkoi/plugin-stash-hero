@@ -81,7 +81,7 @@ function CampaignLinksPage() {
         .select("id,group_id,label,code,utm_source,utm_campaign,utm_content,destination_path,archived_at,sort_order")
         .order("sort_order", { ascending: true })
         .order("created_at", { ascending: false }),
-      anySb.from("campaign_link_clicks").select("link_id"),
+      anySb.from("campaign_link_clicks").select("link_id").eq("counted", true),
       anySb.from("orders").select("utm_source, utm_campaign").eq("status", "completed"),
     ]);
     setGroups((g.data ?? []) as Group[]);
