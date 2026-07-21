@@ -67,7 +67,7 @@ function CampaignLinksPage() {
   const [links, setLinks] = useState<LinkRow[]>([]);
   const [clicks, setClicks] = useState<ClickAgg>(new Map());
   const [purchases, setPurchases] = useState<OrderAgg>(new Map());
-  const [loading, setLoading] = useState(true);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
 
   const reload = async () => {
