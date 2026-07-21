@@ -899,6 +899,8 @@ function useOutsideClose(ref: React.RefObject<HTMLElement | null>, onClose: () =
 
 const inputCls =
   "w-full rounded-md bg-white/5 border border-white/10 focus:border-[var(--accent-red)] focus:outline-none text-sm text-white px-3 py-2 font-mono placeholder:text-white/30";
+const selectCls =
+  "w-full rounded-md bg-[#190737] border border-white/10 focus:border-[var(--accent-red)] focus:outline-none text-sm text-[#C9BEDD] px-3 py-2 font-mono [color-scheme:dark] appearance-none";
 const actionCls =
   "inline-flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider text-white/70 hover:text-white border border-white/10 hover:border-white/25 rounded px-2 py-1 transition-colors disabled:opacity-50";
 
