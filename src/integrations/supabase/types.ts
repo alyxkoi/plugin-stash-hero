@@ -98,20 +98,47 @@ export type Database = {
         }
         Relationships: []
       }
-      campaign_link_clicks: {
+      campaign_click_ignored_ips: {
         Row: {
           created_at: string
-          id: number
-          link_id: string
+          ip_hash: string
+          note: string | null
         }
         Insert: {
           created_at?: string
-          id?: number
-          link_id: string
+          ip_hash: string
+          note?: string | null
         }
         Update: {
           created_at?: string
+          ip_hash?: string
+          note?: string | null
+        }
+        Relationships: []
+      }
+      campaign_link_clicks: {
+        Row: {
+          counted: boolean
+          created_at: string
+          id: number
+          ip_ua_hash: string | null
+          is_bot: boolean
+          link_id: string
+        }
+        Insert: {
+          counted?: boolean
+          created_at?: string
           id?: number
+          ip_ua_hash?: string | null
+          is_bot?: boolean
+          link_id: string
+        }
+        Update: {
+          counted?: boolean
+          created_at?: string
+          id?: number
+          ip_ua_hash?: string | null
+          is_bot?: boolean
           link_id?: string
         }
         Relationships: [
@@ -965,6 +992,14 @@ export type Database = {
         Returns: boolean
       }
       next_order_number: { Args: never; Returns: string }
+      reset_campaign_group_clicks: {
+        Args: { _group_id: string }
+        Returns: number
+      }
+      reset_campaign_link_clicks: {
+        Args: { _link_id: string }
+        Returns: number
+      }
     }
     Enums: {
       app_role: "admin" | "customer"

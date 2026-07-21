@@ -81,7 +81,7 @@ function CampaignLinksPage() {
         .select("id,group_id,label,code,utm_source,utm_campaign,utm_content,destination_path,archived_at,sort_order")
         .order("sort_order", { ascending: true })
         .order("created_at", { ascending: false }),
-      anySb.from("campaign_link_clicks").select("link_id"),
+      anySb.from("campaign_link_clicks").select("link_id").eq("counted", true),
       anySb.from("orders").select("utm_source, utm_campaign").eq("status", "completed"),
     ]);
     setGroups((g.data ?? []) as Group[]);
@@ -642,15 +642,26 @@ function GroupActions({ group, onChanged }: { group: Group; onChanged: () => voi
     void onChanged();
   };
 
+  const resetClicks = async () => {
+    if (!confirm(`Reset click count for all links in "${group.name}"? Historical clicks will be permanently deleted.`)) return;
+    setBusy(true);
+    const { data, error } = await (supabase as any).rpc("reset_campaign_group_clicks", { _group_id: group.id });
+    setBusy(false); setOpen(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`Reset ${data ?? 0} click record${data === 1 ? "" : "s"}.`);
+    void onChanged();
+  };
+
   return (
     <div className="relative shrink-0" ref={menuRef}>
       <button onClick={() => setOpen((v) => !v)} disabled={busy} className={actionCls} aria-label="Group actions">
         <MoreHorizontal size={14} />
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 w-40 rounded-md border border-white/10 bg-[#160432] shadow-xl z-30 py-1">
+        <div className="absolute right-0 top-full mt-1 w-48 rounded-md border border-white/10 bg-[#160432] shadow-xl z-30 py-1">
           <MenuItem onClick={() => { setOpen(false); setEditing(true); }}>Rename / edit</MenuItem>
           <MenuItem onClick={toggleArchive}>{group.archived_at ? "Restore" : "Archive"}</MenuItem>
+          <MenuItem onClick={resetClicks}>Reset click count</MenuItem>
           <MenuItem danger onClick={hardDelete}>Delete permanently</MenuItem>
         </div>
       )}
@@ -751,6 +762,16 @@ function LinkRowItem({
     void onChanged();
   };
 
+  const resetClicks = async () => {
+    if (!confirm(`Reset click count for "${link.label}"? Historical clicks will be permanently deleted.`)) return;
+    setBusy(true);
+    const { data, error } = await (supabase as any).rpc("reset_campaign_link_clicks", { _link_id: link.id });
+    setBusy(false); setOpen(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`Reset ${data ?? 0} click record${data === 1 ? "" : "s"}.`);
+    void onChanged();
+  };
+
   return (
     <>
       <div
@@ -795,10 +816,11 @@ function LinkRowItem({
             <MoreHorizontal size={14} />
           </button>
           {open && (
-            <div className="absolute right-0 top-full mt-1 w-40 rounded-md border border-white/10 bg-[#160432] shadow-xl z-30 py-1">
+            <div className="absolute right-0 top-full mt-1 w-48 rounded-md border border-white/10 bg-[#160432] shadow-xl z-30 py-1">
               <MenuItem onClick={() => { setOpen(false); onCopy(link.code); }}>Copy URL</MenuItem>
               <MenuItem onClick={() => { setOpen(false); setEditing(true); }}>Edit</MenuItem>
               <MenuItem onClick={archive}>{link.archived_at ? "Restore" : "Archive"}</MenuItem>
+              <MenuItem onClick={resetClicks}>Reset click count</MenuItem>
               <MenuItem danger onClick={hardDelete}>Delete permanently</MenuItem>
             </div>
           )}
