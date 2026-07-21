@@ -31,6 +31,7 @@ export const Route = createFileRoute("/go/$code")({
         const url = new URL(dest, base);
         url.searchParams.set("utm_source", (link.utm_source as string) || "");
         if (link.utm_campaign) url.searchParams.set("utm_campaign", link.utm_campaign as string);
+        if ((link as any).utm_content) url.searchParams.set("utm_content", (link as any).utm_content as string);
         const location = abs ? url.toString() : url.pathname + url.search + url.hash;
         return new Response(null, {
           status: 302,
