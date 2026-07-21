@@ -863,7 +863,7 @@ function MenuItem({ children, onClick, danger }: { children: React.ReactNode; on
   );
 }
 
-function useOutsideClose(ref: React.RefObject<HTMLElement>, onClose: () => void) {
+function useOutsideClose(ref: React.RefObject<HTMLElement | null>, onClose: () => void) {
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) onClose();
