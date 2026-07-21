@@ -246,7 +246,7 @@ function CampaignLinksPage() {
         </button>
       </div>
 
-      {loading ? (
+      {!hasLoadedOnce ? (
         <DashCard><div className="py-8 text-center text-xs text-white/40 font-mono">Loading…</div></DashCard>
       ) : (
         <div className="space-y-3">
