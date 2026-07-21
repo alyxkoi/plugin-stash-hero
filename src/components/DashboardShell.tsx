@@ -194,7 +194,7 @@ function DashboardChromeRoot({ initialTitle, initialAction, children }: { initia
         <div ref={trackRef} className="dashboard-bottom-track">
           <span className="bottom-nav-glow" style={{ left: glowRect.left, width: glowRect.width }} />
           {NAV.map((n, i) => {
-            const active = n.exact ? pathname === n.to : pathname.startsWith(n.to);
+            const active = n.exact ? effectivePath === n.to : effectivePath.startsWith(n.to);
             const Icon = n.icon;
             return (
               <Link
