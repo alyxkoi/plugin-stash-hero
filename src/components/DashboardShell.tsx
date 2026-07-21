@@ -147,7 +147,7 @@ function DashboardChromeRoot({ initialTitle, initialAction, children }: { initia
       <div className="flex-1 flex flex-col min-w-0 md:ml-0">
         <header className="sticky top-0 z-20">
           <div className="dash-header-floating px-4 md:px-6 py-3 flex items-center gap-3">
-            <h1 className="font-display text-xl md:text-2xl text-white truncate">{displayTitle}</h1>
+            <h1 className="font-display text-lg sm:text-xl md:text-2xl text-white truncate min-w-0">{displayTitle}</h1>
             <div className="ml-auto relative shrink-0">
               <button onClick={() => setMenu(!menu)} className="flex items-center gap-2 px-2 py-1.5 rounded-lg border border-white/15 hover:border-white/30 transition h-9">
                 <img
