@@ -97,7 +97,7 @@ function CampaignLinksPage() {
       orderAgg.set(k, (orderAgg.get(k) ?? 0) + 1);
     }
     setPurchases(orderAgg);
-    setLoading(false);
+    setHasLoadedOnce(true);
   };
 
   useEffect(() => { void reload(); }, []);
