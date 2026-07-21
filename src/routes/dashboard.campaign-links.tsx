@@ -731,8 +731,7 @@ function LinkRowItem({
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [dragOver, setDragOver] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-  useOutsideClose(menuRef, () => setOpen(false));
+  const btnRef = useRef<HTMLButtonElement>(null);
 
   const clicks = stats?.clicks ?? 0;
   const purchases = stats?.purchases ?? 0;
