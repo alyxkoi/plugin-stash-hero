@@ -126,21 +126,36 @@ export type Database = {
       }
       campaign_link_groups: {
         Row: {
+          archived_at: string | null
           created_at: string
+          end_date: string | null
           id: string
           name: string
+          sort_order: number
+          source_platform: string | null
+          start_date: string | null
           updated_at: string
         }
         Insert: {
+          archived_at?: string | null
           created_at?: string
+          end_date?: string | null
           id?: string
           name: string
+          sort_order?: number
+          source_platform?: string | null
+          start_date?: string | null
           updated_at?: string
         }
         Update: {
+          archived_at?: string | null
           created_at?: string
+          end_date?: string | null
           id?: string
           name?: string
+          sort_order?: number
+          source_platform?: string | null
+          start_date?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -154,8 +169,10 @@ export type Database = {
           group_id: string | null
           id: string
           label: string
+          sort_order: number
           updated_at: string
           utm_campaign: string | null
+          utm_content: string | null
           utm_source: string
         }
         Insert: {
@@ -166,8 +183,10 @@ export type Database = {
           group_id?: string | null
           id?: string
           label: string
+          sort_order?: number
           updated_at?: string
           utm_campaign?: string | null
+          utm_content?: string | null
           utm_source: string
         }
         Update: {
@@ -178,8 +197,10 @@ export type Database = {
           group_id?: string | null
           id?: string
           label?: string
+          sort_order?: number
           updated_at?: string
           utm_campaign?: string | null
+          utm_content?: string | null
           utm_source?: string
         }
         Relationships: [
