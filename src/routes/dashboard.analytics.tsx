@@ -2,9 +2,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { DashboardShell, DashCard, StatCard } from "@/components/DashboardShell";
 import { type AnalyticsRange, RANGE_LABEL } from "@/lib/dashboard-mock";
-import { ResponsiveContainer, AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip, BarChart, Bar, PieChart, Pie, Cell } from "recharts";
+import { ResponsiveContainer, AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip, PieChart, Pie, Cell } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { deriveSaleStatus, formatInSaleTimeZone } from "@/lib/sale-time";
+import { Link2 } from "lucide-react";
 
 
 
@@ -157,10 +158,15 @@ function Analytics() {
     const map = new Map<string, number>();
     for (const o of inRange) {
       const s = (o.utm_source || "direct").toLowerCase();
-      map.set(s, (map.get(s) ?? 0) + Number(o.total || 0));
+      map.set(s, (map.get(s) ?? 0) + 1);
     }
-    return [...map.entries()].map(([source, revenue]) => ({ source, revenue })).sort((a, b) => b.revenue - a.revenue).slice(0, 8);
+    return [...map.entries()]
+      .map(([source, count]) => ({ source, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 4);
   }, [inRange]);
+  const sourcesMax = Math.max(1, ...sources.map(s => s.count));
+
 
   // Per-sale performance: real money captured (post-discount order totals) grouped by sale_id.
   const salePerf = useMemo(() => {
@@ -204,10 +210,17 @@ function Analytics() {
     <DashboardShell
       title="Analytics"
       action={
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 min-w-0">
           <Link
             to="/dashboard/campaign-links"
-            className="btn-primary !py-2 !px-4 !min-h-0 text-[11px]"
+            className="sm:hidden inline-flex items-center justify-center w-9 h-9 rounded-full bg-[var(--accent-red)] text-white shadow-[0_0_18px_rgba(255,0,60,0.35)] shrink-0"
+            aria-label="Campaign Links"
+          >
+            <Link2 size={16} />
+          </Link>
+          <Link
+            to="/dashboard/campaign-links"
+            className="hidden sm:inline-flex btn-primary !py-1.5 !px-3 !min-h-0 text-[10px] shrink-0"
           >
             Campaign Links →
           </Link>
@@ -238,10 +251,9 @@ function Analytics() {
         </defs>
       </svg>
 
-      <div key={`kpi-${range}`} className="dash-page grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div key={`kpi-${range}`} className="dash-page grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         <StatCard label={`Revenue · ${RANGE_LABEL[range]}`} value={fmtMoney(rev)} />
         <StatCard label="Avg order value" value={fmtMoney(aov)} />
-        <StatCard label="Refund rate" value={`${refundRate}%`} />
       </div>
 
 
@@ -340,38 +352,27 @@ function Analytics() {
         </DashCard>
 
         <DashCard title="Where customers come from" action={<RangePills value={range} onChange={setRange} />}>
-          <div key={`src-${range}`} className="dash-page h-64">
+          <div key={`src-${range}`} className="dash-page">
             {sources.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-xs text-white/40 font-mono">No tracked sources in this range.</div>
+              <div className="h-32 flex items-center justify-center text-xs text-white/40 font-mono">No tracked sources in this range.</div>
             ) : (
-              <ResponsiveContainer>
-                <BarChart data={sources} layout="vertical" margin={{ left: 60 }}>
-                  <CartesianGrid stroke="rgba(255,255,255,0.06)" horizontal={false} />
-                  <XAxis type="number" stroke="rgba(255,255,255,0.55)" fontSize={10} tick={AXIS_TICK} axisLine={false} tickLine={false} />
-                  <YAxis dataKey="source" type="category" stroke="rgba(255,255,255,0.55)" fontSize={10} tick={AXIS_TICK} axisLine={false} tickLine={false} />
-                  <Tooltip
-                    cursor={BAR_CURSOR}
-                    contentStyle={TOOLTIP_STYLE}
-                    labelStyle={TOOLTIP_LABEL_STYLE}
-                    itemStyle={TOOLTIP_ITEM_STYLE}
-                    formatter={(v: number) => fmtMoney(v)}
-                  />
-                  <Bar
-                    dataKey="revenue"
-                    fill="url(#pw-blue-grad)"
-                    radius={[0, 6, 6, 0]}
-                    activeBar={{ fill: "url(#pw-red-grad)", stroke: "#FF003C", strokeWidth: 1 }}
-                    isAnimationActive
-                    animationDuration={700}
-                    style={{ filter: "url(#pw-glow)" }}
-                  />
-
-                </BarChart>
-              </ResponsiveContainer>
+              <ul className="space-y-3">
+                {sources.map((s) => {
+                  const pct = Math.max(6, Math.round((s.count / sourcesMax) * 100));
+                  return (
+                    <li key={s.source} className="flex items-center gap-3">
+                      <div className="w-20 shrink-0 text-[11px] font-mono uppercase tracking-wider text-white/70 truncate">{s.source}</div>
+                      <div className="flex-1 h-3 rounded-full bg-white/5 overflow-hidden">
+                        <div className="h-full rounded-full bar-fill" style={{ width: `${pct}%` }} />
+                      </div>
+                      <div className="w-10 shrink-0 text-right font-mono text-[11px] text-white">{s.count}</div>
+                    </li>
+                  );
+                })}
+              </ul>
             )}
           </div>
-
-          <p className="text-[10px] text-white/40 mt-2 font-mono">UTM source captured at checkout. Untagged orders count as "direct".</p>
+          <p className="text-[10px] text-white/40 mt-3 font-mono">UTM source captured at checkout. Untagged orders count as "direct".</p>
         </DashCard>
       </div>
 

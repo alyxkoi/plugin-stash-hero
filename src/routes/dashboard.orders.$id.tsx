@@ -13,7 +13,7 @@ function OrderDetail() {
   if (!o) return <DashboardShell title="Order not found"><DashCard><Link to="/dashboard/orders" className="text-[var(--accent-red-glow)] text-sm">Back to orders</Link></DashCard></DashboardShell>;
   const cust = customers.find(c => c.id === o.customerId)!;
   return (
-    <DashboardShell title={o.number} action={o.status === "completed" && <button className="btn-primary !text-xs !py-2 !px-4">Refund</button>}>
+    <DashboardShell title={o.number}>
       <div className="max-w-4xl mx-auto space-y-6">
         <DashCard>
           <div className="flex flex-wrap items-start justify-between gap-3">

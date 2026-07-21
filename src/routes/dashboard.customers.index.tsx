@@ -1,10 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
-import { DashboardShell, DashCard, StatusBadge } from "@/components/DashboardShell";
-import { Search, Mail, X, ExternalLink } from "lucide-react";
+import { DashboardShell, DashCard } from "@/components/DashboardShell";
+import { CustomerDrawer, type CustomerDrawerData } from "@/components/AdminDrawers";
+import { Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/dashboard/customers/")({
   head: () => ({ meta: [{ title: "Customers — Plugin Warehouse" }] }),
@@ -235,9 +234,27 @@ function CustomersPage() {
         </div>
       </DashCard>
 
-      <CustomerPanel customer={selected} onClose={() => setOpenKey(null)} />
+      <CustomerDrawer
+        open={!!selected}
+        customer={selected ? toDrawerData(selected) : null}
+        onClose={() => setOpenKey(null)}
+      />
     </DashboardShell>
   );
+}
+
+function toDrawerData(a: Aggregate): CustomerDrawerData {
+  return {
+    key: a.key,
+    name: a.name,
+    email: a.email,
+    hasAccount: a.hasAccount,
+    memberSince: a.firstOrderAt,
+    totalSpent: a.totalSpent,
+    completedCount: a.completedCount,
+    ordersCount: a.ordersCount,
+    orders: a.orders.map(o => ({ id: o.id, number: o.number, total: Number(o.total), status: o.status, created_at: o.created_at })),
+  };
 }
 
 function SummaryStat({ label, value }: { label: string; value: string }) {
@@ -265,137 +282,3 @@ function PurchaseBadge({ count }: { count: number }) {
   );
 }
 
-function CustomerPanel({ customer, onClose }: { customer: Aggregate | null; onClose: () => void }) {
-  useEffect(() => {
-    if (!customer) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prev;
-    };
-  }, [customer, onClose]);
-
-  if (!customer) return null;
-  if (typeof document === "undefined") return null;
-
-  const aov = customer.completedCount > 0 ? customer.totalSpent / customer.completedCount : 0;
-  const owned = new Map<string, { name: string }>();
-  for (const o of customer.orders) {
-    if (o.status !== "completed" && o.status !== "partial") continue;
-    for (const it of o.order_items ?? []) owned.set(it.product_id || it.name, { name: it.name });
-  }
-  const refundableOrder = customer.orders.find(o => o.status === "completed") || customer.orders[0];
-
-  return createPortal(
-    <div className="dashboard-scope fixed inset-0 z-[100]" role="dialog" aria-modal="true">
-      <div
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-[fadeIn_.2s_ease-out]"
-        onClick={onClose}
-      />
-      <aside
-        className="absolute right-0 top-0 h-[100dvh] w-full sm:w-[440px] md:w-[480px] max-w-full flex flex-col border-l border-white/10 shadow-[0_0_60px_rgba(0,0,0,0.6)] animate-[slideIn_.28s_cubic-bezier(.2,.8,.2,1)]"
-        style={{ background: "var(--bg-base, #1a0733)" }}
-      >
-        <div className="chromatic-edge pointer-events-none" />
-        {/* Header (fixed) */}
-        <div className="relative z-10 flex items-start gap-3 p-5 border-b border-white/10 shrink-0">
-          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[var(--accent-red)] to-[var(--accent-blue)] flex items-center justify-center text-base font-bold shrink-0">
-            {initialsFrom(customer.name, customer.email)}
-          </div>
-          <div className="flex-1 min-w-0">
-            <h2 className="font-display text-lg md:text-xl truncate">{customer.name || customer.email}</h2>
-            <div className="text-xs font-mono text-white/60 truncate">{customer.email}</div>
-            <div className="flex items-center gap-2 mt-2 flex-wrap">
-              <AccountBadge hasAccount={customer.hasAccount} />
-              <PurchaseBadge count={customer.completedCount} />
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            aria-label="Close panel"
-            className="text-white/60 hover:text-white p-2 rounded-lg hover:bg-white/10 shrink-0"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        {/* Scrollable body */}
-        <div className="relative z-10 flex-1 min-h-0 overflow-y-auto p-5 space-y-6">
-          <div className="text-[10px] text-white/50 font-mono">
-            Customer since {new Date(customer.firstOrderAt).toLocaleDateString("en", { month: "short", day: "numeric", year: "numeric" })}
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <PanelStat label="Total spent" value={money(customer.totalSpent)} />
-            <PanelStat label="Orders" value={customer.completedCount.toString()} />
-            <PanelStat label="Avg order value" value={money(aov)} />
-            <PanelStat label="Status" value={customer.completedCount > 1 ? "Returning" : customer.completedCount === 1 ? "New" : "No purchases"} />
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <a href={`mailto:${customer.email}`} className="btn-ghost !text-xs !py-2 !px-3 inline-flex items-center gap-2"><Mail size={13} /> Email customer</a>
-            {refundableOrder && (
-              <Link to={"/dashboard/orders/$id" as any} params={{ id: refundableOrder.id } as any} className="btn-ghost !text-xs !py-2 !px-3 inline-flex items-center gap-2" onClick={onClose}>
-                Issue refund <ExternalLink size={12} />
-              </Link>
-            )}
-          </div>
-
-          <div>
-            <h3 className="font-display text-sm mb-3 tracking-wide">Order history</h3>
-            {customer.orders.length === 0 ? (
-              <div className="text-xs text-white/40 py-4">No orders yet.</div>
-            ) : (
-              <ul className="space-y-2">
-                {customer.orders.map(o => (
-                  <li key={o.id} className="p-3 rounded-lg border border-white/10 bg-white/[0.02]">
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <Link to={"/dashboard/orders/$id" as any} params={{ id: o.id } as any} className="font-mono text-xs hover:text-[var(--accent-red-glow)]" onClick={onClose}>{o.number}</Link>
-                      <div className="flex items-center gap-2">
-                        <StatusBadge status={o.status} />
-                        <span className="font-mono text-xs">{money(Number(o.total))}</span>
-                      </div>
-                    </div>
-                    <div className="text-[10px] font-mono text-white/50 mb-1">{new Date(o.created_at).toLocaleString("en", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}</div>
-                    <div className="text-xs text-white/70 truncate">{(o.order_items ?? []).map(i => i.name).join(", ") || "—"}</div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          <div>
-            <h3 className="font-display text-sm mb-3 tracking-wide">Plugins owned</h3>
-            {owned.size === 0 ? (
-              <div className="text-xs text-white/40">Nothing purchased yet.</div>
-            ) : (
-              <ul className="flex flex-wrap gap-2">
-                {[...owned.values()].map((p, i) => (
-                  <li key={i} className="text-[11px] px-2 py-1 rounded border border-white/10 bg-white/[0.03]">{p.name}</li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-
-        <style>{`
-          @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
-          @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        `}</style>
-      </aside>
-    </div>,
-    document.body
-  );
-}
-
-function PanelStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="p-3 rounded-lg border border-white/10 bg-white/[0.02]">
-      <div className="label-mini opacity-60 text-[9px] mb-1">{label}</div>
-      <div className="font-mono text-base text-white">{value}</div>
-    </div>
-  );
-}

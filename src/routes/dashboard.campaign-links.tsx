@@ -802,6 +802,11 @@ function LinkRowItem({
               <CopyIcon size={11} />
             </button>
           </div>
+          <div className="sm:hidden flex gap-4 font-mono text-[11px] text-white/70 mt-1.5">
+            <span><span className="text-white/40">CLK</span> {clicks}</span>
+            <span><span className="text-white/40">PUR</span> {purchases}</span>
+            <span><span className="text-white/40">CV</span> {conv}%</span>
+          </div>
         </div>
         <div className="hidden sm:flex gap-4 font-mono text-[11px] text-white/70 shrink-0">
           <span><span className="text-white/40">CLK</span> {clicks}</span>

@@ -1,6 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { DashboardShell, DashCard, StatusBadge } from "@/components/DashboardShell";
+import { OrderDrawer } from "@/components/AdminDrawers";
 import { Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -27,6 +28,7 @@ function OrdersPage() {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("all");
   const [page, setPage] = useState(1);
+  const [openOrderId, setOpenOrderId] = useState<string | null>(null);
   const pageSize = 25;
 
   useEffect(() => {
@@ -72,8 +74,8 @@ function OrdersPage() {
             </thead>
             <tbody>
               {paged.map(o => (
-                <tr key={o.id} className="border-t border-white/5 hover:bg-white/[0.03]">
-                  <td className="px-2 py-2 font-mono text-xs">{o.number}</td>
+                <tr key={o.id} onClick={() => setOpenOrderId(o.id)} className="border-t border-white/5 hover:bg-white/[0.03] cursor-pointer">
+                  <td className="px-2 py-2 font-mono text-xs text-white">{o.number}</td>
                   <td className="px-2 py-2 text-xs text-white/70">{o.order_items[0]?.name ?? "—"}{o.order_items.length > 1 && <span className="text-white/40"> + {o.order_items.length - 1} more</span>}</td>
                   <td className="px-2 py-2 text-right font-mono text-xs">{formatMoney(o.total)}</td>
                   <td className="px-2 py-2 text-[10px] font-mono text-white/60">{o.discount_code ?? "—"}</td>
@@ -97,6 +99,7 @@ function OrdersPage() {
           </div>
         </div>
       </DashCard>
+      <OrderDrawer open={!!openOrderId} orderId={openOrderId} onClose={() => setOpenOrderId(null)} />
     </DashboardShell>
   );
 }

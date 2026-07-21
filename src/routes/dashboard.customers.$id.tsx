@@ -35,7 +35,7 @@ function CustomerDetail() {
             </div>
             <div className="flex gap-2 flex-wrap">
               <button className="btn-ghost !text-xs !py-2 !px-4">Send email</button>
-              <button className="btn-ghost !text-xs !py-2 !px-4">Issue refund</button>
+              
               <button className="btn-ghost !text-xs !py-2 !px-4 !border-[var(--accent-red)]/40 !text-[var(--accent-red-glow)]">Ban</button>
             </div>
           </div>
