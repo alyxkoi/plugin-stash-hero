@@ -307,7 +307,7 @@ function Analytics() {
                   </div>
                 </div>
                 <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                  <div className="bar-fill" style={{ width: `${(t.units / topMax) * 100}%` }} />
+                  <div className="bar-fill" style={{ width: `${(t.revenue / topMax) * 100}%` }} />
                 </div>
               </div>
             </div>
