@@ -150,9 +150,12 @@ function Analytics() {
         map.set(key, cur);
       }
     }
-    return [...map.values()].sort((a, b) => b.units - a.units).slice(0, 5);
+    return [...map.values()]
+      .filter(p => p.revenue > 0)
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 5);
   }, [inRange]);
-  const topMax = Math.max(1, ...top.map(t => t.units));
+  const topMax = Math.max(1, ...top.map(t => t.revenue));
 
   const sources = useMemo(() => {
     const map = new Map<string, number>();
