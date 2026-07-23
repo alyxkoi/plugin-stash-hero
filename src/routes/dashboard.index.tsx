@@ -100,7 +100,7 @@ function Overview() {
   return (
     <DashboardShell title="Overview">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard label="Total revenue" value={formatMoney(totalRev)} />
+        <StatCard label="Revenue today" value={formatMoney(todayRev)} />
         <StatCard label="Revenue this month" value={formatMoney(monthRev)} />
         <StatCard label="Orders this month" value={completedThisMonth.length.toString()} />
         <StatCard label="Active customers" value={activeCust.toString()} />
