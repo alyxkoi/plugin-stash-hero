@@ -150,9 +150,12 @@ function Analytics() {
         map.set(key, cur);
       }
     }
-    return [...map.values()].sort((a, b) => b.units - a.units).slice(0, 5);
+    return [...map.values()]
+      .filter(p => p.revenue > 0)
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 5);
   }, [inRange]);
-  const topMax = Math.max(1, ...top.map(t => t.units));
+  const topMax = Math.max(1, ...top.map(t => t.revenue));
 
   const sources = useMemo(() => {
     const map = new Map<string, number>();
@@ -304,7 +307,7 @@ function Analytics() {
                   </div>
                 </div>
                 <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                  <div className="bar-fill" style={{ width: `${(t.units / topMax) * 100}%` }} />
+                  <div className="bar-fill" style={{ width: `${(t.revenue / topMax) * 100}%` }} />
                 </div>
               </div>
             </div>

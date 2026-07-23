@@ -70,7 +70,9 @@ function Overview() {
   const completed = useMemo(() => orders.filter(o => o.status === "completed"), [orders]);
   const monthStart = startOfMonth();
   const completedThisMonth = completed.filter(o => new Date(o.created_at) >= monthStart);
-  const totalRev = completed.reduce((s, o) => s + Number(o.total || 0), 0);
+  const todayCentralKey = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Chicago", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+  const centralDayKey = (iso: string) => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Chicago", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(iso));
+  const todayRev = completed.filter(o => centralDayKey(o.created_at) === todayCentralKey).reduce((s, o) => s + Number(o.total || 0), 0);
   const monthRev = completedThisMonth.reduce((s, o) => s + Number(o.total || 0), 0);
   const thirtyDaysAgo = Date.now() - 30 * 86400 * 1000;
   const activeCust = customers.filter(c => c.last_purchase_at && new Date(c.last_purchase_at).getTime() >= thirtyDaysAgo).length;
@@ -98,7 +100,7 @@ function Overview() {
   return (
     <DashboardShell title="Overview">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard label="Total revenue" value={formatMoney(totalRev)} />
+        <StatCard label="Revenue today" value={formatMoney(todayRev)} />
         <StatCard label="Revenue this month" value={formatMoney(monthRev)} />
         <StatCard label="Orders this month" value={completedThisMonth.length.toString()} />
         <StatCard label="Active customers" value={activeCust.toString()} />
