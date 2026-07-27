@@ -4,6 +4,8 @@ import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { type StripeEnv, createStripeClient, getStripeErrorMessage } from "@/lib/stripe.server";
 import { finalizeOrder, type FulfillItem } from "@/lib/order-fulfill.server";
+import { normalizeUtmSource } from "@/lib/utm";
+
 
 type DiscountResult =
   | {
