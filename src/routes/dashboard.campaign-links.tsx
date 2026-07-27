@@ -1,5 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, Fragment } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { ChevronDown, Copy as CopyIcon, MoreHorizontal, GripVertical } from "lucide-react";
@@ -7,10 +7,13 @@ import { DashboardShell, DashCard } from "@/components/DashboardShell";
 import { supabase } from "@/integrations/supabase/client";
 import { slugifyUtm, generateShareCode, normalizePath } from "@/lib/campaign-links";
 
+// Legacy route — the tool now lives inside /dashboard/marketing?tab=campaign.
+// Permanent redirect so existing bookmarks/URLs keep working.
 export const Route = createFileRoute("/dashboard/campaign-links")({
-  head: () => ({ meta: [{ title: "Campaign Links — Plugin Warehouse" }] }),
-  component: CampaignLinksPage,
+  beforeLoad: () => { throw redirect({ to: "/dashboard/marketing", search: { tab: "campaign" } as any }); },
+  component: () => null,
 });
+
 
 type Group = {
   id: string;
