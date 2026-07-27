@@ -213,25 +213,9 @@ function Analytics() {
   return (
     <DashboardShell
       title="Analytics"
-      action={
-        <div className="flex items-center gap-2 min-w-0">
-          <Link
-            to="/dashboard/campaign-links"
-            className="sm:hidden inline-flex items-center justify-center w-9 h-9 rounded-full bg-[var(--accent-red)] text-white shadow-[0_0_18px_rgba(255,0,60,0.35)] shrink-0"
-            aria-label="Campaign Links"
-          >
-            <Link2 size={16} />
-          </Link>
-          <Link
-            to="/dashboard/campaign-links"
-            className="hidden sm:inline-flex btn-primary !py-1.5 !px-3 !min-h-0 text-[10px] shrink-0"
-          >
-            Campaign Links →
-          </Link>
-          <RangePills value={range} onChange={setRange} />
-        </div>
-      }
+      action={<RangePills value={range} onChange={setRange} />}
     >
+
       {/* Shared SVG defs for chart gradients + soft-glow filter used below. */}
       <svg width="0" height="0" style={{ position: "absolute" }} aria-hidden>
         <defs>
