@@ -192,7 +192,14 @@ function Overview() {
                 {best.map((b, i) => (
                   <li key={b.name + i} className="flex items-center gap-3">
                     <span className="font-mono text-sm text-white/40 w-5">{i + 1}</span>
-                    <div className="w-10 h-10 rounded-md flex-shrink-0" style={{ background: b.cover || "linear-gradient(135deg,#FF003C,#4066FF)" }} />
+                    <div
+                      className="w-10 h-10 rounded-md flex-shrink-0 bg-cover bg-center"
+                      style={{
+                        background: b.coverUrl
+                          ? `url(${b.coverUrl}) center/cover`
+                          : (b.cover || "linear-gradient(135deg,#FF003C,#4066FF)"),
+                      }}
+                    />
                     <div className="flex-1 min-w-0">
                       <div className="text-xs text-white truncate">{b.name}</div>
                       <div className="text-[10px] text-white/50 font-mono">{formatMoney(b.revenue)}</div>
@@ -200,6 +207,7 @@ function Overview() {
                     <span className="font-mono text-sm">{b.units}</span>
                   </li>
                 ))}
+
               </ul>
             )}
           </DashCard>
