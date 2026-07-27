@@ -345,7 +345,7 @@ export function CampaignLinksPage({ embedded = false }: { embedded?: boolean } =
           )}
         </div>
       )}
-    </DashboardShell>
+    </Shell>
   );
 }
 
