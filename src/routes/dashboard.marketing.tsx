@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useSearch, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { DashboardShell, DashCard, StatusBadge } from "@/components/DashboardShell";
@@ -6,13 +6,73 @@ import { Copy, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { DiscountCodeModal, type DiscountRow } from "@/components/dashboard/DiscountCodeModal";
+import { CampaignLinksPage } from "./dashboard.campaign-links";
+
+type MarketingSearch = { tab?: "codes" | "campaign" };
 
 export const Route = createFileRoute("/dashboard/marketing")({
   head: () => ({ meta: [{ title: "Marketing — Plugin Warehouse" }] }),
+  validateSearch: (s: Record<string, unknown>): MarketingSearch => ({
+    tab: s.tab === "campaign" ? "campaign" : "codes",
+  }),
   component: Marketing,
 });
 
 function Marketing() {
+  const search = useSearch({ from: "/dashboard/marketing" }) as MarketingSearch;
+  const navigate = useNavigate();
+  const tab = search.tab ?? "codes";
+  const setTab = (t: "codes" | "campaign") =>
+    navigate({ to: "/dashboard/marketing", search: { tab: t }, replace: true });
+
+  return (
+    <DashboardShell
+      title="Marketing"
+      action={
+        tab === "codes" ? (
+          <MarketingCodesAction />
+        ) : null
+      }
+    >
+      <div className="mb-5 flex gap-1 p-1 rounded-lg border border-white/10 bg-white/5 w-full sm:w-auto sm:inline-flex">
+        {([
+          ["codes", "Discount Codes"],
+          ["campaign", "Campaign Links"],
+        ] as const).map(([key, label]) => (
+          <button
+            key={key}
+            onClick={() => setTab(key)}
+            className={`flex-1 sm:flex-none px-4 py-2 rounded-md text-[11px] font-mono uppercase tracking-wider transition-colors ${
+              tab === key
+                ? "bg-[var(--accent-red)] text-white shadow-[0_0_18px_rgba(255,0,60,0.35)]"
+                : "text-white/60 hover:text-white"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "codes" ? <DiscountCodesPanel /> : <CampaignLinksPage embedded />}
+    </DashboardShell>
+  );
+}
+
+// The "Generate code" button is only relevant to the codes tab, and it needs
+// access to the panel's open-state. Expose it via a shared handler using a
+// custom event so we don't restructure the shell action prop.
+function MarketingCodesAction() {
+  return (
+    <button
+      onClick={() => window.dispatchEvent(new CustomEvent("pw:open-discount-modal"))}
+      className="btn-primary !text-xs !py-2 !px-4 inline-flex items-center gap-1.5"
+    >
+      <Plus size={13} /> Generate code
+    </button>
+  );
+}
+
+function DiscountCodesPanel() {
   const [genOpen, setGenOpen] = useState(false);
   const [rows, setRows] = useState<DiscountRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,6 +88,12 @@ function Marketing() {
   }
   useEffect(() => { load(); }, []);
 
+  useEffect(() => {
+    const onOpen = () => setGenOpen(true);
+    window.addEventListener("pw:open-discount-modal", onOpen);
+    return () => window.removeEventListener("pw:open-discount-modal", onOpen);
+  }, []);
+
   async function remove(id: string) {
     if (!confirm("Delete this discount code?")) return;
     const { error } = await supabase.from("discount_codes").delete().eq("id", id);
@@ -37,9 +103,7 @@ function Marketing() {
   }
 
   return (
-    <DashboardShell title="Marketing" action={
-      <button onClick={() => setGenOpen(true)} className="btn-primary !text-xs !py-2 !px-4 inline-flex items-center gap-1.5"><Plus size={13} /> Generate code</button>
-    }>
+    <>
       <DashCard title="Discount codes">
         <div className="overflow-x-auto -mx-2">
         <table className="w-full text-sm">
@@ -89,6 +153,6 @@ function Marketing() {
           />
         )}
       </AnimatePresence>
-    </DashboardShell>
+    </>
   );
 }

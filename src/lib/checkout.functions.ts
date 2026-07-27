@@ -4,6 +4,8 @@ import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { type StripeEnv, createStripeClient, getStripeErrorMessage } from "@/lib/stripe.server";
 import { finalizeOrder, type FulfillItem } from "@/lib/order-fulfill.server";
+import { normalizeUtmSource } from "@/lib/utm";
+
 
 type DiscountResult =
   | {
@@ -97,6 +99,7 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
     discountCode?: string | null;
     utmSource?: string | null;
     utmCampaign?: string | null;
+    pwCid?: string | null;
     email?: string | null;
     returnUrl: string;
     environment: StripeEnv;
@@ -107,8 +110,10 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
       if (!Number.isInteger(it.qty) || it.qty < 1 || it.qty > 20) throw new Error("Invalid qty");
     }
     if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) throw new Error("Invalid email");
+    if (data.pwCid && !/^[A-Za-z0-9]{6,32}$/.test(data.pwCid)) data.pwCid = null;
     return data;
   })
+
 
   .handler(async ({ data }): Promise<CheckoutResult> => {
     try {
@@ -246,8 +251,9 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
           userId: userId ?? null,
           guestEmail: userId ? guestEmail : guestEmail,
           discountCode,
-          utmSource: data.utmSource ?? null,
+          utmSource: normalizeUtmSource(data.utmSource ?? null),
           utmCampaign: data.utmCampaign ?? null,
+          pwCid: data.pwCid ?? null,
           subtotalCents,
           discountCents,
           totalCents,
@@ -258,6 +264,7 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
         if (!finalized) return { error: "Could not complete free order." };
         return { freeSessionId };
       }
+
 
       if (totalCents < 50) {
         return { error: "Order total must be at least $0.50 to checkout." };
@@ -310,8 +317,9 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
           userId: userId ?? "",
           guest_email: userId ? "" : (email ?? ""),
           discount_code: discountCode ?? "",
-          utm_source: data.utmSource ?? "",
+          utm_source: normalizeUtmSource(data.utmSource ?? null) ?? "",
           utm_campaign: data.utmCampaign ?? "",
+          pw_cid: data.pwCid ?? "",
           subtotal_cents: String(subtotalCents),
           discount_cents: String(discountCents),
           total_cents: String(totalCents),
@@ -319,6 +327,7 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
           // product details from the DB and unit prices from Stripe line_items.
           items: items.map((i) => `${i.product.id}:${i.qty}`).join(","),
         },
+
 
       });
 

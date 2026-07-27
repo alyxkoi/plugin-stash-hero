@@ -6,6 +6,7 @@
 import { sendEmail, FROM_ORDERS } from "@/lib/resend.server";
 import { renderOrderConfirmation } from "@/lib/email-templates.server";
 import { subscribeToMailchimp } from "@/lib/mailchimp.server";
+import { normalizeUtmSource } from "@/lib/utm";
 
 export type FulfillItem = {
   product_id: string;
@@ -24,12 +25,14 @@ export type FulfillInput = {
   discountCode: string | null;
   utmSource: string | null;
   utmCampaign?: string | null;
+  pwCid?: string | null;
   subtotalCents: number;
   discountCents: number;
   totalCents: number;
   items: FulfillItem[];
   stripePaymentIntentId?: string | null;
 };
+
 
 
 export async function finalizeOrder(input: FulfillInput): Promise<{ orderId: string; number: string } | null> {
@@ -81,8 +84,9 @@ export async function finalizeOrder(input: FulfillInput): Promise<{ orderId: str
       discount: input.discountCents / 100,
       total: input.totalCents / 100,
       discount_code: input.discountCode,
-      utm_source: input.utmSource,
+      utm_source: normalizeUtmSource(input.utmSource),
       utm_campaign: input.utmCampaign ?? null,
+      pw_cid: input.pwCid ?? null,
       status: "completed",
       stripe_id: input.stripePaymentIntentId ?? null,
       stripe_session_id: input.sessionId,
@@ -90,6 +94,7 @@ export async function finalizeOrder(input: FulfillInput): Promise<{ orderId: str
     } as any)
     .select("id")
     .maybeSingle();
+
 
 
 

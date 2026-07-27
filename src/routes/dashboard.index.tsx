@@ -19,8 +19,9 @@ type OrderRow = {
   created_at: string;
   customer_id: string | null;
   guest_email: string | null;
-  order_items: { name: string; price: number; product_id: string | null; cover_gradient: string | null }[];
+  order_items: { name: string; price: number; product_id: string | null; cover_gradient: string | null; cover_url: string | null }[];
 };
+
 
 type CustomerLite = { id: string; name: string | null; email: string; last_purchase_at: string | null };
 
@@ -56,11 +57,12 @@ function Overview() {
       const [{ data: o }, { data: c }] = await Promise.all([
         supabase
           .from("orders")
-          .select("id, number, total, status, created_at, customer_id, guest_email, order_items(name, price, product_id, cover_gradient)")
+          .select("id, number, total, status, created_at, customer_id, guest_email, order_items(name, price, product_id, cover_gradient, cover_url)")
           .order("created_at", { ascending: false })
           .limit(1000),
         supabase.from("customers").select("id, name, email, last_purchase_at"),
       ]);
+
       setOrders((o ?? []) as any);
       setCustomers((c ?? []) as any);
       setLoading(false);
@@ -82,11 +84,12 @@ function Overview() {
   const recent = useMemo(() => [...orders].slice(0, 10), [orders]);
 
   const best = useMemo(() => {
-    const map = new Map<string, { name: string; cover: string | null; units: number; revenue: number }>();
+    const map = new Map<string, { name: string; cover: string | null; coverUrl: string | null; units: number; revenue: number }>();
     for (const o of completedThisMonth) {
       for (const it of o.order_items ?? []) {
         const key = it.product_id || it.name;
-        const cur = map.get(key) ?? { name: it.name, cover: it.cover_gradient, units: 0, revenue: 0 };
+        const cur = map.get(key) ?? { name: it.name, cover: it.cover_gradient, coverUrl: it.cover_url ?? null, units: 0, revenue: 0 };
+        if (!cur.coverUrl && it.cover_url) cur.coverUrl = it.cover_url;
         cur.units += 1;
         cur.revenue += Number(it.price || 0);
         map.set(key, cur);
@@ -94,6 +97,7 @@ function Overview() {
     }
     return [...map.values()].sort((a, b) => b.units - a.units).slice(0, 5);
   }, [completedThisMonth]);
+
 
   const customerLookup = useMemo(() => new Map(customers.map(c => [c.id, c])), [customers]);
 
@@ -188,7 +192,14 @@ function Overview() {
                 {best.map((b, i) => (
                   <li key={b.name + i} className="flex items-center gap-3">
                     <span className="font-mono text-sm text-white/40 w-5">{i + 1}</span>
-                    <div className="w-10 h-10 rounded-md flex-shrink-0" style={{ background: b.cover || "linear-gradient(135deg,#FF003C,#4066FF)" }} />
+                    <div
+                      className="w-10 h-10 rounded-md flex-shrink-0 bg-cover bg-center"
+                      style={{
+                        background: b.coverUrl
+                          ? `url(${b.coverUrl}) center/cover`
+                          : (b.cover || "linear-gradient(135deg,#FF003C,#4066FF)"),
+                      }}
+                    />
                     <div className="flex-1 min-w-0">
                       <div className="text-xs text-white truncate">{b.name}</div>
                       <div className="text-[10px] text-white/50 font-mono">{formatMoney(b.revenue)}</div>
@@ -196,6 +207,7 @@ function Overview() {
                     <span className="font-mono text-sm">{b.units}</span>
                   </li>
                 ))}
+
               </ul>
             )}
           </DashCard>

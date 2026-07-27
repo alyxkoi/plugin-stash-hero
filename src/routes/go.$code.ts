@@ -1,9 +1,13 @@
 // First-party campaign-link redirect endpoint.
 // Redirects for everyone; only counts real human navigations.
 // Bots, prefetches, and repeat hits are logged but marked counted=false.
+// Also mints a unique click id (pw_cid) so attribution survives even when
+// UTM query strings get stripped by a client-side redirect.
 
 import { createFileRoute } from "@tanstack/react-router";
 import { createHash } from "crypto";
+import { generateClickId } from "@/lib/utm";
+
 
 // Maintained bot / crawler / preview / scripting UA fragments.
 // Match case-insensitively as a substring — cheap and effective.
@@ -82,6 +86,10 @@ async function logAndRedirect(
 
   const counted = countable && !isBot && !prefetch && !onIgnoreList && !dupWithinWindow;
 
+  // Mint a click id for every countable, non-bot navigation so orders can be
+  // attributed via pw_cid even when UTMs get stripped downstream.
+  const clickId = counted ? generateClickId() : null;
+
   // Fire-and-log; a log failure must never block the redirect.
   try {
     await (supabaseAdmin as any).from("campaign_link_clicks").insert({
@@ -89,6 +97,7 @@ async function logAndRedirect(
       ip_ua_hash: ipUaHash,
       is_bot: isBot,
       counted,
+      click_id: clickId,
     });
   } catch { /* ignore */ }
 
@@ -100,12 +109,14 @@ async function logAndRedirect(
   if (link.utm_source) url.searchParams.set("utm_source", link.utm_source as string);
   if (link.utm_campaign) url.searchParams.set("utm_campaign", link.utm_campaign as string);
   if ((link as any).utm_content) url.searchParams.set("utm_content", (link as any).utm_content as string);
+  if (clickId) url.searchParams.set("pw_cid", clickId);
   const location = abs ? url.toString() : url.pathname + url.search + url.hash;
   return new Response(null, {
     status: 302,
     headers: { Location: location, "Cache-Control": "no-store" },
   });
 }
+
 
 export const Route = createFileRoute("/go/$code")({
   server: {

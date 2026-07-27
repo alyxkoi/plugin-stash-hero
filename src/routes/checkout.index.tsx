@@ -23,14 +23,16 @@ function CheckoutPage() {
   // the first-touch UTM stored on landing so attribution isn't lost when
   // a visitor browses several pages before checking out.
   const utm = useMemo(() => {
-    if (typeof window === "undefined") return { source: null as string | null, campaign: null as string | null };
+    if (typeof window === "undefined") return { source: null as string | null, campaign: null as string | null, cid: null as string | null };
     const q = new URLSearchParams(window.location.search);
     const stored = readStoredUtm();
     return {
       source: q.get("utm_source") || stored?.utm_source || null,
       campaign: q.get("utm_campaign") || stored?.utm_campaign || null,
+      cid: q.get("pw_cid") || stored?.pw_cid || null,
     };
   }, []);
+
 
 
   const [clientSecret, setClientSecret] = useState<string | null>(null);
@@ -71,10 +73,12 @@ function CheckoutPage() {
         discountCode: discount?.code ?? null,
         utmSource: utm.source,
         utmCampaign: utm.campaign,
+        pwCid: utm.cid,
         email: email ?? (user?.email ?? null),
         returnUrl: `${window.location.origin}/checkout/return`,
         environment,
       };
+
 
       // One silent retry on transient network failures (aborted fetch, brief
       // Worker cold-start). Anything else falls through to the visible error.

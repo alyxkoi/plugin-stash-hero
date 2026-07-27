@@ -1,11 +1,12 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { DashboardShell, DashCard, StatCard } from "@/components/DashboardShell";
 import { type AnalyticsRange, RANGE_LABEL } from "@/lib/dashboard-mock";
 import { ResponsiveContainer, AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip, PieChart, Pie, Cell } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { deriveSaleStatus, formatInSaleTimeZone } from "@/lib/sale-time";
-import { Link2 } from "lucide-react";
+import { normalizeUtmSource } from "@/lib/utm";
+
 
 
 
@@ -160,7 +161,7 @@ function Analytics() {
   const sources = useMemo(() => {
     const map = new Map<string, number>();
     for (const o of inRange) {
-      const s = (o.utm_source || "direct").toLowerCase();
+      const s = normalizeUtmSource(o.utm_source) || "direct";
       map.set(s, (map.get(s) ?? 0) + 1);
     }
     return [...map.entries()]
@@ -169,6 +170,7 @@ function Analytics() {
       .slice(0, 4);
   }, [inRange]);
   const sourcesMax = Math.max(1, ...sources.map(s => s.count));
+
 
 
   // Per-sale performance: real money captured (post-discount order totals) grouped by sale_id.
@@ -212,25 +214,9 @@ function Analytics() {
   return (
     <DashboardShell
       title="Analytics"
-      action={
-        <div className="flex items-center gap-2 min-w-0">
-          <Link
-            to="/dashboard/campaign-links"
-            className="sm:hidden inline-flex items-center justify-center w-9 h-9 rounded-full bg-[var(--accent-red)] text-white shadow-[0_0_18px_rgba(255,0,60,0.35)] shrink-0"
-            aria-label="Campaign Links"
-          >
-            <Link2 size={16} />
-          </Link>
-          <Link
-            to="/dashboard/campaign-links"
-            className="hidden sm:inline-flex btn-primary !py-1.5 !px-3 !min-h-0 text-[10px] shrink-0"
-          >
-            Campaign Links →
-          </Link>
-          <RangePills value={range} onChange={setRange} />
-        </div>
-      }
+      action={<RangePills value={range} onChange={setRange} />}
     >
+
       {/* Shared SVG defs for chart gradients + soft-glow filter used below. */}
       <svg width="0" height="0" style={{ position: "absolute" }} aria-hidden>
         <defs>
