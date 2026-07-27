@@ -66,7 +66,7 @@ function slugFromDateRange(start: string | null, end: string | null): string {
   return `${MONTHS[m - 1].toLowerCase()}-${y}`;
 }
 
-function CampaignLinksPage() {
+export function CampaignLinksPage({ embedded = false }: { embedded?: boolean } = {}) {
   const [groups, setGroups] = useState<Group[]>([]);
   const [links, setLinks] = useState<LinkRow[]>([]);
   const [clicks, setClicks] = useState<ClickAgg>(new Map());
