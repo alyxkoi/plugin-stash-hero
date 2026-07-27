@@ -86,7 +86,7 @@ export function CampaignLinksPage({ embedded = false }: { embedded?: boolean } =
         .order("sort_order", { ascending: true })
         .order("created_at", { ascending: false }),
       anySb.from("campaign_link_clicks").select("link_id").eq("counted", true),
-      anySb.from("orders").select("utm_source, utm_campaign").eq("status", "completed"),
+      anySb.from("orders").select("utm_source, utm_campaign").eq("status", "completed").gt("total", 0),
     ]);
     setGroups((g.data ?? []) as Group[]);
     setLinks((l.data ?? []) as LinkRow[]);

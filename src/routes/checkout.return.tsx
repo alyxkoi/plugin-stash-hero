@@ -6,6 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { actions } from "@/lib/store";
+import { clearStoredUtm } from "@/hooks/useUtmCapture";
+
 
 export const Route = createFileRoute("/checkout/return")({
   validateSearch: (s: Record<string, unknown>): { session_id?: string } => ({
@@ -30,8 +32,11 @@ function CheckoutReturn() {
   const [items, setItems] = useState<ItemView[]>([]);
   const [status, setStatus] = useState<"loading" | "ok" | "missing" | "invalid">("loading");
 
-  // Clear the local cart on landing here — webhook has also cleared server cart
-  useEffect(() => { actions.clearCart(); }, []);
+  // Clear the local cart on landing here — webhook has also cleared server cart.
+  // Also drop the stored first-touch UTM so it can't attribute a later, unrelated order.
+  useEffect(() => { actions.clearCart(); clearStoredUtm(); }, []);
+
+
 
   useEffect(() => {
     if (!session_id) { setStatus("invalid"); return; }
