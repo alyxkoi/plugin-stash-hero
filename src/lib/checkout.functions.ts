@@ -317,8 +317,9 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
           userId: userId ?? "",
           guest_email: userId ? "" : (email ?? ""),
           discount_code: discountCode ?? "",
-          utm_source: data.utmSource ?? "",
+          utm_source: normalizeUtmSource(data.utmSource ?? null) ?? "",
           utm_campaign: data.utmCampaign ?? "",
+          pw_cid: data.pwCid ?? "",
           subtotal_cents: String(subtotalCents),
           discount_cents: String(discountCents),
           total_cents: String(totalCents),
@@ -326,6 +327,7 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
           // product details from the DB and unit prices from Stripe line_items.
           items: items.map((i) => `${i.product.id}:${i.qty}`).join(","),
         },
+
 
       });
 
