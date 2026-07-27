@@ -225,18 +225,21 @@ export function CampaignLinksPage({ embedded = false }: { embedded?: boolean } =
     await persistLinkOrder(updates);
   };
 
+  const Shell: any = embedded ? Fragment : DashboardShell;
+  const shellProps = embedded ? {} : {
+    title: "Campaign Links",
+    action: (
+      <Link to="/dashboard/marketing" className="text-[11px] font-mono uppercase tracking-wider text-white/60 hover:text-white transition-colors">
+        ← Back to Marketing
+      </Link>
+    ),
+  };
   return (
-    <DashboardShell
-      title="Campaign Links"
-      action={
-        <Link to="/dashboard/analytics" className="text-[11px] font-mono uppercase tracking-wider text-white/60 hover:text-white transition-colors">
-          ← Back to Analytics
-        </Link>
-      }
-    >
+    <Shell {...shellProps}>
       <div className="mb-6">
         <CreateLinkForm groups={groups} onCreated={reload} onGroupCreated={reload} />
       </div>
+
 
       <div className="flex items-center justify-between mb-3">
         <div className="text-[10px] font-mono uppercase tracking-wider text-white/50">
