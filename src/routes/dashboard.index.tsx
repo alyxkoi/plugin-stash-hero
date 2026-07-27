@@ -84,11 +84,12 @@ function Overview() {
   const recent = useMemo(() => [...orders].slice(0, 10), [orders]);
 
   const best = useMemo(() => {
-    const map = new Map<string, { name: string; cover: string | null; units: number; revenue: number }>();
+    const map = new Map<string, { name: string; cover: string | null; coverUrl: string | null; units: number; revenue: number }>();
     for (const o of completedThisMonth) {
       for (const it of o.order_items ?? []) {
         const key = it.product_id || it.name;
-        const cur = map.get(key) ?? { name: it.name, cover: it.cover_gradient, units: 0, revenue: 0 };
+        const cur = map.get(key) ?? { name: it.name, cover: it.cover_gradient, coverUrl: it.cover_url ?? null, units: 0, revenue: 0 };
+        if (!cur.coverUrl && it.cover_url) cur.coverUrl = it.cover_url;
         cur.units += 1;
         cur.revenue += Number(it.price || 0);
         map.set(key, cur);
@@ -96,6 +97,7 @@ function Overview() {
     }
     return [...map.values()].sort((a, b) => b.units - a.units).slice(0, 5);
   }, [completedThisMonth]);
+
 
   const customerLookup = useMemo(() => new Map(customers.map(c => [c.id, c])), [customers]);
 
