@@ -34,16 +34,25 @@ export function readStoredUtm(): StoredUtm | null {
     const raw = localStorage.getItem(KEY);
     if (!raw) {
       const cid = readCookie(CID_COOKIE);
+      // A cookie-only pw_cid still represents a real /go/{code} click,
+      // so it's a valid attribution signal on its own.
       if (cid) return { utm_source: null, utm_campaign: null, pw_cid: cid, captured_at: new Date().toISOString() };
       return null;
     }
     const parsed = JSON.parse(raw) as StoredUtm;
     if (!parsed?.captured_at) return null;
+    // 30-day attribution window. Expire and refuse to attribute after.
     if (Date.now() - new Date(parsed.captured_at).getTime() > MAX_AGE_MS) {
-      localStorage.removeItem(KEY);
+      try { localStorage.removeItem(KEY); } catch { /* ignore */ }
       return null;
     }
-    // Cookie is the durable fallback; prefer stored cid but fall back to cookie.
+    // Never treat a bare utm_campaign (or referrer-derived value) as a source.
+    // Attribution requires an explicit utm_source OR a click id.
+    if (!parsed.utm_source && !parsed.pw_cid) {
+      const cid = readCookie(CID_COOKIE);
+      if (cid) return { ...parsed, pw_cid: cid };
+      return null;
+    }
     if (!parsed.pw_cid) parsed.pw_cid = readCookie(CID_COOKIE);
     return parsed;
   } catch {
@@ -51,36 +60,42 @@ export function readStoredUtm(): StoredUtm | null {
   }
 }
 
+// Called after an order is placed so stale first-touch attribution can't
+// leak into a future, unrelated purchase.
+export function clearStoredUtm() {
+  if (typeof window === "undefined") return;
+  try { localStorage.removeItem(KEY); } catch { /* ignore */ }
+  try {
+    const secure = window.location.protocol === "https:" ? "; Secure" : "";
+    document.cookie = `${CID_COOKIE}=; Max-Age=0; Path=/; SameSite=Lax${secure}`;
+  } catch { /* ignore */ }
+}
+
 export function useUtmCapture() {
   useEffect(() => {
     if (typeof window === "undefined") return;
-    // Read as early as possible — before any client-side router redirect
-    // has a chance to strip these params from location.search.
     try {
       const params = new URLSearchParams(window.location.search);
       const source = params.get("utm_source");
       const campaign = params.get("utm_campaign");
       const cid = params.get("pw_cid");
 
-      // Never overwrite an already-stored value (esp. with a blank one).
+      // Attribution is set ONLY by explicit URL params from /go/{code} or a
+      // tagged campaign URL. Never from document.referrer, never from a
+      // bare utm_campaign. If neither utm_source nor pw_cid is present in
+      // the landing URL, the visit is "direct" and nothing is stored.
+      if (!source && !cid) return;
+
+      if (cid) writeCookie(CID_COOKIE, cid, MAX_AGE_MS);
+
       const existing = readStoredUtm();
-
-      // If a fresh pw_cid is in the URL, persist it to both storages (cookie
-      // = durable across localStorage clearing; localStorage = quick read).
-      if (cid) {
-        writeCookie(CID_COOKIE, cid, MAX_AGE_MS);
-      }
-
       if (existing) {
-        // Upgrade an existing record with a pw_cid if we just got one and had none.
         if (cid && !existing.pw_cid) {
           const merged: StoredUtm = { ...existing, pw_cid: cid };
           try { localStorage.setItem(KEY, JSON.stringify(merged)); } catch { /* ignore */ }
         }
         return;
       }
-
-      if (!source && !campaign && !cid) return;
 
       const record: StoredUtm = {
         utm_source: source,
@@ -92,3 +107,4 @@ export function useUtmCapture() {
     } catch { /* ignore */ }
   }, []);
 }
+
