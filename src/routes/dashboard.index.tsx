@@ -19,8 +19,9 @@ type OrderRow = {
   created_at: string;
   customer_id: string | null;
   guest_email: string | null;
-  order_items: { name: string; price: number; product_id: string | null; cover_gradient: string | null }[];
+  order_items: { name: string; price: number; product_id: string | null; cover_gradient: string | null; cover_url: string | null }[];
 };
+
 
 type CustomerLite = { id: string; name: string | null; email: string; last_purchase_at: string | null };
 
