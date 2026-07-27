@@ -73,10 +73,12 @@ function CheckoutPage() {
         discountCode: discount?.code ?? null,
         utmSource: utm.source,
         utmCampaign: utm.campaign,
+        pwCid: utm.cid,
         email: email ?? (user?.email ?? null),
         returnUrl: `${window.location.origin}/checkout/return`,
         environment,
       };
+
 
       // One silent retry on transient network failures (aborted fetch, brief
       // Worker cold-start). Anything else falls through to the visible error.
