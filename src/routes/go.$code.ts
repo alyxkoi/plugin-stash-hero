@@ -1,9 +1,13 @@
 // First-party campaign-link redirect endpoint.
 // Redirects for everyone; only counts real human navigations.
 // Bots, prefetches, and repeat hits are logged but marked counted=false.
+// Also mints a unique click id (pw_cid) so attribution survives even when
+// UTM query strings get stripped by a client-side redirect.
 
 import { createFileRoute } from "@tanstack/react-router";
 import { createHash } from "crypto";
+import { generateClickId } from "@/lib/utm";
+
 
 // Maintained bot / crawler / preview / scripting UA fragments.
 // Match case-insensitively as a substring — cheap and effective.
