@@ -99,6 +99,7 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
     discountCode?: string | null;
     utmSource?: string | null;
     utmCampaign?: string | null;
+    pwCid?: string | null;
     email?: string | null;
     returnUrl: string;
     environment: StripeEnv;
@@ -109,8 +110,10 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
       if (!Number.isInteger(it.qty) || it.qty < 1 || it.qty > 20) throw new Error("Invalid qty");
     }
     if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) throw new Error("Invalid email");
+    if (data.pwCid && !/^[A-Za-z0-9]{6,32}$/.test(data.pwCid)) data.pwCid = null;
     return data;
   })
+
 
   .handler(async ({ data }): Promise<CheckoutResult> => {
     try {
