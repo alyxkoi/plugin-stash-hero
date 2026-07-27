@@ -118,6 +118,7 @@ export type Database = {
       }
       campaign_link_clicks: {
         Row: {
+          click_id: string | null
           counted: boolean
           created_at: string
           id: number
@@ -126,6 +127,7 @@ export type Database = {
           link_id: string
         }
         Insert: {
+          click_id?: string | null
           counted?: boolean
           created_at?: string
           id?: number
@@ -134,6 +136,7 @@ export type Database = {
           link_id: string
         }
         Update: {
+          click_id?: string | null
           counted?: boolean
           created_at?: string
           id?: number
@@ -530,6 +533,7 @@ export type Database = {
           guest_email: string | null
           id: string
           number: string
+          pw_cid: string | null
           refund_reason: string | null
           sale_id: string | null
           status: Database["public"]["Enums"]["order_status"]
@@ -551,6 +555,7 @@ export type Database = {
           guest_email?: string | null
           id?: string
           number: string
+          pw_cid?: string | null
           refund_reason?: string | null
           sale_id?: string | null
           status?: Database["public"]["Enums"]["order_status"]
@@ -572,6 +577,7 @@ export type Database = {
           guest_email?: string | null
           id?: string
           number?: string
+          pw_cid?: string | null
           refund_reason?: string | null
           sale_id?: string | null
           status?: Database["public"]["Enums"]["order_status"]
