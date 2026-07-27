@@ -87,6 +87,7 @@ async function handleCheckoutCompleted(session: any, env: StripeEnv) {
   const discountCode: string | null = meta.discount_code || null;
   const utmSource: string | null = meta.utm_source || null;
   const utmCampaign: string | null = meta.utm_campaign || null;
+  const pwCid: string | null = meta.pw_cid || null;
   const subtotalCents = Number(meta.subtotal_cents ?? session.amount_subtotal ?? 0);
   const discountCents = Number(meta.discount_cents ?? 0);
   const totalCents = Number(meta.total_cents ?? session.amount_total ?? 0);
@@ -101,6 +102,7 @@ async function handleCheckoutCompleted(session: any, env: StripeEnv) {
     discountCode,
     utmSource,
     utmCampaign,
+    pwCid,
     subtotalCents,
     discountCents,
     totalCents,
@@ -114,6 +116,7 @@ async function handleCheckoutCompleted(session: any, env: StripeEnv) {
     await notifyTelegram(formatSaleMessage(result.number, itemCount, totalCents));
   }
 }
+
 
 async function handlePaymentFailed(intent: any) {
   const meta = intent.metadata ?? {};
