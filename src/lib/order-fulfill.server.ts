@@ -84,8 +84,9 @@ export async function finalizeOrder(input: FulfillInput): Promise<{ orderId: str
       discount: input.discountCents / 100,
       total: input.totalCents / 100,
       discount_code: input.discountCode,
-      utm_source: input.utmSource,
+      utm_source: normalizeUtmSource(input.utmSource),
       utm_campaign: input.utmCampaign ?? null,
+      pw_cid: input.pwCid ?? null,
       status: "completed",
       stripe_id: input.stripePaymentIntentId ?? null,
       stripe_session_id: input.sessionId,
@@ -93,6 +94,7 @@ export async function finalizeOrder(input: FulfillInput): Promise<{ orderId: str
     } as any)
     .select("id")
     .maybeSingle();
+
 
 
 
