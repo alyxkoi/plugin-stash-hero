@@ -251,8 +251,9 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
           userId: userId ?? null,
           guestEmail: userId ? guestEmail : guestEmail,
           discountCode,
-          utmSource: data.utmSource ?? null,
+          utmSource: normalizeUtmSource(data.utmSource ?? null),
           utmCampaign: data.utmCampaign ?? null,
+          pwCid: data.pwCid ?? null,
           subtotalCents,
           discountCents,
           totalCents,
@@ -263,6 +264,7 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
         if (!finalized) return { error: "Could not complete free order." };
         return { freeSessionId };
       }
+
 
       if (totalCents < 50) {
         return { error: "Order total must be at least $0.50 to checkout." };
