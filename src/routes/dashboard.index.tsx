@@ -57,11 +57,12 @@ function Overview() {
       const [{ data: o }, { data: c }] = await Promise.all([
         supabase
           .from("orders")
-          .select("id, number, total, status, created_at, customer_id, guest_email, order_items(name, price, product_id, cover_gradient)")
+          .select("id, number, total, status, created_at, customer_id, guest_email, order_items(name, price, product_id, cover_gradient, cover_url)")
           .order("created_at", { ascending: false })
           .limit(1000),
         supabase.from("customers").select("id, name, email, last_purchase_at"),
       ]);
+
       setOrders((o ?? []) as any);
       setCustomers((c ?? []) as any);
       setLoading(false);
