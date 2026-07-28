@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { AlertTriangle, Check, Heart, Share2, ShoppingCart } from "lucide-react";
+import { Info, Check, Heart, Share2, ShoppingCart } from "lucide-react";
 
 import { useQuery } from "@tanstack/react-query";
 import type { Category, Product } from "@/lib/mock-data";
