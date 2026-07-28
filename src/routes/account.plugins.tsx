@@ -69,6 +69,25 @@ function PluginsPage() {
           }
         }
       }
+
+      // Resolve live name + cover from products so admin renames reflect immediately.
+      // Fall back to the stored snapshot when a product has been deleted.
+      const ids = Array.from(map.keys());
+      if (ids.length) {
+        const { data: live } = await supabase
+          .from("products")
+          .select("id, name, slug, cover_url, cover_gradient")
+          .in("id", ids);
+        for (const p of (live ?? []) as any[]) {
+          const owned = map.get(p.id);
+          if (!owned) continue;
+          owned.name = p.name ?? owned.name;
+          owned.slug = p.slug ?? owned.slug;
+          owned.cover_url = p.cover_url ?? owned.cover_url;
+          owned.cover_gradient = p.cover_gradient ?? owned.cover_gradient;
+        }
+      }
+
       setPlugins(Array.from(map.values()));
       await refreshUpdates();
       setReady(true);
