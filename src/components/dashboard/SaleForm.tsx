@@ -299,9 +299,29 @@ export function SaleForm({
         </DashCard>
 
         <DashCard title="Schedule">
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Start"><input type="datetime-local" value={v.startAt} onChange={(e) => set("startAt", e.target.value)} className="ipt" /></Field>
-            <Field label="End"><input type="datetime-local" value={v.endAt} onChange={(e) => set("endAt", e.target.value)} className="ipt" /></Field>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="Start">
+              <div className="relative">
+                <input
+                  type="datetime-local"
+                  value={v.startAt}
+                  onChange={(e) => set("startAt", e.target.value)}
+                  className="ipt ipt-dt"
+                />
+                <CalendarIcon className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#B8ACCC]" />
+              </div>
+            </Field>
+            <Field label="End">
+              <div className="relative">
+                <input
+                  type="datetime-local"
+                  value={v.endAt}
+                  onChange={(e) => set("endAt", e.target.value)}
+                  className="ipt ipt-dt"
+                />
+                <CalendarIcon className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#B8ACCC]" />
+              </div>
+            </Field>
           </div>
           <div className="text-[10px] text-white/40 mt-2 font-mono">
             Time zone: {SALE_TIME_ZONE}. Times are saved in UTC automatically.
@@ -310,6 +330,7 @@ export function SaleForm({
             Status is derived automatically — Scheduled before start, Active between start &amp; end, then Ended.
           </div>
         </DashCard>
+
 
         <DashCard title="What does the discount apply to?">
           <div className="space-y-2 mb-4">
