@@ -279,13 +279,13 @@ function ProductDetail() {
           })()}
 
           {p.category === "libraries" && p.libraryType?.toLowerCase() === "kontakt" && (
-            <div className="mb-6 rounded-2xl border border-[var(--accent-red-glow)]/30 bg-[var(--accent-red)]/10 backdrop-blur-md p-4">
+            <div className="mb-6 rounded-2xl border border-[#B8ACCC]/15 bg-[#190737]/70 backdrop-blur-md p-4">
               <div className="flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 text-[var(--accent-red-glow)] shrink-0 mt-0.5" />
+                <Info className="w-5 h-5 text-[#B8ACCC] shrink-0 mt-0.5" />
                 <div>
-                  <div className="font-mono text-xs tracking-wider text-[var(--accent-red-glow)] mb-1">COMPATIBILITY NOTICE</div>
-                  <p className="text-sm text-white/80 leading-relaxed">
-                    This library only works with the Kontakt version included in your download from Plugin Warehouse. Please use the version we provide — it will not work with other Kontakt installations. Make sure to install our included version to use this library.
+                  <div className="font-mono text-xs tracking-wider text-[#B8ACCC] mb-1">GOOD TO KNOW</div>
+                  <p className="text-sm text-[#C9BEDD] leading-relaxed">
+                    This library is built to run on the Kontakt version included with your download. Just install the one we provide and you're good to go.
                   </p>
                 </div>
               </div>
