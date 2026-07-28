@@ -521,7 +521,7 @@ export function SaleForm({
         />
       )}
 
-      <style>{`.ipt{width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:0.55rem 0.75rem;font-size:13px;color:#fff;outline:none}.ipt:focus{border-color:var(--accent-red)}`}</style>
+      <style>{`.ipt{width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:0.55rem 0.75rem;font-size:13px;color:#fff;outline:none}.ipt:focus{border-color:var(--accent-red);box-shadow:0 0 0 3px rgba(255,0,60,0.15)}.ipt-dt{min-height:48px;padding-right:2.25rem;font-size:14px;font-variant-numeric:tabular-nums}.ipt-dt::-webkit-calendar-picker-indicator{opacity:0;position:absolute;right:0;top:0;width:100%;height:100%;cursor:pointer}`}</style>
     </>
   );
 }
