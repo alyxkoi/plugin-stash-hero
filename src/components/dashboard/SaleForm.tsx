@@ -443,19 +443,66 @@ export function SaleForm({
       </div>
 
       {/* Sticky action bar */}
-      <div className="fixed bottom-0 left-0 md:left-[220px] right-0 z-30 border-t border-white/10 bg-[#13002C]/95 backdrop-blur-md px-6 py-3 flex items-center gap-3">
-        <Link to="/dashboard/sales" onClick={clearDraft} className="btn-ghost !text-xs !py-2 !px-4">Cancel</Link>
-        {mode === "new" && draftKey && <span className="text-[10px] text-white/40 font-mono ml-2 hidden md:inline">Draft auto-saved locally</span>}
-        {mode === "edit" && (
-          <button onClick={deleteSale} className="btn-ghost !text-xs !py-2 !px-4 !border-[var(--accent-red)]/40 !text-[var(--accent-red-glow)]">Delete sale</button>
-        )}
-        <button disabled={saving} onClick={() => attemptSave("draft")} className="btn-ghost !text-xs !py-2 !px-4 ml-auto disabled:opacity-50">
-          {saving ? "Saving…" : mode === "new" ? "Save draft" : "Save as draft"}
-        </button>
-        <button disabled={saving} onClick={() => attemptSave("scheduled")} className="btn-primary !text-xs !py-2 !px-6 disabled:opacity-50">
-          {saving ? "Saving…" : mode === "new" ? "Schedule sale" : "Save changes"}
-        </button>
+      <div
+        className="fixed bottom-0 left-0 md:left-[220px] right-0 z-30 border-t border-white/10 bg-[#13002C]/95 backdrop-blur-md px-4 sm:px-6 py-3"
+        style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
+      >
+        {/* Desktop / tablet: single row */}
+        <div className="hidden sm:flex items-center gap-3">
+          {mode === "edit" && (
+            <button onClick={deleteSale} className="btn-ghost !text-xs !py-2 !px-4 !border-[var(--accent-red)]/40 !text-[var(--accent-red-glow)]">Delete sale</button>
+          )}
+          {mode === "new" && draftKey && <span className="text-[10px] text-white/40 font-mono">Draft auto-saved locally</span>}
+          <div className="ml-auto flex items-center gap-3">
+            <Link to="/dashboard/sales" onClick={clearDraft} className="btn-ghost !text-xs !py-2 !px-4">Cancel</Link>
+            <button disabled={saving} onClick={() => attemptSave("draft")} className="btn-ghost !text-xs !py-2 !px-4 disabled:opacity-50">
+              {saving ? "Saving…" : mode === "new" ? "Save draft" : "Save as draft"}
+            </button>
+            <button disabled={saving} onClick={() => attemptSave("scheduled")} className="btn-primary !text-xs !py-2 !px-6 disabled:opacity-50">
+              {saving ? "Saving…" : mode === "new" ? "Schedule sale" : "Save changes"}
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile: grouped by importance */}
+        <div className="sm:hidden flex flex-col gap-2.5">
+          <button
+            disabled={saving}
+            onClick={() => attemptSave("scheduled")}
+            className="btn-primary w-full !text-sm !py-3 !px-4 min-h-[48px] disabled:opacity-50"
+          >
+            {saving ? "Saving…" : mode === "new" ? "Schedule sale" : "Save changes"}
+          </button>
+          <div className="grid grid-cols-2 gap-2.5">
+            <button
+              disabled={saving}
+              onClick={() => attemptSave("draft")}
+              className="btn-ghost w-full !text-sm !py-3 !px-4 min-h-[48px] disabled:opacity-50"
+            >
+              {saving ? "Saving…" : mode === "new" ? "Save draft" : "Save as draft"}
+            </button>
+            <Link
+              to="/dashboard/sales"
+              onClick={clearDraft}
+              className="btn-ghost w-full !text-sm !py-3 !px-4 min-h-[48px] inline-flex items-center justify-center"
+            >
+              Cancel
+            </Link>
+          </div>
+          {mode === "edit" && (
+            <>
+              <div className="h-px bg-white/10 mt-1" />
+              <button
+                onClick={deleteSale}
+                className="w-full min-h-[48px] rounded-lg border border-[var(--accent-red)]/50 text-[var(--accent-red-glow)] text-sm font-semibold tracking-wide bg-transparent hover:bg-[var(--accent-red)]/10 transition"
+              >
+                Delete sale
+              </button>
+            </>
+          )}
+        </div>
       </div>
+
 
       {/* Overlap warning modal */}
       {overlapWarn && (
