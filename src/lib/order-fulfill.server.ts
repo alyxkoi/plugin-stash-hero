@@ -80,36 +80,46 @@ export async function finalizeOrder(input: FulfillInput): Promise<{ orderId: str
     activeSaleId = (activeSale?.id as string | undefined) ?? null;
   }
 
-  const { data: inserted, error: orderErr } = await supabaseAdmin
+  // Structurally idempotent: the unique index on stripe_session_id makes a
+  // duplicate impossible. On conflict we ignore and re-read the existing row,
+  // so a retried webhook/handler returns the original order instead of erroring.
+  const { error: insertErr } = await supabaseAdmin
     .from("orders")
-    .insert({
-      number,
-      user_id: input.userId ?? null,
-      guest_email: input.guestEmail,
-      customer_name: input.customerName ?? null,
-      subtotal: input.subtotalCents / 100,
-      discount: input.discountCents / 100,
-      total: input.totalCents / 100,
-      discount_code: input.discountCode,
-      utm_source: normalizeUtmSource(input.utmSource),
-      utm_campaign: input.utmCampaign ?? null,
-      pw_cid: input.pwCid ?? null,
-      status: "completed",
-      stripe_id: input.stripePaymentIntentId ?? null,
-      stripe_session_id: input.sessionId,
-      sale_id: activeSaleId,
-      credit_applied_cents: 0,
-    } as any)
-    .select("id")
+    .upsert(
+      {
+        number,
+        user_id: input.userId ?? null,
+        guest_email: input.guestEmail,
+        customer_name: input.customerName ?? null,
+        subtotal: input.subtotalCents / 100,
+        discount: input.discountCents / 100,
+        total: input.totalCents / 100,
+        discount_code: input.discountCode,
+        utm_source: normalizeUtmSource(input.utmSource),
+        utm_campaign: input.utmCampaign ?? null,
+        pw_cid: input.pwCid ?? null,
+        status: "completed",
+        stripe_id: input.stripePaymentIntentId ?? null,
+        stripe_session_id: input.sessionId,
+        sale_id: activeSaleId,
+        credit_applied_cents: 0,
+      } as any,
+      { onConflict: "stripe_session_id", ignoreDuplicates: true },
+    );
+  if (insertErr) console.error("[fulfill] order upsert warning", insertErr);
+
+  const { data: inserted } = await supabaseAdmin
+    .from("orders")
+    .select("id, number")
+    .eq("stripe_session_id", input.sessionId)
     .maybeSingle();
 
-
-
-
-  if (orderErr || !inserted) {
-    console.error("[fulfill] order insert failed", orderErr);
+  if (!inserted) {
+    console.error("[fulfill] order insert failed", insertErr);
     return null;
   }
+  number = inserted.number as string;
+
 
   const orderId = inserted.id as string;
 
