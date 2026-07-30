@@ -26,6 +26,7 @@ function OverviewPage() {
   const [pluginsOwned, setPluginsOwned] = useState(0);
   const [credit, setCredit] = useState<CreditSnapshot | null>(null);
   const [showCredit, setShowCredit] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     if (loading || !user) return;
@@ -50,6 +51,15 @@ function OverviewPage() {
       }
       const owned = new Set<string>();
       for (const o of list) for (const it of (o.order_items ?? [])) if (it.product_id) owned.add(it.product_id);
+      // Gifted plugins count toward the library too (deduplicated).
+      const { data: grants } = await supabase
+        .from("plugin_grants")
+        .select("product_id")
+        .eq("customer_id", user.id)
+        .is("revoked_at", null);
+      for (const g of (grants ?? []) as Array<{ product_id: string | null }>) {
+        if (g.product_id) owned.add(g.product_id);
+      }
       setPluginsOwned(owned.size);
       setReady(true);
       try {
@@ -58,7 +68,26 @@ function OverviewPage() {
         console.warn("[account] store credit load failed", e);
       }
     })();
-  }, [user, loading]);
+  }, [user, loading, refreshKey]);
+
+  // Live-update credit + owned count when a grant lands while the page is open.
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel(`account-overview-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "store_credit_ledger", filter: `customer_id=eq.${user.id}` },
+        () => setRefreshKey((n) => n + 1),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "plugin_grants", filter: `customer_id=eq.${user.id}` },
+        () => setRefreshKey((n) => n + 1),
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user]);
 
   const memberSince = user?.created_at
     ? new Date(user.created_at).toLocaleString("en-US", { month: "long", year: "numeric" })
