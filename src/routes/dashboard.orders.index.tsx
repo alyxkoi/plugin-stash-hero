@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 type Row = {
   id: string; number: string; total: number; discount: number; discount_code: string | null;
   utm_source: string | null; status: string; created_at: string; user_id: string | null;
+  customer_name: string | null; guest_email: string | null;
   order_items: { name: string }[];
 };
 
@@ -35,7 +36,7 @@ function OrdersPage() {
     (async () => {
       const { data } = await supabase
         .from("orders")
-        .select("id, number, total, discount, discount_code, utm_source, status, created_at, user_id, order_items(name)")
+        .select("id, number, total, discount, discount_code, utm_source, status, created_at, user_id, customer_name, guest_email, order_items(name)")
         .order("created_at", { ascending: false })
         .limit(500);
       setRows((data ?? []) as any);
@@ -43,8 +44,11 @@ function OrdersPage() {
   }, []);
 
   const filtered = useMemo(() => rows.filter(o => {
-    if (q && !o.number.toLowerCase().includes(q.toLowerCase()) &&
-        !o.order_items.some(i => i.name.toLowerCase().includes(q.toLowerCase()))) return false;
+    const needle = q.toLowerCase();
+    if (q && !o.number.toLowerCase().includes(needle) &&
+        !(o.customer_name ?? "").toLowerCase().includes(needle) &&
+        !(o.guest_email ?? "").toLowerCase().includes(needle) &&
+        !o.order_items.some(i => i.name.toLowerCase().includes(needle))) return false;
     if (status !== "all" && o.status !== status) return false;
     return true;
   }), [rows, q, status]);
@@ -56,7 +60,7 @@ function OrdersPage() {
       <div className="flex flex-wrap gap-3 mb-4">
         <div className="relative flex-1 min-w-[240px] max-w-[360px]">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
-          <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search by order #, product" className="w-full bg-white/5 border border-white/15 rounded-lg pl-9 pr-3 py-2 text-sm outline-none focus:border-[var(--accent-red)]" />
+          <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search by order #, customer, product" className="w-full bg-white/5 border border-white/15 rounded-lg pl-9 pr-3 py-2 text-sm outline-none focus:border-[var(--accent-red)]" />
         </div>
         <select value={status} onChange={e => setStatus(e.target.value)} className="bg-white/5 border border-white/15 rounded-lg px-3 py-2 text-xs outline-none focus:border-[var(--accent-red)]">
           <option value="all" className="bg-[#1F0540]">All status</option>
@@ -70,12 +74,18 @@ function OrdersPage() {
         <div className="overflow-x-auto -mx-2">
           <table className="w-full text-sm">
             <thead className="text-[10px] uppercase tracking-wider text-white/40">
-              <tr><th className="text-left px-2 py-2">Order</th><th className="text-left px-2 py-2">Items</th><th className="text-right px-2 py-2">Total</th><th className="text-left px-2 py-2">Discount</th><th className="text-left px-2 py-2">Source</th><th className="text-left px-2 py-2">Status</th><th className="text-right px-2 py-2">Date</th></tr>
+              <tr><th className="text-left px-2 py-2">Order</th><th className="text-left px-2 py-2">Customer</th><th className="text-left px-2 py-2">Items</th><th className="text-right px-2 py-2">Total</th><th className="text-left px-2 py-2">Discount</th><th className="text-left px-2 py-2">Source</th><th className="text-left px-2 py-2">Status</th><th className="text-right px-2 py-2">Date</th></tr>
             </thead>
             <tbody>
               {paged.map(o => (
                 <tr key={o.id} onClick={() => setOpenOrderId(o.id)} className="border-t border-white/5 hover:bg-white/[0.03] cursor-pointer">
                   <td className="px-2 py-2 font-mono text-xs text-white">{o.number}</td>
+                  <td className="px-2 py-2">
+                    <div className="text-xs text-white truncate max-w-[170px]">{o.customer_name || o.guest_email || "Guest"}</div>
+                    {o.customer_name && o.guest_email && (
+                      <div className="font-mono text-[10px] text-white/45 truncate max-w-[170px]">{o.guest_email}</div>
+                    )}
+                  </td>
                   <td className="px-2 py-2 text-xs text-white/70">{o.order_items[0]?.name ?? "—"}{o.order_items.length > 1 && <span className="text-white/40"> + {o.order_items.length - 1} more</span>}</td>
                   <td className="px-2 py-2 text-right font-mono text-xs">{formatMoney(o.total)}</td>
                   <td className="px-2 py-2 text-[10px] font-mono text-white/60">{o.discount_code ?? "—"}</td>
@@ -85,7 +95,7 @@ function OrdersPage() {
                 </tr>
               ))}
               {paged.length === 0 && (
-                <tr><td colSpan={7} className="px-2 py-12 text-center text-white/40 text-sm">No orders yet.</td></tr>
+                <tr><td colSpan={8} className="px-2 py-12 text-center text-white/40 text-sm">No orders yet.</td></tr>
               )}
             </tbody>
           </table>
