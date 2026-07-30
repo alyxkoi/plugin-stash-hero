@@ -1,97 +1,164 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { Package, CalendarDays, Library, ArrowUpRight, Wallet, X } from "lucide-react";
-import { GlassCard } from "@/components/GlassCard";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ArrowUpRight, X, Gift, FileText, HelpCircle, Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { getMyStoreCredit, type CreditSnapshot } from "@/lib/store-credit.functions";
 
+const INSTALL_GUIDE_URL =
+  "https://thepluginwarehousefiles.com/other%20files/the_plugin_warehouse_installation_guide.pdf";
+
 export const Route = createFileRoute("/account/")({
-  head: () => ({ meta: [{ title: "Account Overview — Plugin Warehouse" }] }),
+  head: () => ({
+    meta: [
+      { title: "Account Overview — Plugin Warehouse" },
+      { name: "description", content: "Your Plugin Warehouse library, orders and store credit in one place." },
+    ],
+  }),
   component: OverviewPage,
 });
 
-type LastOrder = {
-  id: string;
-  number: string;
-  total: number;
-  created_at: string;
-  item_count: number;
+type LastOrder = { id: string; number: string; total: number; created_at: string };
+
+type LibItem = {
+  product_id: string;
+  name: string;
+  cover_url: string | null;
+  cover_gradient: string | null;
+  obtained_at: string;
+  is_gift: boolean;
 };
 
 function OverviewPage() {
   const { user, loading } = useAuth();
   const [ready, setReady] = useState(false);
   const [lastOrder, setLastOrder] = useState<LastOrder | null>(null);
-  const [pluginsOwned, setPluginsOwned] = useState(0);
+  const [library, setLibrary] = useState<LibItem[]>([]);
+  const [updatedIds, setUpdatedIds] = useState<Set<string>>(new Set());
+  const [giftIds, setGiftIds] = useState<Set<string>>(new Set());
   const [credit, setCredit] = useState<CreditSnapshot | null>(null);
   const [showCredit, setShowCredit] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
+
+  const load = useCallback(async () => {
+    if (!user) return;
+
+    const { data: orders } = await supabase
+      .from("orders")
+      .select("id, number, total, created_at, order_items(product_id, name, cover_gradient, cover_url)")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    const list = (orders ?? []) as any[];
+    if (list.length > 0) {
+      const o = list[0];
+      setLastOrder({ id: o.id, number: o.number, total: Number(o.total), created_at: o.created_at });
+    } else {
+      setLastOrder(null);
+    }
+
+    const map = new Map<string, LibItem>();
+    for (const o of list) {
+      for (const it of (o.order_items ?? [])) {
+        if (!it.product_id) continue;
+        const existing = map.get(it.product_id);
+        if (!existing) {
+          map.set(it.product_id, {
+            product_id: it.product_id,
+            name: it.name,
+            cover_url: it.cover_url,
+            cover_gradient: it.cover_gradient,
+            obtained_at: o.created_at,
+            is_gift: false,
+          });
+        } else if (new Date(o.created_at) > new Date(existing.obtained_at)) {
+          existing.obtained_at = o.created_at;
+        }
+      }
+    }
+
+    const { data: grants } = await supabase
+      .from("plugin_grants")
+      .select("product_id, granted_at, acknowledged_at, products(name, cover_url, cover_gradient)")
+      .eq("customer_id", user.id)
+      .is("revoked_at", null);
+
+    const unseenGifts = new Set<string>();
+    for (const g of (grants ?? []) as any[]) {
+      if (!g.product_id) continue;
+      if (!g.acknowledged_at) unseenGifts.add(g.product_id);
+      if (!map.has(g.product_id)) {
+        map.set(g.product_id, {
+          product_id: g.product_id,
+          name: g.products?.name ?? "Plugin",
+          cover_url: g.products?.cover_url ?? null,
+          cover_gradient: g.products?.cover_gradient ?? null,
+          obtained_at: g.granted_at,
+          is_gift: true,
+        });
+      }
+    }
+    setGiftIds(unseenGifts);
+
+    // Live name + cover from products so admin renames show immediately.
+    const ids = Array.from(map.keys());
+    if (ids.length) {
+      const { data: live } = await supabase
+        .from("products").select("id, name, cover_url, cover_gradient").in("id", ids);
+      for (const p of (live ?? []) as any[]) {
+        const owned = map.get(p.id);
+        if (!owned) continue;
+        owned.name = p.name ?? owned.name;
+        owned.cover_url = p.cover_url ?? owned.cover_url;
+        owned.cover_gradient = p.cover_gradient ?? owned.cover_gradient;
+      }
+    }
+    setLibrary(Array.from(map.values()));
+
+    const { data: upd } = await (supabase as any).rpc("get_my_product_file_updates");
+    const u = new Set<string>();
+    for (const r of (upd ?? []) as Array<{ product_id: string; file_updated_at: string; acknowledged_at: string | null }>) {
+      if (!r.acknowledged_at || new Date(r.file_updated_at) > new Date(r.acknowledged_at)) u.add(r.product_id);
+    }
+    setUpdatedIds(u);
+
+    setReady(true);
+    try {
+      setCredit(await getMyStoreCredit());
+    } catch (e) {
+      console.warn("[account] store credit load failed", e);
+    }
+  }, [user]);
 
   useEffect(() => {
     if (loading || !user) return;
-    (async () => {
-      const { data: orders } = await supabase
-        .from("orders")
-        .select("id, number, total, created_at, order_items(product_id)")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+    load();
+  }, [user, loading, load]);
 
-      const list = (orders ?? []) as Array<{
-        id: string; number: string; total: number; created_at: string;
-        order_items: Array<{ product_id: string | null }>;
-      }>;
-
-      if (list.length > 0) {
-        const o = list[0];
-        setLastOrder({
-          id: o.id, number: o.number, total: Number(o.total),
-          created_at: o.created_at, item_count: o.order_items?.length ?? 0,
-        });
-      }
-      const owned = new Set<string>();
-      for (const o of list) for (const it of (o.order_items ?? [])) if (it.product_id) owned.add(it.product_id);
-      // Gifted plugins count toward the library too (deduplicated).
-      const { data: grants } = await supabase
-        .from("plugin_grants")
-        .select("product_id")
-        .eq("customer_id", user.id)
-        .is("revoked_at", null);
-      for (const g of (grants ?? []) as Array<{ product_id: string | null }>) {
-        if (g.product_id) owned.add(g.product_id);
-      }
-      setPluginsOwned(owned.size);
-      setReady(true);
-      try {
-        setCredit(await getMyStoreCredit());
-      } catch (e) {
-        console.warn("[account] store credit load failed", e);
-      }
-    })();
-  }, [user, loading, refreshKey]);
-
-  // Live-update credit + owned count when a grant lands while the page is open.
+  // Silent grants and credit land live while the portal is open.
   useEffect(() => {
     if (!user) return;
     const channel = supabase
       .channel(`account-overview-${user.id}`)
-      .on(
-        "postgres_changes",
+      .on("postgres_changes",
         { event: "*", schema: "public", table: "store_credit_ledger", filter: `customer_id=eq.${user.id}` },
-        () => setRefreshKey((n) => n + 1),
-      )
-      .on(
-        "postgres_changes",
+        () => { load(); })
+      .on("postgres_changes",
         { event: "*", schema: "public", table: "plugin_grants", filter: `customer_id=eq.${user.id}` },
-        () => setRefreshKey((n) => n + 1),
-      )
+        () => { load(); })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [user]);
+  }, [user, load]);
+
+  const featured = useMemo(() => {
+    const score = (p: LibItem) => (updatedIds.has(p.product_id) || giftIds.has(p.product_id) ? 0 : 1);
+    return [...library]
+      .sort((a, b) => score(a) - score(b) || +new Date(b.obtained_at) - +new Date(a.obtained_at))
+      .slice(0, 4);
+  }, [library, updatedIds, giftIds]);
 
   const memberSince = user?.created_at
     ? new Date(user.created_at).toLocaleString("en-US", { month: "long", year: "numeric" })
-    : "—";
+    : null;
 
   if (!ready) return <div className="p-8 text-white/60">Loading…</div>;
 
@@ -99,87 +166,125 @@ function OverviewPage() {
   const creditCents = credit?.balance_cents ?? 0;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-12 md:space-y-16 pb-4">
+      {/* IDENTITY */}
       <header>
         <div className="label-mini text-[#C9BEDD] mb-2">WELCOME BACK</div>
-        <h1 className="font-display text-[clamp(2.25rem,5vw,4rem)] leading-[0.95] tracking-tight">
+        <h1 className="font-display text-[clamp(2.25rem,5vw,4rem)] leading-[0.95] tracking-tight break-words">
           {email.split("@")[0].toUpperCase()}
         </h1>
+        <p className="mt-3 text-[13px] text-[#B8ACCC] break-words">
+          {email}
+          {memberSince && <><span className="text-white/25 mx-2">·</span>Member since {memberSince}</>}
+        </p>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        {/* Last Order */}
-        <StatBox
-          to={lastOrder ? "/account/orders" : undefined}
-          icon={<Package className="w-4 h-4" strokeWidth={1.8} />}
-          label="LAST ORDER"
-        >
-          {lastOrder ? (
-            <>
-              <div className="font-black text-2xl md:text-3xl leading-none">
-                {lastOrder.number}
-              </div>
-              <div className="mt-3 font-mono text-[11px] tracking-wider text-[#B8ACCC]">
+      {/* LIBRARY */}
+      <section>
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-4 mb-5">
+          <h2 className="font-display text-2xl md:text-3xl tracking-wide truncate">YOUR LIBRARY</h2>
+          <Link
+            to="/account/plugins"
+            className="shrink-0 font-mono text-[11px] tracking-[0.16em] text-[#C9BEDD] hover:text-white transition"
+          >
+            VIEW ALL →
+          </Link>
+        </div>
+
+        {featured.length === 0 ? (
+          <div className="glass-card p-10 text-center">
+            <div className="chromatic-edge" />
+            <div className="relative z-10">
+              <p className="text-[#C9BEDD] mb-6">Nothing in the vault yet.</p>
+              <Link to="/shop" className="btn-primary">Browse plugins →</Link>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {featured.map((p) => (
+              <Link key={p.product_id} to="/account/plugins" className="group block min-w-0">
+                <div
+                  className="relative aspect-square rounded-xl overflow-hidden border border-white/10 group-hover:border-[#FF003C]/50 transition"
+                  style={{ background: p.cover_gradient ?? "#190737" }}
+                >
+                  {p.cover_url && (
+                    <img
+                      src={p.cover_url}
+                      alt={p.name}
+                      loading="lazy"
+                      className="absolute inset-0 w-full h-full object-cover transition duration-500 group-hover:scale-[1.04]"
+                    />
+                  )}
+                  <div className="absolute top-2 left-2 flex flex-col items-start gap-1.5">
+                    {updatedIds.has(p.product_id) && (
+                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#FF003C]/25 border border-[#FF003C]/60 text-white font-mono text-[9px] tracking-[0.18em] font-bold backdrop-blur">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#FF003C] shadow-[0_0_6px_#FF003C]" />
+                        UPDATED
+                      </span>
+                    )}
+                    {giftIds.has(p.product_id) && (
+                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/90 border border-white text-black font-mono text-[9px] tracking-[0.18em] font-bold backdrop-blur">
+                        <Gift className="w-2.5 h-2.5" strokeWidth={2.4} />
+                        GIFT
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="mt-2 text-[13px] font-bold leading-tight line-clamp-2">{p.name}</div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* CARDS */}
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {lastOrder && (
+          <Link
+            to="/account/orders"
+            className="block rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF003C] transition hover:-translate-y-0.5"
+          >
+            <BigCard label="LAST ORDER" arrow>
+              <div className="font-black text-3xl md:text-4xl leading-none break-words">{lastOrder.number}</div>
+              <div className="mt-4 font-mono text-[11px] tracking-wider text-[#B8ACCC]">
                 {new Date(lastOrder.created_at)
                   .toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
                   .toUpperCase()}
                 <span className="text-white/25 mx-2">·</span>
-                {lastOrder.item_count} PLUGIN{lastOrder.item_count !== 1 ? "S" : ""}
-                <span className="text-white/25 mx-2">·</span>
                 ${lastOrder.total.toFixed(2)}
               </div>
-            </>
-          ) : (
-            <>
-              <div className="font-black text-2xl md:text-3xl leading-none text-white/60">—</div>
-              <div className="mt-3 font-mono text-[11px] tracking-wider text-[#B8ACCC]">
-                NO ORDERS YET
-              </div>
-            </>
-          )}
-        </StatBox>
+            </BigCard>
+          </Link>
+        )}
 
-        {/* Member Since */}
-        <StatBox
-          icon={<CalendarDays className="w-4 h-4" strokeWidth={1.8} />}
-          label="MEMBER SINCE"
-        >
-          <div className="font-black text-2xl md:text-3xl leading-none">
-            {memberSince}
-          </div>
-          <div className="mt-3 font-mono text-[11px] tracking-wider text-[#B8ACCC]">
-            {email}
-          </div>
-        </StatBox>
-
-        {/* Plugins Owned */}
-        <StatBox
-          to="/account/plugins"
-          icon={<Library className="w-4 h-4" strokeWidth={1.8} />}
-          label="PLUGINS OWNED"
-        >
-          <div className="font-black text-4xl md:text-5xl leading-none">
-            {pluginsOwned}
-          </div>
-          <div className="mt-3 font-mono text-[11px] tracking-wider text-[#B8ACCC]">
-            {pluginsOwned === 0 ? "YOUR LIBRARY AWAITS" : "IN YOUR LIBRARY"}
-          </div>
-        </StatBox>
-        {/* Store Credit */}
-        <StatBox
-          icon={<Wallet className="w-4 h-4" strokeWidth={1.8} />}
-          label="STORE CREDIT"
-          highlight={creditCents > 0}
+        <button
+          type="button"
           onClick={() => setShowCredit(true)}
+          className="block w-full text-left rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF003C] transition hover:-translate-y-0.5"
         >
-          <div className={`font-black text-4xl md:text-5xl leading-none ${creditCents > 0 ? "text-[#FF6A88]" : ""}`}>
-            ${(creditCents / 100).toFixed(2)}
-          </div>
-          <div className="mt-3 font-mono text-[11px] tracking-wider text-[#B8ACCC]">
-            {creditCents > 0 ? "APPLY IT AT CHECKOUT" : "NO CREDIT ON YOUR ACCOUNT"}
-          </div>
-        </StatBox>
-      </div>
+          <BigCard label="STORE CREDIT" arrow accent={creditCents > 0} dim={creditCents === 0}>
+            <div className={`font-black text-4xl md:text-5xl leading-none ${creditCents > 0 ? "text-[#FF6A88]" : "text-white/70"}`}>
+              ${(creditCents / 100).toFixed(2)}
+            </div>
+          </BigCard>
+        </button>
+      </section>
+
+      {/* CLOSING STRIP */}
+      <section className="glass-card glass-card--subtle p-4 md:p-5">
+        <div className="chromatic-edge" />
+        <div className="relative z-10 grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4">
+          <StripLink href={INSTALL_GUIDE_URL} icon={<FileText className="w-4 h-4" strokeWidth={1.7} />}>
+            Installation Guide (PDF)
+          </StripLink>
+          <StripLink href="https://www.thepluginwarehouse.com/faq" icon={<HelpCircle className="w-4 h-4" strokeWidth={1.7} />}>
+            FAQ
+          </StripLink>
+          <StripLink href="https://www.thepluginwarehouse.com/contact-us" icon={<Mail className="w-4 h-4" strokeWidth={1.7} />}>
+            Contact Us
+          </StripLink>
+        </div>
+      </section>
 
       {showCredit && (
         <div
@@ -226,49 +331,35 @@ function OverviewPage() {
           </div>
         </div>
       )}
-
-      {pluginsOwned === 0 && (
-        <GlassCard className="p-8 text-center">
-          <h2 className="font-display text-2xl md:text-3xl tracking-wide mb-2">
-            NOTHING IN THE VAULT YET.
-          </h2>
-          <p className="text-[#C9BEDD] mb-6">Grab your first plugin and it'll show up here.</p>
-          <Link to="/shop" className="btn-primary">BROWSE THE WAREHOUSE →</Link>
-        </GlassCard>
-      )}
     </div>
   );
 }
 
-function StatBox({
-  to, icon, label, children, highlight, onClick,
+function BigCard({
+  label, children, arrow, accent, dim,
 }: {
-  to?: string;
-  icon: React.ReactNode;
   label: string;
   children: React.ReactNode;
-  highlight?: boolean;
-  onClick?: () => void;
+  arrow?: boolean;
+  accent?: boolean;
+  dim?: boolean;
 }) {
-  const inner = (
+  return (
     <div
-      className="glass-card p-5 md:p-6 h-full relative overflow-hidden group"
-      style={highlight ? { borderColor: "rgba(255,0,60,0.55)", boxShadow: "0 0 32px rgba(255,0,60,0.22)" } : undefined}
+      className={`glass-card p-6 md:p-8 h-full relative overflow-hidden group ${dim ? "opacity-60" : ""}`}
+      style={accent ? { borderColor: "rgba(255,0,60,0.55)", boxShadow: "0 0 32px rgba(255,0,60,0.22)" } : undefined}
     >
       <div className="chromatic-edge" />
       <div className="glass-noise" />
-      <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-[#FF003C] to-transparent opacity-70" />
-      <div className="relative z-10 h-full flex flex-col">
-        <div className="flex items-center justify-between mb-6">
-          <div className="inline-flex items-center gap-2 label-mini text-[#C9BEDD]">
-            <span className="w-6 h-6 rounded-full bg-[#FF003C]/12 border border-[#FF003C]/40 inline-flex items-center justify-center text-[#FF6A88]">
-              {icon}
-            </span>
-            {label}
-          </div>
-          {(to || onClick) && (
+      {!dim && (
+        <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-[#FF003C] to-transparent opacity-70" />
+      )}
+      <div className="relative z-10">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 mb-7">
+          <span className="label-mini text-[#B8ACCC] truncate">{label}</span>
+          {arrow && (
             <ArrowUpRight
-              className="w-4 h-4 text-white/40 group-hover:text-[#FF003C] group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition"
+              className="w-4 h-4 shrink-0 text-white/40 group-hover:text-[#FF003C] group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition"
               strokeWidth={1.8}
             />
           )}
@@ -277,24 +368,18 @@ function StatBox({
       </div>
     </div>
   );
-  if (onClick) {
-    return (
-      <button
-        type="button"
-        onClick={onClick}
-        className="block w-full text-left transition hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF003C] rounded-2xl"
-      >
-        {inner}
-      </button>
-    );
-  }
-  if (!to) return inner;
+}
+
+function StripLink({ href, icon, children }: { href: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
-    <Link
-      to={to}
-      className="block transition hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF003C] rounded-2xl"
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      className="flex items-center gap-2.5 min-h-[44px] px-2 rounded-lg text-[#B8ACCC] hover:text-white transition min-w-0"
     >
-      {inner}
-    </Link>
+      <span className="shrink-0 text-[#C9BEDD]">{icon}</span>
+      <span className="font-mono text-[11px] tracking-[0.12em] uppercase truncate">{children}</span>
+    </a>
   );
 }
