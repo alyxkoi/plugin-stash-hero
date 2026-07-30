@@ -49,6 +49,8 @@ function PluginsPage() {
       .from("orders")
       .select("created_at, order_items(product_id, product_slug, name, cover_gradient, cover_url)")
       .eq("user_id", user.id)
+      // Fully refunded orders no longer entitle the customer to the files.
+      .in("status", ["completed", "partial"])
       .order("created_at", { ascending: false });
 
     const map = new Map<string, OwnedPlugin>();

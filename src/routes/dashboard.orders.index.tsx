@@ -4,10 +4,12 @@ import { DashboardShell, DashCard, StatusBadge } from "@/components/DashboardShe
 import { OrderDrawer } from "@/components/AdminDrawers";
 import { Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { netRevenue, sumNetRevenue } from "@/lib/revenue";
 
 type Row = {
   id: string; number: string; total: number; discount: number; discount_code: string | null;
   utm_source: string | null; status: string; created_at: string; user_id: string | null;
+  refunded_amount_cents: number | null;
   customer_name: string | null; guest_email: string | null;
   order_items: { name: string }[];
 };
@@ -36,7 +38,7 @@ function OrdersPage() {
     (async () => {
       const { data } = await supabase
         .from("orders")
-        .select("id, number, total, discount, discount_code, utm_source, status, created_at, user_id, customer_name, guest_email, order_items(name)")
+        .select("id, number, total, discount, discount_code, refunded_amount_cents, utm_source, status, created_at, user_id, customer_name, guest_email, order_items(name)")
         .order("created_at", { ascending: false })
         .limit(500);
       setRows((data ?? []) as any);
@@ -87,7 +89,14 @@ function OrdersPage() {
                     )}
                   </td>
                   <td className="px-2 py-2 text-xs text-white/70">{o.order_items[0]?.name ?? "—"}{o.order_items.length > 1 && <span className="text-white/40"> + {o.order_items.length - 1} more</span>}</td>
-                  <td className="px-2 py-2 text-right font-mono text-xs">{formatMoney(o.total)}</td>
+                  <td className="px-2 py-2 text-right font-mono text-xs">
+                    {Number(o.refunded_amount_cents || 0) > 0 ? (
+                      <span className="inline-flex flex-col items-end leading-tight">
+                        <span>{formatMoney(netRevenue(o))}</span>
+                        <span className="text-[10px] text-white/40 line-through">{formatMoney(o.total)}</span>
+                      </span>
+                    ) : formatMoney(o.total)}
+                  </td>
                   <td className="px-2 py-2 text-[10px] font-mono text-white/60">{o.discount_code ?? "—"}</td>
                   <td className="px-2 py-2">{o.utm_source && <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/5 border border-white/10">{o.utm_source}</span>}</td>
                   <td className="px-2 py-2"><StatusBadge status={o.status} /></td>
@@ -101,7 +110,7 @@ function OrdersPage() {
           </table>
         </div>
         <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/5 text-xs font-mono text-white/50">
-          <span>{filtered.length} orders</span>
+          <span>{filtered.length} orders · {formatMoney(sumNetRevenue(filtered))} net</span>
           <div className="flex items-center gap-2">
             <button disabled={page<=1} onClick={() => setPage(p=>p-1)} className="px-2 py-1 rounded hover:bg-white/5 disabled:opacity-30">Prev</button>
             <span>{page} / {totalPages}</span>

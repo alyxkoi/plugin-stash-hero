@@ -8,6 +8,10 @@ import { presign, r2PublicUrl } from "../_shared/r2.ts";
 
 
 
+// Live entitlement check: a fully refunded order ("refunded") loses access
+// immediately. "partial" (partially refunded) keeps access.
+const ENTITLED_STATUSES = ["paid", "completed", "fulfilled", "partial"];
+
 async function resolveUser(req: Request) {
   const auth = req.headers.get("Authorization");
   if (!auth?.startsWith("Bearer ")) return null;
@@ -38,7 +42,7 @@ Deno.serve(async (req) => {
         .select("id, orders!inner(user_id, status)")
         .eq("product_id", productId)
         .eq("orders.user_id", user.id);
-      if ((items ?? []).some((i: any) => ["paid", "completed", "fulfilled"].includes(i.orders?.status))) {
+      if ((items ?? []).some((i: any) => ENTITLED_STATUSES.includes(i.orders?.status))) {
         allowed = true;
         downloadUserId = user.id;
       }
@@ -69,7 +73,7 @@ Deno.serve(async (req) => {
         .select("id, status, user_id")
         .eq("stripe_session_id", sessionId)
         .maybeSingle();
-      if (order && ["paid", "completed", "fulfilled"].includes(order.status as string)) {
+      if (order && ENTITLED_STATUSES.includes(order.status as string)) {
         const { data: match } = await admin
           .from("order_items")
           .select("id")

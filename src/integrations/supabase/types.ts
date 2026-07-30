@@ -547,6 +547,13 @@ export type Database = {
             foreignKeyName: "order_claims_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
+            referencedRelation: "order_revenue"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_claims_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
@@ -591,6 +598,13 @@ export type Database = {
             foreignKeyName: "order_items_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
+            referencedRelation: "order_revenue"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
@@ -617,10 +631,15 @@ export type Database = {
           id: string
           number: string
           pw_cid: string | null
+          refund_note: string | null
           refund_reason: string | null
+          refunded_amount_cents: number
+          refunded_at: string | null
+          refunded_by: string | null
           sale_id: string | null
           status: Database["public"]["Enums"]["order_status"]
           stripe_id: string | null
+          stripe_refund_id: string | null
           stripe_session_id: string | null
           subtotal: number
           total: number
@@ -642,10 +661,15 @@ export type Database = {
           id?: string
           number: string
           pw_cid?: string | null
+          refund_note?: string | null
           refund_reason?: string | null
+          refunded_amount_cents?: number
+          refunded_at?: string | null
+          refunded_by?: string | null
           sale_id?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           stripe_id?: string | null
+          stripe_refund_id?: string | null
           stripe_session_id?: string | null
           subtotal?: number
           total?: number
@@ -667,10 +691,15 @@ export type Database = {
           id?: string
           number?: string
           pw_cid?: string | null
+          refund_note?: string | null
           refund_reason?: string | null
+          refunded_amount_cents?: number
+          refunded_at?: string | null
+          refunded_by?: string | null
           sale_id?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           stripe_id?: string | null
+          stripe_refund_id?: string | null
           stripe_session_id?: string | null
           subtotal?: number
           total?: number
@@ -1160,6 +1189,13 @@ export type Database = {
             foreignKeyName: "store_credit_ledger_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
+            referencedRelation: "order_revenue"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_credit_ledger_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
@@ -1253,7 +1289,90 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      order_revenue: {
+        Row: {
+          counts_as_sale: boolean | null
+          created_at: string | null
+          customer_id: string | null
+          customer_name: string | null
+          discount_code: string | null
+          guest_email: string | null
+          id: string | null
+          is_fully_refunded: boolean | null
+          net_cents: number | null
+          net_total: number | null
+          number: string | null
+          pw_cid: string | null
+          refunded_amount_cents: number | null
+          sale_id: string | null
+          status: Database["public"]["Enums"]["order_status"] | null
+          total: number | null
+          total_cents: number | null
+          user_id: string | null
+          utm_campaign: string | null
+          utm_source: string | null
+        }
+        Insert: {
+          counts_as_sale?: never
+          created_at?: string | null
+          customer_id?: string | null
+          customer_name?: string | null
+          discount_code?: string | null
+          guest_email?: string | null
+          id?: string | null
+          is_fully_refunded?: never
+          net_cents?: never
+          net_total?: never
+          number?: string | null
+          pw_cid?: string | null
+          refunded_amount_cents?: number | null
+          sale_id?: string | null
+          status?: Database["public"]["Enums"]["order_status"] | null
+          total?: number | null
+          total_cents?: never
+          user_id?: string | null
+          utm_campaign?: string | null
+          utm_source?: string | null
+        }
+        Update: {
+          counts_as_sale?: never
+          created_at?: string | null
+          customer_id?: string | null
+          customer_name?: string | null
+          discount_code?: string | null
+          guest_email?: string | null
+          id?: string | null
+          is_fully_refunded?: never
+          net_cents?: never
+          net_total?: never
+          number?: string | null
+          pw_cid?: string | null
+          refunded_amount_cents?: number | null
+          sale_id?: string | null
+          status?: Database["public"]["Enums"]["order_status"] | null
+          total?: number | null
+          total_cents?: never
+          user_id?: string | null
+          utm_campaign?: string | null
+          utm_source?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sale_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       acknowledge_plugin_grants: {
@@ -1337,6 +1456,21 @@ export type Database = {
         Returns: boolean
       }
       next_order_number: { Args: never; Returns: string }
+      record_order_refund: {
+        Args: {
+          _by?: string
+          _note?: string
+          _order_id: string
+          _refunded_total_cents: number
+          _stripe_refund_id?: string
+        }
+        Returns: {
+          net_cents: number
+          order_id: string
+          refunded_amount_cents: number
+          status: Database["public"]["Enums"]["order_status"]
+        }[]
+      }
       release_credit_reservation: {
         Args: { _session_id: string }
         Returns: undefined

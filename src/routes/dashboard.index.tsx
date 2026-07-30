@@ -5,6 +5,7 @@ import { OrderDrawer } from "@/components/AdminDrawers";
 import { Plus, Tag, Ticket } from "lucide-react";
 import { ResponsiveContainer, Tooltip, XAxis, YAxis, Area, AreaChart, CartesianGrid } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
+import { keptRatio, netRevenue, saleOrders, sumNetRevenue } from "@/lib/revenue";
 
 export const Route = createFileRoute("/dashboard/")({
   head: () => ({ meta: [{ title: "Overview — Plugin Warehouse" }] }),
@@ -16,6 +17,7 @@ type OrderRow = {
   number: string;
   total: number;
   status: string;
+  refunded_amount_cents: number | null;
   created_at: string;
   customer_id: string | null;
   guest_email: string | null;
@@ -58,7 +60,7 @@ function Overview() {
       const [{ data: o }, { data: c }] = await Promise.all([
         supabase
           .from("orders")
-          .select("id, number, total, status, created_at, customer_id, guest_email, customer_name, order_items(name, price, product_id, cover_gradient, cover_url)")
+          .select("id, number, total, status, refunded_amount_cents, created_at, customer_id, guest_email, customer_name, order_items(name, price, product_id, cover_gradient, cover_url)")
           .order("created_at", { ascending: false })
           .limit(1000),
         supabase.from("customers").select("id, name, email, last_purchase_at"),
@@ -70,13 +72,15 @@ function Overview() {
     })();
   }, []);
 
-  const completed = useMemo(() => orders.filter(o => o.status === "completed"), [orders]);
+  // Revenue everywhere is NET (total − refunds) and only counts orders that are
+  // still sales — see src/lib/revenue.ts.
+  const completed = useMemo(() => saleOrders(orders), [orders]);
   const monthStart = startOfMonth();
   const completedThisMonth = completed.filter(o => new Date(o.created_at) >= monthStart);
   const todayCentralKey = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Chicago", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
   const centralDayKey = (iso: string) => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Chicago", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(iso));
-  const todayRev = completed.filter(o => centralDayKey(o.created_at) === todayCentralKey).reduce((s, o) => s + Number(o.total || 0), 0);
-  const monthRev = completedThisMonth.reduce((s, o) => s + Number(o.total || 0), 0);
+  const todayRev = sumNetRevenue(completed.filter(o => centralDayKey(o.created_at) === todayCentralKey));
+  const monthRev = sumNetRevenue(completedThisMonth);
   const thirtyDaysAgo = Date.now() - 30 * 86400 * 1000;
   const activeCust = customers.filter(c => c.last_purchase_at && new Date(c.last_purchase_at).getTime() >= thirtyDaysAgo).length;
 
@@ -87,12 +91,14 @@ function Overview() {
   const best = useMemo(() => {
     const map = new Map<string, { name: string; cover: string | null; coverUrl: string | null; units: number; revenue: number }>();
     for (const o of completedThisMonth) {
+      // Partially refunded orders contribute pro-rated line revenue.
+      const ratio = keptRatio(o);
       for (const it of o.order_items ?? []) {
         const key = it.product_id || it.name;
         const cur = map.get(key) ?? { name: it.name, cover: it.cover_gradient, coverUrl: it.cover_url ?? null, units: 0, revenue: 0 };
         if (!cur.coverUrl && it.cover_url) cur.coverUrl = it.cover_url;
         cur.units += 1;
-        cur.revenue += Number(it.price || 0);
+        cur.revenue += Number(it.price || 0) * ratio;
         map.set(key, cur);
       }
     }
@@ -252,7 +258,7 @@ function buildSeries(orders: OrderRow[], grouping: "daily" | "weekly" | "monthly
     const d = new Date(o.created_at);
     const { key, label, ts } = keyOf(d);
     const cur = buckets.get(key) ?? { key, label, ts, value: 0 };
-    cur.value += Number(o.total || 0);
+    cur.value += netRevenue(o);
     buckets.set(key, cur);
   }
   return [...buckets.values()].sort((a, b) => a.ts - b.ts);

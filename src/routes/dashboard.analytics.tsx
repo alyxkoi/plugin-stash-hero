@@ -6,6 +6,7 @@ import { ResponsiveContainer, AreaChart, Area, CartesianGrid, XAxis, YAxis, Tool
 import { supabase } from "@/integrations/supabase/client";
 import { deriveSaleStatus, formatInSaleTimeZone } from "@/lib/sale-time";
 import { normalizeUtmSource } from "@/lib/utm";
+import { countsAsSale, keptRatio, netRevenue, saleOrders, sumNetRevenue } from "@/lib/revenue";
 
 
 
@@ -59,6 +60,7 @@ type OrderRow = {
   id: string;
   total: number;
   status: string;
+  refunded_amount_cents: number | null;
   created_at: string;
   customer_id: string | null;
   utm_source: string | null;
@@ -108,7 +110,7 @@ function Analytics() {
       const [{ data: ordersData }, { data: salesData }] = await Promise.all([
         supabase
           .from("orders")
-          .select("id, total, status, created_at, customer_id, utm_source, sale_id, order_items(name, price, product_id, cover_gradient)")
+          .select("id, total, status, refunded_amount_cents, created_at, customer_id, utm_source, sale_id, order_items(name, price, product_id, cover_gradient)")
           .order("created_at", { ascending: false })
           .limit(5000),
         supabase
@@ -126,13 +128,15 @@ function Analytics() {
 
   const { start, end } = useMemo(() => rangeBounds(range), [range]);
 
-  const completed = useMemo(() => orders.filter(o => o.status === "completed"), [orders]);
+  // All money below is NET of refunds (src/lib/revenue.ts), so a refund issued
+  // today correctly shrinks the period the order was placed in.
+  const completed = useMemo(() => saleOrders(orders), [orders]);
   const inRange = useMemo(() => completed.filter(o => {
     const t = new Date(o.created_at).getTime();
     return t >= start.getTime() && t <= end.getTime();
   }), [completed, start, end]);
 
-  const rev = inRange.reduce((s, o) => s + Number(o.total || 0), 0);
+  const rev = sumNetRevenue(inRange);
   const aov = inRange.length ? rev / inRange.length : 0;
   const refundedAll = orders.filter(o => o.status === "refunded" && new Date(o.created_at) >= start && new Date(o.created_at) <= end).length;
   const totalInRangeAny = inRange.length + refundedAll;
@@ -143,11 +147,12 @@ function Analytics() {
   const top = useMemo(() => {
     const map = new Map<string, { id: string; name: string; cover: string | null; units: number; revenue: number }>();
     for (const o of inRange) {
+      const ratio = keptRatio(o);
       for (const it of o.order_items ?? []) {
         const key = it.product_id || it.name;
         const cur = map.get(key) ?? { id: key, name: it.name, cover: it.cover_gradient, units: 0, revenue: 0 };
         cur.units += 1;
-        cur.revenue += Number(it.price || 0);
+        cur.revenue += Number(it.price || 0) * ratio;
         map.set(key, cur);
       }
     }
@@ -177,10 +182,10 @@ function Analytics() {
   const salePerf = useMemo(() => {
     const totals = new Map<string, { orders: number; revenue: number }>();
     for (const o of orders) {
-      if (o.status !== "completed" || !o.sale_id) continue;
+      if (!countsAsSale(o) || !o.sale_id) continue;
       const cur = totals.get(o.sale_id) ?? { orders: 0, revenue: 0 };
       cur.orders += 1;
-      cur.revenue += Number(o.total || 0);
+      cur.revenue += netRevenue(o);
       totals.set(o.sale_id, cur);
     }
     return sales
@@ -453,7 +458,7 @@ function buildSeries(orders: OrderRow[], range: AnalyticsRange) {
     const d = new Date(o.created_at);
     const { key, label, ts } = keyOf(d);
     const cur = buckets.get(key) ?? { key, label, ts, value: 0 };
-    cur.value += Number(o.total || 0);
+    cur.value += netRevenue(o);
     buckets.set(key, cur);
   }
   return [...buckets.values()].sort((a, b) => a.ts - b.ts);

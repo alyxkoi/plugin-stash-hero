@@ -10,6 +10,12 @@ export type AdminOrderDetail = {
   discount: number;
   discount_code: string | null;
   credit_applied: number;
+  /** Cumulative refunded amount in dollars (0 when nothing was refunded). */
+  refunded: number;
+  /** total − refunded. The single number that counts as revenue. */
+  net_total: number;
+  refunded_at: string | null;
+  refund_note: string | null;
   created_at: string;
   utm_source: string | null;
   stripe_payment_intent_id: string | null;
@@ -130,7 +136,7 @@ export const getAdminOrderDetail = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: order, error } = await supabaseAdmin
       .from("orders")
-      .select("id, number, status, total, subtotal, discount, discount_code, credit_applied_cents, customer_name, created_at, utm_source, customer_id, user_id, guest_email, stripe_id, stripe_session_id, order_items(id, name, price, cover_gradient, cover_url, product_slug)")
+      .select("id, number, status, total, subtotal, discount, discount_code, credit_applied_cents, refunded_amount_cents, refunded_at, refund_note, customer_name, created_at, utm_source, customer_id, user_id, guest_email, stripe_id, stripe_session_id, order_items(id, name, price, cover_gradient, cover_url, product_slug)")
       .eq("id", data.orderId)
       .maybeSingle();
     if (error || !order) return { error: error?.message ?? "Order not found" };
@@ -167,6 +173,10 @@ export const getAdminOrderDetail = createServerFn({ method: "POST" })
       discount: Number(order.discount),
       discount_code: order.discount_code,
       credit_applied: Number((order as any).credit_applied_cents ?? 0) / 100,
+      refunded: Number((order as any).refunded_amount_cents ?? 0) / 100,
+      net_total: Math.max(0, Number(order.total) - Number((order as any).refunded_amount_cents ?? 0) / 100),
+      refunded_at: ((order as any).refunded_at as string | null) ?? null,
+      refund_note: ((order as any).refund_note as string | null) ?? null,
       created_at: order.created_at,
       utm_source: order.utm_source,
       stripe_payment_intent_id: (order.stripe_id as string | null) ?? null,
@@ -178,6 +188,58 @@ export const getAdminOrderDetail = createServerFn({ method: "POST" })
       payment: stripeInfo.payment,
     };
 
+  });
+
+/**
+ * Manual refund override — for orders that were never charged through Stripe
+ * (free/credit-only orders, off-platform payments) or to correct a mismatch.
+ *
+ * Stripe-charged orders are normally updated automatically by the
+ * `charge.refunded` webhook; this writes the same fields through the same
+ * idempotent routine, so the two paths can never disagree. Pass the CUMULATIVE
+ * refunded amount in dollars (0 clears the refund).
+ */
+export const setOrderRefund = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { orderId: string; refundedAmount: number; note?: string | null }) => {
+    if (!data?.orderId || typeof data.orderId !== "string") throw new Error("orderId required");
+    const amt = Number(data.refundedAmount);
+    if (!Number.isFinite(amt) || amt < 0) throw new Error("refundedAmount must be zero or more");
+    return { orderId: data.orderId, refundedAmount: amt, note: data.note ?? null };
+  })
+  .handler(async ({ data, context }): Promise<{ status: string; refunded: number; net_total: number } | { error: string }> => {
+    const { supabase, userId } = context as any;
+    const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
+    if (!isAdmin) return { error: "Not authorized" };
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Clearing a refund isn't expressible through the cumulative recorder.
+    if (data.refundedAmount === 0) {
+      const { error } = await supabaseAdmin
+        .from("orders")
+        .update({ refunded_amount_cents: 0, refunded_at: null, refund_note: data.note, refunded_by: userId } as any)
+        .eq("id", data.orderId);
+      if (error) return { error: error.message };
+      const { data: row } = await supabaseAdmin
+        .from("order_revenue").select("status, refunded_amount_cents, net_total").eq("id", data.orderId).maybeSingle();
+      return { status: (row?.status as string) ?? "completed", refunded: 0, net_total: Number(row?.net_total ?? 0) };
+    }
+
+    const { data: res, error } = await supabaseAdmin.rpc("record_order_refund", {
+      _order_id: data.orderId,
+      _refunded_total_cents: Math.round(data.refundedAmount * 100),
+      _stripe_refund_id: null,
+      _note: data.note,
+      _by: userId,
+    } as any);
+    if (error) return { error: error.message };
+    const row: any = Array.isArray(res) ? res[0] : res;
+    return {
+      status: (row?.status as string) ?? "partial",
+      refunded: Number(row?.refunded_amount_cents ?? 0) / 100,
+      net_total: Number(row?.net_cents ?? 0) / 100,
+    };
   });
 
 /**
