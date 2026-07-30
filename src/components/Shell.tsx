@@ -5,9 +5,11 @@ import { Nav } from "./Nav";
 import { Footer } from "./Footer";
 import { CartDrawer } from "./CartDrawer";
 import { MysteryGiftPopup } from "./MysteryGiftPopup";
+import { SectionErrorBoundary } from "./SectionErrorBoundary";
 import { useCartSync } from "@/hooks/useCartSync";
 import { useUtmCapture } from "@/hooks/useUtmCapture";
 import { SalePricingProvider } from "@/lib/sale-pricing";
+
 
 function CartSync() {
   useCartSync();
