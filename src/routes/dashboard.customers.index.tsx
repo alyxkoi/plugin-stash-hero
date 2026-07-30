@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { DashboardShell, DashCard } from "@/components/DashboardShell";
 import { CustomerDrawer, type CustomerDrawerData } from "@/components/AdminDrawers";
 import { Search } from "lucide-react";
@@ -10,40 +10,24 @@ export const Route = createFileRoute("/dashboard/customers/")({
   component: CustomersPage,
 });
 
-type CustomerRow = {
-  id: string;
-  email: string;
-  name: string | null;
-  user_id: string | null;
-  created_at: string;
-};
+const PAGE_SIZE = 30;
 
-type OrderRow = {
-  id: string;
-  number: string;
-  total: number;
-  status: string;
-  created_at: string;
+type Row = {
+  key: string;
   customer_id: string | null;
   user_id: string | null;
-  guest_email: string | null;
-  order_items: { name: string; price: number; product_id: string | null }[];
-};
-
-interface Aggregate {
-  key: string;              // customer id OR guest email fallback
-  customerId: string | null;
-  userId: string | null;
   email: string;
   name: string | null;
-  hasAccount: boolean;
-  firstOrderAt: string;
-  lastOrderAt: string;
-  ordersCount: number;
-  completedCount: number;
-  totalSpent: number;
-  orders: OrderRow[];
-}
+  has_account: boolean;
+  first_order_at: string;
+  last_order_at: string;
+  orders_count: number;
+  completed_count: number;
+  total_spent: number;
+  total_count: number;
+};
+
+type DrawerOrder = { id: string; number: string; total: number; status: string; created_at: string };
 
 function money(n: number) {
   return `$${Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -61,123 +45,92 @@ function initialsFrom(name: string | null, email: string) {
   const src = (name || email || "").trim();
   return src.split(/[\s@._-]+/).filter(Boolean).map(p => p[0]).slice(0, 2).join("").toUpperCase() || "?";
 }
-function startOfMonth() {
-  const d = new Date();
-  return new Date(d.getFullYear(), d.getMonth(), 1);
-}
 
 function CustomersPage() {
-  const [customers, setCustomers] = useState<CustomerRow[]>([]);
-  const [orders, setOrders] = useState<OrderRow[]>([]);
+  const [rows, setRows] = useState<Row[]>([]);
+  const [total, setTotal] = useState(0);
+  const [stats, setStats] = useState<{ total_customers: number; new_this_month: number } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState("");
+  const [debouncedQ, setDebouncedQ] = useState("");
   const [filter, setFilter] = useState<"all" | "new" | "returning">("all");
   const [sort, setSort] = useState<"recent" | "top" | "most">("recent");
+  const [page, setPage] = useState(1);
   const [openKey, setOpenKey] = useState<string | null>(null);
+  const [drawerOrders, setDrawerOrders] = useState<DrawerOrder[]>([]);
+
+  // Debounce typing so each keystroke doesn't fire a query.
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQ(q.trim()), 300);
+    return () => clearTimeout(t);
+  }, [q]);
+
+  // Any change to the query/filters restarts at page 1 (server-side scoped).
+  useEffect(() => { setPage(1); }, [debouncedQ, filter, sort]);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const { data, error: err } = await supabase.rpc("admin_customer_list", {
+      _q: debouncedQ,
+      _filter: filter,
+      _sort: sort,
+      _limit: PAGE_SIZE,
+      _offset: (page - 1) * PAGE_SIZE,
+    });
+    if (err) {
+      console.error("[customers] list failed", err);
+      setError("Couldn't load customers.");
+    } else {
+      setError(null);
+      const list = (data ?? []) as Row[];
+      setRows(list);
+      setTotal(list.length ? Number(list[0].total_count) : 0);
+    }
+    setLoading(false);
+  }, [debouncedQ, filter, sort, page]);
+
+  useEffect(() => { load(); }, [load]);
 
   useEffect(() => {
     (async () => {
-      const [{ data: c }, { data: o }] = await Promise.all([
-        supabase.from("customers").select("id, email, name, user_id, created_at"),
-        supabase
-          .from("orders")
-          .select("id, number, total, status, created_at, customer_id, user_id, guest_email, order_items(name, price, product_id)")
-          .order("created_at", { ascending: false })
-          .limit(2000),
-      ]);
-      setCustomers((c ?? []) as any);
-      setOrders((o ?? []) as any);
-      setLoading(false);
+      const { data, error: err } = await supabase.rpc("admin_customer_stats");
+      if (err) { console.warn("[customers] stats failed", err); return; }
+      const s = Array.isArray(data) ? data[0] : data;
+      if (s) setStats(s as any);
     })();
   }, []);
 
-  const aggregates = useMemo<Aggregate[]>(() => {
-    const byId = new Map<string, CustomerRow>();
-    for (const c of customers) byId.set(c.id, c);
-    const map = new Map<string, Aggregate>();
+  const selected = openKey ? rows.find(r => r.key === openKey) ?? null : null;
 
-    // seed with customers so they show even without orders
-    for (const c of customers) {
-      map.set(c.id, {
-        key: c.id,
-        customerId: c.id,
-        userId: c.user_id ?? null,
-        email: c.email,
-        name: c.name,
-        hasAccount: !!c.user_id,
-        firstOrderAt: c.created_at,
-        lastOrderAt: c.created_at,
-        ordersCount: 0,
-        completedCount: 0,
-        totalSpent: 0,
-        orders: [],
-      });
-    }
+  // Orders for the open customer only — no full-table fetch.
+  useEffect(() => {
+    if (!selected) { setDrawerOrders([]); return; }
+    let cancelled = false;
+    (async () => {
+      let query = supabase
+        .from("orders")
+        .select("id, number, total, status, created_at")
+        .order("created_at", { ascending: false })
+        .limit(100);
+      query = selected.customer_id
+        ? query.eq("customer_id", selected.customer_id)
+        : query.is("customer_id", null).ilike("guest_email", selected.email);
+      const { data, error: err } = await query;
+      if (cancelled) return;
+      if (err) { console.warn("[customers] drawer orders failed", err); return; }
+      setDrawerOrders((data ?? []).map(o => ({ ...o, total: Number(o.total) })) as DrawerOrder[]);
+    })();
+    return () => { cancelled = true; };
+  }, [selected?.key, selected?.customer_id, selected?.email]);
 
-    for (const o of orders) {
-      let agg: Aggregate | undefined;
-      if (o.customer_id && map.has(o.customer_id)) {
-        agg = map.get(o.customer_id)!;
-      } else {
-        const email = o.guest_email || "unknown";
-        const key = `guest:${email.toLowerCase()}`;
-        agg = map.get(key) ?? {
-          key,
-          customerId: null,
-          userId: o.user_id ?? null,
-          email,
-          name: null,
-          hasAccount: !!o.user_id,
-          firstOrderAt: o.created_at,
-          lastOrderAt: o.created_at,
-          ordersCount: 0,
-          completedCount: 0,
-          totalSpent: 0,
-          orders: [],
-        };
-        map.set(key, agg);
-      }
-      agg.orders.push(o);
-      agg.ordersCount += 1;
-      if (o.status === "completed" || o.status === "partial") {
-        agg.completedCount += 1;
-        agg.totalSpent += Number(o.total || 0);
-      }
-      if (new Date(o.created_at) < new Date(agg.firstOrderAt)) agg.firstOrderAt = o.created_at;
-      if (new Date(o.created_at) > new Date(agg.lastOrderAt)) agg.lastOrderAt = o.created_at;
-      if (o.user_id) { agg.hasAccount = true; agg.userId = agg.userId ?? o.user_id; }
-    }
-
-    return [...map.values()];
-  }, [customers, orders]);
-
-  const monthStart = startOfMonth().getTime();
-  const totalCustomers = aggregates.length;
-  const newThisMonth = aggregates.filter(a => new Date(a.firstOrderAt).getTime() >= monthStart).length;
-
-  const filtered = useMemo(() => {
-    let list = aggregates.filter(a => {
-      if (q) {
-        const needle = q.toLowerCase();
-        if (!a.email.toLowerCase().includes(needle) && !(a.name || "").toLowerCase().includes(needle)) return false;
-      }
-      if (filter === "new" && a.completedCount > 1) return false;
-      if (filter === "returning" && a.completedCount < 2) return false;
-      return true;
-    });
-    if (sort === "top") list.sort((a, b) => b.totalSpent - a.totalSpent);
-    else if (sort === "most") list.sort((a, b) => b.completedCount - a.completedCount);
-    else list.sort((a, b) => +new Date(b.lastOrderAt) - +new Date(a.lastOrderAt));
-    return list;
-  }, [aggregates, q, filter, sort]);
-
-  const selected = openKey ? filtered.find(a => a.key === openKey) ?? aggregates.find(a => a.key === openKey) ?? null : null;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <DashboardShell title="Customers">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-        <SummaryStat label="Total customers" value={totalCustomers.toString()} />
-        <SummaryStat label="New this month" value={newThisMonth.toString()} />
+        <SummaryStat label="Total customers" value={(stats?.total_customers ?? total).toString()} />
+        <SummaryStat label="New this month" value={(stats?.new_this_month ?? 0).toString()} />
       </div>
 
       <div className="flex flex-wrap gap-3 mb-4">
@@ -211,7 +164,7 @@ function CustomersPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map(a => (
+              {rows.map(a => (
                 <tr key={a.key} onClick={() => setOpenKey(a.key)} className="border-t border-white/5 hover:bg-white/[0.04] cursor-pointer">
                   <td className="py-2 px-2">
                     <div className="flex items-center gap-3">
@@ -222,42 +175,71 @@ function CustomersPage() {
                       </div>
                     </div>
                   </td>
-                  <td className="py-2 px-2"><AccountBadge hasAccount={a.hasAccount} /></td>
-                  <td className="py-2 px-2"><PurchaseBadge count={a.completedCount} /></td>
-                  <td className="py-2 px-2 text-right font-mono text-xs">{money(a.totalSpent)}</td>
-                  <td className="hidden md:table-cell py-2 px-2 text-right font-mono text-xs">{a.ordersCount}</td>
-                  <td className="py-2 px-2 text-right text-[10px] font-mono text-white/50 whitespace-nowrap">{a.completedCount > 0 ? relTime(a.lastOrderAt) : "—"}</td>
+                  <td className="py-2 px-2"><AccountBadge hasAccount={a.has_account} /></td>
+                  <td className="py-2 px-2"><PurchaseBadge count={Number(a.completed_count)} /></td>
+                  <td className="py-2 px-2 text-right font-mono text-xs">{money(Number(a.total_spent))}</td>
+                  <td className="hidden md:table-cell py-2 px-2 text-right font-mono text-xs">{a.orders_count}</td>
+                  <td className="py-2 px-2 text-right text-[10px] font-mono text-white/50 whitespace-nowrap">{Number(a.completed_count) > 0 ? relTime(a.last_order_at) : "—"}</td>
                 </tr>
               ))}
-              {filtered.length === 0 && (
-                <tr><td colSpan={6} className="py-16 text-center text-white/40 text-sm">{loading ? "Loading…" : "No customers yet. This list populates automatically as orders come in."}</td></tr>
+              {rows.length === 0 && (
+                <tr><td colSpan={6} className="py-16 text-center text-white/40 text-sm">
+                  {loading ? "Loading…" : error ? (
+                    <span>
+                      {error}{" "}
+                      <button onClick={load} className="underline text-[var(--accent-red)]">Retry</button>
+                    </span>
+                  ) : "No customers yet. This list populates automatically as orders come in."}
+                </td></tr>
               )}
             </tbody>
           </table>
+        </div>
+
+        <div className="mt-4 pt-3 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="text-[11px] font-mono text-[#B8ACCC] text-center sm:text-left">
+            Page {page} of {totalPages} · {total} customer{total === 1 ? "" : "s"}
+          </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page <= 1 || loading}
+              className="flex-1 sm:flex-none min-h-[44px] px-4 rounded-lg border border-white/15 text-xs font-mono uppercase tracking-wider text-white/80 transition hover:border-white/35 disabled:opacity-30"
+            >
+              Prev
+            </button>
+            <button
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages || loading}
+              className="flex-1 sm:flex-none min-h-[44px] px-4 rounded-lg bg-[var(--accent-red)] text-xs font-mono uppercase tracking-wider text-white transition hover:brightness-110 disabled:opacity-30"
+            >
+              Next
+            </button>
+          </div>
         </div>
       </DashCard>
 
       <CustomerDrawer
         open={!!selected}
-        customer={selected ? toDrawerData(selected) : null}
+        customer={selected ? toDrawerData(selected, drawerOrders) : null}
         onClose={() => setOpenKey(null)}
       />
     </DashboardShell>
   );
 }
 
-function toDrawerData(a: Aggregate): CustomerDrawerData {
+function toDrawerData(a: Row, orders: DrawerOrder[]): CustomerDrawerData {
   return {
     key: a.key,
-    userId: a.userId,
+    userId: a.user_id,
     name: a.name,
     email: a.email,
-    hasAccount: a.hasAccount,
-    memberSince: a.firstOrderAt,
-    totalSpent: a.totalSpent,
-    completedCount: a.completedCount,
-    ordersCount: a.ordersCount,
-    orders: a.orders.map(o => ({ id: o.id, number: o.number, total: Number(o.total), status: o.status, created_at: o.created_at })),
+    hasAccount: a.has_account,
+    memberSince: a.first_order_at,
+    totalSpent: Number(a.total_spent),
+    completedCount: Number(a.completed_count),
+    ordersCount: Number(a.orders_count),
+    orders,
   };
 }
 
@@ -285,4 +267,3 @@ function PurchaseBadge({ count }: { count: number }) {
     </span>
   );
 }
-
