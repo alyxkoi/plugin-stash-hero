@@ -5,6 +5,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { type StripeEnv, createStripeClient, getStripeErrorMessage } from "@/lib/stripe.server";
 import { finalizeOrder, type FulfillItem } from "@/lib/order-fulfill.server";
 import { normalizeUtmSource } from "@/lib/utm";
+import { escapeLikePattern } from "@/lib/like-escape";
 
 
 type DiscountResult =
@@ -60,7 +61,7 @@ export const validateDiscount = createServerFn({ method: "POST" })
     const { data: row } = await supabaseAdmin
       .from("discount_codes")
       .select("id,code,type,value,status,expires_at,usage_limit,uses,scope,categories")
-      .ilike("code", code)
+      .ilike("code", escapeLikePattern(code))
       .maybeSingle();
 
     if (!row) return { ok: false, error: "That code doesn't exist." };
@@ -197,7 +198,7 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
         const { data: dc } = await supabaseAdmin
           .from("discount_codes")
           .select("id,code,type,value,status,expires_at,usage_limit,uses,scope,categories")
-          .ilike("code", codeUpper)
+          .ilike("code", escapeLikePattern(codeUpper))
           .maybeSingle();
         if (dc && dc.status === "active"
             && (!dc.expires_at || new Date(dc.expires_at as string).getTime() > Date.now())

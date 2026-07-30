@@ -7,6 +7,7 @@ import { sendEmail, FROM_ORDERS } from "@/lib/resend.server";
 import { renderOrderConfirmation } from "@/lib/email-templates.server";
 import { subscribeToMailchimp } from "@/lib/mailchimp.server";
 import { normalizeUtmSource } from "@/lib/utm";
+import { escapeLikePattern } from "@/lib/like-escape";
 
 export type FulfillItem = {
   product_id: string;
@@ -197,7 +198,7 @@ export async function finalizeOrder(input: FulfillInput): Promise<{ orderId: str
     const { data: dc } = await supabaseAdmin
       .from("discount_codes")
       .select("id,uses")
-      .ilike("code", input.discountCode)
+      .ilike("code", escapeLikePattern(input.discountCode))
       .maybeSingle();
     if (dc) {
       await supabaseAdmin
