@@ -5,6 +5,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, signOut } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { sumNetRevenue } from "@/lib/revenue";
 
 const INSTALL_GUIDE_URL =
   "https://thepluginwarehousefiles.com/other%20files/the_plugin_warehouse_installation_guide.pdf";
@@ -12,7 +13,7 @@ const INSTALL_GUIDE_URL =
 type Item = { id: string; product_id: string | null; product_slug: string | null; name: string; price: number; cover_gradient: string | null; cover_url: string | null };
 type Order = {
   id: string; number: string; subtotal: number; discount: number; total: number;
-  discount_code: string | null; status: string; created_at: string;
+  discount_code: string | null; status: string; created_at: string; refunded_amount_cents: number | null;
   order_items: Item[];
 };
 
@@ -46,7 +47,7 @@ function OrdersPage() {
     (async () => {
       const { data } = await supabase
         .from("orders")
-        .select("id, number, subtotal, discount, total, discount_code, status, created_at, order_items(id, product_id, product_slug, name, price, cover_gradient, cover_url)")
+        .select("id, number, subtotal, discount, total, discount_code, status, refunded_amount_cents, created_at, order_items(id, product_id, product_slug, name, price, cover_gradient, cover_url)")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
       setOrders((data ?? []) as any);
@@ -74,7 +75,8 @@ function OrdersPage() {
       o.order_items.some(i => i.name.toLowerCase().includes(q)));
   }, [orders, query]);
 
-  const totalSpent = orders.filter(o => o.status === "completed").reduce((n, o) => n + Number(o.total), 0);
+  // Net of any refunds — same shared calculation as the admin dashboard.
+  const totalSpent = sumNetRevenue(orders);
 
   const onSignOut = async () => {
     await signOut();

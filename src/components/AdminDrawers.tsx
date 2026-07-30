@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { DetailDrawer } from "./DetailDrawer";
 import { StatusBadge } from "./DashboardShell";
 import { StoreCreditPanel } from "./dashboard/StoreCreditPanel";
-import { getAdminOrderDetail, type AdminOrderDetail } from "@/lib/orders-admin.functions";
+import { getAdminOrderDetail, setOrderRefund, type AdminOrderDetail } from "@/lib/orders-admin.functions";
+import { toast } from "sonner";
 import { Mail, Phone, CreditCard, ExternalLink } from "lucide-react";
 
 
@@ -123,9 +124,24 @@ export function OrderDrawer({
                 <Row label="Store credit" value={`−${money(detail.credit_applied)}`} accent />
               )}
               <div className="border-t border-white/10 mt-2 pt-2">
-                <Row label="Total" value={money(detail.total)} bold />
+                <Row label="Charged" value={money(detail.total)} bold={detail.refunded === 0} />
               </div>
+              {detail.refunded > 0 && (
+                <>
+                  <Row label="Refunded" value={`−${money(detail.refunded)}`} accent />
+                  <div className="border-t border-white/10 mt-2 pt-2">
+                    <Row label="Net revenue" value={money(detail.net_total)} bold />
+                  </div>
+                </>
+              )}
             </div>
+            {detail.refunded > 0 && (
+              <div className="mt-2 text-[10px] font-mono text-[#B8ACCC]">
+                {detail.net_total === 0 ? "Fully refunded" : "Partially refunded"}
+                {detail.refunded_at ? ` · ${fmtDate(detail.refunded_at)}` : ""}
+                {detail.refund_note ? ` · ${detail.refund_note}` : ""}
+              </div>
+            )}
             {detail.credit_applied > 0 && detail.status === "refunded" && (
               <div className="mt-2 rounded-lg border border-white/15 bg-white/[0.03] p-3 text-[11px] text-[#C9BEDD]">
                 This order used {money(detail.credit_applied)} in store credit. Refunding in Stripe does not restore it —
@@ -145,10 +161,117 @@ export function OrderDrawer({
               Refund order in Stripe <ExternalLink size={13} />
             </a>
           )}
+
+          <ManualRefund
+            detail={detail}
+            onDone={(patch: Partial<AdminOrderDetail>) => setDetail((d) => (d ? { ...d, ...patch } : d))}
+          />
+
         </div>
       )}
 
     </DetailDrawer>
+  );
+}
+
+/* ============================================================ */
+/*  MANUAL REFUND OVERRIDE                                       */
+/* ============================================================ */
+/**
+ * Stripe-charged orders are updated automatically by the `charge.refunded`
+ * webhook. This is the override for orders that never went through Stripe
+ * (free / store-credit-only / off-platform) or to correct a mismatch. It writes
+ * through the same routine, so both paths land on the same numbers.
+ */
+function ManualRefund({
+  detail, onDone,
+}: {
+  detail: AdminOrderDetail;
+  onDone: (patch: Partial<AdminOrderDetail>) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [amount, setAmount] = useState(() => (detail.refunded > 0 ? detail.refunded.toFixed(2) : detail.total.toFixed(2)));
+  const [note, setNote] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const submit = async (value: number) => {
+    setSaving(true);
+    try {
+      const res = await setOrderRefund({ data: { orderId: detail.id, refundedAmount: value, note: note.trim() || null } });
+      if ("error" in res) { toast.error(res.error); return; }
+      onDone({
+        status: res.status,
+        refunded: res.refunded,
+        net_total: res.net_total,
+        refunded_at: res.refunded > 0 ? new Date().toISOString() : null,
+        refund_note: note.trim() || detail.refund_note,
+      });
+      toast.success(res.refunded === 0 ? "Refund cleared" : `Recorded ${money(res.refunded)} refunded`);
+      setOpen(false);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not record refund");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="w-full min-h-[44px] rounded-lg border border-dashed border-white/15 text-[10px] font-mono uppercase tracking-[0.16em] text-[#B8ACCC] hover:border-white/35 hover:text-white transition"
+      >
+        {detail.refunded > 0 ? "Adjust recorded refund" : "Record refund manually"}
+      </button>
+    );
+  }
+
+  return (
+    <section className="rounded-lg border border-[var(--accent-red)]/35 bg-[var(--accent-red)]/[0.05] p-4 space-y-3">
+      <SectionLabel>Record refund</SectionLabel>
+      <p className="text-[11px] text-[#C9BEDD] leading-relaxed">
+        Enter the <strong className="text-white">total</strong> amount refunded on this order (max {money(detail.total)}).
+        Stripe refunds sync here on their own — use this only for orders that never went through Stripe, or to correct a mismatch.
+      </p>
+      <div className="flex gap-2">
+        <input
+          value={amount}
+          onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))}
+          inputMode="decimal"
+          className="w-28 bg-white/5 border border-white/15 rounded-lg px-3 py-2 font-mono text-xs text-white outline-none focus:border-[var(--accent-red)]"
+        />
+        <input
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder="Reason (optional)"
+          className="flex-1 min-w-0 bg-white/5 border border-white/15 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[var(--accent-red)]"
+        />
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <button
+          disabled={saving}
+          onClick={() => submit(Math.min(Number(amount) || 0, detail.total))}
+          className="min-h-[40px] px-4 rounded-lg bg-[var(--accent-red)] text-[10px] font-mono uppercase tracking-[0.16em] text-white disabled:opacity-50"
+        >
+          {saving ? "Saving…" : "Save refund"}
+        </button>
+        {detail.refunded > 0 && (
+          <button
+            disabled={saving}
+            onClick={() => submit(0)}
+            className="min-h-[40px] px-4 rounded-lg border border-white/20 text-[10px] font-mono uppercase tracking-[0.16em] text-[#C9BEDD] hover:text-white disabled:opacity-50"
+          >
+            Clear refund
+          </button>
+        )}
+        <button
+          onClick={() => setOpen(false)}
+          className="min-h-[40px] px-4 rounded-lg text-[10px] font-mono uppercase tracking-[0.16em] text-white/50 hover:text-white"
+        >
+          Cancel
+        </button>
+      </div>
+    </section>
   );
 }
 

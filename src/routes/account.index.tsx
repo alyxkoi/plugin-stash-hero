@@ -46,6 +46,8 @@ function OverviewPage() {
       .from("orders")
       .select("id, number, total, created_at, order_items(product_id, name, cover_gradient, cover_url)")
       .eq("user_id", user.id)
+      // Fully refunded orders no longer entitle the customer to the files.
+      .in("status", ["completed", "partial"])
       .order("created_at", { ascending: false });
 
     const list = (orders ?? []) as any[];

@@ -134,6 +134,47 @@ async function handleSessionExpired(session: any) {
 
 
 
+// ---- Refunds ----
+// Stripe sends the CUMULATIVE `amount_refunded` on the charge, so replaying an
+// event or receiving several partial refunds always converges on the right
+// number. `record_order_refund` clamps to the order total, never moves
+// backwards, and derives the order status (completed → partial → refunded).
+async function handleChargeRefunded(charge: any) {
+  const intentId: string | null =
+    (typeof charge.payment_intent === "string" ? charge.payment_intent : charge.payment_intent?.id) ?? null;
+  const refundedCents = Math.max(0, Number(charge.amount_refunded ?? 0));
+  if (!intentId || refundedCents === 0) {
+    console.log("[webhook] refund ignored (no intent or zero amount)");
+    return;
+  }
+
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: order } = await supabaseAdmin
+    .from("orders")
+    .select("id, number, total")
+    .eq("stripe_id", intentId)
+    .maybeSingle();
+  if (!order) {
+    console.error("[webhook] refund: no order for intent", intentId);
+    return;
+  }
+
+  const latestRefundId: string | null = charge.refunds?.data?.[0]?.id ?? null;
+  const { data: res, error } = await supabaseAdmin.rpc("record_order_refund", {
+    _order_id: order.id as string,
+    _refunded_total_cents: refundedCents,
+    _stripe_refund_id: latestRefundId,
+    _note: "Refunded in Stripe",
+    _by: null,
+  } as any);
+  if (error) {
+    console.error("[webhook] record_order_refund failed", error);
+    throw error;
+  }
+  const row = Array.isArray(res) ? res[0] : res;
+  console.log("[webhook] refund recorded", order.number, row?.status, row?.refunded_amount_cents);
+}
+
 async function handlePaymentFailed(intent: any) {
   const meta = intent.metadata ?? {};
   let items: FulfillItem[] = [];
@@ -198,6 +239,8 @@ export const Route = createFileRoute("/api/public/payments/webhook")({
             await handleSessionExpired(event.data.object);
           } else if (event.type === "payment_intent.payment_failed") {
             await handlePaymentFailed(event.data.object);
+          } else if (event.type === "charge.refunded") {
+            await handleChargeRefunded(event.data.object);
 
           } else {
             console.log("[webhook] unhandled:", event.type);
