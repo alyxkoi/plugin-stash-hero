@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useStore } from "@/lib/store";
 import { readStoredUtm } from "@/hooks/useUtmCapture";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
-import { getMyStoreCredit } from "@/lib/store-credit.functions";
+import { getMyStoreCredit, guestEmailHasCredit } from "@/lib/store-credit.functions";
 
 export const Route = createFileRoute("/checkout/")({
   head: () => ({ meta: [{ title: "Checkout — Plugin Warehouse" }] }),
@@ -40,6 +40,7 @@ function CheckoutPage() {
   const [error, setError] = useState<string | null>(null);
   const [guestEmail, setGuestEmail] = useState("");
   const [emailConfirmed, setEmailConfirmed] = useState(false);
+  const [guestCreditHint, setGuestCreditHint] = useState(false);
   const [creating, setCreating] = useState(false);
   const startedRef = useRef(false);
 
@@ -178,6 +179,17 @@ function CheckoutPage() {
               setError("Enter a valid email.");
               return;
             }
+            // One-time nudge: this email belongs to an account holding credit.
+            if (!guestCreditHint) {
+              guestEmailHasCredit({ data: { email: guestEmail } })
+                .then((r) => {
+                  if (r.hasCredit) { setGuestCreditHint(true); return; }
+                  setEmailConfirmed(true);
+                  startSession(guestEmail);
+                })
+                .catch(() => { setEmailConfirmed(true); startSession(guestEmail); });
+              return;
+            }
             setEmailConfirmed(true);
             startSession(guestEmail);
           }}
@@ -195,8 +207,15 @@ function CheckoutPage() {
               className="input-glass"
             />
           </label>
+          {guestCreditHint && (
+            <div className="rounded-xl border border-[var(--accent-red-glow)]/45 bg-[rgba(255,0,60,0.07)] p-4 mb-4">
+              <div className="text-sm text-white font-bold mb-1">You have store credit on this email.</div>
+              <p className="text-xs text-white/65 mb-3">Sign in to use it on this order, or keep going as a guest.</p>
+              <Link to="/login" search={{ next: "/checkout" } as any} className="btn-primary w-full !text-sm !py-3 block text-center">SIGN IN TO USE CREDIT →</Link>
+            </div>
+          )}
           {error && <div className="text-xs text-[var(--accent-red-glow)] font-mono mb-3">{error}</div>}
-          <button type="submit" className="btn-primary w-full !text-base !py-4">CONTINUE TO PAYMENT →</button>
+          <button type="submit" className="btn-primary w-full !text-base !py-4">{guestCreditHint ? "CONTINUE AS GUEST →" : "CONTINUE TO PAYMENT →"}</button>
         </form>
         <div className="text-center text-xs text-white/50 mt-6">
           Have an account?{" "}
