@@ -35,6 +35,8 @@ export function MysteryGiftPopup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -89,6 +91,7 @@ export function MysteryGiftPopup() {
   async function onAccountSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    if (!firstName.trim() || !lastName.trim()) { setError("Enter your first and last name."); return; }
     const pwErr = validatePassword(password);
     if (pwErr) { setError(pwErr); return; }
     if (password !== confirm) { setError("Passwords don't match."); return; }
@@ -96,7 +99,10 @@ export function MysteryGiftPopup() {
     const { data, error: signErr } = await supabase.auth.signUp({
       email: email.trim(),
       password,
-      options: { emailRedirectTo: `${window.location.origin}/account` },
+      options: {
+        emailRedirectTo: `${window.location.origin}/account`,
+        data: { first_name: firstName.trim(), last_name: lastName.trim() },
+      },
     });
     if (signErr) {
       if (/already/i.test(signErr.message)) setError("An account with this email already exists. Try logging in.");
@@ -220,6 +226,22 @@ export function MysteryGiftPopup() {
                       Save your gift to a real account so you can re-download anytime.
                     </p>
                     <form onSubmit={onAccountSubmit} className="mt-6 space-y-3 text-left">
+                      <div className="grid grid-cols-2 gap-3">
+                        <input
+                          required
+                          value={firstName}
+                          onChange={(e) => setFirstName(e.target.value)}
+                          placeholder="First name"
+                          className="w-full rounded-xl bg-white/5 border border-white/15 px-4 py-3 text-white placeholder:text-white/35 outline-none focus:border-[#FF2D6E] focus:ring-2 focus:ring-[#FF2D6E]/40 transition"
+                        />
+                        <input
+                          required
+                          value={lastName}
+                          onChange={(e) => setLastName(e.target.value)}
+                          placeholder="Last name"
+                          className="w-full rounded-xl bg-white/5 border border-white/15 px-4 py-3 text-white placeholder:text-white/35 outline-none focus:border-[#FF2D6E] focus:ring-2 focus:ring-[#FF2D6E]/40 transition"
+                        />
+                      </div>
                       <input
                         type="password"
                         required
