@@ -157,6 +157,8 @@ export function OrderDrawer({
 /* ============================================================ */
 export type CustomerDrawerData = {
   key: string;
+  /** auth user id — required for store credit (account holders only) */
+  userId?: string | null;
   name: string | null;
   email: string;
   phone?: string | null;
@@ -167,6 +169,7 @@ export type CustomerDrawerData = {
   ordersCount: number;
   orders: { id: string; number: string; total: number; status: string; created_at: string }[];
 };
+
 
 export function CustomerDrawer({
   customer, open, onClose,
