@@ -19,6 +19,7 @@ type OrderRow = {
   created_at: string;
   customer_id: string | null;
   guest_email: string | null;
+  customer_name: string | null;
   order_items: { name: string; price: number; product_id: string | null; cover_gradient: string | null; cover_url: string | null }[];
 };
 
@@ -57,7 +58,7 @@ function Overview() {
       const [{ data: o }, { data: c }] = await Promise.all([
         supabase
           .from("orders")
-          .select("id, number, total, status, created_at, customer_id, guest_email, order_items(name, price, product_id, cover_gradient, cover_url)")
+          .select("id, number, total, status, created_at, customer_id, guest_email, customer_name, order_items(name, price, product_id, cover_gradient, cover_url)")
           .order("created_at", { ascending: false })
           .limit(1000),
         supabase.from("customers").select("id, name, email, last_purchase_at"),
@@ -157,8 +158,10 @@ function Overview() {
                 <tbody>
                   {recent.map(o => {
                     const cust = o.customer_id ? customerLookup.get(o.customer_id) : null;
-                    const label = cust?.name || cust?.email || o.guest_email || "Guest";
-                    const ini = initialsFrom(cust?.name ?? null, cust?.email || o.guest_email || "?");
+                    const displayName = o.customer_name || cust?.name || null;
+                    const label = displayName || cust?.email || o.guest_email || "Guest";
+                    const sub = displayName ? (cust?.email || o.guest_email || null) : null;
+                    const ini = initialsFrom(displayName, cust?.email || o.guest_email || "?");
                     return (
                       <tr key={o.id} onClick={() => setOpenOrderId(o.id)} className="border-t border-white/5 hover:bg-white/[0.03] cursor-pointer">
                         <td className="px-2 py-3 font-mono text-xs text-white hover:text-[var(--accent-red-glow)]">{o.number}</td>
