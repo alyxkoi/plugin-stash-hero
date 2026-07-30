@@ -1264,6 +1264,36 @@ export type Database = {
         Args: { _product_ids: string[] }
         Returns: undefined
       }
+      admin_customer_list: {
+        Args: {
+          _filter?: string
+          _limit?: number
+          _offset?: number
+          _q?: string
+          _sort?: string
+        }
+        Returns: {
+          completed_count: number
+          customer_id: string
+          email: string
+          first_order_at: string
+          has_account: boolean
+          key: string
+          last_order_at: string
+          name: string
+          orders_count: number
+          total_count: number
+          total_spent: number
+          user_id: string
+        }[]
+      }
+      admin_customer_stats: {
+        Args: never
+        Returns: {
+          new_this_month: number
+          total_customers: number
+        }[]
+      }
       admin_grant_store_credit: {
         Args: {
           _amount_cents: number
