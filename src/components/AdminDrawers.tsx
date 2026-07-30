@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { DetailDrawer } from "./DetailDrawer";
 import { StatusBadge } from "./DashboardShell";
+import { StoreCreditPanel } from "./dashboard/StoreCreditPanel";
 import { getAdminOrderDetail, type AdminOrderDetail } from "@/lib/orders-admin.functions";
-import { Mail, Phone, CreditCard } from "lucide-react";
+import { Mail, Phone, CreditCard, ExternalLink } from "lucide-react";
+
 
 function money(n: number) {
   return `$${Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
