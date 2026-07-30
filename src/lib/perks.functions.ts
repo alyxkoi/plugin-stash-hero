@@ -100,7 +100,9 @@ type RunInput = {
   reason: string;
 };
 
-export type RunResult = { batchId: string; granted: number; skipped: number; failed: number } | { error: string };
+export type RunResult =
+  | { batchId: string; granted: number; skipped: number; failed: number; errors: string[] }
+  | { error: string };
 
 /**
  * Executes a grant batch fully server-side in chunks of 200 rows.
@@ -277,7 +279,7 @@ export const runGrantBatch = createServerFn({ method: "POST" })
         })
         .eq("id", batchId);
 
-      return { batchId, granted, skipped, failed };
+      return { batchId, granted, skipped, failed, errors };
     } catch (e: any) {
       return { error: e?.message ?? "Grant failed" };
     }
