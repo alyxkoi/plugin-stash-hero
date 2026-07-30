@@ -488,10 +488,24 @@ function BatchRow({ batch, onChanged }: { batch: GrantBatchRow; onChanged: () =>
   }
 
   async function revokeOne(grantId: string) {
-    const res = await revokePluginGrant({ data: { grantId } });
-    if ("error" in res) { toast.error(res.error); return; }
-    setRecipients((prev) => prev?.map((r) => (r.id === grantId ? { ...r, revoked_at: new Date().toISOString() } : r)) ?? null);
+    setBusy(true);
+    try {
+      const res = await revokePluginGrant({ data: { grantId } });
+      if ("error" in res) { toast.error(res.error); return; }
+      if (res.revoked === 0) { toast.error("That grant was already revoked"); }
+      else toast.success("Grant revoked");
+      setRecipients((prev) => prev?.map((r) => (r.id === grantId ? { ...r, revoked_at: new Date().toISOString() } : r)) ?? null);
+      const r = await getBatchRecipients({ data: { batchId: batch.id, type: batch.type } });
+      if (!("error" in r)) setRecipients(r.recipients);
+      onChanged();
+    } catch (e: any) {
+      console.error("[perks] revoke failed", e);
+      toast.error(e?.message ?? "Revoke failed");
+    } finally {
+      setBusy(false);
+    }
   }
+
 
   return (
     <li className="rounded-lg border border-white/10 bg-white/[0.02]">
