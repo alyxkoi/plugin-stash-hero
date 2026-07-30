@@ -198,7 +198,10 @@ export const runGrantBatch = createServerFn({ method: "POST" })
             for (const g of (existing ?? []) as any[]) active.add(`${g.customer_id}:${g.product_id}`);
           }
 
-          const rows: Array<Record<string, unknown>> = [];
+          const rows: Array<{
+            customer_id: string; product_id: string; reason: string;
+            granted_by: string; batch_id: string; revoked_at: null;
+          }> = [];
           for (const customerId of recipients) {
             for (const productId of validProductIds) {
               if (active.has(`${customerId}:${productId}`)) { skipped += 1; continue; }
