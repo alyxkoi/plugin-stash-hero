@@ -31,7 +31,12 @@ export type FulfillInput = {
   totalCents: number;
   items: FulfillItem[];
   stripePaymentIntentId?: string | null;
+  /** Name captured at checkout (Stripe customer_details.name or signup profile). */
+  customerName?: string | null;
+  /** Max store credit to debit for this order (computed server-side). */
+  creditMaxCents?: number;
 };
+
 
 
 
@@ -80,6 +85,7 @@ export async function finalizeOrder(input: FulfillInput): Promise<{ orderId: str
       number,
       user_id: input.userId ?? null,
       guest_email: input.guestEmail,
+      customer_name: input.customerName ?? null,
       subtotal: input.subtotalCents / 100,
       discount: input.discountCents / 100,
       total: input.totalCents / 100,
@@ -91,6 +97,7 @@ export async function finalizeOrder(input: FulfillInput): Promise<{ orderId: str
       stripe_id: input.stripePaymentIntentId ?? null,
       stripe_session_id: input.sessionId,
       sale_id: activeSaleId,
+      credit_applied_cents: 0,
     } as any)
     .select("id")
     .maybeSingle();
@@ -104,6 +111,57 @@ export async function finalizeOrder(input: FulfillInput): Promise<{ orderId: str
   }
 
   const orderId = inserted.id as string;
+
+  // ---- Store credit: atomic debit tied to this session id (retry-safe) ----
+  if (input.userId && (input.creditMaxCents ?? 0) > 0) {
+    const { data: debited, error: creditErr } = await supabaseAdmin.rpc("consume_store_credit", {
+      _customer_id: input.userId,
+      _order_id: orderId,
+      _max_cents: Math.round(input.creditMaxCents!),
+      _idempotency_key: `credit:${input.sessionId}`,
+      _session_id: input.sessionId,
+    } as any);
+    if (creditErr) {
+      console.error("[fulfill] store credit debit failed", creditErr);
+    } else if (Number(debited ?? 0) > 0) {
+      await supabaseAdmin
+        .from("orders")
+        .update({ credit_applied_cents: Number(debited) } as any)
+        .eq("id", orderId);
+    }
+  }
+
+  // ---- Persist the checkout name onto the profile when it's still empty ----
+  if (input.userId && input.customerName) {
+    const parts = input.customerName.trim().split(/\s+/);
+    const first = parts[0] ?? null;
+    const last = parts.length > 1 ? parts.slice(1).join(" ") : null;
+    const { data: prof } = await supabaseAdmin
+      .from("profiles")
+      .select("first_name, last_name")
+      .eq("id", input.userId)
+      .maybeSingle();
+    if (prof && !prof.first_name && !prof.last_name) {
+      await supabaseAdmin
+        .from("profiles")
+        .update({ first_name: first, last_name: last } as any)
+        .eq("id", input.userId);
+    }
+  }
+  if (input.customerName) {
+    const emailForCustomer = input.guestEmail;
+    if (emailForCustomer) {
+      const { data: cust } = await supabaseAdmin
+        .from("customers")
+        .select("id, name")
+        .ilike("email", emailForCustomer)
+        .maybeSingle();
+      if (cust && !cust.name) {
+        await supabaseAdmin.from("customers").update({ name: input.customerName } as any).eq("id", cust.id as string);
+      }
+    }
+  }
+
 
   if (input.items.length > 0) {
     const rows = input.items.flatMap((it) =>

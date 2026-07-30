@@ -9,8 +9,11 @@ export type AdminOrderDetail = {
   subtotal: number;
   discount: number;
   discount_code: string | null;
+  credit_applied: number;
   created_at: string;
   utm_source: string | null;
+  stripe_payment_intent_id: string | null;
+  stripe_mode: "live" | "test" | null;
   items: {
     id: string;
     name: string;
@@ -32,6 +35,7 @@ export type AdminOrderDetail = {
     wallet: string | null;
   } | null;
 };
+
 
 function splitName(name: string | null): { firstName: string | null; lastName: string | null } {
   if (!name) return { firstName: null, lastName: null };
@@ -56,8 +60,9 @@ function prettyType(t: string): string {
   return map[t] ?? t.replace(/_/g, " ");
 }
 
-async function fetchStripeDetails(stripePaymentIntentId: string | null, stripeSessionId: string | null): Promise<{ payment: AdminOrderDetail["payment"]; phone: string | null; email: string | null; name: string | null }> {
-  if (!stripePaymentIntentId && !stripeSessionId) return { payment: null, phone: null, email: null, name: null };
+async function fetchStripeDetails(stripePaymentIntentId: string | null, stripeSessionId: string | null): Promise<{ payment: AdminOrderDetail["payment"]; phone: string | null; email: string | null; name: string | null; mode: "live" | "test" | null }> {
+  if (!stripePaymentIntentId && !stripeSessionId) return { payment: null, phone: null, email: null, name: null, mode: null };
+
   const { createStripeClient } = await import("@/lib/stripe.server");
   type StripeEnv = "sandbox" | "live";
   const envs: StripeEnv[] = ["live", "sandbox"];
@@ -101,13 +106,13 @@ async function fetchStripeDetails(stripePaymentIntentId: string | null, stripeSe
         if (!name) name = (charge?.billing_details?.name as string | undefined) ?? null;
       }
 
-      return { payment, phone, email, name };
+      return { payment, phone, email, name, mode: env === "live" ? "live" : "test" };
     } catch {
       // fall through to next env
       continue;
     }
   }
-  return { payment: null, phone: null, email: null, name: null };
+  return { payment: null, phone: null, email: null, name: null, mode: null };
 }
 
 export const getAdminOrderDetail = createServerFn({ method: "POST" })
@@ -125,20 +130,31 @@ export const getAdminOrderDetail = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: order, error } = await supabaseAdmin
       .from("orders")
-      .select("id, number, status, total, subtotal, discount, discount_code, created_at, utm_source, customer_id, user_id, guest_email, stripe_id, stripe_session_id, order_items(id, name, price, cover_gradient, cover_url, product_slug)")
+      .select("id, number, status, total, subtotal, discount, discount_code, credit_applied_cents, customer_name, created_at, utm_source, customer_id, user_id, guest_email, stripe_id, stripe_session_id, order_items(id, name, price, cover_gradient, cover_url, product_slug)")
       .eq("id", data.orderId)
       .maybeSingle();
     if (error || !order) return { error: error?.message ?? "Order not found" };
 
     let dbEmail: string | null = order.guest_email ?? null;
-    let dbName: string | null = null;
+    let dbName: string | null = (order as any).customer_name ?? null;
     if (order.customer_id) {
       const { data: c } = await supabaseAdmin.from("customers").select("email, name").eq("id", order.customer_id).maybeSingle();
-      if (c) { dbEmail = c.email ?? dbEmail; dbName = c.name ?? null; }
+      if (c) { dbEmail = c.email ?? dbEmail; dbName = dbName || (c.name ?? null); }
+    }
+    if (!dbName && order.user_id) {
+      const { data: p } = await supabaseAdmin
+        .from("profiles")
+        .select("email, first_name, last_name")
+        .eq("id", order.user_id as string)
+        .maybeSingle();
+      if (p) {
+        dbName = [p.first_name, p.last_name].filter(Boolean).join(" ") || null;
+        dbEmail = dbEmail || (p.email as string | null);
+      }
     }
 
     const stripeInfo = await fetchStripeDetails(order.stripe_id as string | null, order.stripe_session_id as string | null);
-    const resolvedName = stripeInfo.name || dbName;
+    const resolvedName = dbName || stripeInfo.name;
     const { firstName, lastName } = splitName(resolvedName);
     const resolvedEmail = stripeInfo.email || dbEmail;
 
@@ -150,12 +166,79 @@ export const getAdminOrderDetail = createServerFn({ method: "POST" })
       subtotal: Number(order.subtotal),
       discount: Number(order.discount),
       discount_code: order.discount_code,
+      credit_applied: Number((order as any).credit_applied_cents ?? 0) / 100,
       created_at: order.created_at,
       utm_source: order.utm_source,
+      stripe_payment_intent_id: (order.stripe_id as string | null) ?? null,
+      stripe_mode: stripeInfo.mode,
       items: (order.order_items ?? []).map((it: any) => ({
         id: it.id, name: it.name, price: Number(it.price), cover_gradient: it.cover_gradient, cover_url: it.cover_url, product_slug: it.product_slug,
       })),
       customer: { firstName, lastName, email: resolvedEmail, phone: stripeInfo.phone },
       payment: stripeInfo.payment,
     };
+
+  });
+
+/**
+ * One-off backfill: pull the buyer name (and payment intent id) for existing
+ * paid orders from their Stripe Checkout Session, and copy the name onto the
+ * customer profile when it's still empty. Admin-only, safe to re-run.
+ */
+export const backfillOrderNames = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ scanned: number; namesFilled: number; intentsFilled: number } | { error: string }> => {
+    const { supabase, userId } = context as any;
+    const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
+    if (!isAdmin) return { error: "Not authorized" };
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { createStripeClient } = await import("@/lib/stripe.server");
+
+    const { data: orders } = await supabaseAdmin
+      .from("orders")
+      .select("id, user_id, guest_email, stripe_id, stripe_session_id, customer_name, total")
+      .is("customer_name", null)
+      .limit(500);
+
+    let namesFilled = 0;
+    let intentsFilled = 0;
+    const rows = (orders ?? []) as any[];
+
+    for (const o of rows) {
+      const sid = o.stripe_session_id as string | null;
+      if (!sid || sid.startsWith("free_")) continue;
+      let name: string | null = null;
+      let intent: string | null = null;
+      for (const env of ["live", "sandbox"] as const) {
+        try {
+          const stripe = createStripeClient(env);
+          const s: any = await stripe.checkout.sessions.retrieve(sid);
+          name = (s.customer_details?.name as string | undefined) ?? null;
+          intent = typeof s.payment_intent === "string" ? s.payment_intent : (s.payment_intent?.id ?? null);
+          break;
+        } catch {
+          continue;
+        }
+      }
+      const patch: Record<string, unknown> = {};
+      if (name) { patch.customer_name = name; namesFilled += 1; }
+      if (!o.stripe_id && intent) { patch.stripe_id = intent; intentsFilled += 1; }
+      if (Object.keys(patch).length > 0) {
+        await supabaseAdmin.from("orders").update(patch as any).eq("id", o.id as string);
+      }
+      if (name && o.user_id) {
+        const parts = name.trim().split(/\s+/);
+        const { data: prof } = await supabaseAdmin
+          .from("profiles").select("first_name, last_name").eq("id", o.user_id as string).maybeSingle();
+        if (prof && !prof.first_name && !prof.last_name) {
+          await supabaseAdmin.from("profiles").update({
+            first_name: parts[0] ?? null,
+            last_name: parts.length > 1 ? parts.slice(1).join(" ") : null,
+          } as any).eq("id", o.user_id as string);
+        }
+      }
+    }
+
+    return { scanned: rows.length, namesFilled, intentsFilled };
   });

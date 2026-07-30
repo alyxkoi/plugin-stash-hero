@@ -90,7 +90,9 @@ async function handleCheckoutCompleted(session: any, env: StripeEnv) {
   const pwCid: string | null = meta.pw_cid || null;
   const subtotalCents = Number(meta.subtotal_cents ?? session.amount_subtotal ?? 0);
   const discountCents = Number(meta.discount_cents ?? 0);
+  const creditCents = Number(meta.credit_cents ?? 0);
   const totalCents = Number(meta.total_cents ?? session.amount_total ?? 0);
+  const customerName: string | null = (session.customer_details?.name as string | undefined) || null;
 
   const compact = parseCompactItems(meta);
   const items = await resolveFulfillItems(compact, sessionId, env);
@@ -108,6 +110,8 @@ async function handleCheckoutCompleted(session: any, env: StripeEnv) {
     totalCents,
     items,
     stripePaymentIntentId: (session.payment_intent as string) ?? null,
+    customerName,
+    creditMaxCents: creditCents,
   });
 
 
@@ -116,6 +120,18 @@ async function handleCheckoutCompleted(session: any, env: StripeEnv) {
     await notifyTelegram(formatSaleMessage(result.number, itemCount, totalCents));
   }
 }
+
+// Abandoned / expired checkout — release any store credit that was reserved
+// for it so the customer never loses credit they didn't spend.
+async function handleSessionExpired(session: any) {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin.rpc("release_credit_reservation", { _session_id: session.id as string } as any);
+  } catch (e) {
+    console.error("[webhook] release reservation failed", e);
+  }
+}
+
 
 
 async function handlePaymentFailed(intent: any) {
@@ -156,8 +172,11 @@ export const Route = createFileRoute("/api/public/payments/webhook")({
           const event = await verifyWebhook(request, env);
           if (event.type === "checkout.session.completed") {
             await handleCheckoutCompleted(event.data.object, env);
+          } else if (event.type === "checkout.session.expired") {
+            await handleSessionExpired(event.data.object);
           } else if (event.type === "payment_intent.payment_failed") {
             await handlePaymentFailed(event.data.object);
+
           } else {
             console.log("[webhook] unhandled:", event.type);
           }

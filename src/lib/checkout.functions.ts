@@ -103,6 +103,8 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
     email?: string | null;
     returnUrl: string;
     environment: StripeEnv;
+    /** Opt-in only. The server computes the amount — never trust a client amount. */
+    applyCredit?: boolean;
   }) => {
     if (!Array.isArray(data.items) || data.items.length === 0) throw new Error("Cart is empty");
     for (const it of data.items) {
@@ -111,8 +113,10 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
     }
     if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) throw new Error("Invalid email");
     if (data.pwCid && !/^[A-Za-z0-9]{6,32}$/.test(data.pwCid)) data.pwCid = null;
+    data.applyCredit = data.applyCredit === true;
     return data;
   })
+
 
 
   .handler(async ({ data }): Promise<CheckoutResult> => {
@@ -231,10 +235,36 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
 
       const totalCents = Math.max(0, subtotalCents - discountCents);
 
-      // Free-checkout path: total is $0 (all freebies, or discount zeroed it out).
-      // Skip Stripe entirely — create the order directly and hand the client a
-      // synthetic session id so the return page + download links work the same.
-      if (totalCents === 0) {
+      // -------- Store credit (server-authoritative) --------
+      // The client only sends a boolean. The amount is always recomputed here
+      // from the append-only ledger, and only debited once the order exists.
+      let creditCents = 0;
+      let profileName: string | null = null;
+      if (userId) {
+        const { data: prof } = await supabaseAdmin
+          .from("profiles")
+          .select("first_name, last_name")
+          .eq("id", userId)
+          .maybeSingle();
+        if (prof) {
+          profileName = [prof.first_name, prof.last_name].filter(Boolean).join(" ") || null;
+        }
+        if (data.applyCredit) {
+          const { data: ledger } = await supabaseAdmin
+            .from("store_credit_ledger")
+            .select("amount_cents")
+            .eq("customer_id", userId);
+          const balance = (ledger ?? []).reduce((n: number, r: any) => n + Number(r.amount_cents || 0), 0);
+          creditCents = Math.max(0, Math.min(balance, totalCents));
+        }
+      }
+
+      const netCents = Math.max(0, totalCents - creditCents);
+
+      // Free-checkout path: nothing left to charge (freebies, a discount that
+      // zeroed the cart, or store credit covering the full order). Skip Stripe
+      // entirely and create the order directly.
+      if (netCents === 0) {
         const freeSessionId = `free_${crypto.randomUUID()}`;
         const fulfillItems: FulfillItem[] = items.map((i) => ({
           product_id: i.product.id as string,
@@ -256,9 +286,11 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
           pwCid: data.pwCid ?? null,
           subtotalCents,
           discountCents,
-          totalCents,
+          totalCents: 0,
           items: fulfillItems,
           stripePaymentIntentId: null,
+          customerName: profileName,
+          creditMaxCents: creditCents,
         });
 
         if (!finalized) return { error: "Could not complete free order." };
@@ -266,9 +298,10 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
       }
 
 
-      if (totalCents < 50) {
+      if (netCents < 50) {
         return { error: "Order total must be at least $0.50 to checkout." };
       }
+
 
 
 
@@ -297,6 +330,26 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
 
       const email = data.email ?? null;
 
+      // Store credit becomes a one-time amount_off coupon for exactly the
+      // computed amount. Nothing is debited yet — the ledger is only touched
+      // on checkout.session.completed.
+      let creditCoupon: string | null = null;
+      if (creditCents > 0) {
+        try {
+          const coupon = await stripe.coupons.create({
+            amount_off: creditCents,
+            currency: "usd",
+            duration: "once",
+            name: `Store credit ($${(creditCents / 100).toFixed(2)})`,
+            metadata: { kind: "store_credit", userId: userId ?? "" },
+          });
+          creditCoupon = coupon.id;
+        } catch (e) {
+          console.error("[checkout] store credit coupon failed", e);
+          return { error: "Couldn't apply your store credit. Try again or uncheck it." };
+        }
+      }
+
       const session = await stripe.checkout.sessions.create({
         line_items,
         mode: "payment",
@@ -307,6 +360,7 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
         // when the cart total or buyer country falls outside their rules.
         payment_method_types: ["card", "afterpay_clearpay", "affirm"],
 
+        ...(creditCoupon && { discounts: [{ coupon: creditCoupon }] }),
         ...(email && { customer_email: email }),
         payment_intent_data: {
           description: items.length === 1
@@ -322,7 +376,8 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
           pw_cid: data.pwCid ?? "",
           subtotal_cents: String(subtotalCents),
           discount_cents: String(discountCents),
-          total_cents: String(totalCents),
+          credit_cents: String(creditCents),
+          total_cents: String(netCents),
           // Compact: "<uuid>:<qty>,<uuid>:<qty>". Webhook looks up full
           // product details from the DB and unit prices from Stripe line_items.
           items: items.map((i) => `${i.product.id}:${i.qty}`).join(","),
@@ -331,7 +386,19 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
 
       });
 
+      // Reserve (don't debit) the credit against this session so an abandoned
+      // checkout can release it later.
+      if (creditCents > 0 && userId && session.id) {
+        await supabaseAdmin
+          .from("store_credit_reservations")
+          .upsert(
+            { customer_id: userId, session_id: session.id, reserved_cents: creditCents, status: "pending" } as any,
+            { onConflict: "session_id" },
+          );
+      }
+
       return { clientSecret: session.client_secret ?? "" };
+
     } catch (error) {
       return { error: getStripeErrorMessage(error) };
     }
