@@ -168,8 +168,12 @@ function Overview() {
                         <td className="px-2 py-3">
                           <div className="flex items-center gap-2">
                             <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[var(--accent-red)] to-[var(--accent-blue)] flex items-center justify-center text-[9px] font-bold">{ini}</div>
-                            <span className="text-xs truncate max-w-[160px]">{label}</span>
+                            <span className="min-w-0">
+                              <span className="block text-xs truncate max-w-[160px]">{label}</span>
+                              {sub && <span className="block font-mono text-[10px] text-white/45 truncate max-w-[160px]">{sub}</span>}
+                            </span>
                           </div>
+
                         </td>
                         <td className="px-2 py-3 text-xs text-white/60">{o.order_items?.length ?? 0}</td>
                         <td className="px-2 py-3 text-right font-mono text-xs">{formatMoney(Number(o.total))}</td>
