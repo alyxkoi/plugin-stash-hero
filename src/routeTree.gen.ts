@@ -35,6 +35,7 @@ import { Route as SaleSlugRouteImport } from './routes/sale.$slug'
 import { Route as LibraryTokenRouteImport } from './routes/library.$token'
 import { Route as GoCodeRouteImport } from './routes/go.$code'
 import { Route as DashboardSettingsRouteImport } from './routes/dashboard.settings'
+import { Route as DashboardPerksRouteImport } from './routes/dashboard.perks'
 import { Route as DashboardMarketingRouteImport } from './routes/dashboard.marketing'
 import { Route as DashboardLoginRouteImport } from './routes/dashboard.login'
 import { Route as DashboardCampaignLinksRouteImport } from './routes/dashboard.campaign-links'
@@ -188,6 +189,11 @@ const DashboardSettingsRoute = DashboardSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardPerksRoute = DashboardPerksRouteImport.update({
+  id: '/perks',
+  path: '/perks',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardMarketingRoute = DashboardMarketingRouteImport.update({
   id: '/marketing',
   path: '/marketing',
@@ -326,6 +332,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/campaign-links': typeof DashboardCampaignLinksRoute
   '/dashboard/login': typeof DashboardLoginRoute
   '/dashboard/marketing': typeof DashboardMarketingRoute
+  '/dashboard/perks': typeof DashboardPerksRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/go/$code': typeof GoCodeRoute
   '/library/$token': typeof LibraryTokenRoute
@@ -374,6 +381,7 @@ export interface FileRoutesByTo {
   '/dashboard/campaign-links': typeof DashboardCampaignLinksRoute
   '/dashboard/login': typeof DashboardLoginRoute
   '/dashboard/marketing': typeof DashboardMarketingRoute
+  '/dashboard/perks': typeof DashboardPerksRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/go/$code': typeof GoCodeRoute
   '/library/$token': typeof LibraryTokenRoute
@@ -425,6 +433,7 @@ export interface FileRoutesById {
   '/dashboard/campaign-links': typeof DashboardCampaignLinksRoute
   '/dashboard/login': typeof DashboardLoginRoute
   '/dashboard/marketing': typeof DashboardMarketingRoute
+  '/dashboard/perks': typeof DashboardPerksRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/go/$code': typeof GoCodeRoute
   '/library/$token': typeof LibraryTokenRoute
@@ -477,6 +486,7 @@ export interface FileRouteTypes {
     | '/dashboard/campaign-links'
     | '/dashboard/login'
     | '/dashboard/marketing'
+    | '/dashboard/perks'
     | '/dashboard/settings'
     | '/go/$code'
     | '/library/$token'
@@ -525,6 +535,7 @@ export interface FileRouteTypes {
     | '/dashboard/campaign-links'
     | '/dashboard/login'
     | '/dashboard/marketing'
+    | '/dashboard/perks'
     | '/dashboard/settings'
     | '/go/$code'
     | '/library/$token'
@@ -575,6 +586,7 @@ export interface FileRouteTypes {
     | '/dashboard/campaign-links'
     | '/dashboard/login'
     | '/dashboard/marketing'
+    | '/dashboard/perks'
     | '/dashboard/settings'
     | '/go/$code'
     | '/library/$token'
@@ -815,6 +827,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardSettingsRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/perks': {
+      id: '/dashboard/perks'
+      path: '/perks'
+      fullPath: '/dashboard/perks'
+      preLoaderRoute: typeof DashboardPerksRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/marketing': {
       id: '/dashboard/marketing'
       path: '/marketing'
@@ -994,6 +1013,7 @@ interface DashboardRouteChildren {
   DashboardCampaignLinksRoute: typeof DashboardCampaignLinksRoute
   DashboardLoginRoute: typeof DashboardLoginRoute
   DashboardMarketingRoute: typeof DashboardMarketingRoute
+  DashboardPerksRoute: typeof DashboardPerksRoute
   DashboardSettingsRoute: typeof DashboardSettingsRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
   DashboardCustomersIdRoute: typeof DashboardCustomersIdRoute
@@ -1013,6 +1033,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardCampaignLinksRoute: DashboardCampaignLinksRoute,
   DashboardLoginRoute: DashboardLoginRoute,
   DashboardMarketingRoute: DashboardMarketingRoute,
+  DashboardPerksRoute: DashboardPerksRoute,
   DashboardSettingsRoute: DashboardSettingsRoute,
   DashboardIndexRoute: DashboardIndexRoute,
   DashboardCustomersIdRoute: DashboardCustomersIdRoute,
