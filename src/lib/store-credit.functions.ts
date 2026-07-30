@@ -127,3 +127,29 @@ export const adminAdjustStoreCredit = createServerFn({ method: "POST" })
       return { error: e?.message ?? "Failed to adjust store credit" };
     }
   });
+
+/**
+ * Guest checkout hint: does an account with this email hold store credit?
+ * Returns a boolean only — never the amount — so it can prompt a sign-in
+ * without leaking balances.
+ */
+export const guestEmailHasCredit = createServerFn({ method: "POST" })
+  .inputValidator((data: { email: string }) => {
+    if (!data?.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) throw new Error("Invalid email");
+    return { email: data.email.trim().toLowerCase() };
+  })
+  .handler(async ({ data }): Promise<{ hasCredit: boolean }> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: prof } = await supabaseAdmin
+      .from("profiles")
+      .select("id")
+      .ilike("email", data.email)
+      .maybeSingle();
+    if (!prof) return { hasCredit: false };
+    const { data: rows } = await supabaseAdmin
+      .from("store_credit_ledger")
+      .select("amount_cents")
+      .eq("customer_id", prof.id as string);
+    const balance = (rows ?? []).reduce((n: number, r: any) => n + Number(r.amount_cents || 0), 0);
+    return { hasCredit: balance > 0 };
+  });
