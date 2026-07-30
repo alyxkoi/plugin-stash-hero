@@ -174,7 +174,16 @@ export async function finalizeOrder(input: FulfillInput): Promise<{ orderId: str
   }
 
 
-  if (input.items.length > 0) {
+  // Line items are only written once per order — a retried handler must never
+  // duplicate them.
+  const { data: existingItems } = await supabaseAdmin
+    .from("order_items")
+    .select("id")
+    .eq("order_id", orderId)
+    .limit(1);
+  const itemsAlreadyWritten = (existingItems ?? []).length > 0;
+
+  if (input.items.length > 0 && !itemsAlreadyWritten) {
     const rows = input.items.flatMap((it) =>
       Array.from({ length: it.qty }, () => ({
         order_id: orderId,
@@ -188,6 +197,7 @@ export async function finalizeOrder(input: FulfillInput): Promise<{ orderId: str
     );
     const { error: itemsErr } = await supabaseAdmin.from("order_items").insert(rows);
     if (itemsErr) console.error("[fulfill] order_items insert failed", itemsErr);
+
 
     // Seed per-user file-update acknowledgements so newly purchased products
     // never show an "updated" badge until the next actual file replacement.
