@@ -214,7 +214,7 @@ export async function finalizeOrder(input: FulfillInput): Promise<{ orderId: str
     }
   }
 
-  if (input.discountCode) {
+  if (input.discountCode && !itemsAlreadyWritten) {
     const { data: dc } = await supabaseAdmin
       .from("discount_codes")
       .select("id,uses")
@@ -232,8 +232,24 @@ export async function finalizeOrder(input: FulfillInput): Promise<{ orderId: str
     await supabaseAdmin.from("cart_items").delete().eq("user_id", input.userId);
   }
 
+  // ---- Confirmation email: exactly once per order ----
+  // Claim the send by flipping confirmation_email_sent_at from NULL in a
+  // conditional UPDATE. Only the caller that wins the claim sends the email,
+  // so repeated handler runs can never produce a second confirmation.
   const recipient = input.guestEmail;
+  let mayEmail = false;
   if (recipient && input.items.length > 0) {
+    const { data: claimed } = await supabaseAdmin
+      .from("orders")
+      .update({ confirmation_email_sent_at: new Date().toISOString() } as any)
+      .eq("id", orderId)
+      .is("confirmation_email_sent_at", null)
+      .select("id");
+    mayEmail = (claimed ?? []).length > 0;
+  }
+
+  if (recipient && input.items.length > 0 && mayEmail) {
+
     const origin =
       process.env.PUBLIC_SITE_URL ||
       process.env.SITE_URL ||
