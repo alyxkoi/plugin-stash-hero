@@ -213,6 +213,20 @@ export function CustomerDrawer({
               </div>
             </section>
 
+            {/* Store credit */}
+            {customer.userId ? (
+              <StoreCreditPanel customerId={customer.userId} />
+            ) : (
+              <section>
+                <SectionLabel>Store credit</SectionLabel>
+                <div className="rounded-lg border border-white/10 bg-white/[0.02] p-4 text-[11px] font-mono text-[#B8ACCC]">
+                  Guest checkout — store credit requires an account.
+                </div>
+              </section>
+            )}
+
+
+
             {/* Recent orders */}
             <section>
               <SectionLabel>Recent orders</SectionLabel>
