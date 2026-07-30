@@ -47,6 +47,11 @@ async function optionalUserId(): Promise<string | null> {
   }
 }
 
+/** Escape LIKE wildcards so user-supplied codes match exactly (case-insensitively). */
+function escapeLikePattern(value: string): string {
+  return value.replace(/[\\%_]/g, (m) => `\\${m}`);
+}
+
 // -------------------- Discount validation --------------------
 
 export const validateDiscount = createServerFn({ method: "POST" })
@@ -60,7 +65,7 @@ export const validateDiscount = createServerFn({ method: "POST" })
     const { data: row } = await supabaseAdmin
       .from("discount_codes")
       .select("id,code,type,value,status,expires_at,usage_limit,uses,scope,categories")
-      .ilike("code", code)
+      .ilike("code", escapeLikePattern(code))
       .maybeSingle();
 
     if (!row) return { ok: false, error: "That code doesn't exist." };
@@ -197,7 +202,7 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
         const { data: dc } = await supabaseAdmin
           .from("discount_codes")
           .select("id,code,type,value,status,expires_at,usage_limit,uses,scope,categories")
-          .ilike("code", codeUpper)
+          .ilike("code", escapeLikePattern(codeUpper))
           .maybeSingle();
         if (dc && dc.status === "active"
             && (!dc.expires_at || new Date(dc.expires_at as string).getTime() > Date.now())

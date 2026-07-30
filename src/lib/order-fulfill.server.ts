@@ -197,7 +197,7 @@ export async function finalizeOrder(input: FulfillInput): Promise<{ orderId: str
     const { data: dc } = await supabaseAdmin
       .from("discount_codes")
       .select("id,uses")
-      .ilike("code", input.discountCode)
+      .ilike("code", input.discountCode.replace(/[\\%_]/g, (m) => `\\${m}`))
       .maybeSingle();
     if (dc) {
       await supabaseAdmin
