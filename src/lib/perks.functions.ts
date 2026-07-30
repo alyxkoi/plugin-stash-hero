@@ -100,7 +100,9 @@ type RunInput = {
   reason: string;
 };
 
-export type RunResult = { batchId: string; granted: number; skipped: number; failed: number } | { error: string };
+export type RunResult =
+  | { batchId: string; granted: number; skipped: number; failed: number; errors: string[] }
+  | { error: string };
 
 /**
  * Executes a grant batch fully server-side in chunks of 200 rows.
@@ -176,30 +178,61 @@ export const runGrantBatch = createServerFn({ method: "POST" })
       let skipped = 0;
       let failed = 0;
 
+      const errors: string[] = [];
+
       try {
         if (data.kind === "plugin") {
           const validProductIds = (await supabaseAdmin
             .from("products").select("id").in("id", data.productIds!)).data?.map((p: any) => p.id as string) ?? [];
 
-          const rows = recipients.flatMap((customerId) =>
-            validProductIds.map((productId) => ({
-              customer_id: customerId,
-              product_id: productId,
-              reason,
-              granted_by: userId,
-              batch_id: batchId,
-            })),
-          );
+          // Already-active grants are skipped up front. The unique index is
+          // PARTIAL (WHERE revoked_at IS NULL) so it cannot be used for
+          // ON CONFLICT inference — we must never upsert here, or every insert
+          // fails with 42P10. Plain inserts only, revoked_at stays NULL.
+          const active = new Set<string>();
+          for (const part of chunk(recipients, BATCH_SIZE)) {
+            const { data: existing } = await supabaseAdmin
+              .from("plugin_grants")
+              .select("customer_id, product_id")
+              .in("customer_id", part)
+              .in("product_id", validProductIds)
+              .is("revoked_at", null);
+            for (const g of (existing ?? []) as any[]) active.add(`${g.customer_id}:${g.product_id}`);
+          }
+
+          const rows: Array<{
+            customer_id: string; product_id: string; reason: string;
+            granted_by: string; batch_id: string; revoked_at: null;
+          }> = [];
+          for (const customerId of recipients) {
+            for (const productId of validProductIds) {
+              if (active.has(`${customerId}:${productId}`)) { skipped += 1; continue; }
+              rows.push({
+                customer_id: customerId,
+                product_id: productId,
+                reason,
+                granted_by: userId,
+                batch_id: batchId,
+                revoked_at: null,
+              });
+            }
+          }
 
           for (const part of chunk(rows, BATCH_SIZE)) {
             const { data: inserted, error } = await supabaseAdmin
               .from("plugin_grants")
-              .upsert(part, { onConflict: "customer_id,product_id", ignoreDuplicates: true })
+              .insert(part)
               .select("id");
-            if (error) { failed += part.length; continue; }
-            const n = (inserted ?? []).length;
-            granted += n;
-            skipped += part.length - n;
+            if (!error) { granted += (inserted ?? []).length; continue; }
+            // A race or leftover duplicate poisons the whole chunk — retry row by row.
+            for (const row of part) {
+              const { error: rowErr } = await supabaseAdmin.from("plugin_grants").insert(row).select("id").single();
+              if (!rowErr) { granted += 1; continue; }
+              if ((rowErr as any).code === "23505") { skipped += 1; continue; }
+              failed += 1;
+              console.error("[perks] plugin grant insert failed", rowErr);
+              if (errors.length < 3) errors.push(rowErr.message);
+            }
           }
         } else {
           const amount = data.amountCents as number;
@@ -217,15 +250,23 @@ export const runGrantBatch = createServerFn({ method: "POST" })
               .from("store_credit_ledger")
               .upsert(part, { onConflict: "idempotency_key", ignoreDuplicates: true })
               .select("id");
-            if (error) { failed += part.length; continue; }
+            if (error) {
+              failed += part.length;
+              console.error("[perks] credit grant insert failed", error);
+              if (errors.length < 3) errors.push(error.message);
+              continue;
+            }
             const n = (inserted ?? []).length;
             granted += n;
             skipped += part.length - n;
           }
         }
-      } catch (e) {
+      } catch (e: any) {
         failed += 1;
+        console.error("[perks] batch execution threw", e);
+        if (errors.length < 3) errors.push(e?.message ?? "Unknown error");
       }
+
 
       await supabaseAdmin
         .from("grant_batches")
@@ -238,7 +279,7 @@ export const runGrantBatch = createServerFn({ method: "POST" })
         })
         .eq("id", batchId);
 
-      return { batchId, granted, skipped, failed };
+      return { batchId, granted, skipped, failed, errors };
     } catch (e: any) {
       return { error: e?.message ?? "Grant failed" };
     }
