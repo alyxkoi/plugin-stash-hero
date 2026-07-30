@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { Download, FileText, ArrowUpDown } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Download, FileText, ArrowUpDown, Gift } from "lucide-react";
 import { GlassCard } from "@/components/GlassCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -16,6 +16,7 @@ type OwnedPlugin = {
   cover_gradient: string | null;
   cover_url: string | null;
   last_purchased_at: string;
+  is_gift: boolean;
 };
 
 type SortMode = "recent" | "alpha";
@@ -30,6 +31,7 @@ function PluginsPage() {
   const [ready, setReady] = useState(false);
   const [plugins, setPlugins] = useState<OwnedPlugin[]>([]);
   const [updatedIds, setUpdatedIds] = useState<Set<string>>(new Set());
+  const [giftIds, setGiftIds] = useState<Set<string>>(new Set());
   const [sort, setSort] = useState<SortMode>("recent");
 
   const refreshUpdates = async () => {
@@ -41,58 +43,103 @@ function PluginsPage() {
     setUpdatedIds(s);
   };
 
+  const load = useCallback(async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("orders")
+      .select("created_at, order_items(product_id, product_slug, name, cover_gradient, cover_url)")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    const map = new Map<string, OwnedPlugin>();
+    for (const o of (data ?? []) as any[]) {
+      for (const it of (o.order_items ?? [])) {
+        if (!it.product_id) continue;
+        const existing = map.get(it.product_id);
+        if (!existing) {
+          map.set(it.product_id, {
+            product_id: it.product_id,
+            name: it.name,
+            slug: it.product_slug,
+            cover_gradient: it.cover_gradient,
+            cover_url: it.cover_url,
+            last_purchased_at: o.created_at,
+            is_gift: false,
+          });
+        } else if (new Date(o.created_at) > new Date(existing.last_purchased_at)) {
+          existing.last_purchased_at = o.created_at;
+        }
+      }
+    }
+
+    // Active plugin grants (gifts) join the library, deduplicated by product.
+    const { data: grants } = await supabase
+      .from("plugin_grants")
+      .select("product_id, granted_at, acknowledged_at, products(name, slug, cover_url, cover_gradient)")
+      .eq("customer_id", user.id)
+      .is("revoked_at", null);
+
+    const unseenGifts = new Set<string>();
+    for (const g of (grants ?? []) as any[]) {
+      if (!g.product_id) continue;
+      if (!g.acknowledged_at) unseenGifts.add(g.product_id);
+      const existing = map.get(g.product_id);
+      if (!existing) {
+        map.set(g.product_id, {
+          product_id: g.product_id,
+          name: g.products?.name ?? "Plugin",
+          slug: g.products?.slug ?? null,
+          cover_gradient: g.products?.cover_gradient ?? null,
+          cover_url: g.products?.cover_url ?? null,
+          last_purchased_at: g.granted_at,
+          is_gift: true,
+        });
+      }
+    }
+    setGiftIds(unseenGifts);
+
+    // Resolve live name + cover from products so admin renames reflect immediately.
+    // Fall back to the stored snapshot when a product has been deleted.
+    const ids = Array.from(map.keys());
+    if (ids.length) {
+      const { data: live } = await supabase
+        .from("products")
+        .select("id, name, slug, cover_url, cover_gradient")
+        .in("id", ids);
+      for (const p of (live ?? []) as any[]) {
+        const owned = map.get(p.id);
+        if (!owned) continue;
+        owned.name = p.name ?? owned.name;
+        owned.slug = p.slug ?? owned.slug;
+        owned.cover_url = p.cover_url ?? owned.cover_url;
+        owned.cover_gradient = p.cover_gradient ?? owned.cover_gradient;
+      }
+    }
+
+    setPlugins(Array.from(map.values()));
+    await refreshUpdates();
+    setReady(true);
+  }, [user]);
+
   useEffect(() => {
     if (loading || !user) return;
-    (async () => {
-      const { data } = await supabase
-        .from("orders")
-        .select("created_at, order_items(product_id, product_slug, name, cover_gradient, cover_url)")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+    load();
+  }, [user, loading, load]);
 
-      const map = new Map<string, OwnedPlugin>();
-      for (const o of (data ?? []) as any[]) {
-        for (const it of (o.order_items ?? [])) {
-          if (!it.product_id) continue;
-          const existing = map.get(it.product_id);
-          if (!existing) {
-            map.set(it.product_id, {
-              product_id: it.product_id,
-              name: it.name,
-              slug: it.product_slug,
-              cover_gradient: it.cover_gradient,
-              cover_url: it.cover_url,
-              last_purchased_at: o.created_at,
-            });
-          } else if (new Date(o.created_at) > new Date(existing.last_purchased_at)) {
-            existing.last_purchased_at = o.created_at;
-          }
-        }
-      }
-
-      // Resolve live name + cover from products so admin renames reflect immediately.
-      // Fall back to the stored snapshot when a product has been deleted.
-      const ids = Array.from(map.keys());
-      if (ids.length) {
-        const { data: live } = await supabase
-          .from("products")
-          .select("id, name, slug, cover_url, cover_gradient")
-          .in("id", ids);
-        for (const p of (live ?? []) as any[]) {
-          const owned = map.get(p.id);
-          if (!owned) continue;
-          owned.name = p.name ?? owned.name;
-          owned.slug = p.slug ?? owned.slug;
-          owned.cover_url = p.cover_url ?? owned.cover_url;
-          owned.cover_gradient = p.cover_gradient ?? owned.cover_gradient;
-        }
-      }
-
-      setPlugins(Array.from(map.values()));
-      await refreshUpdates();
-      setReady(true);
-    })();
-  }, [user, loading]);
+  // Live updates when a gift lands while the portal is open. A dropped socket
+  // never blanks the list — we only ever re-load into the same state shape.
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel(`account-grants-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "plugin_grants", filter: `customer_id=eq.${user.id}` },
+        () => { load(); },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user, load]);
 
   const sorted = useMemo(() => {
     const arr = [...plugins];
@@ -100,6 +147,12 @@ function PluginsPage() {
     else arr.sort((a, b) => +new Date(b.last_purchased_at) - +new Date(a.last_purchased_at));
     return arr;
   }, [plugins, sort]);
+
+  const acknowledgeGift = async (productId: string) => {
+    if (!giftIds.has(productId)) return;
+    await (supabase as any).rpc("acknowledge_plugin_grants", { _product_ids: [productId] });
+    setGiftIds((prev) => { const n = new Set(prev); n.delete(productId); return n; });
+  };
 
   async function download(productId: string, name: string) {
     const { data, error } = await supabase.functions.invoke("r2-download-url", { body: { productId } });
@@ -115,12 +168,15 @@ function PluginsPage() {
       await (supabase as any).rpc("acknowledge_product_files", { _product_ids: [productId] });
       setUpdatedIds((prev) => { const n = new Set(prev); n.delete(productId); return n; });
     }
+    await acknowledgeGift(productId);
   }
 
   const acknowledgeOnView = async (productId: string) => {
-    if (!updatedIds.has(productId)) return;
-    await (supabase as any).rpc("acknowledge_product_files", { _product_ids: [productId] });
-    setUpdatedIds((prev) => { const n = new Set(prev); n.delete(productId); return n; });
+    if (updatedIds.has(productId)) {
+      await (supabase as any).rpc("acknowledge_product_files", { _product_ids: [productId] });
+      setUpdatedIds((prev) => { const n = new Set(prev); n.delete(productId); return n; });
+    }
+    await acknowledgeGift(productId);
   };
 
   if (!ready) return <div className="p-8 text-white/60">Loading your library…</div>;
@@ -187,6 +243,7 @@ function PluginsPage() {
               key={p.product_id}
               plugin={p}
               hasUpdate={updatedIds.has(p.product_id)}
+              isNewGift={giftIds.has(p.product_id)}
               onDownload={() => download(p.product_id, p.name)}
               onView={() => acknowledgeOnView(p.product_id)}
             />
@@ -198,10 +255,11 @@ function PluginsPage() {
 }
 
 function PluginCard({
-  plugin, hasUpdate, onDownload, onView,
+  plugin, hasUpdate, isNewGift, onDownload, onView,
 }: {
   plugin: OwnedPlugin;
   hasUpdate: boolean;
+  isNewGift: boolean;
   onDownload: () => void;
   onView: () => void;
 }) {
@@ -223,12 +281,20 @@ function PluginCard({
               onLoad={onView}
             />
           )}
-          {hasUpdate && (
-            <span className="absolute top-2 left-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#FF003C]/20 border border-[#FF003C]/60 text-white font-mono text-[9px] tracking-[0.18em] font-bold backdrop-blur">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#FF003C] shadow-[0_0_6px_#FF003C]" />
-              UPDATED
-            </span>
-          )}
+          <div className="absolute top-2 left-2 flex flex-col items-start gap-1.5">
+            {hasUpdate && (
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#FF003C]/20 border border-[#FF003C]/60 text-white font-mono text-[9px] tracking-[0.18em] font-bold backdrop-blur">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#FF003C] shadow-[0_0_6px_#FF003C]" />
+                UPDATED
+              </span>
+            )}
+            {isNewGift && (
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/90 border border-white text-black font-mono text-[9px] tracking-[0.18em] font-bold backdrop-blur">
+                <Gift className="w-2.5 h-2.5" strokeWidth={2.4} />
+                GIFT
+              </span>
+            )}
+          </div>
         </div>
         <div className="p-3 md:p-4 flex flex-col gap-3 flex-1">
           <div className="font-bold text-sm md:text-base leading-tight line-clamp-2 min-h-[2.5em]">

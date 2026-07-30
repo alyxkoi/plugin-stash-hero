@@ -3,6 +3,7 @@ import { useState } from "react";
 import { AuthLayout, Field, PasswordField } from "@/components/AuthLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
+import { claimMyOrders } from "@/lib/order-claim.functions";
 
 export const Route = createFileRoute("/login")({
   validateSearch: (s: Record<string, unknown>): { next?: string } => ({
@@ -37,6 +38,8 @@ function LoginPage() {
         return;
       }
       if (!data.session) { setError("Sign-in didn't complete. Try again."); return; }
+      // Reconcile any guest purchases made with this (verified) email address.
+      try { await claimMyOrders(); } catch { /* non-blocking */ }
       navigate({ to: dest });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong. Try again.");

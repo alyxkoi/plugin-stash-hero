@@ -440,6 +440,54 @@ export type Database = {
         }
         Relationships: []
       }
+      grant_batches: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          failed_count: number
+          granted_count: number
+          id: string
+          reason: string
+          recipient_count: number
+          skipped_count: number
+          status: string
+          summary: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          failed_count?: number
+          granted_count?: number
+          id?: string
+          reason: string
+          recipient_count?: number
+          skipped_count?: number
+          status?: string
+          summary: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          failed_count?: number
+          granted_count?: number
+          id?: string
+          reason?: string
+          recipient_count?: number
+          skipped_count?: number
+          status?: string
+          summary?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       library_downloads: {
         Row: {
           downloaded_at: string
@@ -468,6 +516,38 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_claims: {
+        Row: {
+          claimed_at: string
+          id: string
+          matched_email: string
+          order_id: string
+          user_id: string
+        }
+        Insert: {
+          claimed_at?: string
+          id?: string
+          matched_email: string
+          order_id: string
+          user_id: string
+        }
+        Update: {
+          claimed_at?: string
+          id?: string
+          matched_email?: string
+          order_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_claims_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
         ]
@@ -609,6 +689,70 @@ export type Database = {
             columns: ["sale_id"]
             isOneToOne: false
             referencedRelation: "sale_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plugin_grants: {
+        Row: {
+          acknowledged_at: string | null
+          batch_id: string | null
+          created_at: string
+          customer_id: string
+          granted_at: string
+          granted_by: string | null
+          id: string
+          product_id: string
+          reason: string
+          revoked_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          batch_id?: string | null
+          created_at?: string
+          customer_id: string
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          product_id: string
+          reason: string
+          revoked_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          batch_id?: string | null
+          created_at?: string
+          customer_id?: string
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          product_id?: string
+          reason?: string
+          revoked_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plugin_grants_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "grant_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plugin_grants_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plugin_grants_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
@@ -960,6 +1104,7 @@ export type Database = {
       store_credit_ledger: {
         Row: {
           amount_cents: number
+          batch_id: string | null
           created_at: string
           created_by: string | null
           customer_id: string
@@ -971,6 +1116,7 @@ export type Database = {
         }
         Insert: {
           amount_cents: number
+          batch_id?: string | null
           created_at?: string
           created_by?: string | null
           customer_id: string
@@ -982,6 +1128,7 @@ export type Database = {
         }
         Update: {
           amount_cents?: number
+          batch_id?: string | null
           created_at?: string
           created_by?: string | null
           customer_id?: string
@@ -992,6 +1139,13 @@ export type Database = {
           type?: Database["public"]["Enums"]["store_credit_type"]
         }
         Relationships: [
+          {
+            foreignKeyName: "store_credit_ledger_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "grant_batches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "store_credit_ledger_customer_id_fkey"
             columns: ["customer_id"]
@@ -1072,6 +1226,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      acknowledge_plugin_grants: {
+        Args: { _product_ids: string[] }
+        Returns: undefined
+      }
       acknowledge_product_files: {
         Args: { _product_ids: string[] }
         Returns: undefined
@@ -1085,6 +1243,7 @@ export type Database = {
         }
         Returns: number
       }
+      claim_my_orders: { Args: never; Returns: number }
       consume_store_credit: {
         Args: {
           _customer_id: string
