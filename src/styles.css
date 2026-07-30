@@ -2194,10 +2194,10 @@ select.input-glass option:checked, .select-glass option:checked {
 .dashboard-bottom-track {
   position: relative;
   display: flex;
-  gap: 4px;
+  gap: 2px;
   width: 100%;
-  max-width: 520px;
-  padding: 6px;
+  max-width: 560px;
+  padding: 5px;
   border: 1px solid rgba(255,255,255,0.14);
   border-radius: 22px;
   background: linear-gradient(180deg, rgba(42,10,72,0.92), rgba(18,2,42,0.94));
@@ -2225,7 +2225,7 @@ select.input-glass option:checked, .select-glass option:checked {
   z-index: 1;
   flex: 1 1 0;
   min-width: 0;
-  height: 44px;
+  height: 46px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2384,4 +2384,11 @@ select.input-glass option:checked, .select-glass option:checked {
 }
 .blog-prose hr {
   border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 2rem 0;
+}
+
+
+/* Perks: indeterminate batch progress bar */
+@keyframes perks-progress {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
 }
