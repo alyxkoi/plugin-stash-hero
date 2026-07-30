@@ -605,6 +605,7 @@ export type Database = {
       }
       orders: {
         Row: {
+          confirmation_email_sent_at: string | null
           created_at: string
           credit_applied_cents: number
           customer_id: string | null
@@ -629,6 +630,7 @@ export type Database = {
           utm_source: string | null
         }
         Insert: {
+          confirmation_email_sent_at?: string | null
           created_at?: string
           credit_applied_cents?: number
           customer_id?: string | null
@@ -653,6 +655,7 @@ export type Database = {
           utm_source?: string | null
         }
         Update: {
+          confirmation_email_sent_at?: string | null
           created_at?: string
           credit_applied_cents?: number
           customer_id?: string | null
@@ -1199,6 +1202,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      stripe_webhook_events: {
+        Row: {
+          created_at: string
+          event_id: string
+          event_type: string
+          processed_at: string | null
+          received_at: string
+          session_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          event_type: string
+          processed_at?: string | null
+          received_at?: string
+          session_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          event_type?: string
+          processed_at?: string | null
+          received_at?: string
+          session_id?: string | null
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {

@@ -106,6 +106,8 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
     environment: StripeEnv;
     /** Opt-in only. The server computes the amount — never trust a client amount. */
     applyCredit?: boolean;
+    /** Stable per checkout attempt. Makes the $0 order path idempotent across retries. */
+    idempotencyKey?: string | null;
   }) => {
     if (!Array.isArray(data.items) || data.items.length === 0) throw new Error("Cart is empty");
     for (const it of data.items) {
@@ -115,6 +117,7 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
     if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) throw new Error("Invalid email");
     if (data.pwCid && !/^[A-Za-z0-9]{6,32}$/.test(data.pwCid)) data.pwCid = null;
     data.applyCredit = data.applyCredit === true;
+    if (data.idempotencyKey && !/^[A-Za-z0-9_-]{8,64}$/.test(data.idempotencyKey)) data.idempotencyKey = null;
     return data;
   })
 
@@ -266,7 +269,10 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
       // zeroed the cart, or store credit covering the full order). Skip Stripe
       // entirely and create the order directly.
       if (netCents === 0) {
-        const freeSessionId = `free_${crypto.randomUUID()}`;
+        // Deterministic session id when the client supplied an idempotency key,
+        // so a retried call resolves to the SAME order row (unique index on
+        // stripe_session_id) instead of minting a second order + email.
+        const freeSessionId = `free_${data.idempotencyKey ?? crypto.randomUUID()}`;
         const fulfillItems: FulfillItem[] = items.map((i) => ({
           product_id: i.product.id as string,
           slug: i.product.slug as string,

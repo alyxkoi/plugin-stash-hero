@@ -43,6 +43,13 @@ function CheckoutPage() {
   const [guestCreditHint, setGuestCreditHint] = useState(false);
   const [creating, setCreating] = useState(false);
   const startedRef = useRef(false);
+  // Stable for the lifetime of this checkout attempt. Sent to the server so the
+  // $0-order path is idempotent even if we silently retry the request below.
+  const idempotencyRef = useRef<string>(
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID().replace(/-/g, "")
+      : String(Date.now()) + Math.random().toString(36).slice(2, 10),
+  );
 
   // Store credit — opt-in, defaults OFF. The server always recomputes the
   // exact amount from the ledger; we only send a boolean.
@@ -104,6 +111,7 @@ function CheckoutPage() {
         returnUrl: `${window.location.origin}/checkout/return`,
         environment,
         applyCredit,
+        idempotencyKey: idempotencyRef.current,
       };
 
 

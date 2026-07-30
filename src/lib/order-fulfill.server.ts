@@ -80,36 +80,46 @@ export async function finalizeOrder(input: FulfillInput): Promise<{ orderId: str
     activeSaleId = (activeSale?.id as string | undefined) ?? null;
   }
 
-  const { data: inserted, error: orderErr } = await supabaseAdmin
+  // Structurally idempotent: the unique index on stripe_session_id makes a
+  // duplicate impossible. On conflict we ignore and re-read the existing row,
+  // so a retried webhook/handler returns the original order instead of erroring.
+  const { error: insertErr } = await supabaseAdmin
     .from("orders")
-    .insert({
-      number,
-      user_id: input.userId ?? null,
-      guest_email: input.guestEmail,
-      customer_name: input.customerName ?? null,
-      subtotal: input.subtotalCents / 100,
-      discount: input.discountCents / 100,
-      total: input.totalCents / 100,
-      discount_code: input.discountCode,
-      utm_source: normalizeUtmSource(input.utmSource),
-      utm_campaign: input.utmCampaign ?? null,
-      pw_cid: input.pwCid ?? null,
-      status: "completed",
-      stripe_id: input.stripePaymentIntentId ?? null,
-      stripe_session_id: input.sessionId,
-      sale_id: activeSaleId,
-      credit_applied_cents: 0,
-    } as any)
-    .select("id")
+    .upsert(
+      {
+        number,
+        user_id: input.userId ?? null,
+        guest_email: input.guestEmail,
+        customer_name: input.customerName ?? null,
+        subtotal: input.subtotalCents / 100,
+        discount: input.discountCents / 100,
+        total: input.totalCents / 100,
+        discount_code: input.discountCode,
+        utm_source: normalizeUtmSource(input.utmSource),
+        utm_campaign: input.utmCampaign ?? null,
+        pw_cid: input.pwCid ?? null,
+        status: "completed",
+        stripe_id: input.stripePaymentIntentId ?? null,
+        stripe_session_id: input.sessionId,
+        sale_id: activeSaleId,
+        credit_applied_cents: 0,
+      } as any,
+      { onConflict: "stripe_session_id", ignoreDuplicates: true },
+    );
+  if (insertErr) console.error("[fulfill] order upsert warning", insertErr);
+
+  const { data: inserted } = await supabaseAdmin
+    .from("orders")
+    .select("id, number")
+    .eq("stripe_session_id", input.sessionId)
     .maybeSingle();
 
-
-
-
-  if (orderErr || !inserted) {
-    console.error("[fulfill] order insert failed", orderErr);
+  if (!inserted) {
+    console.error("[fulfill] order insert failed", insertErr);
     return null;
   }
+  number = inserted.number as string;
+
 
   const orderId = inserted.id as string;
 
@@ -164,7 +174,16 @@ export async function finalizeOrder(input: FulfillInput): Promise<{ orderId: str
   }
 
 
-  if (input.items.length > 0) {
+  // Line items are only written once per order — a retried handler must never
+  // duplicate them.
+  const { data: existingItems } = await supabaseAdmin
+    .from("order_items")
+    .select("id")
+    .eq("order_id", orderId)
+    .limit(1);
+  const itemsAlreadyWritten = (existingItems ?? []).length > 0;
+
+  if (input.items.length > 0 && !itemsAlreadyWritten) {
     const rows = input.items.flatMap((it) =>
       Array.from({ length: it.qty }, () => ({
         order_id: orderId,
@@ -178,6 +197,7 @@ export async function finalizeOrder(input: FulfillInput): Promise<{ orderId: str
     );
     const { error: itemsErr } = await supabaseAdmin.from("order_items").insert(rows);
     if (itemsErr) console.error("[fulfill] order_items insert failed", itemsErr);
+
 
     // Seed per-user file-update acknowledgements so newly purchased products
     // never show an "updated" badge until the next actual file replacement.
@@ -194,7 +214,7 @@ export async function finalizeOrder(input: FulfillInput): Promise<{ orderId: str
     }
   }
 
-  if (input.discountCode) {
+  if (input.discountCode && !itemsAlreadyWritten) {
     const { data: dc } = await supabaseAdmin
       .from("discount_codes")
       .select("id,uses")
@@ -212,8 +232,24 @@ export async function finalizeOrder(input: FulfillInput): Promise<{ orderId: str
     await supabaseAdmin.from("cart_items").delete().eq("user_id", input.userId);
   }
 
+  // ---- Confirmation email: exactly once per order ----
+  // Claim the send by flipping confirmation_email_sent_at from NULL in a
+  // conditional UPDATE. Only the caller that wins the claim sends the email,
+  // so repeated handler runs can never produce a second confirmation.
   const recipient = input.guestEmail;
+  let mayEmail = false;
   if (recipient && input.items.length > 0) {
+    const { data: claimed } = await supabaseAdmin
+      .from("orders")
+      .update({ confirmation_email_sent_at: new Date().toISOString() } as any)
+      .eq("id", orderId)
+      .is("confirmation_email_sent_at", null)
+      .select("id");
+    mayEmail = (claimed ?? []).length > 0;
+  }
+
+  if (recipient && input.items.length > 0 && mayEmail) {
+
     const origin =
       process.env.PUBLIC_SITE_URL ||
       process.env.SITE_URL ||
