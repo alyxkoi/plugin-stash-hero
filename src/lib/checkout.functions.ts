@@ -5,6 +5,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { type StripeEnv, createStripeClient, getStripeErrorMessage } from "@/lib/stripe.server";
 import { finalizeOrder, type FulfillItem } from "@/lib/order-fulfill.server";
 import { normalizeUtmSource } from "@/lib/utm";
+import { escapeLikePattern } from "@/lib/like-escape";
 
 
 type DiscountResult =
@@ -45,11 +46,6 @@ async function optionalUserId(): Promise<string | null> {
   } catch {
     return null;
   }
-}
-
-/** Escape LIKE wildcards so user-supplied codes match exactly (case-insensitively). */
-function escapeLikePattern(value: string): string {
-  return value.replace(/[\\%_]/g, (m) => `\\${m}`);
 }
 
 // -------------------- Discount validation --------------------
