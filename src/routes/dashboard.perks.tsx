@@ -108,7 +108,12 @@ function PerksPage() {
       });
       if ("error" in res) { toast.error(res.error); return; }
       setResult({ granted: res.granted, skipped: res.skipped, failed: res.failed });
-      toast.success(`${res.granted.toLocaleString()} granted · ${res.skipped} skipped · ${res.failed} failed`);
+      if (res.failed > 0) {
+        console.error("[perks] grant batch errors", res.errors);
+        toast.error(`${res.failed} failed${res.errors[0] ? ` — ${res.errors[0]}` : ""}`);
+      }
+      if (res.granted > 0) toast.success(`${res.granted.toLocaleString()} granted · ${res.skipped} skipped`);
+      else if (res.failed === 0) toast.info(`Nothing to grant — ${res.skipped} already owned`);
       resetForm();
       await loadBatches();
     } catch (e: any) {
@@ -475,10 +480,19 @@ function BatchRow({ batch, onChanged }: { batch: GrantBatchRow; onChanged: () =>
 
   async function revokeAll() {
     setBusy(true);
-    const res = await revokeGrantBatch({ data: { batchId: batch.id } });
+    let res: Awaited<ReturnType<typeof revokeGrantBatch>>;
+    try {
+      res = await revokeGrantBatch({ data: { batchId: batch.id } });
+    } catch (e: any) {
+      console.error("[perks] batch revoke failed", e);
+      toast.error(e?.message ?? "Revoke failed");
+      setBusy(false);
+      return;
+    }
     setBusy(false);
     if ("error" in res) { toast.error(res.error); return; }
-    toast.success(`Revoked ${res.revoked} grant${res.revoked !== 1 ? "s" : ""}`);
+    if (res.revoked === 0) toast.error("Nothing left to revoke in this batch");
+    else toast.success(`Revoked ${res.revoked} grant${res.revoked !== 1 ? "s" : ""}`);
     setRecipients(null);
     if (open) {
       const r = await getBatchRecipients({ data: { batchId: batch.id, type: batch.type } });
@@ -550,7 +564,7 @@ function BatchRow({ batch, onChanged }: { batch: GrantBatchRow; onChanged: () =>
                     r.revoked_at ? (
                       <span className="font-mono text-[10px] text-white/40">REVOKED</span>
                     ) : (
-                      <button onClick={() => revokeOne(r.id)} className={QUIET_RED}>Revoke</button>
+                      <button onClick={() => revokeOne(r.id)} disabled={busy} className={`${QUIET_RED} disabled:opacity-40`}>Revoke</button>
                     )
                   )}
                 </li>
