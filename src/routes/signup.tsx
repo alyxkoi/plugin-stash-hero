@@ -12,6 +12,8 @@ export const Route = createFileRoute("/signup")({
 
 function SignupPage() {
   const navigate = useNavigate();
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -22,6 +24,7 @@ function SignupPage() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (!firstName.trim() || !lastName.trim()) { setError("Enter your first and last name."); return; }
     const pwErr = validatePassword(password);
     if (pwErr) { setError(pwErr); return; }
     if (password !== confirmPassword) { setError("Passwords don't match."); return; }
@@ -31,7 +34,11 @@ function SignupPage() {
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/account`,
-        data: { marketing_opt_in: marketing },
+        data: {
+          marketing_opt_in: marketing,
+          first_name: firstName.trim(),
+          last_name: lastName.trim(),
+        },
       },
     });
     setBusy(false);
@@ -81,6 +88,10 @@ function SignupPage() {
       footer={<>Already got an account? <Link to="/login" className="text-[var(--accent-red-glow)] font-bold">SIGN IN →</Link></>}
     >
       <form onSubmit={onSubmit}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="FIRST NAME" required value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+          <Field label="LAST NAME" required value={lastName} onChange={(e) => setLastName(e.target.value)} />
+        </div>
         <Field label="EMAIL" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
         <PasswordField label="PASSWORD" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
         <PasswordField label="CONFIRM PASSWORD" required minLength={6} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />

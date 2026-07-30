@@ -33,6 +33,7 @@ type OrderRow = {
 interface Aggregate {
   key: string;              // customer id OR guest email fallback
   customerId: string | null;
+  userId: string | null;
   email: string;
   name: string | null;
   hasAccount: boolean;
@@ -100,6 +101,7 @@ function CustomersPage() {
       map.set(c.id, {
         key: c.id,
         customerId: c.id,
+        userId: c.user_id ?? null,
         email: c.email,
         name: c.name,
         hasAccount: !!c.user_id,
@@ -122,6 +124,7 @@ function CustomersPage() {
         agg = map.get(key) ?? {
           key,
           customerId: null,
+          userId: o.user_id ?? null,
           email,
           name: null,
           hasAccount: !!o.user_id,
@@ -142,7 +145,7 @@ function CustomersPage() {
       }
       if (new Date(o.created_at) < new Date(agg.firstOrderAt)) agg.firstOrderAt = o.created_at;
       if (new Date(o.created_at) > new Date(agg.lastOrderAt)) agg.lastOrderAt = o.created_at;
-      if (o.user_id) agg.hasAccount = true;
+      if (o.user_id) { agg.hasAccount = true; agg.userId = agg.userId ?? o.user_id; }
     }
 
     return [...map.values()];
@@ -246,6 +249,7 @@ function CustomersPage() {
 function toDrawerData(a: Aggregate): CustomerDrawerData {
   return {
     key: a.key,
+    userId: a.userId,
     name: a.name,
     email: a.email,
     hasAccount: a.hasAccount,

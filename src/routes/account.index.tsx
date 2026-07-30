@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Package, CalendarDays, Library, ArrowUpRight } from "lucide-react";
+import { Package, CalendarDays, Library, ArrowUpRight, Wallet, X } from "lucide-react";
 import { GlassCard } from "@/components/GlassCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { getMyStoreCredit, type CreditSnapshot } from "@/lib/store-credit.functions";
 
 export const Route = createFileRoute("/account/")({
   head: () => ({ meta: [{ title: "Account Overview — Plugin Warehouse" }] }),
@@ -23,6 +24,8 @@ function OverviewPage() {
   const [ready, setReady] = useState(false);
   const [lastOrder, setLastOrder] = useState<LastOrder | null>(null);
   const [pluginsOwned, setPluginsOwned] = useState(0);
+  const [credit, setCredit] = useState<CreditSnapshot | null>(null);
+  const [showCredit, setShowCredit] = useState(false);
 
   useEffect(() => {
     if (loading || !user) return;
@@ -49,6 +52,11 @@ function OverviewPage() {
       for (const o of list) for (const it of (o.order_items ?? [])) if (it.product_id) owned.add(it.product_id);
       setPluginsOwned(owned.size);
       setReady(true);
+      try {
+        setCredit(await getMyStoreCredit());
+      } catch (e) {
+        console.warn("[account] store credit load failed", e);
+      }
     })();
   }, [user, loading]);
 
@@ -59,6 +67,7 @@ function OverviewPage() {
   if (!ready) return <div className="p-8 text-white/60">Loading…</div>;
 
   const email = user?.email ?? "";
+  const creditCents = credit?.balance_cents ?? 0;
 
   return (
     <div className="space-y-8">
@@ -69,7 +78,7 @@ function OverviewPage() {
         </h1>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         {/* Last Order */}
         <StatBox
           to={lastOrder ? "/account/orders" : undefined}
@@ -127,7 +136,67 @@ function OverviewPage() {
             {pluginsOwned === 0 ? "YOUR LIBRARY AWAITS" : "IN YOUR LIBRARY"}
           </div>
         </StatBox>
+        {/* Store Credit */}
+        <StatBox
+          icon={<Wallet className="w-4 h-4" strokeWidth={1.8} />}
+          label="STORE CREDIT"
+          highlight={creditCents > 0}
+          onClick={() => setShowCredit(true)}
+        >
+          <div className={`font-black text-4xl md:text-5xl leading-none ${creditCents > 0 ? "text-[#FF6A88]" : ""}`}>
+            ${(creditCents / 100).toFixed(2)}
+          </div>
+          <div className="mt-3 font-mono text-[11px] tracking-wider text-[#B8ACCC]">
+            {creditCents > 0 ? "APPLY IT AT CHECKOUT" : "NO CREDIT ON YOUR ACCOUNT"}
+          </div>
+        </StatBox>
       </div>
+
+      {showCredit && (
+        <div
+          className="fixed inset-0 z-[80] bg-black/70 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-6"
+          onClick={() => setShowCredit(false)}
+        >
+          <div
+            className="glass-card glass-card--heavy w-full md:max-w-lg max-h-[85vh] overflow-y-auto p-6 relative rounded-t-2xl md:rounded-2xl"
+            onClick={(e) => e.stopPropagation()}
+            style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom))" }}
+          >
+            <button
+              onClick={() => setShowCredit(false)}
+              aria-label="Close"
+              className="absolute top-4 right-4 w-10 h-10 inline-flex items-center justify-center rounded-full border border-white/15 text-[#C9BEDD]"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <div className="label-mini text-[#C9BEDD] mb-1">STORE CREDIT</div>
+            <div className="font-black text-3xl mb-5">${(creditCents / 100).toFixed(2)}</div>
+            {(credit?.entries.length ?? 0) === 0 ? (
+              <p className="text-[#B8ACCC] text-sm">No credit activity yet.</p>
+            ) : (
+              <ul className="space-y-2">
+                {credit!.entries.map((e) => (
+                  <li key={e.id} className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-mono text-[11px] text-[#B8ACCC]">
+                        {new Date(e.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                      </span>
+                      <span className={`font-mono text-sm ${e.amount_cents < 0 ? "text-[#FF6A88]" : "text-emerald-300"}`}>
+                        {e.amount_cents > 0 ? "+" : "−"}${(Math.abs(e.amount_cents) / 100).toFixed(2)}
+                      </span>
+                    </div>
+                    {e.reason && <div className="text-sm text-white/85 mt-1">{e.reason}</div>}
+                    <div className="font-mono text-[10px] text-[#B8ACCC] mt-1">
+                      BALANCE ${(e.balance_after_cents / 100).toFixed(2)}
+                      {e.order_number && <> · {e.order_number}</>}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
 
       {pluginsOwned === 0 && (
         <GlassCard className="p-8 text-center">
@@ -143,15 +212,20 @@ function OverviewPage() {
 }
 
 function StatBox({
-  to, icon, label, children,
+  to, icon, label, children, highlight, onClick,
 }: {
   to?: string;
   icon: React.ReactNode;
   label: string;
   children: React.ReactNode;
+  highlight?: boolean;
+  onClick?: () => void;
 }) {
   const inner = (
-    <div className="glass-card p-5 md:p-6 h-full relative overflow-hidden group">
+    <div
+      className="glass-card p-5 md:p-6 h-full relative overflow-hidden group"
+      style={highlight ? { borderColor: "rgba(255,0,60,0.55)", boxShadow: "0 0 32px rgba(255,0,60,0.22)" } : undefined}
+    >
       <div className="chromatic-edge" />
       <div className="glass-noise" />
       <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-[#FF003C] to-transparent opacity-70" />
@@ -163,7 +237,7 @@ function StatBox({
             </span>
             {label}
           </div>
-          {to && (
+          {(to || onClick) && (
             <ArrowUpRight
               className="w-4 h-4 text-white/40 group-hover:text-[#FF003C] group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition"
               strokeWidth={1.8}
@@ -174,6 +248,17 @@ function StatBox({
       </div>
     </div>
   );
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className="block w-full text-left transition hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF003C] rounded-2xl"
+      >
+        {inner}
+      </button>
+    );
+  }
   if (!to) return inner;
   return (
     <Link

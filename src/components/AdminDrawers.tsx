@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { DetailDrawer } from "./DetailDrawer";
 import { StatusBadge } from "./DashboardShell";
+import { StoreCreditPanel } from "./dashboard/StoreCreditPanel";
 import { getAdminOrderDetail, type AdminOrderDetail } from "@/lib/orders-admin.functions";
-import { Mail, Phone, CreditCard } from "lucide-react";
+import { Mail, Phone, CreditCard, ExternalLink } from "lucide-react";
+
 
 function money(n: number) {
   return `$${Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -117,13 +119,35 @@ export function OrderDrawer({
               {detail.discount > 0 && (
                 <Row label={`Discount${detail.discount_code ? ` · ${detail.discount_code}` : ""}`} value={`−${money(detail.discount)}`} accent />
               )}
+              {detail.credit_applied > 0 && (
+                <Row label="Store credit" value={`−${money(detail.credit_applied)}`} accent />
+              )}
               <div className="border-t border-white/10 mt-2 pt-2">
                 <Row label="Total" value={money(detail.total)} bold />
               </div>
             </div>
+            {detail.credit_applied > 0 && detail.status === "refunded" && (
+              <div className="mt-2 rounded-lg border border-white/15 bg-white/[0.03] p-3 text-[11px] text-[#C9BEDD]">
+                This order used {money(detail.credit_applied)} in store credit. Refunding in Stripe does not restore it —
+                re-grant it manually from the customer drawer if appropriate.
+              </div>
+            )}
           </section>
+
+          {/* Refund → Stripe (hidden on $0 orders and orders with no payment) */}
+          {detail.stripe_payment_intent_id && detail.total > 0 && (
+            <a
+              href={`https://dashboard.stripe.com/${detail.stripe_mode === "test" ? "test/" : ""}payments/${detail.stripe_payment_intent_id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 w-full min-h-[48px] rounded-lg border border-white/20 text-[11px] font-mono uppercase tracking-wider text-[#C9BEDD] hover:border-[var(--accent-red)]/60 hover:text-white transition"
+            >
+              Refund order in Stripe <ExternalLink size={13} />
+            </a>
+          )}
         </div>
       )}
+
     </DetailDrawer>
   );
 }
@@ -133,6 +157,8 @@ export function OrderDrawer({
 /* ============================================================ */
 export type CustomerDrawerData = {
   key: string;
+  /** auth user id — required for store credit (account holders only) */
+  userId?: string | null;
   name: string | null;
   email: string;
   phone?: string | null;
@@ -143,6 +169,7 @@ export type CustomerDrawerData = {
   ordersCount: number;
   orders: { id: string; number: string; total: number; status: string; created_at: string }[];
 };
+
 
 export function CustomerDrawer({
   customer, open, onClose,
@@ -185,6 +212,20 @@ export function CustomerDrawer({
                 <MiniStat label="AOV" value={money(aov)} />
               </div>
             </section>
+
+            {/* Store credit */}
+            {customer.userId ? (
+              <StoreCreditPanel customerId={customer.userId} />
+            ) : (
+              <section>
+                <SectionLabel>Store credit</SectionLabel>
+                <div className="rounded-lg border border-white/10 bg-white/[0.02] p-4 text-[11px] font-mono text-[#B8ACCC]">
+                  Guest checkout — store credit requires an account.
+                </div>
+              </section>
+            )}
+
+
 
             {/* Recent orders */}
             <section>

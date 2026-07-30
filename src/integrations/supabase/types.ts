@@ -526,7 +526,9 @@ export type Database = {
       orders: {
         Row: {
           created_at: string
+          credit_applied_cents: number
           customer_id: string | null
+          customer_name: string | null
           discount: number
           discount_code: string | null
           download_count: number
@@ -548,7 +550,9 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          credit_applied_cents?: number
           customer_id?: string | null
+          customer_name?: string | null
           discount?: number
           discount_code?: string | null
           download_count?: number
@@ -570,7 +574,9 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          credit_applied_cents?: number
           customer_id?: string | null
+          customer_name?: string | null
           discount?: number
           discount_code?: string | null
           download_count?: number
@@ -776,7 +782,9 @@ export type Database = {
           created_at: string
           display_name: string | null
           email: string
+          first_name: string | null
           id: string
+          last_name: string | null
           location: string | null
           marketing_prefs: Json
           updated_at: string
@@ -786,7 +794,9 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           email: string
+          first_name?: string | null
           id: string
+          last_name?: string | null
           location?: string | null
           marketing_prefs?: Json
           updated_at?: string
@@ -796,7 +806,9 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           email?: string
+          first_name?: string | null
           id?: string
+          last_name?: string | null
           location?: string | null
           marketing_prefs?: Json
           updated_at?: string
@@ -945,6 +957,95 @@ export type Database = {
           },
         ]
       }
+      store_credit_ledger: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          id: string
+          idempotency_key: string | null
+          order_id: string | null
+          reason: string | null
+          type: Database["public"]["Enums"]["store_credit_type"]
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          id?: string
+          idempotency_key?: string | null
+          order_id?: string | null
+          reason?: string | null
+          type: Database["public"]["Enums"]["store_credit_type"]
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          id?: string
+          idempotency_key?: string | null
+          order_id?: string | null
+          reason?: string | null
+          type?: Database["public"]["Enums"]["store_credit_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_credit_ledger_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_credit_ledger_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_credit_reservations: {
+        Row: {
+          created_at: string
+          customer_id: string
+          id: string
+          reserved_cents: number
+          session_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          id?: string
+          reserved_cents: number
+          session_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          id?: string
+          reserved_cents?: number
+          session_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_credit_reservations_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -975,6 +1076,25 @@ export type Database = {
         Args: { _product_ids: string[] }
         Returns: undefined
       }
+      admin_grant_store_credit: {
+        Args: {
+          _amount_cents: number
+          _customer_id: string
+          _reason: string
+          _type?: Database["public"]["Enums"]["store_credit_type"]
+        }
+        Returns: number
+      }
+      consume_store_credit: {
+        Args: {
+          _customer_id: string
+          _idempotency_key: string
+          _max_cents: number
+          _order_id: string
+          _session_id?: string
+        }
+        Returns: number
+      }
       get_bestseller_product_ids: {
         Args: { _limit?: number }
         Returns: {
@@ -998,6 +1118,10 @@ export type Database = {
         Returns: boolean
       }
       next_order_number: { Args: never; Returns: string }
+      release_credit_reservation: {
+        Args: { _session_id: string }
+        Returns: undefined
+      }
       reset_campaign_group_clicks: {
         Args: { _group_id: string }
         Returns: number
@@ -1006,6 +1130,7 @@ export type Database = {
         Args: { _link_id: string }
         Returns: number
       }
+      store_credit_balance: { Args: { _customer_id: string }; Returns: number }
     }
     Enums: {
       app_role: "admin" | "customer"
@@ -1016,6 +1141,7 @@ export type Database = {
       product_status: "published" | "draft" | "archived"
       sale_event_status: "active" | "scheduled" | "ended" | "draft"
       sale_scope: "all" | "selected" | "categories"
+      store_credit_type: "grant" | "spend" | "adjustment" | "reversal"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1151,6 +1277,7 @@ export const Constants = {
       product_status: ["published", "draft", "archived"],
       sale_event_status: ["active", "scheduled", "ended", "draft"],
       sale_scope: ["all", "selected", "categories"],
+      store_credit_type: ["grant", "spend", "adjustment", "reversal"],
     },
   },
 } as const

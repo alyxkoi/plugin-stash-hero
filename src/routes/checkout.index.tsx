@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useStore } from "@/lib/store";
 import { readStoredUtm } from "@/hooks/useUtmCapture";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
+import { getMyStoreCredit, guestEmailHasCredit } from "@/lib/store-credit.functions";
 
 export const Route = createFileRoute("/checkout/")({
   head: () => ({ meta: [{ title: "Checkout — Plugin Warehouse" }] }),
@@ -39,8 +40,33 @@ function CheckoutPage() {
   const [error, setError] = useState<string | null>(null);
   const [guestEmail, setGuestEmail] = useState("");
   const [emailConfirmed, setEmailConfirmed] = useState(false);
+  const [guestCreditHint, setGuestCreditHint] = useState(false);
   const [creating, setCreating] = useState(false);
   const startedRef = useRef(false);
+
+  // Store credit — opt-in, defaults OFF. The server always recomputes the
+  // exact amount from the ledger; we only send a boolean.
+  const [creditCents, setCreditCents] = useState(0);
+  const [creditLoaded, setCreditLoaded] = useState(false);
+  const [applyCredit, setApplyCredit] = useState(false);
+  const [creditReviewed, setCreditReviewed] = useState(false);
+
+  useEffect(() => {
+    if (loading) return;
+    if (!user) { setCreditLoaded(true); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const snap = await getMyStoreCredit();
+        if (!cancelled) setCreditCents(snap.balance_cents);
+      } catch (e) {
+        console.warn("[checkout] store credit load failed", e);
+      } finally {
+        if (!cancelled) setCreditLoaded(true);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user, loading]);
 
   const needsEmail = !loading && !user && !emailConfirmed;
 
@@ -77,6 +103,7 @@ function CheckoutPage() {
         email: email ?? (user?.email ?? null),
         returnUrl: `${window.location.origin}/checkout/return`,
         environment,
+        applyCredit,
       };
 
 
@@ -117,12 +144,14 @@ function CheckoutPage() {
   }
 
 
-  // Auto-start for logged-in users
+  // Auto-start for logged-in users. When they hold store credit we pause on a
+  // short review step first so applying it is a deliberate opt-in.
   useEffect(() => {
-    if (loading || cart.length === 0) return;
+    if (loading || cart.length === 0 || !creditLoaded) return;
+    if (creditCents > 0 && !creditReviewed) return;
     if (user && !clientSecret && !startedRef.current) startSession(user.email ?? null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, loading, cart.length]);
+  }, [user, loading, cart.length, creditLoaded, creditCents, creditReviewed]);
 
   if (loading) return <CheckoutFrame><p className="text-white/60">Loading…</p></CheckoutFrame>;
 
@@ -150,6 +179,17 @@ function CheckoutPage() {
               setError("Enter a valid email.");
               return;
             }
+            // One-time nudge: this email belongs to an account holding credit.
+            if (!guestCreditHint) {
+              guestEmailHasCredit({ data: { email: guestEmail } })
+                .then((r) => {
+                  if (r.hasCredit) { setGuestCreditHint(true); return; }
+                  setEmailConfirmed(true);
+                  startSession(guestEmail);
+                })
+                .catch(() => { setEmailConfirmed(true); startSession(guestEmail); });
+              return;
+            }
             setEmailConfirmed(true);
             startSession(guestEmail);
           }}
@@ -167,13 +207,58 @@ function CheckoutPage() {
               className="input-glass"
             />
           </label>
+          {guestCreditHint && (
+            <div className="rounded-xl border border-[var(--accent-red-glow)]/45 bg-[rgba(255,0,60,0.07)] p-4 mb-4">
+              <div className="text-sm text-white font-bold mb-1">You have store credit on this email.</div>
+              <p className="text-xs text-white/65 mb-3">Sign in to use it on this order, or keep going as a guest.</p>
+              <Link to="/login" search={{ next: "/checkout" } as any} className="btn-primary w-full !text-sm !py-3 block text-center">SIGN IN TO USE CREDIT →</Link>
+            </div>
+          )}
           {error && <div className="text-xs text-[var(--accent-red-glow)] font-mono mb-3">{error}</div>}
-          <button type="submit" className="btn-primary w-full !text-base !py-4">CONTINUE TO PAYMENT →</button>
+          <button type="submit" className="btn-primary w-full !text-base !py-4">{guestCreditHint ? "CONTINUE AS GUEST →" : "CONTINUE TO PAYMENT →"}</button>
         </form>
         <div className="text-center text-xs text-white/50 mt-6">
           Have an account?{" "}
           <Link to="/login" search={{ next: "/checkout" } as any} className="text-[var(--accent-red-glow)] font-bold hover:underline">SIGN IN →</Link>
         </div>
+      </GuestGateFrame>
+    );
+  }
+
+  // Store credit opt-in step (signed-in customers with a balance)
+  if (user && creditLoaded && creditCents > 0 && !creditReviewed && !clientSecret) {
+    return (
+      <GuestGateFrame>
+        <div className="font-mono text-xs tracking-[0.2em] text-[var(--accent-red-glow)] mb-3">CHECKOUT</div>
+        <h1 className="font-black text-4xl md:text-5xl chrome-text mb-2">YOU'VE GOT CREDIT.</h1>
+        <p className="text-white/65 mb-8">
+          ${(creditCents / 100).toFixed(2)} of store credit is sitting on your account. Use it now, or save it for later.
+        </p>
+        <button
+          type="button"
+          onClick={() => setApplyCredit((v) => !v)}
+          aria-pressed={applyCredit}
+          className={`w-full text-left flex items-center gap-4 p-4 rounded-xl border transition min-h-[64px] ${applyCredit ? "border-[var(--accent-red-glow)] bg-[rgba(255,0,60,0.08)]" : "border-white/15 bg-white/[0.03]"}`}
+        >
+          <span className={`w-12 h-7 rounded-full shrink-0 relative transition ${applyCredit ? "bg-[var(--accent-red)]" : "bg-white/20"}`}>
+            <span className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-all ${applyCredit ? "left-6" : "left-1"}`} />
+          </span>
+          <span className="min-w-0">
+            <span className="block text-sm text-white font-bold">Apply store credit (${(creditCents / 100).toFixed(2)} available)</span>
+            <span className="block font-mono text-[11px] text-white/55 mt-0.5">
+              {applyCredit
+                ? "Applied to this order — any leftover stays on your account."
+                : "Off — your credit stays untouched."}
+            </span>
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setCreditReviewed(true)}
+          className="btn-primary w-full !text-base !py-4 mt-6"
+        >
+          CONTINUE TO PAYMENT →
+        </button>
       </GuestGateFrame>
     );
   }
