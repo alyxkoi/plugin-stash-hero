@@ -41,7 +41,21 @@ Deno.serve(async (req) => {
       if ((items ?? []).some((i: any) => ["paid", "completed", "fulfilled"].includes(i.orders?.status))) {
         allowed = true;
         downloadUserId = user.id;
-      } else {
+      }
+
+      // Gifted plugins (admin grants) get the identical download experience.
+      if (!allowed) {
+        const { data: grant } = await admin
+          .from("plugin_grants")
+          .select("id")
+          .eq("customer_id", user.id)
+          .eq("product_id", productId)
+          .is("revoked_at", null)
+          .maybeSingle();
+        if (grant) { allowed = true; downloadUserId = user.id; }
+      }
+
+      if (!allowed) {
         // Admins can download anything
         const { data: roleRow } = await admin.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle();
         if (roleRow) { allowed = true; downloadUserId = user.id; }

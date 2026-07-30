@@ -2,6 +2,7 @@ import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tan
 import { useEffect } from "react";
 import { LogOut } from "lucide-react";
 import { useAuth, signOut } from "@/hooks/useAuth";
+import { claimMyOrders } from "@/lib/order-claim.functions";
 
 export const Route = createFileRoute("/account")({
   head: () => ({ meta: [{ title: "Your Account — Plugin Warehouse" }] }),
@@ -23,6 +24,12 @@ function AccountGate() {
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/login", replace: true });
   }, [loading, user, navigate]);
+
+  // Link guest purchases made with this verified email to the account.
+  useEffect(() => {
+    if (loading || !user) return;
+    claimMyOrders().catch(() => { /* non-blocking */ });
+  }, [loading, user?.id]);
 
   if (loading || !user) {
     return (
