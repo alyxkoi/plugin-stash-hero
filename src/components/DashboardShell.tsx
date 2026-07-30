@@ -7,14 +7,15 @@ import {
 } from "lucide-react";
 import logo from "@/assets/logo-dashboard.webp";
 import { useAuth, signOut } from "@/hooks/useAuth";
+import { SectionErrorBoundary } from "@/components/SectionErrorBoundary";
 
 const NAV: { to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean }[] = [
   { to: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
   { to: "/dashboard/orders", label: "Orders", icon: ShoppingBag },
-  { to: "/dashboard/products", label: "Products", icon: Package },
+  { to: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/dashboard/customers", label: "Customers", icon: Users },
   { to: "/dashboard/perks", label: "Perks", icon: Gift },
-  { to: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
+  { to: "/dashboard/products", label: "Products", icon: Package },
   { to: "/dashboard/sales", label: "Sales", icon: Tag },
   { to: "/dashboard/marketing", label: "Marketing", icon: Megaphone },
   { to: "/dashboard/settings", label: "Settings", icon: Settings },
@@ -109,16 +110,16 @@ function DashboardChromeRoot({ initialTitle, initialAction, children }: { initia
   return (
     <div className="dashboard-scope min-h-screen flex w-full" style={{ background: "var(--bg-base)" }}>
       {/* Sidebar */}
-      <aside className="dashboard-sidebar hidden lg:block sticky top-0 left-0 h-screen w-[220px] z-40">
+      <aside className="dashboard-sidebar hidden lg:block sticky top-0 left-0 h-screen max-h-screen w-[220px] shrink-0 z-40">
         <div className="glass-card h-full !rounded-none !rounded-r-2xl p-4 flex flex-col">
           <div className="chromatic-edge" />
-          <div className="relative z-10 flex-1 flex flex-col">
+          <div className="relative z-10 flex-1 flex flex-col min-h-0">
             <Link to="/dashboard" className="flex items-center gap-2 mb-1">
               <img src={logo} alt="Plugin Warehouse" width={420} height={120} className="h-7 w-auto object-contain" />
             </Link>
             <div className="label-mini opacity-50 text-[9px] mb-6 pl-1">Dashboard</div>
 
-            <nav className="relative flex flex-col gap-1 flex-1">
+            <nav className="relative flex flex-col gap-1 flex-1 min-h-0 overflow-y-auto overscroll-contain pr-1">
               <span className="nav-glow-blob" style={{ top: glowTop, height: ITEM_H }} />
               <span className="nav-glow" style={{ top: glowTop + 8, height: ITEM_H - 16 }} />
               {NAV.map((n) => {
@@ -133,7 +134,7 @@ function DashboardChromeRoot({ initialTitle, initialAction, children }: { initia
               })}
             </nav>
 
-            <div className="border-t border-white/10 pt-3 mt-3 flex flex-col gap-1">
+            <div className="shrink-0 border-t border-white/10 pt-3 mt-3 flex flex-col gap-1">
               <a href="/" target="_blank" rel="noreferrer" className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-white/60 hover:text-white transition">
                 <ExternalLink size={14} /> View storefront
               </a>
@@ -188,7 +189,9 @@ function DashboardChromeRoot({ initialTitle, initialAction, children }: { initia
                   {page.action}
                 </div>
               )}
-              <DashboardChromeContext.Provider value={chrome}>{children}</DashboardChromeContext.Provider>
+              <SectionErrorBoundary resetKey={pathname}>
+                <DashboardChromeContext.Provider value={chrome}>{children}</DashboardChromeContext.Provider>
+              </SectionErrorBoundary>
             </motion.div>
           </AnimatePresence>
           </div>

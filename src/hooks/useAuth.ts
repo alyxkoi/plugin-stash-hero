@@ -42,7 +42,7 @@ export function useAuth(): AuthState {
     const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
       // Ignore silent token refreshes and user metadata updates — they must
       // not remount gated views or reset form state.
-      if (event === "TOKEN_REFRESHED" || event === "USER_UPDATED") {
+      if (event === "TOKEN_REFRESHED" || event === "USER_UPDATED" || event === "INITIAL_SESSION") {
         setSession(s);
         return;
       }

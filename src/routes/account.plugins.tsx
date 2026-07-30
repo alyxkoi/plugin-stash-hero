@@ -131,13 +131,16 @@ function PluginsPage() {
   useEffect(() => {
     if (!user) return;
     const channel = supabase
-      .channel(`account-grants-${user.id}`)
+      .channel(`account-grants-${user.id}-${Math.random().toString(36).slice(2)}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "plugin_grants", filter: `customer_id=eq.${user.id}` },
         () => { load(); },
       )
-      .subscribe();
+      .subscribe((status) => {
+        // Realtime hiccups stay silent — they must never surface as page errors.
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") console.warn("[realtime]", status);
+      });
     return () => { supabase.removeChannel(channel); };
   }, [user, load]);
 
