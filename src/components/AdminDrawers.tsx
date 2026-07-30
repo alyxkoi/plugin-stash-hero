@@ -119,13 +119,35 @@ export function OrderDrawer({
               {detail.discount > 0 && (
                 <Row label={`Discount${detail.discount_code ? ` · ${detail.discount_code}` : ""}`} value={`−${money(detail.discount)}`} accent />
               )}
+              {detail.credit_applied > 0 && (
+                <Row label="Store credit" value={`−${money(detail.credit_applied)}`} accent />
+              )}
               <div className="border-t border-white/10 mt-2 pt-2">
                 <Row label="Total" value={money(detail.total)} bold />
               </div>
             </div>
+            {detail.credit_applied > 0 && detail.status === "refunded" && (
+              <div className="mt-2 rounded-lg border border-white/15 bg-white/[0.03] p-3 text-[11px] text-[#C9BEDD]">
+                This order used {money(detail.credit_applied)} in store credit. Refunding in Stripe does not restore it —
+                re-grant it manually from the customer drawer if appropriate.
+              </div>
+            )}
           </section>
+
+          {/* Refund → Stripe (hidden on $0 orders and orders with no payment) */}
+          {detail.stripe_payment_intent_id && detail.total > 0 && (
+            <a
+              href={`https://dashboard.stripe.com/${detail.stripe_mode === "test" ? "test/" : ""}payments/${detail.stripe_payment_intent_id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 w-full min-h-[48px] rounded-lg border border-white/20 text-[11px] font-mono uppercase tracking-wider text-[#C9BEDD] hover:border-[var(--accent-red)]/60 hover:text-white transition"
+            >
+              Refund order in Stripe <ExternalLink size={13} />
+            </a>
+          )}
         </div>
       )}
+
     </DetailDrawer>
   );
 }
