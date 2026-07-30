@@ -55,11 +55,14 @@ export function Shell() {
             }}
             style={{ willChange: "opacity" }}
           >
-            <Outlet />
+            <SectionErrorBoundary resetKey={pathname}>
+              <Outlet />
+            </SectionErrorBoundary>
           </motion.div>
         </AnimatePresence>
         </div>
       </main>
+
       <Footer />
       <CartDrawer />
       <CartSync />
