@@ -169,7 +169,29 @@ export const Route = createFileRoute("/api/public/payments/webhook")({
         }
         const env: StripeEnv = rawEnv;
         try {
+          // Signature is verified on every request before anything is read.
           const event = await verifyWebhook(request, env);
+
+          // ---- Event-level idempotency ----
+          // Stripe retries deliveries, and an endpoint can be registered more
+          // than once. Claim the event id first; if it's already logged, skip.
+          const eventId = (event as any).id as string | undefined;
+          if (eventId) {
+            const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+            const { data: claimed, error: claimErr } = await supabaseAdmin
+              .from("stripe_webhook_events")
+              .insert({
+                event_id: eventId,
+                event_type: event.type,
+                session_id: ((event.data.object as any)?.id as string) ?? null,
+              } as any)
+              .select("event_id");
+            if (claimErr || (claimed ?? []).length === 0) {
+              console.log("[webhook] duplicate event skipped:", eventId, event.type);
+              return Response.json({ received: true, duplicate: true });
+            }
+          }
+
           if (event.type === "checkout.session.completed") {
             await handleCheckoutCompleted(event.data.object, env);
           } else if (event.type === "checkout.session.expired") {
@@ -179,6 +201,14 @@ export const Route = createFileRoute("/api/public/payments/webhook")({
 
           } else {
             console.log("[webhook] unhandled:", event.type);
+          }
+
+          if (eventId) {
+            const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+            await supabaseAdmin
+              .from("stripe_webhook_events")
+              .update({ processed_at: new Date().toISOString() } as any)
+              .eq("event_id", eventId);
           }
           return Response.json({ received: true });
         } catch (e) {
