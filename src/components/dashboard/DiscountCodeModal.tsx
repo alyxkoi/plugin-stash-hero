@@ -23,16 +23,17 @@ export type DiscountRow = {
 
 type ProductLite = { id: string; name: string; maker: string; category: string };
 
-export function DiscountCodeModal({ onClose, onCreated }: { onClose: () => void; onCreated: (r: DiscountRow) => void }) {
+export function DiscountCodeModal({ onClose, onCreated, existing }: { onClose: () => void; onCreated: (r: DiscountRow) => void; existing?: DiscountRow }) {
   const reduce = useReducedMotion();
-  const [code, setCode] = useState("");
-  const [type, setType] = useState<"percent" | "flat">("percent");
-  const [value, setValue] = useState("");
-  const [usageLimit, setUsageLimit] = useState("");
-  const [expiresAt, setExpiresAt] = useState("");
-  const [active, setActive] = useState(true);
-  const [scope, setScope] = useState<Scope>("all");
-  const [categoriesSel, setCategoriesSel] = useState<string[]>([]);
+  const isEdit = !!existing;
+  const [code, setCode] = useState(existing?.code ?? "");
+  const [type, setType] = useState<"percent" | "flat">(existing?.type ?? "percent");
+  const [value, setValue] = useState(existing ? String(existing.value) : "");
+  const [usageLimit, setUsageLimit] = useState(existing?.usage_limit != null ? String(existing.usage_limit) : "");
+  const [expiresAt, setExpiresAt] = useState(existing?.expires_at ? existing.expires_at.slice(0, 10) : "");
+  const [active, setActive] = useState(existing ? existing.status === "active" : true);
+  const [scope, setScope] = useState<Scope>(existing?.scope ?? "all");
+  const [categoriesSel, setCategoriesSel] = useState<string[]>(existing?.categories ?? []);
   const [productIds, setProductIds] = useState<string[]>([]);
   const [products, setProducts] = useState<ProductLite[]>([]);
   const [query, setQuery] = useState("");
@@ -47,6 +48,16 @@ export function DiscountCodeModal({ onClose, onCreated }: { onClose: () => void;
       setProducts((data ?? []) as ProductLite[]);
     })();
   }, []);
+
+  useEffect(() => {
+    if (!existing || existing.scope !== "selected") return;
+    (async () => {
+      const { data } = await (supabase as any).from("discount_code_products")
+        .select("product_id")
+        .eq("discount_code_id", existing.id);
+      setProductIds(((data ?? []) as { product_id: string }[]).map(r => r.product_id));
+    })();
+  }, [existing]);
 
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -94,17 +105,22 @@ export function DiscountCodeModal({ onClose, onCreated }: { onClose: () => void;
       scope,
       categories: scope === "categories" ? categoriesSel : [],
     };
-    const { data, error } = await supabase.from("discount_codes")
-      .insert(payload as any)
-      .select("id, code, type, value, usage_limit, uses, expires_at, status, applies_to, scope, categories")
-      .single();
+    const sel = "id, code, type, value, usage_limit, uses, expires_at, status, applies_to, scope, categories";
+    const { data, error } = isEdit
+      ? await supabase.from("discount_codes").update(payload as any).eq("id", existing!.id).select(sel).single()
+      : await supabase.from("discount_codes").insert(payload as any).select(sel).single();
     if (error || !data) {
       setSaving(false);
-      return toast.error(error?.message || "Couldn't create code");
+      return toast.error(error?.message || (isEdit ? "Couldn't save code" : "Couldn't create code"));
     }
+    const codeId = (data as any).id as string;
     // Sync join table for scope=selected.
+    if (isEdit) {
+      const { error: dErr } = await (supabase as any).from("discount_code_products").delete().eq("discount_code_id", codeId);
+      if (dErr) { setSaving(false); return toast.error(dErr.message); }
+    }
     if (scope === "selected" && productIds.length > 0) {
-      const rows = productIds.map(pid => ({ discount_code_id: (data as any).id as string, product_id: pid }));
+      const rows = productIds.map(pid => ({ discount_code_id: codeId, product_id: pid }));
       const { error: jErr } = await (supabase as any).from("discount_code_products").insert(rows);
       if (jErr) {
         setSaving(false);
@@ -112,7 +128,7 @@ export function DiscountCodeModal({ onClose, onCreated }: { onClose: () => void;
       }
     }
     setSaving(false);
-    toast.success("Code created");
+    toast.success(isEdit ? "Code updated" : "Code created");
     onCreated(data as unknown as DiscountRow);
   }
 
@@ -144,7 +160,7 @@ export function DiscountCodeModal({ onClose, onCreated }: { onClose: () => void;
         >
           <div className="chromatic-edge pointer-events-none" />
           <div className="relative z-10 flex items-center justify-between px-6 py-4 border-b border-white/10 shrink-0">
-            <h3 className="font-display text-lg">Generate discount code</h3>
+            <h3 className="font-display text-lg">{isEdit ? "Edit discount code" : "Generate discount code"}</h3>
             <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition" aria-label="Close">
               <X size={16} />
             </button>
@@ -264,7 +280,7 @@ export function DiscountCodeModal({ onClose, onCreated }: { onClose: () => void;
 
           <div className="relative z-10 flex gap-2 justify-end px-6 py-4 border-t border-white/10 shrink-0" style={{ background: "rgba(20,5,44,0.6)" }}>
             <button onClick={onClose} className="btn-ghost !text-xs !py-2 !px-4">Cancel</button>
-            <button onClick={save} disabled={saving} className="btn-primary !text-xs !py-2 !px-4">{saving ? "Creating…" : "Create code"}</button>
+            <button onClick={save} disabled={saving} className="btn-primary !text-xs !py-2 !px-4">{saving ? (isEdit ? "Saving…" : "Creating…") : (isEdit ? "Save changes" : "Create code")}</button>
           </div>
         </motion.div>
 

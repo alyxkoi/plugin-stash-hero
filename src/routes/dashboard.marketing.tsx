@@ -2,7 +2,7 @@ import { createFileRoute, useSearch, useNavigate } from "@tanstack/react-router"
 import { useEffect, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { DashboardShell, DashCard, StatusBadge } from "@/components/DashboardShell";
-import { Copy, Plus, Trash2 } from "lucide-react";
+import { Copy, Plus, Trash2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { DiscountCodeModal, type DiscountRow } from "@/components/dashboard/DiscountCodeModal";
@@ -74,6 +74,7 @@ function MarketingCodesAction() {
 
 function DiscountCodesPanel() {
   const [genOpen, setGenOpen] = useState(false);
+  const [editing, setEditing] = useState<DiscountRow | null>(null);
   const [rows, setRows] = useState<DiscountRow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -133,6 +134,7 @@ function DiscountCodesPanel() {
                 <td className="hidden md:table-cell py-2 px-2"><StatusBadge status={c.status} /></td>
                 <td className="py-2 px-2 text-right whitespace-nowrap">
                   <button onClick={() => { navigator.clipboard.writeText(c.code); toast.success("Code copied"); }} className="p-1.5 rounded hover:bg-white/10" title="Copy"><Copy size={13} /></button>
+                  <button onClick={() => setEditing(c)} className="p-1.5 rounded hover:bg-white/10 text-white/70 hover:text-white" title="Edit"><Pencil size={13} /></button>
                   <button onClick={() => remove(c.id)} className="p-1.5 rounded hover:bg-white/10 text-white/60 hover:text-[var(--accent-red-glow)]" title="Delete"><Trash2 size={13} /></button>
                 </td>
               </tr>
@@ -150,6 +152,17 @@ function DiscountCodesPanel() {
           <DiscountCodeModal
             onClose={() => setGenOpen(false)}
             onCreated={row => { setRows(r => [row, ...r]); setGenOpen(false); }}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {editing && (
+          <DiscountCodeModal
+            key={editing.id}
+            existing={editing}
+            onClose={() => setEditing(null)}
+            onCreated={row => { setRows(r => r.map(x => (x.id === row.id ? row : x))); setEditing(null); }}
           />
         )}
       </AnimatePresence>
