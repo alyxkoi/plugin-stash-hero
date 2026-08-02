@@ -280,7 +280,7 @@ export function DiscountCodeModal({ onClose, onCreated, existing }: { onClose: (
 
           <div className="relative z-10 flex gap-2 justify-end px-6 py-4 border-t border-white/10 shrink-0" style={{ background: "rgba(20,5,44,0.6)" }}>
             <button onClick={onClose} className="btn-ghost !text-xs !py-2 !px-4">Cancel</button>
-            <button onClick={save} disabled={saving} className="btn-primary !text-xs !py-2 !px-4">{saving ? "Creating…" : "Create code"}</button>
+            <button onClick={save} disabled={saving} className="btn-primary !text-xs !py-2 !px-4">{saving ? (isEdit ? "Saving…" : "Creating…") : (isEdit ? "Save changes" : "Create code")}</button>
           </div>
         </motion.div>
 
