@@ -134,6 +134,7 @@ function DiscountCodesPanel() {
                 <td className="hidden md:table-cell py-2 px-2"><StatusBadge status={c.status} /></td>
                 <td className="py-2 px-2 text-right whitespace-nowrap">
                   <button onClick={() => { navigator.clipboard.writeText(c.code); toast.success("Code copied"); }} className="p-1.5 rounded hover:bg-white/10" title="Copy"><Copy size={13} /></button>
+                  <button onClick={() => setEditing(c)} className="p-1.5 rounded hover:bg-white/10 text-white/70 hover:text-white" title="Edit"><Pencil size={13} /></button>
                   <button onClick={() => remove(c.id)} className="p-1.5 rounded hover:bg-white/10 text-white/60 hover:text-[var(--accent-red-glow)]" title="Delete"><Trash2 size={13} /></button>
                 </td>
               </tr>
