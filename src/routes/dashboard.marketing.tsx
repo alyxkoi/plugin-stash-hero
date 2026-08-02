@@ -74,6 +74,7 @@ function MarketingCodesAction() {
 
 function DiscountCodesPanel() {
   const [genOpen, setGenOpen] = useState(false);
+  const [editing, setEditing] = useState<DiscountRow | null>(null);
   const [rows, setRows] = useState<DiscountRow[]>([]);
   const [loading, setLoading] = useState(true);
 
