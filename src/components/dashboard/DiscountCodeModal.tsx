@@ -23,16 +23,17 @@ export type DiscountRow = {
 
 type ProductLite = { id: string; name: string; maker: string; category: string };
 
-export function DiscountCodeModal({ onClose, onCreated }: { onClose: () => void; onCreated: (r: DiscountRow) => void }) {
+export function DiscountCodeModal({ onClose, onCreated, existing }: { onClose: () => void; onCreated: (r: DiscountRow) => void; existing?: DiscountRow }) {
   const reduce = useReducedMotion();
-  const [code, setCode] = useState("");
-  const [type, setType] = useState<"percent" | "flat">("percent");
-  const [value, setValue] = useState("");
-  const [usageLimit, setUsageLimit] = useState("");
-  const [expiresAt, setExpiresAt] = useState("");
-  const [active, setActive] = useState(true);
-  const [scope, setScope] = useState<Scope>("all");
-  const [categoriesSel, setCategoriesSel] = useState<string[]>([]);
+  const isEdit = !!existing;
+  const [code, setCode] = useState(existing?.code ?? "");
+  const [type, setType] = useState<"percent" | "flat">(existing?.type ?? "percent");
+  const [value, setValue] = useState(existing ? String(existing.value) : "");
+  const [usageLimit, setUsageLimit] = useState(existing?.usage_limit != null ? String(existing.usage_limit) : "");
+  const [expiresAt, setExpiresAt] = useState(existing?.expires_at ? existing.expires_at.slice(0, 10) : "");
+  const [active, setActive] = useState(existing ? existing.status === "active" : true);
+  const [scope, setScope] = useState<Scope>(existing?.scope ?? "all");
+  const [categoriesSel, setCategoriesSel] = useState<string[]>(existing?.categories ?? []);
   const [productIds, setProductIds] = useState<string[]>([]);
   const [products, setProducts] = useState<ProductLite[]>([]);
   const [query, setQuery] = useState("");
@@ -47,6 +48,16 @@ export function DiscountCodeModal({ onClose, onCreated }: { onClose: () => void;
       setProducts((data ?? []) as ProductLite[]);
     })();
   }, []);
+
+  useEffect(() => {
+    if (!existing || existing.scope !== "selected") return;
+    (async () => {
+      const { data } = await (supabase as any).from("discount_code_products")
+        .select("product_id")
+        .eq("discount_code_id", existing.id);
+      setProductIds(((data ?? []) as { product_id: string }[]).map(r => r.product_id));
+    })();
+  }, [existing]);
 
   useEffect(() => {
     const prev = document.body.style.overflow;
