@@ -160,7 +160,7 @@ export function DiscountCodeModal({ onClose, onCreated, existing }: { onClose: (
         >
           <div className="chromatic-edge pointer-events-none" />
           <div className="relative z-10 flex items-center justify-between px-6 py-4 border-b border-white/10 shrink-0">
-            <h3 className="font-display text-lg">Generate discount code</h3>
+            <h3 className="font-display text-lg">{isEdit ? "Edit discount code" : "Generate discount code"}</h3>
             <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition" aria-label="Close">
               <X size={16} />
             </button>
