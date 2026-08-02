@@ -2,7 +2,7 @@ import { createFileRoute, useSearch, useNavigate } from "@tanstack/react-router"
 import { useEffect, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { DashboardShell, DashCard, StatusBadge } from "@/components/DashboardShell";
-import { Copy, Plus, Trash2 } from "lucide-react";
+import { Copy, Plus, Trash2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { DiscountCodeModal, type DiscountRow } from "@/components/dashboard/DiscountCodeModal";
