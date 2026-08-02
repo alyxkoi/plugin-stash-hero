@@ -155,6 +155,17 @@ function DiscountCodesPanel() {
           />
         )}
       </AnimatePresence>
+
+      <AnimatePresence>
+        {editing && (
+          <DiscountCodeModal
+            key={editing.id}
+            existing={editing}
+            onClose={() => setEditing(null)}
+            onCreated={row => { setRows(r => r.map(x => (x.id === row.id ? row : x))); setEditing(null); }}
+          />
+        )}
+      </AnimatePresence>
     </>
   );
 }
