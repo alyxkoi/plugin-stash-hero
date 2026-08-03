@@ -79,8 +79,9 @@ function CustomersPage() {
       _offset: (page - 1) * PAGE_SIZE,
     });
     if (err) {
-      console.error("[customers] list failed", err);
-      setError("Couldn't load customers.");
+      // Surface the real Postgres error — guessing cost us a full regression cycle.
+      console.error("[customers] list failed", err.code, err.message, err.details, err.hint);
+      setError(`Couldn't load customers${err.code ? ` (${err.code})` : ""}: ${err.message}`);
     } else {
       setError(null);
       const list = (data ?? []) as Row[];
@@ -150,7 +151,15 @@ function CustomersPage() {
         </select>
       </div>
 
+      {error && rows.length > 0 && (
+        <div className="mb-3 flex flex-wrap items-center gap-3 rounded-lg border border-[var(--accent-red)]/40 bg-[var(--accent-red)]/10 px-3 py-2 text-[11px] font-mono text-white/80">
+          <span className="truncate">{error}</span>
+          <button onClick={load} className="underline text-[var(--accent-red)]">Retry</button>
+        </div>
+      )}
+
       <DashCard>
+
         {/* Desktop: table. Mobile: stacked rows — no horizontal clipping. */}
         <div className="hidden md:block">
           <table className="w-full text-sm">
