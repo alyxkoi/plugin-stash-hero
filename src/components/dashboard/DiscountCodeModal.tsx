@@ -9,6 +9,8 @@ import { categories as ALL_CATEGORIES } from "@/lib/mock-data";
 export type Scope = "all" | "categories" | "selected";
 export type DiscountRow = {
   id: string;
+  /** Admin-facing label only — has zero effect on checkout behaviour. */
+  name: string | null;
   code: string;
   type: "percent" | "flat";
   value: number;
@@ -20,6 +22,7 @@ export type DiscountRow = {
   scope: Scope;
   categories: string[];
 };
+
 
 type ProductLite = { id: string; name: string; maker: string; category: string };
 
