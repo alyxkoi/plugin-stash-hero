@@ -5,7 +5,9 @@ import { OrderDrawer } from "@/components/AdminDrawers";
 import { Plus, Tag, Ticket } from "lucide-react";
 import { ResponsiveContainer, Tooltip, XAxis, YAxis, Area, AreaChart, CartesianGrid } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
-import { keptRatio, netRevenue, saleOrders, sumNetRevenue } from "@/lib/revenue";
+import { keptRatio, saleOrders, sumNetRevenue, netRevenue } from "@/lib/revenue";
+import { useIsMobile } from "@/hooks/use-mobile";
+
 
 export const Route = createFileRoute("/dashboard/")({
   head: () => ({ meta: [{ title: "Overview — Plugin Warehouse" }] }),
