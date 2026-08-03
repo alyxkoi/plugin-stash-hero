@@ -281,18 +281,33 @@ function SummaryStat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function AccountBadge({ hasAccount }: { hasAccount: boolean }) {
-  return hasAccount
-    ? <span className="text-[9px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--accent-blue)]/15 text-[var(--accent-blue-glow)] border border-[var(--accent-blue)]/40">Account</span>
-    : <span className="text-[9px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded bg-white/5 text-white/60 border border-white/15">Guest</span>;
+function Avatar({ name, email }: { name: string | null; email: string }) {
+  return (
+    <div className="w-8 h-8 shrink-0 rounded-full bg-gradient-to-br from-[var(--accent-red)] to-[var(--accent-blue)] flex items-center justify-center text-[10px] font-bold">
+      {initialsFrom(name, email)}
+    </div>
+  );
 }
 
+function AccountBadge({ hasAccount }: { hasAccount: boolean }) {
+  return hasAccount
+    ? <span className="inline-flex items-center h-6 px-2 rounded-md text-[10px] font-mono uppercase tracking-wider bg-[var(--accent-blue)]/15 text-[var(--accent-blue-glow)] border border-[var(--accent-blue)]/40">Account</span>
+    : <span className="inline-flex items-center h-6 px-2 rounded-md text-[10px] font-mono uppercase tracking-wider bg-white/5 text-[#B8ACCC] border border-white/15">Guest</span>;
+}
+
+/**
+ * ONE pill, never two — "NEW" or "REPEAT ×N". Uses total order count, matching
+ * the shared new/returning definition (any prior order makes them returning).
+ */
 function PurchaseBadge({ count }: { count: number }) {
   if (count <= 0) return <span className="text-[10px] text-white/30 font-mono">—</span>;
-  if (count === 1) return <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-white/5 text-white/70 border border-white/15">New</span>;
+  if (count === 1) {
+    return <span className="inline-flex items-center h-6 px-2 rounded-md text-[10px] font-mono uppercase tracking-wider bg-white/5 text-[#C9BEDD] border border-white/15">New</span>;
+  }
   return (
-    <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-gradient-to-r from-[var(--accent-red)]/25 to-[var(--accent-blue)]/25 text-white border border-[var(--accent-red)]/40 shadow-[0_0_12px_rgba(255,0,60,0.25)]">
-      ×{count} repeat
+    <span className="inline-flex items-center h-6 px-2 rounded-md whitespace-nowrap text-[10px] font-mono uppercase tracking-wider bg-gradient-to-r from-[var(--accent-red)]/25 to-[var(--accent-blue)]/25 text-white border border-[var(--accent-red)]/40 shadow-[0_0_12px_rgba(255,0,60,0.25)]">
+      Repeat ×{count}
     </span>
   );
 }
+
