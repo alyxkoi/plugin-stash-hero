@@ -190,7 +190,7 @@ function Hero() {
     <section className="relative px-4 md:px-6 -mt-24 md:-mt-28 pt-28 md:pt-36 pb-12 md:pb-24 overflow-hidden">
       <video
         className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-        src="https://ovhpoysgvuupqydprsjx.supabase.co/storage/v1/object/public/imagesvideos//pwh%20hero%20video.mp4"
+        src={heroVideoAsset.url}
         autoPlay
         loop
         muted
