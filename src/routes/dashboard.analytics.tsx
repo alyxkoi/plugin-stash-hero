@@ -7,6 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { deriveSaleStatus, formatInSaleTimeZone } from "@/lib/sale-time";
 import { normalizeUtmSource } from "@/lib/utm";
 import { countsAsSale, keptRatio, netRevenue, saleOrders, sumNetRevenue } from "@/lib/revenue";
+import { fetchOrderIdentity, splitNewReturning, type IdentityMap } from "@/lib/customer-identity";
+
 
 
 
