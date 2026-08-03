@@ -257,31 +257,66 @@ function Overview() {
   );
 }
 
-function buildSeries(orders: OrderRow[], grouping: "daily" | "weekly" | "monthly") {
-  if (orders.length === 0) return [];
-  const buckets = new Map<string, { key: string; label: string; ts: number; value: number }>();
-  const keyOf = (d: Date): { key: string; label: string; ts: number } => {
-    if (grouping === "daily") {
-      const k = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-      return { key: k, label: d.toLocaleDateString("en", { month: "short", day: "numeric" }), ts: new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() };
-    }
-    if (grouping === "weekly") {
-      const start = new Date(d);
-      start.setDate(d.getDate() - d.getDay());
-      start.setHours(0, 0, 0, 0);
-      return { key: `w-${start.getTime()}`, label: start.toLocaleDateString("en", { month: "short", day: "numeric" }), ts: start.getTime() };
-    }
-    return { key: `${d.getFullYear()}-${d.getMonth()}`, label: d.toLocaleDateString("en", { month: "short", year: "2-digit" }), ts: new Date(d.getFullYear(), d.getMonth(), 1).getTime() };
-  };
-  for (const o of orders) {
-    const d = new Date(o.created_at);
-    const { key, label, ts } = keyOf(d);
-    const cur = buckets.get(key) ?? { key, label, ts, value: 0 };
-    cur.value += netRevenue(o);
-    buckets.set(key, cur);
-  }
-  return [...buckets.values()].sort((a, b) => a.ts - b.ts);
+/* ---- Central-time (America/Chicago) day bucketing ---------------------- */
+
+const CENTRAL_TZ = "America/Chicago";
+const CENTRAL_DAY_FMT = new Intl.DateTimeFormat("en-CA", { timeZone: CENTRAL_TZ, year: "numeric", month: "2-digit", day: "2-digit" });
+const CENTRAL_WEEKDAY_FMT = new Intl.DateTimeFormat("en-US", { timeZone: CENTRAL_TZ, weekday: "short" });
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+/** "YYYY-MM-DD" for the Central-time calendar day containing `d`. */
+function centralDayKey(d: Date) {
+  return CENTRAL_DAY_FMT.format(d);
 }
+
+/** A stable noon-UTC anchor for a Central calendar day key, for labels/math. */
+function anchorFor(key: string) {
+  const [y, m, day] = key.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, day, 12));
+}
+
+function keyFromAnchor(d: Date) {
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * Daily buckets in Central time. Windows:
+ *  - daily: the last `dailyWindow` days ending today (5 on mobile, 7 elsewhere)
+ *  - wtd:   most recent Sunday → today
+ *  - mtd:   1st of the current month → today
+ * Every day in the window is emitted (zero-filled) so the x-axis is continuous.
+ */
+function buildSeries(orders: OrderRow[], grouping: Grouping, dailyWindow: number) {
+  const now = new Date();
+  const todayKey = centralDayKey(now);
+  const today = anchorFor(todayKey);
+
+  let days: number;
+  if (grouping === "wtd") {
+    days = WEEKDAYS.indexOf(CENTRAL_WEEKDAY_FMT.format(now)) + 1;
+  } else if (grouping === "mtd") {
+    days = Number(todayKey.slice(8, 10));
+  } else {
+    days = dailyWindow;
+  }
+  if (!days || days < 1) days = 1;
+
+  const buckets = new Map<string, number>();
+  for (const o of orders) buckets.set(centralDayKey(new Date(o.created_at)), (buckets.get(centralDayKey(new Date(o.created_at))) ?? 0) + netRevenue(o));
+
+  const out: { key: string; label: string; value: number }[] = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(today.getTime() - i * 86400_000);
+    const key = keyFromAnchor(d);
+    out.push({
+      key,
+      label: d.toLocaleDateString("en", { timeZone: "UTC", month: "short", day: "numeric" }),
+      value: Math.round((buckets.get(key) ?? 0) * 100) / 100,
+    });
+  }
+  return out;
+}
+
 
 function QuickTile({ icon, title, to }: { icon: React.ReactNode; title: string; to: string }) {
   return (
