@@ -151,7 +151,8 @@ function CustomersPage() {
       </div>
 
       <DashCard>
-        <div className="overflow-x-auto -mx-2">
+        {/* Desktop: table. Mobile: stacked rows — no horizontal clipping. */}
+        <div className="hidden md:block">
           <table className="w-full text-sm">
             <thead className="text-[10px] uppercase tracking-wider text-white/40">
               <tr>
@@ -159,7 +160,7 @@ function CustomersPage() {
                 <th className="text-left py-2 px-2">Type</th>
                 <th className="text-left py-2 px-2">Purchases</th>
                 <th className="text-right py-2 px-2">Spent</th>
-                <th className="hidden md:table-cell text-right py-2 px-2">Orders</th>
+                <th className="text-right py-2 px-2">Orders</th>
                 <th className="text-right py-2 px-2">Last purchase</th>
               </tr>
             </thead>
@@ -167,34 +168,62 @@ function CustomersPage() {
               {rows.map(a => (
                 <tr key={a.key} onClick={() => setOpenKey(a.key)} className="border-t border-white/5 hover:bg-white/[0.04] cursor-pointer">
                   <td className="py-2 px-2">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--accent-red)] to-[var(--accent-blue)] flex items-center justify-center text-[10px] font-bold shrink-0">{initialsFrom(a.name, a.email)}</div>
+                    <div className="flex min-w-0 items-center gap-3">
+                      <Avatar name={a.name} email={a.email} />
                       <div className="min-w-0">
                         <div className="text-sm truncate">{a.name || a.email}</div>
-                        {a.name && <div className="text-[10px] text-white/40 font-mono truncate">{a.email}</div>}
+                        {a.name && <div className="text-[10px] text-[#B8ACCC] font-mono truncate">{a.email}</div>}
                       </div>
                     </div>
                   </td>
                   <td className="py-2 px-2"><AccountBadge hasAccount={a.has_account} /></td>
-                  <td className="py-2 px-2"><PurchaseBadge count={Number(a.completed_count)} /></td>
+                  <td className="py-2 px-2"><PurchaseBadge count={Number(a.orders_count)} /></td>
                   <td className="py-2 px-2 text-right font-mono text-xs">{money(Number(a.total_spent))}</td>
-                  <td className="hidden md:table-cell py-2 px-2 text-right font-mono text-xs">{a.orders_count}</td>
-                  <td className="py-2 px-2 text-right text-[10px] font-mono text-white/50 whitespace-nowrap">{Number(a.completed_count) > 0 ? relTime(a.last_order_at) : "—"}</td>
+                  <td className="py-2 px-2 text-right font-mono text-xs">{a.orders_count}</td>
+                  <td className="py-2 px-2 text-right text-[10px] font-mono text-[#B8ACCC] whitespace-nowrap">{Number(a.orders_count) > 0 ? relTime(a.last_order_at) : "—"}</td>
                 </tr>
               ))}
-              {rows.length === 0 && (
-                <tr><td colSpan={6} className="py-16 text-center text-white/40 text-sm">
-                  {loading ? "Loading…" : error ? (
-                    <span>
-                      {error}{" "}
-                      <button onClick={load} className="underline text-[var(--accent-red)]">Retry</button>
-                    </span>
-                  ) : "No customers yet. This list populates automatically as orders come in."}
-                </td></tr>
-              )}
             </tbody>
           </table>
         </div>
+
+        <ul className="md:hidden divide-y divide-white/5">
+          {rows.map(a => (
+            <li key={a.key}>
+              <button onClick={() => setOpenKey(a.key)} className="w-full text-left py-3 active:bg-white/[0.04] transition">
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <Avatar name={a.name} email={a.email} />
+                    <div className="min-w-0">
+                      <div className="text-sm truncate">{a.name || a.email}</div>
+                      {a.name && <div className="text-[11px] text-[#B8ACCC] font-mono truncate">{a.email}</div>}
+                    </div>
+                  </div>
+                  <div className="shrink-0 text-right font-mono text-sm">{money(Number(a.total_spent))}</div>
+                </div>
+                <div className="mt-2 flex flex-wrap items-center gap-2 pl-11">
+                  <PurchaseBadge count={Number(a.orders_count)} />
+                  <AccountBadge hasAccount={a.has_account} />
+                  <span className="text-[10px] font-mono text-[#B8ACCC]">
+                    {Number(a.orders_count) > 0 ? relTime(a.last_order_at) : "—"}
+                  </span>
+                </div>
+              </button>
+            </li>
+          ))}
+        </ul>
+
+        {rows.length === 0 && (
+          <div className="py-16 text-center text-white/40 text-sm">
+            {loading ? "Loading…" : error ? (
+              <span>
+                {error}{" "}
+                <button onClick={load} className="underline text-[var(--accent-red)]">Retry</button>
+              </span>
+            ) : "No customers yet. This list populates automatically as orders come in."}
+          </div>
+        )}
+
 
         <div className="mt-4 pt-3 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="text-[11px] font-mono text-[#B8ACCC] text-center sm:text-left">
@@ -252,18 +281,33 @@ function SummaryStat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function AccountBadge({ hasAccount }: { hasAccount: boolean }) {
-  return hasAccount
-    ? <span className="text-[9px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--accent-blue)]/15 text-[var(--accent-blue-glow)] border border-[var(--accent-blue)]/40">Account</span>
-    : <span className="text-[9px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded bg-white/5 text-white/60 border border-white/15">Guest</span>;
+function Avatar({ name, email }: { name: string | null; email: string }) {
+  return (
+    <div className="w-8 h-8 shrink-0 rounded-full bg-gradient-to-br from-[var(--accent-red)] to-[var(--accent-blue)] flex items-center justify-center text-[10px] font-bold">
+      {initialsFrom(name, email)}
+    </div>
+  );
 }
 
+function AccountBadge({ hasAccount }: { hasAccount: boolean }) {
+  return hasAccount
+    ? <span className="inline-flex items-center h-6 px-2 rounded-md text-[10px] font-mono uppercase tracking-wider bg-[var(--accent-blue)]/15 text-[var(--accent-blue-glow)] border border-[var(--accent-blue)]/40">Account</span>
+    : <span className="inline-flex items-center h-6 px-2 rounded-md text-[10px] font-mono uppercase tracking-wider bg-white/5 text-[#B8ACCC] border border-white/15">Guest</span>;
+}
+
+/**
+ * ONE pill, never two — "NEW" or "REPEAT ×N". Uses total order count, matching
+ * the shared new/returning definition (any prior order makes them returning).
+ */
 function PurchaseBadge({ count }: { count: number }) {
   if (count <= 0) return <span className="text-[10px] text-white/30 font-mono">—</span>;
-  if (count === 1) return <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-white/5 text-white/70 border border-white/15">New</span>;
+  if (count === 1) {
+    return <span className="inline-flex items-center h-6 px-2 rounded-md text-[10px] font-mono uppercase tracking-wider bg-white/5 text-[#C9BEDD] border border-white/15">New</span>;
+  }
   return (
-    <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-gradient-to-r from-[var(--accent-red)]/25 to-[var(--accent-blue)]/25 text-white border border-[var(--accent-red)]/40 shadow-[0_0_12px_rgba(255,0,60,0.25)]">
-      ×{count} repeat
+    <span className="inline-flex items-center h-6 px-2 rounded-md whitespace-nowrap text-[10px] font-mono uppercase tracking-wider bg-gradient-to-r from-[var(--accent-red)]/25 to-[var(--accent-blue)]/25 text-white border border-[var(--accent-red)]/40 shadow-[0_0_12px_rgba(255,0,60,0.25)]">
+      Repeat ×{count}
     </span>
   );
 }
+

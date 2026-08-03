@@ -400,6 +400,7 @@ export type Database = {
           created_at: string
           expires_at: string | null
           id: string
+          name: string | null
           scope: string
           status: Database["public"]["Enums"]["discount_status"]
           type: Database["public"]["Enums"]["discount_type"]
@@ -415,6 +416,7 @@ export type Database = {
           created_at?: string
           expires_at?: string | null
           id?: string
+          name?: string | null
           scope?: string
           status?: Database["public"]["Enums"]["discount_status"]
           type: Database["public"]["Enums"]["discount_type"]
@@ -430,6 +432,7 @@ export type Database = {
           created_at?: string
           expires_at?: string | null
           id?: string
+          name?: string | null
           scope?: string
           status?: Database["public"]["Enums"]["discount_status"]
           type?: Database["public"]["Enums"]["discount_type"]
@@ -547,6 +550,13 @@ export type Database = {
             foreignKeyName: "order_claims_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
+            referencedRelation: "order_customer_identity"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "order_claims_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
             referencedRelation: "order_revenue"
             referencedColumns: ["id"]
           },
@@ -594,6 +604,13 @@ export type Database = {
           product_slug?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "order_customer_identity"
+            referencedColumns: ["order_id"]
+          },
           {
             foreignKeyName: "order_items_order_id_fkey"
             columns: ["order_id"]
@@ -1189,6 +1206,13 @@ export type Database = {
             foreignKeyName: "store_credit_ledger_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
+            referencedRelation: "order_customer_identity"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "store_credit_ledger_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
             referencedRelation: "order_revenue"
             referencedColumns: ["id"]
           },
@@ -1289,6 +1313,20 @@ export type Database = {
       }
     }
     Views: {
+      order_customer_identity: {
+        Row: {
+          created_at: string | null
+          first_order_at: string | null
+          is_first_order: boolean | null
+          normalized_email: string | null
+          order_id: string | null
+          order_index: number | null
+          refunded_amount_cents: number | null
+          status: Database["public"]["Enums"]["order_status"] | null
+          total: number | null
+        }
+        Relationships: []
+      }
       order_revenue: {
         Row: {
           counts_as_sale: boolean | null
@@ -1422,6 +1460,7 @@ export type Database = {
         }
         Returns: number
       }
+      admin_new_customers_this_month: { Args: never; Returns: number }
       claim_my_orders: { Args: never; Returns: number }
       consume_store_credit: {
         Args: {

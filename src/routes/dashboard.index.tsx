@@ -5,7 +5,9 @@ import { OrderDrawer } from "@/components/AdminDrawers";
 import { Plus, Tag, Ticket } from "lucide-react";
 import { ResponsiveContainer, Tooltip, XAxis, YAxis, Area, AreaChart, CartesianGrid } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
-import { keptRatio, netRevenue, saleOrders, sumNetRevenue } from "@/lib/revenue";
+import { keptRatio, saleOrders, sumNetRevenue, netRevenue } from "@/lib/revenue";
+import { useIsMobile } from "@/hooks/use-mobile";
+
 
 export const Route = createFileRoute("/dashboard/")({
   head: () => ({ meta: [{ title: "Overview — Plugin Warehouse" }] }),
@@ -48,10 +50,15 @@ function initialsFrom(name: string | null, email: string) {
 
 function startOfMonth(d = new Date()) { return new Date(d.getFullYear(), d.getMonth(), 1); }
 
+type Grouping = "daily" | "wtd" | "mtd";
+const GROUPING_LABEL: Record<Grouping, string> = { daily: "Daily", wtd: "Week to date", mtd: "Month to date" };
+
 function Overview() {
-  const [grouping, setGrouping] = useState<"daily" | "weekly" | "monthly">("daily");
+  const [grouping, setGrouping] = useState<Grouping>("daily");
+  const isMobile = useIsMobile();
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [customers, setCustomers] = useState<CustomerLite[]>([]);
+  const [newCustomers, setNewCustomers] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [openOrderId, setOpenOrderId] = useState<string | null>(null);
 
@@ -72,19 +79,30 @@ function Overview() {
     })();
   }, []);
 
+  // New customers this month = distinct normalized emails whose FIRST EVER order
+  // is in the current Central-time calendar month (shared identity logic).
+  useEffect(() => {
+    (async () => {
+      const { data, error } = await supabase.rpc("admin_new_customers_this_month");
+      if (error) { console.warn("[overview] new customers failed", error); return; }
+      setNewCustomers(Number(data ?? 0));
+    })();
+  }, []);
+
   // Revenue everywhere is NET (total − refunds) and only counts orders that are
   // still sales — see src/lib/revenue.ts.
   const completed = useMemo(() => saleOrders(orders), [orders]);
   const monthStart = startOfMonth();
   const completedThisMonth = completed.filter(o => new Date(o.created_at) >= monthStart);
-  const todayCentralKey = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Chicago", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
-  const centralDayKey = (iso: string) => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Chicago", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(iso));
-  const todayRev = sumNetRevenue(completed.filter(o => centralDayKey(o.created_at) === todayCentralKey));
+  const todayCentralKey = centralDayKey(new Date());
+  const todayRev = sumNetRevenue(completed.filter(o => centralDayKey(new Date(o.created_at)) === todayCentralKey));
   const monthRev = sumNetRevenue(completedThisMonth);
-  const thirtyDaysAgo = Date.now() - 30 * 86400 * 1000;
-  const activeCust = customers.filter(c => c.last_purchase_at && new Date(c.last_purchase_at).getTime() >= thirtyDaysAgo).length;
 
-  const series = useMemo(() => buildSeries(completed, grouping), [completed, grouping]);
+  const series = useMemo(
+    () => buildSeries(completed, grouping, isMobile ? 5 : 7),
+    [completed, grouping, isMobile],
+  );
+
 
   const recent = useMemo(() => [...orders].slice(0, 10), [orders]);
 
@@ -114,7 +132,7 @@ function Overview() {
         <StatCard label="Revenue today" value={formatMoney(todayRev)} />
         <StatCard label="Revenue this month" value={formatMoney(monthRev)} />
         <StatCard label="Orders this month" value={completedThisMonth.length.toString()} />
-        <StatCard label="Active customers" value={activeCust.toString()} />
+        <StatCard label="New customers this month" value={(newCustomers ?? 0).toString()} />
       </div>
 
       <DashCard
@@ -122,20 +140,21 @@ function Overview() {
         className="mb-6"
         action={
           <div className="flex gap-1 p-0.5 rounded-lg border border-white/10">
-            {(["daily", "weekly", "monthly"] as const).map(g => (
-              <button key={g} onClick={() => setGrouping(g)} className={`px-3 py-1 rounded-md text-[10px] uppercase tracking-wider font-mono transition ${grouping === g ? "bg-[var(--accent-red)] text-white" : "text-white/60 hover:text-white"}`}>{g}</button>
+            {(["daily", "wtd", "mtd"] as const).map(g => (
+              <button key={g} onClick={() => setGrouping(g)} className={`px-2.5 py-1 rounded-md text-[10px] uppercase tracking-wider font-mono whitespace-nowrap transition ${grouping === g ? "bg-[var(--accent-red)] text-white" : "text-white/60 hover:text-white"}`}>{GROUPING_LABEL[g]}</button>
             ))}
           </div>
         }
+
       >
         <div className="h-64">
-          {series.length === 0 ? (
+          {loading || series.length === 0 ? (
             <div className="h-full flex items-center justify-center text-white/40 text-xs font-mono">
               {loading ? "Loading…" : "No revenue yet. Live data will appear here after your first completed order."}
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={series}>
+              <AreaChart data={series} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="rev" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#FF003C" stopOpacity={0.45} />
@@ -143,7 +162,8 @@ function Overview() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
-                <XAxis dataKey="label" stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={false} />
+                <XAxis dataKey="label" stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={false} interval="preserveStartEnd" minTickGap={24} tickMargin={8} />
+
                 <YAxis stroke="rgba(255,255,255,0.4)" fontSize={10} tickFormatter={(v) => `$${v}`} tickLine={false} axisLine={false} />
                 <Tooltip contentStyle={{ background: "#1F0540", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, fontSize: 12 }} formatter={(v: number) => formatMoney(v)} />
                 <Area type="monotone" dataKey="value" stroke="#FF003C" strokeWidth={2} fill="url(#rev)" />
@@ -238,31 +258,66 @@ function Overview() {
   );
 }
 
-function buildSeries(orders: OrderRow[], grouping: "daily" | "weekly" | "monthly") {
-  if (orders.length === 0) return [];
-  const buckets = new Map<string, { key: string; label: string; ts: number; value: number }>();
-  const keyOf = (d: Date): { key: string; label: string; ts: number } => {
-    if (grouping === "daily") {
-      const k = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-      return { key: k, label: d.toLocaleDateString("en", { month: "short", day: "numeric" }), ts: new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() };
-    }
-    if (grouping === "weekly") {
-      const start = new Date(d);
-      start.setDate(d.getDate() - d.getDay());
-      start.setHours(0, 0, 0, 0);
-      return { key: `w-${start.getTime()}`, label: start.toLocaleDateString("en", { month: "short", day: "numeric" }), ts: start.getTime() };
-    }
-    return { key: `${d.getFullYear()}-${d.getMonth()}`, label: d.toLocaleDateString("en", { month: "short", year: "2-digit" }), ts: new Date(d.getFullYear(), d.getMonth(), 1).getTime() };
-  };
-  for (const o of orders) {
-    const d = new Date(o.created_at);
-    const { key, label, ts } = keyOf(d);
-    const cur = buckets.get(key) ?? { key, label, ts, value: 0 };
-    cur.value += netRevenue(o);
-    buckets.set(key, cur);
-  }
-  return [...buckets.values()].sort((a, b) => a.ts - b.ts);
+/* ---- Central-time (America/Chicago) day bucketing ---------------------- */
+
+const CENTRAL_TZ = "America/Chicago";
+const CENTRAL_DAY_FMT = new Intl.DateTimeFormat("en-CA", { timeZone: CENTRAL_TZ, year: "numeric", month: "2-digit", day: "2-digit" });
+const CENTRAL_WEEKDAY_FMT = new Intl.DateTimeFormat("en-US", { timeZone: CENTRAL_TZ, weekday: "short" });
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+/** "YYYY-MM-DD" for the Central-time calendar day containing `d`. */
+function centralDayKey(d: Date) {
+  return CENTRAL_DAY_FMT.format(d);
 }
+
+/** A stable noon-UTC anchor for a Central calendar day key, for labels/math. */
+function anchorFor(key: string) {
+  const [y, m, day] = key.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, day, 12));
+}
+
+function keyFromAnchor(d: Date) {
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * Daily buckets in Central time. Windows:
+ *  - daily: the last `dailyWindow` days ending today (5 on mobile, 7 elsewhere)
+ *  - wtd:   most recent Sunday → today
+ *  - mtd:   1st of the current month → today
+ * Every day in the window is emitted (zero-filled) so the x-axis is continuous.
+ */
+function buildSeries(orders: OrderRow[], grouping: Grouping, dailyWindow: number) {
+  const now = new Date();
+  const todayKey = centralDayKey(now);
+  const today = anchorFor(todayKey);
+
+  let days: number;
+  if (grouping === "wtd") {
+    days = WEEKDAYS.indexOf(CENTRAL_WEEKDAY_FMT.format(now)) + 1;
+  } else if (grouping === "mtd") {
+    days = Number(todayKey.slice(8, 10));
+  } else {
+    days = dailyWindow;
+  }
+  if (!days || days < 1) days = 1;
+
+  const buckets = new Map<string, number>();
+  for (const o of orders) buckets.set(centralDayKey(new Date(o.created_at)), (buckets.get(centralDayKey(new Date(o.created_at))) ?? 0) + netRevenue(o));
+
+  const out: { key: string; label: string; value: number }[] = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(today.getTime() - i * 86400_000);
+    const key = keyFromAnchor(d);
+    out.push({
+      key,
+      label: d.toLocaleDateString("en", { timeZone: "UTC", month: "short", day: "numeric" }),
+      value: Math.round((buckets.get(key) ?? 0) * 100) / 100,
+    });
+  }
+  return out;
+}
+
 
 function QuickTile({ icon, title, to }: { icon: React.ReactNode; title: string; to: string }) {
   return (

@@ -81,7 +81,7 @@ function DiscountCodesPanel() {
   async function load() {
     const { data, error } = await supabase
       .from("discount_codes")
-      .select("id, code, type, value, usage_limit, uses, expires_at, status, applies_to, scope, categories")
+      .select("id, name, code, type, value, usage_limit, uses, expires_at, status, applies_to, scope, categories")
       .order("created_at", { ascending: false });
     if (error) toast.error(error.message);
     setRows((data ?? []) as unknown as DiscountRow[]);
@@ -110,7 +110,7 @@ function DiscountCodesPanel() {
         <table className="w-full text-sm">
           <thead className="text-[10px] uppercase tracking-wider text-white/40">
             <tr>
-              <th className="text-left py-2 px-2">Code</th>
+              <th className="text-left py-2 px-2">Name / code</th>
               <th className="text-left py-2 px-2">Type</th>
               <th className="text-right py-2 px-2">Value</th>
               <th className="text-right py-2 px-2" title="How many customers have redeemed this code">Uses</th>
@@ -123,7 +123,10 @@ function DiscountCodesPanel() {
           <tbody>
             {rows.map(c => (
               <tr key={c.id} className="border-t border-white/5">
-                <td className="py-2 px-2 font-mono text-xs text-[var(--accent-red-glow)]">{c.code}</td>
+                <td className="py-2 px-2">
+                  {c.name && <div className="text-[12px] text-white truncate max-w-[220px]">{c.name}</div>}
+                  <div className="font-mono text-xs text-[var(--accent-red-glow)]">{c.code}</div>
+                </td>
                 <td className="py-2 px-2 text-[10px] font-mono">{c.type === "percent" ? "%" : "$"}</td>
                 <td className="py-2 px-2 text-right font-mono text-xs">{c.type === "percent" ? `${c.value}%` : `$${c.value}`}</td>
                 <td className="py-2 px-2 text-right font-mono text-xs">
@@ -151,7 +154,7 @@ function DiscountCodesPanel() {
         {genOpen && (
           <DiscountCodeModal
             onClose={() => setGenOpen(false)}
-            onCreated={row => { setRows(r => [row, ...r]); setGenOpen(false); }}
+            onCreated={row => { setRows(r => [row, ...r]); setGenOpen(false); load(); }}
           />
         )}
       </AnimatePresence>
@@ -162,7 +165,7 @@ function DiscountCodesPanel() {
             key={editing.id}
             existing={editing}
             onClose={() => setEditing(null)}
-            onCreated={row => { setRows(r => r.map(x => (x.id === row.id ? row : x))); setEditing(null); }}
+            onCreated={row => { setRows(r => r.map(x => (x.id === row.id ? row : x))); setEditing(null); load(); }}
           />
         )}
       </AnimatePresence>

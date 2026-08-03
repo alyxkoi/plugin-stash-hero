@@ -193,18 +193,23 @@ function ProductsPage() {
     <DashboardShell title="Products" action={
       <Link to="/dashboard/products/new" className="btn-primary !text-xs !py-2 !px-4 inline-flex items-center gap-1.5"><Plus size={14} /> Add product</Link>
     }>
-      <div className="flex flex-wrap items-center gap-3 mb-4">
-        <div className="relative flex-1 min-w-[240px] max-w-[360px]">
+      {/* Compact control area: full-width search, then one aligned row of
+          equal-height secondary controls (wraps on narrow screens). */}
+      <div className="mb-4 space-y-2.5">
+        <div className="relative">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
-          <input value={q} onChange={e => { setQ(e.target.value); setPage(1); }} placeholder="Search plugins" className="w-full bg-white/5 border border-white/15 rounded-lg pl-9 pr-3 py-2 text-sm text-white outline-none focus:border-[var(--accent-red)]" />
+          <input value={q} onChange={e => { setQ(e.target.value); setPage(1); }} placeholder="Search plugins" className="w-full h-10 bg-white/5 border border-white/15 rounded-lg pl-9 pr-3 text-sm text-white outline-none focus:border-[var(--accent-red)]" />
         </div>
-        <Select value={cat} onChange={(v) => { setCat(v); setPage(1); }} options={[{ value: "all", label: "All categories" }, ...productCategories.map(c => ({ value: c, label: c.charAt(0).toUpperCase()+c.slice(1) }))]} />
-        <Select value={status} onChange={(v) => { setStatus(v as any); setPage(1); }} options={[
-          { value: "all", label: "All status" }, { value: "published", label: "Published" }, { value: "draft", label: "Draft" }, { value: "archived", label: "Archived" }, { value: "freebies", label: "Freebies (free)" },
-        ]} />
-        <button onClick={() => refetch()} className="btn-ghost !text-xs !py-2 !px-3">{isFetching ? "Refreshing…" : "Refresh"}</button>
-        <button onClick={() => setShowCats(true)} className="btn-ghost !text-xs !py-2 !px-3 ml-auto">Manage categories</button>
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 [&_select]:h-10 [&_select]:w-full [&_select]:rounded-lg">
+          <Select value={cat} onChange={(v) => { setCat(v); setPage(1); }} options={[{ value: "all", label: "All categories" }, ...productCategories.map(c => ({ value: c, label: c.charAt(0).toUpperCase()+c.slice(1) }))]} />
+          <Select value={status} onChange={(v) => { setStatus(v as any); setPage(1); }} options={[
+            { value: "all", label: "All status" }, { value: "published", label: "Published" }, { value: "draft", label: "Draft" }, { value: "archived", label: "Archived" }, { value: "freebies", label: "Freebies (free)" },
+          ]} />
+          <button onClick={() => refetch()} className="btn-ghost !h-10 !text-xs !py-0 !px-3 w-full">{isFetching ? "Refreshing…" : "Refresh"}</button>
+          <button onClick={() => setShowCats(true)} className="btn-ghost !h-10 !text-xs !py-0 !px-3 w-full">Manage categories</button>
+        </div>
       </div>
+
 
       {selected.size > 0 && (
         <div className="glass-card p-3 mb-3 flex items-center gap-3">

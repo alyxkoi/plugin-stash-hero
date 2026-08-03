@@ -9,6 +9,8 @@ import { categories as ALL_CATEGORIES } from "@/lib/mock-data";
 export type Scope = "all" | "categories" | "selected";
 export type DiscountRow = {
   id: string;
+  /** Admin-facing label only — has zero effect on checkout behaviour. */
+  name: string | null;
   code: string;
   type: "percent" | "flat";
   value: number;
@@ -21,11 +23,13 @@ export type DiscountRow = {
   categories: string[];
 };
 
+
 type ProductLite = { id: string; name: string; maker: string; category: string };
 
 export function DiscountCodeModal({ onClose, onCreated, existing }: { onClose: () => void; onCreated: (r: DiscountRow) => void; existing?: DiscountRow }) {
   const reduce = useReducedMotion();
   const isEdit = !!existing;
+  const [name, setName] = useState(existing?.name ?? "");
   const [code, setCode] = useState(existing?.code ?? "");
   const [type, setType] = useState<"percent" | "flat">(existing?.type ?? "percent");
   const [value, setValue] = useState(existing ? String(existing.value) : "");
@@ -95,6 +99,7 @@ export function DiscountCodeModal({ onClose, onCreated, existing }: { onClose: (
         ? `${categoriesSel.length} categor${categoriesSel.length === 1 ? "y" : "ies"}`
         : `${productIds.length} plugin${productIds.length === 1 ? "" : "s"}`;
     const payload: Record<string, unknown> = {
+      name: name.trim() || null,
       code: trimmed,
       type,
       value: val,
@@ -105,7 +110,7 @@ export function DiscountCodeModal({ onClose, onCreated, existing }: { onClose: (
       scope,
       categories: scope === "categories" ? categoriesSel : [],
     };
-    const sel = "id, code, type, value, usage_limit, uses, expires_at, status, applies_to, scope, categories";
+    const sel = "id, name, code, type, value, usage_limit, uses, expires_at, status, applies_to, scope, categories";
     const { data, error } = isEdit
       ? await supabase.from("discount_codes").update(payload as any).eq("id", existing!.id).select(sel).single()
       : await supabase.from("discount_codes").insert(payload as any).select(sel).single();
@@ -167,6 +172,11 @@ export function DiscountCodeModal({ onClose, onCreated, existing }: { onClose: (
           </div>
 
           <div className="relative z-10 flex-1 min-h-0 overflow-y-auto px-6 py-5 space-y-4">
+            <label className="block">
+              <span className="label-mini text-[10px] opacity-70 mb-1.5 block">Name <span className="opacity-50">(optional, admin only)</span></span>
+              <input value={name} onChange={e => setName(e.target.value)} className="ipt-modal w-full" placeholder="Soothe 2 launch — 25% off" />
+            </label>
+
             <label className="block">
               <span className="label-mini text-[10px] opacity-70 mb-1.5 block">Code</span>
               <div className="flex gap-2">
