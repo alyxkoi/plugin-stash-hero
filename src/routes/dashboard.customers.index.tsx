@@ -79,8 +79,9 @@ function CustomersPage() {
       _offset: (page - 1) * PAGE_SIZE,
     });
     if (err) {
-      console.error("[customers] list failed", err);
-      setError("Couldn't load customers.");
+      // Surface the real Postgres error — guessing cost us a full regression cycle.
+      console.error("[customers] list failed", err.code, err.message, err.details, err.hint);
+      setError(`Couldn't load customers${err.code ? ` (${err.code})` : ""}: ${err.message}`);
     } else {
       setError(null);
       const list = (data ?? []) as Row[];
