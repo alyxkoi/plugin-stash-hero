@@ -202,19 +202,18 @@ function Analytics() {
   }, [orders, sales, now]);
 
 
+  // New vs returning uses the SHARED identity logic (src/lib/customer-identity.ts):
+  // classification is per-order, keyed on normalized email across ALL orders
+  // ever placed — not just the ones inside the selected range.
   const split = useMemo(() => {
-    // Group orders by customer within range. First-order in range = "new", later = "returning".
-    const perCust = new Map<string, number>();
-    const sorted = [...inRange].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-    let neu = 0, ret = 0;
-    for (const o of sorted) {
-      const key = o.customer_id || o.id;
-      const seen = perCust.get(key) ?? 0;
-      if (seen === 0) neu++; else ret++;
-      perCust.set(key, seen + 1);
-    }
-    return [{ name: "New", value: neu }, { name: "Returning", value: ret }];
-  }, [inRange]);
+    const inRangeAny = orders.filter(o => {
+      const t = new Date(o.created_at).getTime();
+      return t >= start.getTime() && t <= end.getTime();
+    });
+    const { neu, returning } = splitNewReturning(inRangeAny, identity);
+    return [{ name: "New", value: neu }, { name: "Returning", value: returning }];
+  }, [orders, identity, start, end]);
+
 
   return (
     <DashboardShell
