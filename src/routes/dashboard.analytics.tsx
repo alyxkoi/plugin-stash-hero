@@ -100,7 +100,11 @@ function Analytics() {
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [sales, setSales] = useState<SaleEventRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [identity, setIdentity] = useState<IdentityMap>(() => new Map());
   const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => { fetchOrderIdentity().then(setIdentity); }, []);
+
 
   useEffect(() => {
     const t = window.setInterval(() => setNow(Date.now()), 30_000);
