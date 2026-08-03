@@ -29,6 +29,7 @@ import { actions, useStore } from "@/lib/store";
 import { usePublishedProducts, useBestsellerIds } from "@/hooks/useProducts";
 import { useSalePricing } from "@/lib/sale-pricing";
 import { useActiveSale } from "@/hooks/useActiveSale";
+import heroVideoAsset from "@/assets/hero_vid_2.mp4.asset.json";
 
 /* ============ PLACEHOLDER PRODUCTS ============
  * Used so every section keeps its layout, titles, and body copy even before
