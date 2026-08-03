@@ -50,10 +50,15 @@ function initialsFrom(name: string | null, email: string) {
 
 function startOfMonth(d = new Date()) { return new Date(d.getFullYear(), d.getMonth(), 1); }
 
+type Grouping = "daily" | "wtd" | "mtd";
+const GROUPING_LABEL: Record<Grouping, string> = { daily: "Daily", wtd: "Week to date", mtd: "Month to date" };
+
 function Overview() {
-  const [grouping, setGrouping] = useState<"daily" | "weekly" | "monthly">("daily");
+  const [grouping, setGrouping] = useState<Grouping>("daily");
+  const isMobile = useIsMobile();
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [customers, setCustomers] = useState<CustomerLite[]>([]);
+  const [newCustomers, setNewCustomers] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [openOrderId, setOpenOrderId] = useState<string | null>(null);
 
@@ -74,19 +79,30 @@ function Overview() {
     })();
   }, []);
 
+  // New customers this month = distinct normalized emails whose FIRST EVER order
+  // is in the current Central-time calendar month (shared identity logic).
+  useEffect(() => {
+    (async () => {
+      const { data, error } = await supabase.rpc("admin_new_customers_this_month");
+      if (error) { console.warn("[overview] new customers failed", error); return; }
+      setNewCustomers(Number(data ?? 0));
+    })();
+  }, []);
+
   // Revenue everywhere is NET (total − refunds) and only counts orders that are
   // still sales — see src/lib/revenue.ts.
   const completed = useMemo(() => saleOrders(orders), [orders]);
   const monthStart = startOfMonth();
   const completedThisMonth = completed.filter(o => new Date(o.created_at) >= monthStart);
-  const todayCentralKey = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Chicago", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
-  const centralDayKey = (iso: string) => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Chicago", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(iso));
-  const todayRev = sumNetRevenue(completed.filter(o => centralDayKey(o.created_at) === todayCentralKey));
+  const todayCentralKey = centralDayKey(new Date());
+  const todayRev = sumNetRevenue(completed.filter(o => centralDayKey(new Date(o.created_at)) === todayCentralKey));
   const monthRev = sumNetRevenue(completedThisMonth);
-  const thirtyDaysAgo = Date.now() - 30 * 86400 * 1000;
-  const activeCust = customers.filter(c => c.last_purchase_at && new Date(c.last_purchase_at).getTime() >= thirtyDaysAgo).length;
 
-  const series = useMemo(() => buildSeries(completed, grouping), [completed, grouping]);
+  const series = useMemo(
+    () => buildSeries(completed, grouping, isMobile ? 5 : 7),
+    [completed, grouping, isMobile],
+  );
+
 
   const recent = useMemo(() => [...orders].slice(0, 10), [orders]);
 
