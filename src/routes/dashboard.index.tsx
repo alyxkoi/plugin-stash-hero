@@ -132,7 +132,7 @@ function Overview() {
         <StatCard label="Revenue today" value={formatMoney(todayRev)} />
         <StatCard label="Revenue this month" value={formatMoney(monthRev)} />
         <StatCard label="Orders this month" value={completedThisMonth.length.toString()} />
-        <StatCard label="Active customers" value={activeCust.toString()} />
+        <StatCard label="New customers this month" value={(newCustomers ?? 0).toString()} />
       </div>
 
       <DashCard
@@ -140,11 +140,12 @@ function Overview() {
         className="mb-6"
         action={
           <div className="flex gap-1 p-0.5 rounded-lg border border-white/10">
-            {(["daily", "weekly", "monthly"] as const).map(g => (
-              <button key={g} onClick={() => setGrouping(g)} className={`px-3 py-1 rounded-md text-[10px] uppercase tracking-wider font-mono transition ${grouping === g ? "bg-[var(--accent-red)] text-white" : "text-white/60 hover:text-white"}`}>{g}</button>
+            {(["daily", "wtd", "mtd"] as const).map(g => (
+              <button key={g} onClick={() => setGrouping(g)} className={`px-2.5 py-1 rounded-md text-[10px] uppercase tracking-wider font-mono whitespace-nowrap transition ${grouping === g ? "bg-[var(--accent-red)] text-white" : "text-white/60 hover:text-white"}`}>{GROUPING_LABEL[g]}</button>
             ))}
           </div>
         }
+
       >
         <div className="h-64">
           {series.length === 0 ? (
