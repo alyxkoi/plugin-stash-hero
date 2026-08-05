@@ -118,7 +118,10 @@ export function Nav() {
     };
   }, [drawerOpen]);
 
-  const count = cart.reduce((n, i) => n + i.qty, 0);
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
+  const count = hydrated ? cart.reduce((n, i) => n + i.qty, 0) : 0;
+
 
   return (
     <>
