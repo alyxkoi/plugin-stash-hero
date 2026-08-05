@@ -189,7 +189,14 @@ function Hero() {
   return (
     <section className="relative px-4 md:px-6 -mt-24 md:-mt-28 pt-28 md:pt-36 pb-12 md:pb-24 overflow-hidden">
       <video
-        className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+        className="pointer-events-none"
+        style={{
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+        }}
         src={heroVideoAsset.url}
         autoPlay
         loop
