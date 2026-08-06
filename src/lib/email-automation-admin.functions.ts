@@ -56,13 +56,13 @@ export const getEmailAutomationStats = createServerFn({ method: "GET" })
         .in("normalized_email", emails);
       for (const r of sentRows) {
         const t = new Date(r.sent_at as string).getTime();
-        const hit = (idents ?? []).some(
-          (o) =>
-            o.normalized_email === r.customer_email &&
-            (o.status === "completed" || o.status === "partial") &&
-            new Date(o.created_at).getTime() >= t &&
-            new Date(o.created_at).getTime() <= t + 86400_000,
-        );
+        const hit = (idents ?? []).some((o) => {
+          if (o.normalized_email !== r.customer_email) return false;
+          if (o.status !== "completed" && o.status !== "partial") return false;
+          const ot = o.created_at ? new Date(o.created_at).getTime() : 0;
+          return ot >= t && ot <= t + 86400_000;
+        });
+
         if (hit) recovered[r.sequence_type as SeqType]++;
       }
     }
