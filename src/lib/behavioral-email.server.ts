@@ -508,6 +508,8 @@ async function buildCartCandidates(
 }
 
 // ---------- saved items ----------
+// Batched per customer: one nudge email and one price-drop email per address,
+// never one per saved item.
 
 async function buildSavedCandidates(
   now: number,
@@ -524,7 +526,7 @@ async function buildSavedCandidates(
   const { data: profs } = await supabaseAdmin.from("profiles").select("id, email").in("id", userIds);
   const emailByUser = new Map<string, string>((profs ?? []).map((p) => [p.id, normalizeEmail(p.email)]));
 
-  // 30-day cap on price-drop alerts per saved item
+  // 30-day cap on price-drop alerts, tracked per saved item id.
   const { data: recentDrops } = await supabaseAdmin
     .from("email_automation_log")
     .select("trigger_ref, sent_at")
@@ -532,57 +534,112 @@ async function buildSavedCandidates(
     .eq("step", 2)
     .eq("status", "sent")
     .gte("sent_at", new Date(now - 30 * DAY).toISOString());
-  const dropRecently = new Set((recentDrops ?? []).map((r) => r.trigger_ref.split(":")[0]));
+  const dropRecently = new Set<string>();
+  for (const r of recentDrops ?? []) {
+    const ref = r.trigger_ref ?? "";
+    const ids = ref.startsWith("drop:") ? ref.slice(5).split(":")[0] : ref.split(":")[0];
+    for (const id of (ids ?? "").split(",")) if (id) dropRecently.add(id);
+  }
 
-  const out: Candidate[] = [];
-
+  type SavedRow = { id: string; product_id: string; price_at_save: number | null; saved_at: string };
+  const byUser = new Map<string, { email: string; rows: SavedRow[] }>();
   for (const s of saved) {
     const email = emailByUser.get(s.user_id) ?? "";
     if (!email) continue;
-    const product = products.get(s.product_id);
-    if (!product) continue;
+    if (!products.get(s.product_id)) continue;
+    const entry = byUser.get(s.user_id) ?? { email, rows: [] };
+    entry.rows.push({
+      id: s.id,
+      product_id: s.product_id,
+      price_at_save: s.price_at_save == null ? null : Number(s.price_at_save),
+      saved_at: s.saved_at,
+    });
+    byUser.set(s.user_id, entry);
+  }
 
-    const current = effectivePrice(product, sales);
-    const savedPrice = s.price_at_save == null ? null : Number(s.price_at_save);
+  const out: Candidate[] = [];
 
-    const stillSavedAndUnbought = async (): Promise<string | null> => {
-      const { data: row } = await supabaseAdmin.from("saved_items").select("id").eq("id", s.id).maybeSingle();
-      if (!row) return "no_longer_saved";
-      if (!products.get(s.product_id)) return "product_unavailable";
-      if (await hasPurchased(email, [s.product_id])) return "already_purchased";
+  for (const [userId, { email, rows }] of byUser) {
+    // guard shared by both saved-items emails, scoped to the batched item ids
+    const guardFor = (savedIds: string[], productIds: string[]) => async (): Promise<string | null> => {
+      const { data: still } = await supabaseAdmin
+        .from("saved_items")
+        .select("id")
+        .eq("user_id", userId)
+        .in("id", savedIds);
+      if (!still || still.length === 0) return "no_longer_saved";
+      if (productIds.every((id) => !products.get(id))) return "product_unavailable";
+      if (await hasPurchased(email, productIds)) return "already_purchased";
       return null;
     };
 
-    // STEP 2 — price drop (event driven, takes precedence over the slow nudge)
-    if (savedPrice != null && savedPrice > 0 && current < savedPrice - 0.005 && !dropRecently.has(s.id)) {
+    // ---- STEP 2: price drops (event driven, only items that actually dropped)
+    const dropped = rows
+      .filter((r) => !dropRecently.has(r.id))
+      .map((r) => {
+        const product = products.get(r.product_id)!;
+        const current = effectivePrice(product, sales);
+        return { r, product, current, was: r.price_at_save };
+      })
+      .filter((d) => d.was != null && d.was > 0 && d.current < d.was - 0.005);
+
+    if (dropped.length > 0) {
+      const byDrop = [...dropped].sort(
+        (a, b) => (b.was! - b.current) / b.was! - (a.was! - a.current) / a.was!,
+      );
+      const items: DropProduct[] = byDrop.map((d) => ({
+        ...toEmailProduct(d.product, d.current),
+        oldPrice: d.was!,
+        newPrice: d.current,
+      }));
+      const savedIds = byDrop.map((d) => d.r.id);
+      const priceKey = byDrop.map((d) => Math.round(d.current * 100)).join("-");
+      const deadlineText = deadlineFor(byDrop[0]!.product, sales, DEADLINE_DROP_FALLBACK);
       out.push({
         email,
         sequence: "saved_items",
         step: 2,
-        triggerRef: `${s.id}:${Math.round(current * 100)}`,
+        triggerRef: `drop:${savedIds.join(",")}:${priceKey}`,
         exemptFromSequencing: true,
-        render: () =>
-          renderPriceDrop({
-            item: toEmailProduct(product, current),
-            oldPrice: savedPrice,
-            newPrice: current,
-            unsubUrl: unsubUrl(email),
-          }),
-        guard: stillSavedAndUnbought,
+        render: () => renderPriceDrop({ items, deadlineText, unsubUrl: unsubUrl(email) }),
+        guard: guardFor(savedIds, byDrop.map((d) => d.r.product_id)),
       });
     }
 
-    // STEP 1 — 3 days after saving
-    const age = now - new Date(s.saved_at).getTime();
-    if (age >= 3 * DAY && age <= 30 * DAY) {
+    // ---- STEP 1: 3-day nudge across every eligible saved item
+    const eligible = rows
+      .filter((r) => {
+        const age = now - new Date(r.saved_at).getTime();
+        return age >= 3 * DAY && age <= 30 * DAY;
+      })
+      .sort((a, b) => new Date(a.saved_at).getTime() - new Date(b.saved_at).getTime());
+
+    if (eligible.length > 0) {
+      const byPrice = [...eligible].sort(
+        (a, b) =>
+          effectivePrice(products.get(b.product_id)!, sales) -
+          effectivePrice(products.get(a.product_id)!, sales),
+      );
+      const items = byPrice.map((r) => {
+        const product = products.get(r.product_id)!;
+        return toEmailProduct(product, effectivePrice(product, sales));
+      });
+      const deadlineText = deadlineFor(
+        products.get(byPrice[0]!.product_id),
+        sales,
+        DEADLINE_SAVED_FALLBACK,
+      );
       out.push({
         email,
         sequence: "saved_items",
         step: 1,
-        triggerRef: s.id,
-        render: () =>
-          renderSavedItemsNudge({ items: [toEmailProduct(product, current)], unsubUrl: unsubUrl(email) }),
-        guard: stillSavedAndUnbought,
+        // oldest eligible saved item anchors the trigger so the nudge fires once
+        triggerRef: eligible[0]!.id,
+        render: () => renderSavedItemsNudge({ items, deadlineText, unsubUrl: unsubUrl(email) }),
+        guard: guardFor(
+          eligible.map((r) => r.id),
+          eligible.map((r) => r.product_id),
+        ),
       });
     }
   }
