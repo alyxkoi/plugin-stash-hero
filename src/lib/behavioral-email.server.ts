@@ -277,13 +277,15 @@ export async function runBehavioralEmailJob(
     }
 
     const mail = c.render();
-    const res = await sendEmail({
-      from: FROM,
-      to: c.email,
-      subject: mail.subject,
-      html: mail.html,
-      text: mail.text,
-    });
+    const res = dryRun
+      ? { id: null as string | null, error: undefined as string | undefined }
+      : await sendEmail({
+          from: FROM,
+          to: c.email,
+          subject: mail.subject,
+          html: mail.html,
+          text: mail.text,
+        });
 
     if (res.error) {
       await supabaseAdmin.from("email_automation_log").upsert(
@@ -295,6 +297,7 @@ export async function runBehavioralEmailJob(
           status: "failed" as const,
           error: res.error.slice(0, 500),
           attempts: (prior?.attempts ?? 0) + 1,
+          dry_run: dryRun,
         },
         { onConflict: "customer_email,sequence_type,step,trigger_ref" },
       );
@@ -313,9 +316,11 @@ export async function runBehavioralEmailJob(
         resend_message_id: res.id ?? null,
         error: null,
         attempts: (prior?.attempts ?? 0) + 1,
+        dry_run: dryRun,
       },
       { onConflict: "customer_email,sequence_type,step,trigger_ref" },
     );
+    sentKeys.add(`${c.email}|${c.sequence}|${c.step}|${c.triggerRef}`);
     usedThisRun.add(c.email);
     lastSent.set(c.email, now);
     stats.sent++;
@@ -324,7 +329,10 @@ export async function runBehavioralEmailJob(
   return stats;
 }
 
-async function logSkip(c: Candidate, reason: string) {
+async function logSkip(c: Candidate, reason: string, dryRun: boolean) {
+  // Retryable suppressions must be able to change on a later run, so they are
+  // upserted (not ignored) and re-evaluated next time.
+  const retryable = RETRYABLE_SKIPS.has(reason);
   await supabaseAdmin.from("email_automation_log").upsert(
     {
       customer_email: c.email,
@@ -333,10 +341,12 @@ async function logSkip(c: Candidate, reason: string) {
       trigger_ref: c.triggerRef,
       status: "skipped" as const,
       skip_reason: reason,
+      dry_run: dryRun,
     },
-    { onConflict: "customer_email,sequence_type,step,trigger_ref", ignoreDuplicates: true },
+    { onConflict: "customer_email,sequence_type,step,trigger_ref", ignoreDuplicates: !retryable },
   );
 }
+
 
 // ---------- abandoned cart ----------
 
