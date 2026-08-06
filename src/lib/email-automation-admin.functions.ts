@@ -110,3 +110,16 @@ export const setEmailSequenceEnabled = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true as const };
   });
+
+// Dry-run: evaluates every rule and writes dry-run log rows without calling Resend.
+// Optionally scoped to a single designated test address.
+export const runEmailAutomationDryRun = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ onlyEmail: z.string().trim().email().optional() }).parse(d ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase as never, context.userId);
+    const { runBehavioralEmailJob } = await import("@/lib/behavioral-email.server");
+    return await runBehavioralEmailJob({ dryRun: true, onlyEmail: data.onlyEmail });
+  });
