@@ -475,15 +475,20 @@ async function buildCartCandidates(
 
     const productIds = rows.map((r) => r.product_id);
     const live = productIds.map((id) => products.get(id)).filter(Boolean) as ProductRow[];
-    const emailItems = live.map((p) => toEmailProduct(p, effectivePrice(p, sales)));
-    const total = emailItems.reduce((s, i) => s + i.price, 0);
+    if (live.length === 0) continue;
+    // One email per customer: highest-priced item is the hero, the rest batch below it.
+    const byPrice = [...live].sort((a, b) => effectivePrice(b, sales) - effectivePrice(a, sales));
+    const emailItems = byPrice.map((p) => toEmailProduct(p, effectivePrice(p, sales)));
+    const deadlineText = deadlineFor(byPrice[0], sales, DEADLINE_CART_FALLBACK);
 
     out.push({
       email,
       sequence: "abandoned_cart",
       step,
       triggerRef,
-      render: () => renderAbandonedCart({ step, items: emailItems, total, unsubUrl: unsubUrl(email) }),
+      render: () =>
+        renderAbandonedCart({ step, items: emailItems, deadlineText, unsubUrl: unsubUrl(email) }),
+
 
       guard: async () => {
         const { data: still } = await supabaseAdmin
