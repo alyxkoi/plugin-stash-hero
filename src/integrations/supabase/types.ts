@@ -1517,6 +1517,10 @@ export type Database = {
         Args: { _product_ids: string[] }
         Returns: undefined
       }
+      admin_behavioral_email_stats: {
+        Args: { _from: string; _to: string }
+        Returns: Json
+      }
       admin_customer_list: {
         Args: {
           _filter?: string
