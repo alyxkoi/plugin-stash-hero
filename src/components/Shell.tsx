@@ -7,7 +7,7 @@ import { CartDrawer } from "./CartDrawer";
 import { MysteryGiftPopup } from "./MysteryGiftPopup";
 import { SectionErrorBoundary } from "./SectionErrorBoundary";
 import { useCartSync } from "@/hooks/useCartSync";
-import { useUtmCapture } from "@/hooks/useUtmCapture";
+import { useUtmCapture, usePwCidUrlPersistence } from "@/hooks/useUtmCapture";
 import { SalePricingProvider } from "@/lib/sale-pricing";
 
 
@@ -17,9 +17,12 @@ function CartSync() {
 }
 
 function UtmSync() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
   useUtmCapture();
+  usePwCidUrlPersistence(pathname);
   return null;
 }
+
 
 
 export function Shell() {
