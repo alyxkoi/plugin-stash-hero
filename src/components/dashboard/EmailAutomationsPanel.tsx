@@ -4,8 +4,14 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { DashCard } from "@/components/DashboardShell";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   getEmailAutomationStats,
-  runEmailAutomationDryRun,
   setEmailSequenceEnabled,
   sendBehavioralTestEmail,
   RANGE_KEYS,
@@ -13,6 +19,7 @@ import {
   type StepStat,
   type TestTemplateKey,
 } from "@/lib/email-automation-admin.functions";
+
 
 const TEST_TEMPLATE_LABELS: { key: TestTemplateKey; label: string }[] = [
   { key: "cart_1h", label: "Cart · 1 hour" },
