@@ -4,95 +4,123 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 type SeqType = "abandoned_cart" | "saved_items";
 
+export const RANGE_KEYS = ["7d", "14d", "30d", "wtd", "mtd"] as const;
+export type RangeKey = (typeof RANGE_KEYS)[number];
+
 async function assertAdmin(supabase: { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown }> }, userId: string) {
   const { data } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
   if (data !== true) throw new Error("Forbidden");
 }
 
+/* ---- Central-time (America/Chicago) range boundaries ------------------- */
+
+const TZ = "America/Chicago";
+const PARTS_FMT = new Intl.DateTimeFormat("en-US", {
+  timeZone: TZ,
+  hour12: false,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  weekday: "short",
+});
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function centralParts(d: Date) {
+  const p = Object.fromEntries(PARTS_FMT.formatToParts(d).map((x) => [x.type, x.value])) as Record<string, string>;
+  return {
+    y: Number(p.year),
+    m: Number(p.month),
+    d: Number(p.day),
+    h: Number(p.hour) % 24,
+    mi: Number(p.minute),
+    s: Number(p.second),
+    dow: WEEKDAYS.indexOf(p.weekday ?? "Sun"),
+  };
+}
+
+/** Offset (ms) between Central wall-clock time and UTC at instant `d`. */
+function centralOffset(d: Date) {
+  const p = centralParts(d);
+  return Date.UTC(p.y, p.m - 1, p.d, p.h, p.mi, p.s) - d.getTime();
+}
+
+/** UTC instant of Central midnight, `daysBack` days before today. */
+function centralMidnight(daysBack: number): Date {
+  const now = new Date();
+  const p = centralParts(now);
+  const localMidnight = Date.UTC(p.y, p.m - 1, p.d) - daysBack * 86400_000;
+  let inst = new Date(localMidnight - centralOffset(now));
+  // refine once so DST transitions inside the window stay correct
+  inst = new Date(localMidnight - centralOffset(inst));
+  return inst;
+}
+
+/** [from, to) in UTC for a range key. Week starts Sunday; all math in Central. */
+export function rangeBounds(range: RangeKey): { from: Date; to: Date } {
+  const now = new Date();
+  const p = centralParts(now);
+  let daysBack: number;
+  if (range === "7d") daysBack = 6;
+  else if (range === "14d") daysBack = 13;
+  else if (range === "30d") daysBack = 29;
+  else if (range === "wtd") daysBack = p.dow;
+  else daysBack = p.d - 1;
+  return { from: centralMidnight(daysBack), to: new Date(now.getTime() + 60_000) };
+}
+
+/* ---- stats ------------------------------------------------------------- */
+
+export type StepStat = { sequence: SeqType; step: number; sent: number; sales: number; netCents: number };
+export type SeqOutcome = { sequence: SeqType; skipped: number; failed: number; dryRun: number };
+export type SkipRow = {
+  email: string;
+  sequence: SeqType;
+  step: number;
+  reason: string;
+  at: string;
+  dryRun: boolean;
+};
+
 export const getEmailAutomationStats = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((d: unknown) =>
+    z.object({ range: z.enum(RANGE_KEYS).default("30d") }).parse(d ?? {}),
+  )
+  .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase as never, context.userId);
     const supabase = context.supabase;
-    const now = Date.now();
-    const since30 = new Date(now - 30 * 86400_000).toISOString();
-    const since7 = new Date(now - 7 * 86400_000).toISOString();
+    const { from, to } = rangeBounds(data.range);
 
-    const { data: logs } = await supabase
-      .from("email_automation_log")
-      .select("customer_email, sequence_type, step, status, skip_reason, sent_at, created_at, dry_run")
-      .gte("created_at", since30)
-      .order("created_at", { ascending: false })
-      .limit(5000);
+    const { data: stats, error } = await supabase.rpc("admin_behavioral_email_stats", {
+      _from: from.toISOString(),
+      _to: to.toISOString(),
+    });
+    if (error) throw new Error(error.message);
 
-    const rows = logs ?? [];
-
-    const bucket = (seq: SeqType) => {
-      const mk = () => ({ 1: 0, 2: 0, 3: 0 } as Record<number, number>);
-      const d7 = mk();
-      const d30 = mk();
-      let failed = 0;
-      let skipped = 0;
-      let dryRun = 0;
-      for (const r of rows) {
-        if (r.sequence_type !== seq) continue;
-        if (r.dry_run) {
-          dryRun++;
-          continue;
-        }
-        if (r.status === "sent" && r.sent_at) {
-          d30[r.step] = (d30[r.step] ?? 0) + 1;
-          if (r.sent_at >= since7) d7[r.step] = (d7[r.step] ?? 0) + 1;
-        } else if (r.status === "failed") failed++;
-        else if (r.status === "skipped") skipped++;
-      }
-      return { last7: d7, last30: d30, failed, skipped, dryRun };
+    const payload = (stats ?? {}) as {
+      steps?: StepStat[];
+      outcomes?: SeqOutcome[];
+      recentSkips?: SkipRow[];
     };
 
-
-    // Recovered orders: completed within 24h after a sequence email to that address
-    const sentRows = rows.filter((r) => r.status === "sent" && r.sent_at);
-    const emails = Array.from(new Set(sentRows.map((r) => r.customer_email)));
-    const recovered: Record<SeqType, number> = { abandoned_cart: 0, saved_items: 0 };
-    if (emails.length > 0) {
-      const { data: idents } = await supabase
-        .from("order_customer_identity")
-        .select("normalized_email, created_at, status")
-        .gte("created_at", since30)
-        .in("normalized_email", emails);
-      for (const r of sentRows) {
-        const t = new Date(r.sent_at as string).getTime();
-        const hit = (idents ?? []).some((o) => {
-          if (o.normalized_email !== r.customer_email) return false;
-          if (o.status !== "completed" && o.status !== "partial") return false;
-          const ot = o.created_at ? new Date(o.created_at).getTime() : 0;
-          return ot >= t && ot <= t + 86400_000;
-        });
-
-        if (hit) recovered[r.sequence_type as SeqType]++;
-      }
-    }
-
-    const { data: settings } = await supabase.from("email_sequence_settings").select("sequence_type, enabled");
-
-    const recentSkips = rows
-      .filter((r) => r.status === "skipped")
-      .slice(0, 20)
-      .map((r) => ({
-        email: r.customer_email,
-        sequence: r.sequence_type as SeqType,
-        step: r.step,
-        reason: r.skip_reason ?? "unknown",
-        at: r.created_at,
-        dryRun: r.dry_run === true,
-      }));
-
+    const { data: settings } = await supabase
+      .from("email_sequence_settings")
+      .select("sequence_type, enabled");
 
     return {
-      abandoned_cart: { ...bucket("abandoned_cart"), recovered: recovered.abandoned_cart },
-      saved_items: { ...bucket("saved_items"), recovered: recovered.saved_items },
-      settings: Object.fromEntries((settings ?? []).map((s) => [s.sequence_type, s.enabled])) as Record<string, boolean>,
-      recentSkips,
+      range: data.range,
+      from: from.toISOString(),
+      to: to.toISOString(),
+      steps: payload.steps ?? [],
+      outcomes: payload.outcomes ?? [],
+      recentSkips: payload.recentSkips ?? [],
+      settings: Object.fromEntries((settings ?? []).map((s) => [s.sequence_type, s.enabled])) as Record<
+        string,
+        boolean
+      >,
     };
   });
 
