@@ -145,6 +145,7 @@ export function EmailAutomationsPanel() {
             <div className="mt-4 flex gap-5 text-[10px] font-mono uppercase tracking-widest text-white/35">
               <span>{s?.skipped ?? 0} skipped</span>
               <span>{s?.failed ?? 0} failed</span>
+              <span>{s?.dryRun ?? 0} dry-run rows</span>
             </div>
           </DashCard>
         );
@@ -173,7 +174,7 @@ export function EmailAutomationsPanel() {
                     <td className="py-2 px-2 text-[12px] text-white/80 truncate max-w-[220px]">{r.email}</td>
                     <td className="py-2 px-2 text-[11px] text-white/55">{LABELS[r.sequence].title}</td>
                     <td className="py-2 px-2 font-mono text-xs">{r.step}</td>
-                    <td className="py-2 px-2 font-mono text-[11px] text-[var(--accent-red-glow)]">{r.reason}</td>
+                    <td className="py-2 px-2 font-mono text-[11px] text-[var(--accent-red-glow)]">{r.reason}{r.dryRun ? " (dry)" : ""}</td>
                     <td className="py-2 px-2 text-right font-mono text-[10px] text-white/40 whitespace-nowrap">
                       {new Date(r.at).toLocaleString()}
                     </td>
