@@ -1188,6 +1188,35 @@ select.input-glass option:checked, .select-glass option:checked {
   will-change: transform;
 }
 .rotation-marquee-wrap:hover .rotation-marquee-track { animation-play-state: paused; }
+
+/* ===== Deals hero: animated gradient CTA ===== */
+.gradient-blob {
+  background:
+    radial-gradient(circle at 30% 40%, #FF003C 0%, transparent 55%),
+    radial-gradient(circle at 70% 60%, #0E0BD1 0%, transparent 55%),
+    radial-gradient(circle at 50% 30%, #A78BFA 0%, transparent 55%),
+    radial-gradient(circle at 20% 80%, #FF003C 0%, transparent 50%);
+  background-size: 200% 200%;
+  filter: blur(18px) saturate(1.15);
+  transform: scale(1.15);
+  animation: gradient-drift 7s ease-in-out infinite alternate;
+}
+@media (prefers-reduced-motion: reduce) {
+  .gradient-blob { animation: none; }
+}
+.animate-gradient-btn { position: relative; }
+.animate-gradient-btn-fast .gradient-blob,
+.animate-gradient-btn:hover .gradient-blob {
+  animation-duration: 4s;
+  filter: blur(18px) saturate(1.35) brightness(1.12);
+}
+@keyframes gradient-drift {
+  0%   { background-position: 0% 0%; }
+  25%  { background-position: 50% 100%; }
+  50%  { background-position: 100% 50%; }
+  75%  { background-position: 50% 0%; }
+  100% { background-position: 0% 100%; }
+}
 .rotation-marquee-track .rotation-card {
   width: 360px;
   min-width: 0;
