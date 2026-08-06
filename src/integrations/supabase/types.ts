@@ -448,6 +448,7 @@ export type Database = {
           attempts: number
           created_at: string
           customer_email: string
+          dry_run: boolean
           error: string | null
           id: string
           resend_message_id: string | null
@@ -463,6 +464,7 @@ export type Database = {
           attempts?: number
           created_at?: string
           customer_email: string
+          dry_run?: boolean
           error?: string | null
           id?: string
           resend_message_id?: string | null
@@ -478,6 +480,7 @@ export type Database = {
           attempts?: number
           created_at?: string
           customer_email?: string
+          dry_run?: boolean
           error?: string | null
           id?: string
           resend_message_id?: string | null
