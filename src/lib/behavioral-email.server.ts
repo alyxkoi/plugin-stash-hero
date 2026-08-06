@@ -358,6 +358,8 @@ async function buildCartCandidates(
   now: number,
   products: Map<string, ProductRow>,
   sales: ActiveSale[],
+  sentKeys: Set<string>,
+  dryRun: boolean,
 ): Promise<Candidate[]> {
   const { data: items } = await supabaseAdmin
     .from("cart_items")
@@ -384,9 +386,11 @@ async function buildCartCandidates(
     const age = now - activity;
     // Stale carts (older than a week) are past the sequence window — never back-blast them.
     if (age > 7 * DAY) continue;
-    const step: 1 | 2 | 3 | null = age >= 72 * HOUR ? 3 : age >= 24 * HOUR ? 2 : age >= 1 * HOUR ? 1 : null;
+    // Elapsed time only sets the CEILING; progression decides the actual step.
+    const ageStep: 1 | 2 | 3 | null =
+      age >= 72 * HOUR ? 3 : age >= 24 * HOUR ? 2 : age >= 1 * HOUR ? 1 : null;
 
-    if (!step) continue;
+    if (!ageStep) continue;
 
     const triggerRef = `${userId}:${new Date(activity).toISOString()}`;
 
@@ -396,14 +400,39 @@ async function buildCartCandidates(
         {
           customer_email: `unknown:${userId}`,
           sequence_type: "abandoned_cart" as const,
-          step,
+          step: ageStep,
           trigger_ref: triggerRef,
           status: "skipped" as const,
           skip_reason: "no_valid_email",
+          dry_run: dryRun,
         },
         { onConflict: "customer_email,sequence_type,step,trigger_ref", ignoreDuplicates: true },
       );
       continue;
+    }
+
+    // highest step already delivered for this exact trigger
+    let prevSent = 0;
+    for (const s of [1, 2, 3]) {
+      if (sentKeys.has(`${email}|abandoned_cart|${s}|${triggerRef}`)) prevSent = s;
+    }
+    const step = Math.min(ageStep, prevSent + 1) as 1 | 2 | 3;
+    if (step > 3) continue;
+
+    // Audit the fact that a later step was time-eligible but held back.
+    if (step < ageStep) {
+      await supabaseAdmin.from("email_automation_log").upsert(
+        {
+          customer_email: email,
+          sequence_type: "abandoned_cart" as const,
+          step: ageStep,
+          trigger_ref: triggerRef,
+          status: "skipped" as const,
+          skip_reason: "prior_step_not_sent",
+          dry_run: dryRun,
+        },
+        { onConflict: "customer_email,sequence_type,step,trigger_ref" },
+      );
     }
 
     const productIds = rows.map((r) => r.product_id);
@@ -417,6 +446,7 @@ async function buildCartCandidates(
       step,
       triggerRef,
       render: () => renderAbandonedCart({ step, items: emailItems, total, unsubUrl: unsubUrl(email) }),
+
       guard: async () => {
         const { data: still } = await supabaseAdmin
           .from("cart_items")
