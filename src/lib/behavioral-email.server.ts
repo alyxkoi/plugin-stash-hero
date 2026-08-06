@@ -36,6 +36,8 @@ type Candidate = {
   sequence: SequenceType;
   step: 1 | 2 | 3;
   triggerRef: string;
+  // event-driven emails (saved-items price drop) may fire without the earlier step
+  exemptFromSequencing?: boolean;
   render: () => { subject: string; html: string; text: string };
   // guard evaluated again immediately before send
   guard: () => Promise<string | null>; // returns skip reason or null
@@ -48,9 +50,11 @@ type LogRow = {
   step: number;
   trigger_ref: string;
   status: "sent" | "failed" | "skipped";
+  skip_reason: string | null;
   attempts: number;
   sent_at: string | null;
 };
+
 
 // ---------- pricing ----------
 
@@ -146,14 +150,23 @@ async function optedOut(emails: string[]): Promise<Set<string>> {
 
 // ---------- main run ----------
 
-export async function runBehavioralEmailJob(): Promise<{
+// Skip reasons that represent a temporary suppression: the same (email, sequence,
+// step, ref) may be retried on a later run.
+const RETRYABLE_SKIPS = new Set(["frequency_cap", "prior_step_not_sent"]);
+
+export async function runBehavioralEmailJob(
+  opts: { dryRun?: boolean; onlyEmail?: string } = {},
+): Promise<{
   sent: number;
   failed: number;
   skipped: number;
   deferred: number;
+  dryRun: boolean;
 }> {
+  const dryRun = opts.dryRun === true;
+  const onlyEmail = normalizeEmail(opts.onlyEmail) || null;
   const now = Date.now();
-  const stats = { sent: 0, failed: 0, skipped: 0, deferred: 0 };
+  const stats = { sent: 0, failed: 0, skipped: 0, deferred: 0, dryRun };
 
   const { data: settingsRows } = await supabaseAdmin
     .from("email_sequence_settings")
@@ -168,22 +181,34 @@ export async function runBehavioralEmailJob(): Promise<{
     .eq("status", "published");
   const products = new Map<string, ProductRow>((productRows ?? []).map((p) => [p.id, p as ProductRow]));
 
+  // Sequence progression: every step already delivered (real or dry-run).
+  const { data: sentRows } = await supabaseAdmin
+    .from("email_automation_log")
+    .select("customer_email, sequence_type, step, trigger_ref")
+    .eq("status", "sent")
+    .gte("created_at", new Date(now - 60 * DAY).toISOString());
+  const sentKeys = new Set<string>(
+    (sentRows ?? []).map((r) => `${r.customer_email}|${r.sequence_type}|${r.step}|${r.trigger_ref}`),
+  );
+
   const candidates: Candidate[] = [];
 
-  if (enabled.get("abandoned_cart") !== false) {
-    candidates.push(...(await buildCartCandidates(now, products, sales)));
+  if (dryRun || enabled.get("abandoned_cart") !== false) {
+    candidates.push(...(await buildCartCandidates(now, products, sales, sentKeys, dryRun)));
   }
-  if (enabled.get("saved_items") !== false) {
-    candidates.push(...(await buildSavedCandidates(now, products, sales)));
+  if (dryRun || enabled.get("saved_items") !== false) {
+    candidates.push(...(await buildSavedCandidates(now, products, sales, dryRun)));
   }
 
+  const scoped = onlyEmail ? candidates.filter((c) => c.email === onlyEmail) : candidates;
+
   // Existing log rows for these (email, sequence, step, ref) combos
-  const emails = Array.from(new Set(candidates.map((c) => c.email)));
+  const emails = Array.from(new Set(scoped.map((c) => c.email)));
   const existing = new Map<string, LogRow>();
   if (emails.length > 0) {
     const { data: logs } = await supabaseAdmin
       .from("email_automation_log")
-      .select("id, customer_email, sequence_type, step, trigger_ref, status, attempts, sent_at")
+      .select("id, customer_email, sequence_type, step, trigger_ref, status, skip_reason, attempts, sent_at")
       .in("customer_email", emails);
     for (const l of (logs ?? []) as LogRow[]) {
       existing.set(`${l.customer_email}|${l.sequence_type}|${l.step}|${l.trigger_ref}`, l);
@@ -209,21 +234,32 @@ export async function runBehavioralEmailJob(): Promise<{
   }
 
   // Abandoned cart first (higher intent), then saved items
-  candidates.sort((a, b) => (a.sequence === b.sequence ? 0 : a.sequence === "abandoned_cart" ? -1 : 1));
+  scoped.sort((a, b) => (a.sequence === b.sequence ? 0 : a.sequence === "abandoned_cart" ? -1 : 1));
 
   const usedThisRun = new Set<string>();
 
-  for (const c of candidates) {
+  for (const c of scoped) {
     const key = `${c.email}|${c.sequence}|${c.step}|${c.triggerRef}`;
     const prior = existing.get(key);
 
     if (prior && prior.status === "sent") continue;
-    if (prior && prior.status === "skipped") continue;
+    if (prior && prior.status === "skipped" && !RETRYABLE_SKIPS.has(prior.skip_reason ?? "")) continue;
     if (prior && prior.status === "failed" && prior.attempts >= 2) continue; // retried once already
+
+    // strict sequencing: a step only fires once the previous step was delivered.
+    // The saved-items price-drop email is event-driven and exempt by design.
+    if (c.step > 1 && !c.exemptFromSequencing) {
+      const prevKey = `${c.email}|${c.sequence}|${c.step - 1}|${c.triggerRef}`;
+      if (!sentKeys.has(prevKey)) {
+        await logSkip(c, "prior_step_not_sent", dryRun);
+        stats.skipped++;
+        continue;
+      }
+    }
 
     // opt-out
     if (opted.has(c.email)) {
-      await logSkip(c, "unsubscribed");
+      await logSkip(c, "unsubscribed", dryRun);
       stats.skipped++;
       continue;
     }
@@ -231,7 +267,7 @@ export async function runBehavioralEmailJob(): Promise<{
     // send-time guard
     const reason = await c.guard();
     if (reason) {
-      await logSkip(c, reason);
+      await logSkip(c, reason, dryRun);
       stats.skipped++;
       continue;
     }
@@ -239,18 +275,21 @@ export async function runBehavioralEmailJob(): Promise<{
     // frequency cap: one behavioral email per address per 24h
     const last = lastSent.get(c.email) ?? 0;
     if (usedThisRun.has(c.email) || now - last < DAY) {
+      await logSkip(c, "frequency_cap", dryRun);
       stats.deferred++;
       continue;
     }
 
     const mail = c.render();
-    const res = await sendEmail({
-      from: FROM,
-      to: c.email,
-      subject: mail.subject,
-      html: mail.html,
-      text: mail.text,
-    });
+    const res = dryRun
+      ? { id: null as string | null, error: undefined as string | undefined }
+      : await sendEmail({
+          from: FROM,
+          to: c.email,
+          subject: mail.subject,
+          html: mail.html,
+          text: mail.text,
+        });
 
     if (res.error) {
       await supabaseAdmin.from("email_automation_log").upsert(
@@ -262,6 +301,7 @@ export async function runBehavioralEmailJob(): Promise<{
           status: "failed" as const,
           error: res.error.slice(0, 500),
           attempts: (prior?.attempts ?? 0) + 1,
+          dry_run: dryRun,
         },
         { onConflict: "customer_email,sequence_type,step,trigger_ref" },
       );
@@ -280,9 +320,11 @@ export async function runBehavioralEmailJob(): Promise<{
         resend_message_id: res.id ?? null,
         error: null,
         attempts: (prior?.attempts ?? 0) + 1,
+        dry_run: dryRun,
       },
       { onConflict: "customer_email,sequence_type,step,trigger_ref" },
     );
+    sentKeys.add(`${c.email}|${c.sequence}|${c.step}|${c.triggerRef}`);
     usedThisRun.add(c.email);
     lastSent.set(c.email, now);
     stats.sent++;
@@ -291,7 +333,10 @@ export async function runBehavioralEmailJob(): Promise<{
   return stats;
 }
 
-async function logSkip(c: Candidate, reason: string) {
+async function logSkip(c: Candidate, reason: string, dryRun: boolean) {
+  // Retryable suppressions must be able to change on a later run, so they are
+  // upserted (not ignored) and re-evaluated next time.
+  const retryable = RETRYABLE_SKIPS.has(reason);
   await supabaseAdmin.from("email_automation_log").upsert(
     {
       customer_email: c.email,
@@ -300,10 +345,12 @@ async function logSkip(c: Candidate, reason: string) {
       trigger_ref: c.triggerRef,
       status: "skipped" as const,
       skip_reason: reason,
+      dry_run: dryRun,
     },
-    { onConflict: "customer_email,sequence_type,step,trigger_ref", ignoreDuplicates: true },
+    { onConflict: "customer_email,sequence_type,step,trigger_ref", ignoreDuplicates: !retryable },
   );
 }
+
 
 // ---------- abandoned cart ----------
 
@@ -311,6 +358,8 @@ async function buildCartCandidates(
   now: number,
   products: Map<string, ProductRow>,
   sales: ActiveSale[],
+  sentKeys: Set<string>,
+  dryRun: boolean,
 ): Promise<Candidate[]> {
   const { data: items } = await supabaseAdmin
     .from("cart_items")
@@ -337,9 +386,11 @@ async function buildCartCandidates(
     const age = now - activity;
     // Stale carts (older than a week) are past the sequence window — never back-blast them.
     if (age > 7 * DAY) continue;
-    const step: 1 | 2 | 3 | null = age >= 72 * HOUR ? 3 : age >= 24 * HOUR ? 2 : age >= 1 * HOUR ? 1 : null;
+    // Elapsed time only sets the CEILING; progression decides the actual step.
+    const ageStep: 1 | 2 | 3 | null =
+      age >= 72 * HOUR ? 3 : age >= 24 * HOUR ? 2 : age >= 1 * HOUR ? 1 : null;
 
-    if (!step) continue;
+    if (!ageStep) continue;
 
     const triggerRef = `${userId}:${new Date(activity).toISOString()}`;
 
@@ -349,14 +400,39 @@ async function buildCartCandidates(
         {
           customer_email: `unknown:${userId}`,
           sequence_type: "abandoned_cart" as const,
-          step,
+          step: ageStep,
           trigger_ref: triggerRef,
           status: "skipped" as const,
           skip_reason: "no_valid_email",
+          dry_run: dryRun,
         },
         { onConflict: "customer_email,sequence_type,step,trigger_ref", ignoreDuplicates: true },
       );
       continue;
+    }
+
+    // highest step already delivered for this exact trigger
+    let prevSent = 0;
+    for (const s of [1, 2, 3]) {
+      if (sentKeys.has(`${email}|abandoned_cart|${s}|${triggerRef}`)) prevSent = s;
+    }
+    const step = Math.min(ageStep, prevSent + 1) as 1 | 2 | 3;
+    if (step > 3) continue;
+
+    // Audit the fact that a later step was time-eligible but held back.
+    if (step < ageStep) {
+      await supabaseAdmin.from("email_automation_log").upsert(
+        {
+          customer_email: email,
+          sequence_type: "abandoned_cart" as const,
+          step: ageStep,
+          trigger_ref: triggerRef,
+          status: "skipped" as const,
+          skip_reason: "prior_step_not_sent",
+          dry_run: dryRun,
+        },
+        { onConflict: "customer_email,sequence_type,step,trigger_ref" },
+      );
     }
 
     const productIds = rows.map((r) => r.product_id);
@@ -370,6 +446,7 @@ async function buildCartCandidates(
       step,
       triggerRef,
       render: () => renderAbandonedCart({ step, items: emailItems, total, unsubUrl: unsubUrl(email) }),
+
       guard: async () => {
         const { data: still } = await supabaseAdmin
           .from("cart_items")
@@ -393,6 +470,7 @@ async function buildSavedCandidates(
   now: number,
   products: Map<string, ProductRow>,
   sales: ActiveSale[],
+  _dryRun: boolean,
 ): Promise<Candidate[]> {
   const { data: saved } = await supabaseAdmin
     .from("saved_items")
@@ -439,6 +517,7 @@ async function buildSavedCandidates(
         sequence: "saved_items",
         step: 2,
         triggerRef: `${s.id}:${Math.round(current * 100)}`,
+        exemptFromSequencing: true,
         render: () =>
           renderPriceDrop({
             item: toEmailProduct(product, current),

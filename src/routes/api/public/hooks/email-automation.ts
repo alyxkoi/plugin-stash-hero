@@ -10,6 +10,7 @@ export const Route = createFileRoute("/api/public/hooks/email-automation")({
           process.env.SUPABASE_ANON_KEY,
           process.env.SUPABASE_PUBLISHABLE_KEY,
           process.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined,
         ].filter(Boolean) as string[];
         const expected = allowed.includes(key) ? key : "";
 
@@ -20,8 +21,15 @@ export const Route = createFileRoute("/api/public/hooks/email-automation")({
           });
         }
         try {
+          const body = (await request.json().catch(() => ({}))) as {
+            dryRun?: boolean;
+            onlyEmail?: string;
+          };
           const { runBehavioralEmailJob } = await import("@/lib/behavioral-email.server");
-          const stats = await runBehavioralEmailJob();
+          const stats = await runBehavioralEmailJob({
+            dryRun: body.dryRun === true,
+            onlyEmail: body.onlyEmail,
+          });
           console.log("[email-automation]", stats);
           return new Response(JSON.stringify({ ok: true, ...stats }), {
             headers: { "Content-Type": "application/json" },

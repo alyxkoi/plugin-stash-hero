@@ -1,11 +1,14 @@
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { DashCard } from "@/components/DashboardShell";
 import {
   getEmailAutomationStats,
+  runEmailAutomationDryRun,
   setEmailSequenceEnabled,
 } from "@/lib/email-automation-admin.functions";
+
 
 type SeqKey = "abandoned_cart" | "saved_items";
 
@@ -23,7 +26,9 @@ const LABELS: Record<SeqKey, { title: string; steps: Record<number, string> }> =
 export function EmailAutomationsPanel() {
   const fetchStats = useServerFn(getEmailAutomationStats);
   const toggleFn = useServerFn(setEmailSequenceEnabled);
+  const dryRunFn = useServerFn(runEmailAutomationDryRun);
   const qc = useQueryClient();
+  const [testEmail, setTestEmail] = useState("");
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["email-automation-stats"],
@@ -40,6 +45,18 @@ export function EmailAutomationsPanel() {
     onError: (e: Error) => toast.error(e.message || "Couldn't update sequence"),
   });
 
+  const dryRun = useMutation({
+    mutationFn: () =>
+      dryRunFn({ data: testEmail.trim() ? { onlyEmail: testEmail.trim() } : {} }),
+    onSuccess: (r) => {
+      qc.invalidateQueries({ queryKey: ["email-automation-stats"] });
+      toast.success(
+        `Dry run: ${r.sent} would send · ${r.skipped} skipped · ${r.deferred} deferred · ${r.failed} failed`,
+      );
+    },
+    onError: (e: Error) => toast.error(e.message || "Dry run failed"),
+  });
+
   if (isError) {
     return (
       <DashCard title="Behavioral emails">
@@ -53,6 +70,30 @@ export function EmailAutomationsPanel() {
 
   return (
     <div className="space-y-4">
+      <DashCard title="Dry run">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <p className="flex-1 text-[12px] leading-relaxed text-white/50">
+            Evaluates every rule and records the outcome in the log without sending anything through
+            Resend. Leave blank to simulate the whole queue, or enter one address to scope it.
+          </p>
+          <div className="flex gap-2">
+            <input
+              value={testEmail}
+              onChange={(e) => setTestEmail(e.target.value)}
+              placeholder="test@address.com"
+              className="w-full sm:w-56 rounded-md border border-white/12 bg-white/[0.04] px-3 py-2 text-[12px] outline-none placeholder:text-white/25 focus:border-white/30"
+            />
+            <button
+              disabled={dryRun.isPending}
+              onClick={() => dryRun.mutate()}
+              className="whitespace-nowrap rounded-md border border-white/20 px-4 py-2 text-[11px] font-mono uppercase tracking-wider text-white/70 transition-colors hover:border-white/40 hover:text-white disabled:opacity-50"
+            >
+              {dryRun.isPending ? "Running…" : "Run dry run"}
+            </button>
+          </div>
+        </div>
+      </DashCard>
+
       {(["abandoned_cart", "saved_items"] as SeqKey[]).map((key) => {
         const s = data?.[key];
         const enabled = data?.settings?.[key] ?? true;
@@ -104,6 +145,7 @@ export function EmailAutomationsPanel() {
             <div className="mt-4 flex gap-5 text-[10px] font-mono uppercase tracking-widest text-white/35">
               <span>{s?.skipped ?? 0} skipped</span>
               <span>{s?.failed ?? 0} failed</span>
+              <span>{s?.dryRun ?? 0} dry-run rows</span>
             </div>
           </DashCard>
         );
@@ -132,7 +174,7 @@ export function EmailAutomationsPanel() {
                     <td className="py-2 px-2 text-[12px] text-white/80 truncate max-w-[220px]">{r.email}</td>
                     <td className="py-2 px-2 text-[11px] text-white/55">{LABELS[r.sequence].title}</td>
                     <td className="py-2 px-2 font-mono text-xs">{r.step}</td>
-                    <td className="py-2 px-2 font-mono text-[11px] text-[var(--accent-red-glow)]">{r.reason}</td>
+                    <td className="py-2 px-2 font-mono text-[11px] text-[var(--accent-red-glow)]">{r.reason}{r.dryRun ? " (dry)" : ""}</td>
                     <td className="py-2 px-2 text-right font-mono text-[10px] text-white/40 whitespace-nowrap">
                       {new Date(r.at).toLocaleString()}
                     </td>

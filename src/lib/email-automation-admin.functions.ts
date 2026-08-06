@@ -20,7 +20,7 @@ export const getEmailAutomationStats = createServerFn({ method: "GET" })
 
     const { data: logs } = await supabase
       .from("email_automation_log")
-      .select("customer_email, sequence_type, step, status, skip_reason, sent_at, created_at")
+      .select("customer_email, sequence_type, step, status, skip_reason, sent_at, created_at, dry_run")
       .gte("created_at", since30)
       .order("created_at", { ascending: false })
       .limit(5000);
@@ -33,16 +33,22 @@ export const getEmailAutomationStats = createServerFn({ method: "GET" })
       const d30 = mk();
       let failed = 0;
       let skipped = 0;
+      let dryRun = 0;
       for (const r of rows) {
         if (r.sequence_type !== seq) continue;
+        if (r.dry_run) {
+          dryRun++;
+          continue;
+        }
         if (r.status === "sent" && r.sent_at) {
           d30[r.step] = (d30[r.step] ?? 0) + 1;
           if (r.sent_at >= since7) d7[r.step] = (d7[r.step] ?? 0) + 1;
         } else if (r.status === "failed") failed++;
         else if (r.status === "skipped") skipped++;
       }
-      return { last7: d7, last30: d30, failed, skipped };
+      return { last7: d7, last30: d30, failed, skipped, dryRun };
     };
+
 
     // Recovered orders: completed within 24h after a sequence email to that address
     const sentRows = rows.filter((r) => r.status === "sent" && r.sent_at);
@@ -71,14 +77,16 @@ export const getEmailAutomationStats = createServerFn({ method: "GET" })
 
     const recentSkips = rows
       .filter((r) => r.status === "skipped")
-      .slice(0, 12)
+      .slice(0, 20)
       .map((r) => ({
         email: r.customer_email,
         sequence: r.sequence_type as SeqType,
         step: r.step,
         reason: r.skip_reason ?? "unknown",
         at: r.created_at,
+        dryRun: r.dry_run === true,
       }));
+
 
     return {
       abandoned_cart: { ...bucket("abandoned_cart"), recovered: recovered.abandoned_cart },
@@ -101,4 +109,17 @@ export const setEmailSequenceEnabled = createServerFn({ method: "POST" })
       .eq("sequence_type", data.sequence);
     if (error) throw new Error(error.message);
     return { ok: true as const };
+  });
+
+// Dry-run: evaluates every rule and writes dry-run log rows without calling Resend.
+// Optionally scoped to a single designated test address.
+export const runEmailAutomationDryRun = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ onlyEmail: z.string().trim().email().optional() }).parse(d ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase as never, context.userId);
+    const { runBehavioralEmailJob } = await import("@/lib/behavioral-email.server");
+    return await runBehavioralEmailJob({ dryRun: true, onlyEmail: data.onlyEmail });
   });
