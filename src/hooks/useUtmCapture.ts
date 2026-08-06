@@ -71,40 +71,64 @@ export function clearStoredUtm() {
   } catch { /* ignore */ }
 }
 
+function captureFromUrl() {
+  if (typeof window === "undefined") return;
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const source = params.get("utm_source");
+    const campaign = params.get("utm_campaign");
+    const cid = params.get("pw_cid");
+
+    // Attribution is set ONLY by explicit URL params from /go/{code} or a
+    // tagged campaign URL. Never from document.referrer, never from a
+    // bare utm_campaign. If neither utm_source nor pw_cid is present in
+    // the landing URL, the visit is "direct" and nothing is stored.
+    if (!source && !cid) return;
+
+    if (cid) writeCookie(CID_COOKIE, cid, MAX_AGE_MS);
+
+    const existing = readStoredUtm();
+    if (existing) {
+      if (cid && !existing.pw_cid) {
+        const merged: StoredUtm = { ...existing, pw_cid: cid };
+        try { localStorage.setItem(KEY, JSON.stringify(merged)); } catch { /* ignore */ }
+      }
+      return;
+    }
+
+    const record: StoredUtm = {
+      utm_source: source,
+      utm_campaign: campaign,
+      pw_cid: cid,
+      captured_at: new Date().toISOString(),
+    };
+    try { localStorage.setItem(KEY, JSON.stringify(record)); } catch { /* ignore */ }
+  } catch { /* ignore */ }
+}
+
+// Eager capture at module load — runs before the router can rewrite or
+// redirect away from the landing URL and strip the query string.
+captureFromUrl();
+
 export function useUtmCapture() {
+  useEffect(() => { captureFromUrl(); }, []);
+}
+
+// Keeps pw_cid in the URL across internal navigations so attribution
+// survives in-app browsers (Instagram/Facebook) where localStorage and
+// cookies are frequently isolated or wiped.
+export function usePwCidUrlPersistence(pathname: string) {
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      const params = new URLSearchParams(window.location.search);
-      const source = params.get("utm_source");
-      const campaign = params.get("utm_campaign");
-      const cid = params.get("pw_cid");
-
-      // Attribution is set ONLY by explicit URL params from /go/{code} or a
-      // tagged campaign URL. Never from document.referrer, never from a
-      // bare utm_campaign. If neither utm_source nor pw_cid is present in
-      // the landing URL, the visit is "direct" and nothing is stored.
-      if (!source && !cid) return;
-
-      if (cid) writeCookie(CID_COOKIE, cid, MAX_AGE_MS);
-
-      const existing = readStoredUtm();
-      if (existing) {
-        if (cid && !existing.pw_cid) {
-          const merged: StoredUtm = { ...existing, pw_cid: cid };
-          try { localStorage.setItem(KEY, JSON.stringify(merged)); } catch { /* ignore */ }
-        }
-        return;
-      }
-
-      const record: StoredUtm = {
-        utm_source: source,
-        utm_campaign: campaign,
-        pw_cid: cid,
-        captured_at: new Date().toISOString(),
-      };
-      try { localStorage.setItem(KEY, JSON.stringify(record)); } catch { /* ignore */ }
+      const url = new URL(window.location.href);
+      if (url.searchParams.get("pw_cid")) return;
+      const cid = readStoredUtm()?.pw_cid;
+      if (!cid) return;
+      url.searchParams.set("pw_cid", cid);
+      window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
     } catch { /* ignore */ }
-  }, []);
+  }, [pathname]);
 }
+
 
