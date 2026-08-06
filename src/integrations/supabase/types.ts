@@ -98,24 +98,6 @@ export type Database = {
         }
         Relationships: []
       }
-      campaign_click_ignored_ips: {
-        Row: {
-          created_at: string
-          ip_hash: string
-          note: string | null
-        }
-        Insert: {
-          created_at?: string
-          ip_hash: string
-          note?: string | null
-        }
-        Update: {
-          created_at?: string
-          ip_hash?: string
-          note?: string | null
-        }
-        Relationships: []
-      }
       campaign_link_clicks: {
         Row: {
           click_id: string | null

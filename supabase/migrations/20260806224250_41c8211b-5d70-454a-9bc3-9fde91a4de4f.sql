@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS public.campaign_click_ignored_ips;
