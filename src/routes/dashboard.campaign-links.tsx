@@ -311,9 +311,6 @@ export function CampaignLinksPage({ embedded = false }: { embedded?: boolean } =
                         </div>
                       );
                     })()}
-                    <div className="hidden">
-
-                    </div>
                   </div>
                   <GroupActions group={g} onChanged={reload} />
                 </div>
