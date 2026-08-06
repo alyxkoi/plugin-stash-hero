@@ -58,7 +58,13 @@ type LogRow = {
 
 // ---------- pricing ----------
 
-type ActiveSale = { discount_pct: number; scope: string; categories: string[]; productIds: Set<string> };
+type ActiveSale = {
+  discount_pct: number;
+  scope: string;
+  categories: string[];
+  productIds: Set<string>;
+  end_at: string | null;
+};
 
 async function loadActiveSales(): Promise<ActiveSale[]> {
   const nowIso = new Date().toISOString();
@@ -79,6 +85,7 @@ async function loadActiveSales(): Promise<ActiveSale[]> {
     scope: s.scope as string,
     categories: (s.categories as string[]) ?? [],
     productIds: new Set((junction ?? []).filter((j) => j.sale_event_id === s.id).map((j) => j.product_id)),
+    end_at: (s.end_at as string | null) ?? null,
   }));
 }
 
@@ -92,22 +99,47 @@ type ProductRow = {
   status: string;
 };
 
-function effectivePrice(p: ProductRow, sales: ActiveSale[]): number {
-  let best = 0;
+/** Best active sale for a product, or null when it is not on sale. */
+function bestSale(p: ProductRow, sales: ActiveSale[]): ActiveSale | null {
+  let best: ActiveSale | null = null;
   for (const s of sales) {
     const applies =
       s.scope === "all" ||
       (s.scope === "categories" && s.categories.includes(p.category)) ||
       (s.scope === "selected" && s.productIds.has(p.id));
-    if (applies) best = Math.max(best, s.discount_pct ?? 0);
+    if (!applies) continue;
+    if (!best || (s.discount_pct ?? 0) > (best.discount_pct ?? 0)) best = s;
   }
-  if (best <= 0) return Number(p.price);
-  return Math.round(Number(p.price) * (1 - best / 100) * 100) / 100;
+  return best && (best.discount_pct ?? 0) > 0 ? best : null;
+}
+
+function effectivePrice(p: ProductRow, sales: ActiveSale[]): number {
+  const s = bestSale(p, sales);
+  if (!s) return Number(p.price);
+  return Math.round(Number(p.price) * (1 - (s.discount_pct ?? 0) / 100) * 100) / 100;
 }
 
 function toEmailProduct(p: ProductRow, price: number): EmailProduct {
-  return { name: p.name, price, coverUrl: p.cover_url, slug: p.slug };
+  const list = Number(p.price);
+  return {
+    name: p.name,
+    price,
+    comparePrice: price < list - 0.005 ? list : null,
+    coverUrl: p.cover_url,
+    slug: p.slug,
+  };
 }
+
+/**
+ * DEADLINE_TEXT: real sale end date for the hero item, otherwise the
+ * per-sequence fallback. Never invents scarcity.
+ */
+function deadlineFor(hero: ProductRow | undefined, sales: ActiveSale[], fallback: string): string {
+  if (!hero) return fallback;
+  const sale = bestSale(hero, sales);
+  return (sale ? saleDeadlineText(sale.end_at) : null) ?? fallback;
+}
+
 
 // ---------- shared lookups ----------
 
