@@ -517,6 +517,7 @@ async function buildSavedCandidates(
         sequence: "saved_items",
         step: 2,
         triggerRef: `${s.id}:${Math.round(current * 100)}`,
+        exemptFromSequencing: true,
         render: () =>
           renderPriceDrop({
             item: toEmailProduct(product, current),
