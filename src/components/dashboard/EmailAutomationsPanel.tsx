@@ -7,12 +7,23 @@ import {
   getEmailAutomationStats,
   runEmailAutomationDryRun,
   setEmailSequenceEnabled,
+  sendBehavioralTestEmail,
   RANGE_KEYS,
   type RangeKey,
   type StepStat,
+  type TestTemplateKey,
 } from "@/lib/email-automation-admin.functions";
 
+const TEST_TEMPLATE_LABELS: { key: TestTemplateKey; label: string }[] = [
+  { key: "cart_1h", label: "Cart · 1 hour" },
+  { key: "cart_24h", label: "Cart · 24 hours" },
+  { key: "cart_72h", label: "Cart · 72 hours" },
+  { key: "saved_3day", label: "Saved · 3-day nudge" },
+  { key: "price_drop", label: "Saved · price drop" },
+];
+
 type SeqKey = "abandoned_cart" | "saved_items";
+
 
 const LABELS: Record<SeqKey, { title: string; steps: { step: number; label: string }[] }> = {
   abandoned_cart: {
