@@ -4,7 +4,7 @@
 // includes the product.
 import { corsHeaders, adminClient, json } from "../_shared/auth.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { presign, r2PublicUrl } from "../_shared/r2.ts";
+import { presign } from "../_shared/r2.ts";
 
 
 
