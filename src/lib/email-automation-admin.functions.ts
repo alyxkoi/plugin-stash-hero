@@ -77,14 +77,16 @@ export const getEmailAutomationStats = createServerFn({ method: "GET" })
 
     const recentSkips = rows
       .filter((r) => r.status === "skipped")
-      .slice(0, 12)
+      .slice(0, 20)
       .map((r) => ({
         email: r.customer_email,
         sequence: r.sequence_type as SeqType,
         step: r.step,
         reason: r.skip_reason ?? "unknown",
         at: r.created_at,
+        dryRun: r.dry_run === true,
       }));
+
 
     return {
       abandoned_cart: { ...bucket("abandoned_cart"), recovered: recovered.abandoned_cart },
