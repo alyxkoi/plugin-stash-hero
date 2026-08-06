@@ -86,7 +86,21 @@ function SaleEvent() {
 
   return (
     <div>
-      <section className="relative px-4 md:px-12 py-16 md:py-24 overflow-hidden" style={{ background: "#13002C" }}>
+      <section className="relative px-4 md:px-12 py-16 md:py-24 overflow-hidden">
+        {/* Summer background image: desktop on md+, mobile/tablet below */}
+        <picture className="absolute inset-0 w-full h-full">
+          <source
+            media="(min-width: 768px)"
+            srcSet="https://ovhpoysgvuupqydprsjx.supabase.co/storage/v1/object/public/imagesvideos/summerdesktop.png"
+          />
+          <img
+            src="https://ovhpoysgvuupqydprsjx.supabase.co/storage/v1/object/public/imagesvideos/summermobile.png"
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        </picture>
+        {/* Dark overlay so text stays legible over the photo */}
+        <div className="absolute inset-0 bg-black/45 pointer-events-none" />
         {/* Stadium floodlight glow */}
         <div
           className="absolute inset-0 pointer-events-none"
