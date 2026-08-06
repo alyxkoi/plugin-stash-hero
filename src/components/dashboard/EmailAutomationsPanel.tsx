@@ -67,10 +67,9 @@ const rateText = (sales: number, sent: number) => (sent > 0 ? `${rate(sales, sen
 export function EmailAutomationsPanel() {
   const fetchStats = useServerFn(getEmailAutomationStats);
   const toggleFn = useServerFn(setEmailSequenceEnabled);
-  const dryRunFn = useServerFn(runEmailAutomationDryRun);
   const testSendFn = useServerFn(sendBehavioralTestEmail);
   const qc = useQueryClient();
-  const [testEmail, setTestEmail] = useState("");
+
   const [range, setRange] = useState<RangeKey>("30d");
   const [skipsOpen, setSkipsOpen] = useState(false);
   const [testTemplate, setTestTemplate] = useState<TestTemplateKey>("cart_1h");
