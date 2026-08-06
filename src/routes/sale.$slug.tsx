@@ -99,68 +99,26 @@ function SaleEvent() {
             className="absolute inset-0 w-full h-full object-cover"
           />
         </picture>
-        {/* Dark overlay so text stays legible over the photo */}
-        <div className="absolute inset-0 bg-black/45 pointer-events-none" />
-        {/* Stadium floodlight glow */}
+
+        {/* Contrast scrim: stronger behind the content, fading toward edges */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: `radial-gradient(ellipse 60% 70% at 20% 10%, ${accent}55, transparent 60%), radial-gradient(ellipse 50% 60% at 90% 90%, #2B28FF44, transparent 65%), radial-gradient(ellipse 80% 40% at 50% 0%, #ffffff18, transparent 70%)`,
+            background:
+              "radial-gradient(ellipse 80% 60% at 50% 55%, rgba(11,0,24,0.55) 0%, rgba(11,0,24,0.25) 45%, transparent 75%)",
           }}
         />
-        {/* Faint pitch lines */}
-        <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-[0.09]" preserveAspectRatio="none" viewBox="0 0 100 100">
-          <line x1="50" y1="0" x2="50" y2="100" stroke="white" strokeWidth="0.15" />
-          <circle cx="50" cy="50" r="12" stroke="white" strokeWidth="0.15" fill="none" />
-          <rect x="0" y="30" width="18" height="40" stroke="white" strokeWidth="0.15" fill="none" />
-          <rect x="82" y="30" width="18" height="40" stroke="white" strokeWidth="0.15" fill="none" />
-        </svg>
-        {/* Diagonal speed streaks */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {[0, 1, 2, 3, 4, 5].map((i) => (
-            <div
-              key={i}
-              className="absolute h-[2px] opacity-40"
-              style={{
-                top: `${10 + i * 15}%`,
-                left: "-10%",
-                width: "120%",
-                background: `linear-gradient(90deg, transparent, ${i % 2 === 0 ? accent : "#2B28FF"}${i % 2 === 0 ? "aa" : "66"}, transparent)`,
-                transform: `rotate(-8deg)`,
-                filter: "blur(1px)",
-              }}
-            />
-          ))}
-        </div>
-        {/* Flag color accent bar */}
-        <div className="absolute top-0 left-0 right-0 h-[3px] pointer-events-none" style={{ background: `linear-gradient(90deg, ${accent}, #FFD84A, #00C46A, #2B28FF, ${accent})`, opacity: 0.75 }} />
-        {/* Equalizer bars — bottom right, sound + energy nod */}
-        <div className="absolute bottom-6 right-6 hidden md:flex items-end gap-1 pointer-events-none opacity-70">
-          {[14, 28, 42, 22, 36, 50, 30, 18, 44, 26, 38, 20].map((barH, i) => (
-            <div
-              key={i}
-              className="w-[3px] rounded-full animate-pulse"
-              style={{
-                height: `${barH}px`,
-                background: `linear-gradient(180deg, ${accent}, #2B28FF)`,
-                animationDelay: `${i * 0.12}s`,
-                animationDuration: `${1 + (i % 3) * 0.3}s`,
-                boxShadow: `0 0 6px ${accent}88`,
-              }}
-            />
-          ))}
-        </div>
 
         <div className="relative flex flex-col items-center justify-center text-center min-h-[70vh] gap-8 md:gap-10">
           <h1 className="font-black chrome-text leading-[0.95] max-w-4xl mx-auto text-balance" style={{ fontSize: "clamp(2.25rem, 6.5vw, 6rem)", textShadow: "0 0 40px rgba(255,255,255,0.35)" }}>{headline}</h1>
-          <p className="text-white/70 text-base md:text-lg max-w-2xl mx-auto">{sub}</p>
+          <p className="text-white/70 text-base md:text-lg max-w-2xl mx-auto pb-2 md:pb-4">{sub}</p>
           <a
             href="#grid"
             onClick={scrollToGrid}
-            className="btn-primary !text-base !py-4 !px-8 !bg-transparent !shadow-none !text-white transition-colors duration-200 hover:!bg-[#FF003C]"
-            style={{ border: "1.5px solid rgba(255,255,255,0.7)" }}
+            className="relative inline-flex items-center justify-center font-bold text-white text-base py-4 px-8 rounded-full overflow-hidden group animate-gradient-btn hover:animate-gradient-btn-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
           >
-            SHOP THE SALE →
+            <span className="absolute inset-0 gradient-blob" />
+            <span className="relative z-10">SHOP THE SALE →</span>
           </a>
         </div>
 
