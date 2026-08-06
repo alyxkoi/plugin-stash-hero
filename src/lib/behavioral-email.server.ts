@@ -323,6 +323,8 @@ export async function runBehavioralEmailJob(
       ? { id: null as string | null, error: undefined as string | undefined }
       : await sendEmail({
           from: FROM,
+          reply_to: "pluginwh@gmail.com",
+
           to: c.email,
           subject: mail.subject,
           html: mail.html,
