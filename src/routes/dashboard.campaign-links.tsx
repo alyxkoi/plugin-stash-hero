@@ -71,6 +71,8 @@ export function CampaignLinksPage({ embedded = false }: { embedded?: boolean } =
   const [links, setLinks] = useState<LinkRow[]>([]);
   const [clicks, setClicks] = useState<ClickAgg>(new Map());
   const [purchases, setPurchases] = useState<OrderAgg>(new Map());
+  // Orders tagged with a source but with no click-id match to any link.
+  const [unattributed, setUnattributed] = useState<Map<string, number>>(new Map());
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
 
@@ -85,23 +87,36 @@ export function CampaignLinksPage({ embedded = false }: { embedded?: boolean } =
         .select("id,group_id,label,code,utm_source,utm_campaign,utm_content,destination_path,archived_at,sort_order")
         .order("sort_order", { ascending: true })
         .order("created_at", { ascending: false }),
-      anySb.from("campaign_link_clicks").select("link_id").eq("counted", true),
-      // Fully refunded orders stop counting as campaign purchases.
-      anySb.from("orders").select("utm_source, utm_campaign").in("status", ["completed", "partial"]).gt("total", 0),
+      // click_id is what purchases are matched on — precise, no fuzzy matching.
+      anySb.from("campaign_link_clicks").select("link_id, click_id").eq("counted", true),
+      // Fully refunded orders stop counting as campaign purchases ($0 excluded too).
+      anySb.from("orders").select("pw_cid, utm_source").in("status", ["completed", "partial"]).gt("total", 0),
     ]);
     setGroups((g.data ?? []) as Group[]);
     setLinks((l.data ?? []) as LinkRow[]);
+
+    const clickRows = (c.data ?? []) as { link_id: string; click_id: string | null }[];
     const clickAgg: ClickAgg = new Map();
-    for (const row of (c.data ?? []) as { link_id: string }[]) {
+    const cidToLink = new Map<string, string>();
+    for (const row of clickRows) {
       clickAgg.set(row.link_id, (clickAgg.get(row.link_id) ?? 0) + 1);
+      if (row.click_id) cidToLink.set(row.click_id, row.link_id);
     }
     setClicks(clickAgg);
+
     const orderAgg: OrderAgg = new Map();
-    for (const row of (o.data ?? []) as { utm_source: string | null; utm_campaign: string | null }[]) {
-      const k = pairKey(row.utm_source, row.utm_campaign);
-      orderAgg.set(k, (orderAgg.get(k) ?? 0) + 1);
+    const unmatched = new Map<string, number>();
+    for (const row of (o.data ?? []) as { pw_cid: string | null; utm_source: string | null }[]) {
+      const linkId = row.pw_cid ? cidToLink.get(row.pw_cid) : undefined;
+      if (linkId) {
+        orderAgg.set(linkId, (orderAgg.get(linkId) ?? 0) + 1);
+        continue;
+      }
+      const src = normalizeUtmSource(row.utm_source);
+      if (src) unmatched.set(src, (unmatched.get(src) ?? 0) + 1);
     }
     setPurchases(orderAgg);
+    setUnattributed(unmatched);
     setHasLoadedOnce(true);
   };
 
@@ -110,12 +125,11 @@ export function CampaignLinksPage({ embedded = false }: { embedded?: boolean } =
   const stats = useMemo(() => {
     const per = new Map<string, { clicks: number; purchases: number }>();
     for (const link of links) {
-      const clks = clicks.get(link.id) ?? 0;
-      const purch = purchases.get(pairKey(link.utm_source, link.utm_campaign)) ?? 0;
-      per.set(link.id, { clicks: clks, purchases: purch });
+      per.set(link.id, { clicks: clicks.get(link.id) ?? 0, purchases: purchases.get(link.id) ?? 0 });
     }
     return per;
   }, [links, clicks, purchases]);
+
 
   const visibleLinks = useMemo(
     () => links.filter((l) => (showArchived ? !!l.archived_at : !l.archived_at)),
