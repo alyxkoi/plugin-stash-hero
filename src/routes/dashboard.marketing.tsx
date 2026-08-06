@@ -7,14 +7,16 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { DiscountCodeModal, type DiscountRow } from "@/components/dashboard/DiscountCodeModal";
 import { CampaignLinksPage } from "./dashboard.campaign-links";
+import { EmailAutomationsPanel } from "@/components/dashboard/EmailAutomationsPanel";
 
-type MarketingSearch = { tab?: "codes" | "campaign" };
+type MarketingSearch = { tab?: "codes" | "campaign" | "emails" };
 
 export const Route = createFileRoute("/dashboard/marketing")({
   head: () => ({ meta: [{ title: "Marketing — Plugin Warehouse" }] }),
   validateSearch: (s: Record<string, unknown>): MarketingSearch => ({
-    tab: s.tab === "campaign" ? "campaign" : "codes",
+    tab: s.tab === "campaign" ? "campaign" : s.tab === "emails" ? "emails" : "codes",
   }),
+
   component: Marketing,
 });
 
@@ -22,7 +24,7 @@ function Marketing() {
   const search = useSearch({ from: "/dashboard/marketing" }) as MarketingSearch;
   const navigate = useNavigate();
   const tab = search.tab ?? "codes";
-  const setTab = (t: "codes" | "campaign") =>
+  const setTab = (t: "codes" | "campaign" | "emails") =>
     navigate({ to: "/dashboard/marketing", search: { tab: t }, replace: true });
 
   return (
@@ -38,6 +40,7 @@ function Marketing() {
         {([
           ["codes", "Discount Codes"],
           ["campaign", "Campaign Links"],
+          ["emails", "Behavioral Emails"],
         ] as const).map(([key, label]) => (
           <button
             key={key}
@@ -53,10 +56,17 @@ function Marketing() {
         ))}
       </div>
 
-      {tab === "codes" ? <DiscountCodesPanel /> : <CampaignLinksPage embedded />}
+      {tab === "codes" ? (
+        <DiscountCodesPanel />
+      ) : tab === "campaign" ? (
+        <CampaignLinksPage embedded />
+      ) : (
+        <EmailAutomationsPanel />
+      )}
     </DashboardShell>
   );
 }
+
 
 // The "Generate code" button is only relevant to the codes tab, and it needs
 // access to the panel's open-state. Expose it via a shared handler using a

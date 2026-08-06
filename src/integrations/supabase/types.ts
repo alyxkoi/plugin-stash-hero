@@ -443,6 +443,96 @@ export type Database = {
         }
         Relationships: []
       }
+      email_automation_log: {
+        Row: {
+          attempts: number
+          created_at: string
+          customer_email: string
+          error: string | null
+          id: string
+          resend_message_id: string | null
+          sent_at: string | null
+          sequence_type: Database["public"]["Enums"]["email_sequence_type"]
+          skip_reason: string | null
+          status: Database["public"]["Enums"]["email_send_status"]
+          step: number
+          trigger_ref: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          customer_email: string
+          error?: string | null
+          id?: string
+          resend_message_id?: string | null
+          sent_at?: string | null
+          sequence_type: Database["public"]["Enums"]["email_sequence_type"]
+          skip_reason?: string | null
+          status: Database["public"]["Enums"]["email_send_status"]
+          step: number
+          trigger_ref: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          customer_email?: string
+          error?: string | null
+          id?: string
+          resend_message_id?: string | null
+          sent_at?: string | null
+          sequence_type?: Database["public"]["Enums"]["email_sequence_type"]
+          skip_reason?: string | null
+          status?: Database["public"]["Enums"]["email_send_status"]
+          step?: number
+          trigger_ref?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      email_preferences: {
+        Row: {
+          behavioral_emails_enabled: boolean
+          created_at: string
+          customer_email: string
+          unsubscribed_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          behavioral_emails_enabled?: boolean
+          created_at?: string
+          customer_email: string
+          unsubscribed_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          behavioral_emails_enabled?: boolean
+          created_at?: string
+          customer_email?: string
+          unsubscribed_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      email_sequence_settings: {
+        Row: {
+          enabled: boolean
+          sequence_type: Database["public"]["Enums"]["email_sequence_type"]
+          updated_at: string
+        }
+        Insert: {
+          enabled?: boolean
+          sequence_type: Database["public"]["Enums"]["email_sequence_type"]
+          updated_at?: string
+        }
+        Update: {
+          enabled?: boolean
+          sequence_type?: Database["public"]["Enums"]["email_sequence_type"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       grant_batches: {
         Row: {
           completed_at: string | null
@@ -1124,6 +1214,7 @@ export type Database = {
           price_at_save: number | null
           product_id: string
           saved_at: string
+          updated_at: string
           user_id: string
         }
         Insert: {
@@ -1131,6 +1222,7 @@ export type Database = {
           price_at_save?: number | null
           product_id: string
           saved_at?: string
+          updated_at?: string
           user_id: string
         }
         Update: {
@@ -1138,6 +1230,7 @@ export type Database = {
           price_at_save?: number | null
           product_id?: string
           saved_at?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: [
@@ -1529,6 +1622,8 @@ export type Database = {
       customer_status: "active" | "refunded" | "banned"
       discount_status: "active" | "expired" | "disabled"
       discount_type: "percent" | "flat"
+      email_send_status: "sent" | "failed" | "skipped"
+      email_sequence_type: "abandoned_cart" | "saved_items"
       order_status: "completed" | "refunded" | "partial" | "pending"
       product_status: "published" | "draft" | "archived"
       sale_event_status: "active" | "scheduled" | "ended" | "draft"
@@ -1665,6 +1760,8 @@ export const Constants = {
       customer_status: ["active", "refunded", "banned"],
       discount_status: ["active", "expired", "disabled"],
       discount_type: ["percent", "flat"],
+      email_send_status: ["sent", "failed", "skipped"],
+      email_sequence_type: ["abandoned_cart", "saved_items"],
       order_status: ["completed", "refunded", "partial", "pending"],
       product_status: ["published", "draft", "archived"],
       sale_event_status: ["active", "scheduled", "ended", "draft"],

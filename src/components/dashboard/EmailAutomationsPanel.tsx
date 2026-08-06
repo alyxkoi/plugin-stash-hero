@@ -1,0 +1,148 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import { DashCard } from "@/components/DashboardShell";
+import {
+  getEmailAutomationStats,
+  setEmailSequenceEnabled,
+} from "@/lib/email-automation-admin.functions";
+
+type SeqKey = "abandoned_cart" | "saved_items";
+
+const LABELS: Record<SeqKey, { title: string; steps: Record<number, string> }> = {
+  abandoned_cart: {
+    title: "Abandoned cart",
+    steps: { 1: "1 hour", 2: "24 hours", 3: "72 hours" },
+  },
+  saved_items: {
+    title: "Saved items",
+    steps: { 1: "3-day nudge", 2: "Price drop", 3: "—" },
+  },
+};
+
+export function EmailAutomationsPanel() {
+  const fetchStats = useServerFn(getEmailAutomationStats);
+  const toggleFn = useServerFn(setEmailSequenceEnabled);
+  const qc = useQueryClient();
+
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ["email-automation-stats"],
+    queryFn: () => fetchStats(),
+    staleTime: 30_000,
+  });
+
+  const toggle = useMutation({
+    mutationFn: (v: { sequence: SeqKey; enabled: boolean }) => toggleFn({ data: v }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["email-automation-stats"] });
+      toast.success("Sequence updated");
+    },
+    onError: (e: Error) => toast.error(e.message || "Couldn't update sequence"),
+  });
+
+  if (isError) {
+    return (
+      <DashCard title="Behavioral emails">
+        <div className="py-10 text-center text-sm text-white/50">
+          Couldn't load automation stats.{" "}
+          <button onClick={() => refetch()} className="underline hover:text-white">Retry</button>
+        </div>
+      </DashCard>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {(["abandoned_cart", "saved_items"] as SeqKey[]).map((key) => {
+        const s = data?.[key];
+        const enabled = data?.settings?.[key] ?? true;
+        const meta = LABELS[key];
+        return (
+          <DashCard key={key} title={meta.title}>
+            <div className="flex flex-wrap items-center justify-between gap-3 pb-4">
+              <div className="text-[11px] font-mono uppercase tracking-widest text-white/40">
+                {isLoading ? "Loading…" : enabled ? "Running every 15 minutes" : "Paused"}
+              </div>
+              <button
+                disabled={toggle.isPending || isLoading}
+                onClick={() => toggle.mutate({ sequence: key, enabled: !enabled })}
+                className={`px-4 py-2 rounded-md text-[11px] font-mono uppercase tracking-wider transition-colors ${
+                  enabled
+                    ? "bg-[var(--accent-red)] text-white shadow-[0_0_18px_rgba(255,0,60,0.35)]"
+                    : "border border-white/15 text-white/60 hover:text-white"
+                }`}
+              >
+                {enabled ? "On" : "Off"}
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[1, 2, 3]
+                .filter((step) => !(key === "saved_items" && step === 3))
+                .map((step) => (
+                  <div key={step} className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                    <div className="text-[10px] font-mono uppercase tracking-widest text-white/40">
+                      Step {step} · {meta.steps[step]}
+                    </div>
+                    <div className="mt-2 text-2xl font-black tabular-nums">{s?.last7?.[step] ?? 0}</div>
+                    <div className="mt-1 text-[10px] font-mono uppercase tracking-widest text-white/35">
+                      7d · {s?.last30?.[step] ?? 0} in 30d
+                    </div>
+                  </div>
+                ))}
+              <div className="rounded-xl border border-[var(--accent-red)]/40 bg-[var(--accent-red)]/[0.07] p-4">
+                <div className="text-[10px] font-mono uppercase tracking-widest text-white/50">Recovered orders</div>
+                <div className="mt-2 text-2xl font-black tabular-nums text-[var(--accent-red-glow)]">
+                  {s?.recovered ?? 0}
+                </div>
+                <div className="mt-1 text-[10px] font-mono uppercase tracking-widest text-white/35">
+                  within 24h · 30d
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 flex gap-5 text-[10px] font-mono uppercase tracking-widest text-white/35">
+              <span>{s?.skipped ?? 0} skipped</span>
+              <span>{s?.failed ?? 0} failed</span>
+            </div>
+          </DashCard>
+        );
+      })}
+
+      <DashCard title="Recent skips">
+        {(data?.recentSkips?.length ?? 0) === 0 ? (
+          <div className="py-8 text-center text-sm text-white/40">
+            {isLoading ? "Loading…" : "Nothing skipped in the last 30 days."}
+          </div>
+        ) : (
+          <div className="overflow-x-auto -mx-2">
+            <table className="w-full text-sm">
+              <thead className="text-[10px] uppercase tracking-wider text-white/40">
+                <tr>
+                  <th className="text-left py-2 px-2">Email</th>
+                  <th className="text-left py-2 px-2">Sequence</th>
+                  <th className="text-left py-2 px-2">Step</th>
+                  <th className="text-left py-2 px-2">Reason</th>
+                  <th className="text-right py-2 px-2">When</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data!.recentSkips.map((r, i) => (
+                  <tr key={`${r.email}-${i}`} className="border-t border-white/5">
+                    <td className="py-2 px-2 text-[12px] text-white/80 truncate max-w-[220px]">{r.email}</td>
+                    <td className="py-2 px-2 text-[11px] text-white/55">{LABELS[r.sequence].title}</td>
+                    <td className="py-2 px-2 font-mono text-xs">{r.step}</td>
+                    <td className="py-2 px-2 font-mono text-[11px] text-[var(--accent-red-glow)]">{r.reason}</td>
+                    <td className="py-2 px-2 text-right font-mono text-[10px] text-white/40 whitespace-nowrap">
+                      {new Date(r.at).toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </DashCard>
+    </div>
+  );
+}

@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as TermsOfServiceRouteImport } from './routes/terms-of-service'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SignupRouteImport } from './routes/signup'
@@ -58,7 +59,14 @@ import { Route as DashboardOrdersIdRouteImport } from './routes/dashboard.orders
 import { Route as DashboardCustomersIdRouteImport } from './routes/dashboard.customers.$id'
 import { Route as ApiPublicDownloadRouteImport } from './routes/api/public/download'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
+import { Route as ApiPublicHooksEmailAutomationRouteImport } from './routes/api/public/hooks/email-automation'
+import { Route as ApiPublicEmailUnsubscribeRouteImport } from './routes/api/public/email/unsubscribe'
 
+const UnsubscribeRoute = UnsubscribeRouteImport.update({
+  id: '/unsubscribe',
+  path: '/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TermsOfServiceRoute = TermsOfServiceRouteImport.update({
   id: '/terms-of-service',
   path: '/terms-of-service',
@@ -305,6 +313,18 @@ const ApiPublicPaymentsWebhookRoute =
     path: '/api/public/payments/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksEmailAutomationRoute =
+  ApiPublicHooksEmailAutomationRouteImport.update({
+    id: '/api/public/hooks/email-automation',
+    path: '/api/public/hooks/email-automation',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicEmailUnsubscribeRoute =
+  ApiPublicEmailUnsubscribeRouteImport.update({
+    id: '/api/public/email/unsubscribe',
+    path: '/api/public/email/unsubscribe',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -323,6 +343,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms-of-service': typeof TermsOfServiceRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/account/contact': typeof AccountContactRoute
   '/account/orders': typeof AccountOrdersRoute
   '/account/plugins': typeof AccountPluginsRoute
@@ -355,6 +376,8 @@ export interface FileRoutesByFullPath {
   '/dashboard/orders/': typeof DashboardOrdersIndexRoute
   '/dashboard/products/': typeof DashboardProductsIndexRoute
   '/dashboard/sales/': typeof DashboardSalesIndexRoute
+  '/api/public/email/unsubscribe': typeof ApiPublicEmailUnsubscribeRoute
+  '/api/public/hooks/email-automation': typeof ApiPublicHooksEmailAutomationRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRoutesByTo {
@@ -372,6 +395,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms-of-service': typeof TermsOfServiceRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/account/contact': typeof AccountContactRoute
   '/account/orders': typeof AccountOrdersRoute
   '/account/plugins': typeof AccountPluginsRoute
@@ -404,6 +428,8 @@ export interface FileRoutesByTo {
   '/dashboard/orders': typeof DashboardOrdersIndexRoute
   '/dashboard/products': typeof DashboardProductsIndexRoute
   '/dashboard/sales': typeof DashboardSalesIndexRoute
+  '/api/public/email/unsubscribe': typeof ApiPublicEmailUnsubscribeRoute
+  '/api/public/hooks/email-automation': typeof ApiPublicHooksEmailAutomationRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRoutesById {
@@ -424,6 +450,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms-of-service': typeof TermsOfServiceRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/account/contact': typeof AccountContactRoute
   '/account/orders': typeof AccountOrdersRoute
   '/account/plugins': typeof AccountPluginsRoute
@@ -456,6 +483,8 @@ export interface FileRoutesById {
   '/dashboard/orders/': typeof DashboardOrdersIndexRoute
   '/dashboard/products/': typeof DashboardProductsIndexRoute
   '/dashboard/sales/': typeof DashboardSalesIndexRoute
+  '/api/public/email/unsubscribe': typeof ApiPublicEmailUnsubscribeRoute
+  '/api/public/hooks/email-automation': typeof ApiPublicHooksEmailAutomationRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRouteTypes {
@@ -477,6 +506,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/sitemap.xml'
     | '/terms-of-service'
+    | '/unsubscribe'
     | '/account/contact'
     | '/account/orders'
     | '/account/plugins'
@@ -509,6 +539,8 @@ export interface FileRouteTypes {
     | '/dashboard/orders/'
     | '/dashboard/products/'
     | '/dashboard/sales/'
+    | '/api/public/email/unsubscribe'
+    | '/api/public/hooks/email-automation'
     | '/api/public/payments/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -526,6 +558,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/sitemap.xml'
     | '/terms-of-service'
+    | '/unsubscribe'
     | '/account/contact'
     | '/account/orders'
     | '/account/plugins'
@@ -558,6 +591,8 @@ export interface FileRouteTypes {
     | '/dashboard/orders'
     | '/dashboard/products'
     | '/dashboard/sales'
+    | '/api/public/email/unsubscribe'
+    | '/api/public/hooks/email-automation'
     | '/api/public/payments/webhook'
   id:
     | '__root__'
@@ -577,6 +612,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/sitemap.xml'
     | '/terms-of-service'
+    | '/unsubscribe'
     | '/account/contact'
     | '/account/orders'
     | '/account/plugins'
@@ -609,6 +645,8 @@ export interface FileRouteTypes {
     | '/dashboard/orders/'
     | '/dashboard/products/'
     | '/dashboard/sales/'
+    | '/api/public/email/unsubscribe'
+    | '/api/public/hooks/email-automation'
     | '/api/public/payments/webhook'
   fileRoutesById: FileRoutesById
 }
@@ -629,6 +667,7 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsOfServiceRoute: typeof TermsOfServiceRoute
+  UnsubscribeRoute: typeof UnsubscribeRoute
   BlogSlugRoute: typeof BlogSlugRoute
   CheckoutReturnRoute: typeof CheckoutReturnRoute
   GoCodeRoute: typeof GoCodeRoute
@@ -640,11 +679,20 @@ export interface RootRouteChildren {
   ShopIndexRoute: typeof ShopIndexRoute
   ApiPublicDownloadRoute: typeof ApiPublicDownloadRoute
   ShopPSlugRoute: typeof ShopPSlugRoute
+  ApiPublicEmailUnsubscribeRoute: typeof ApiPublicEmailUnsubscribeRoute
+  ApiPublicHooksEmailAutomationRoute: typeof ApiPublicHooksEmailAutomationRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/unsubscribe': {
+      id: '/unsubscribe'
+      path: '/unsubscribe'
+      fullPath: '/unsubscribe'
+      preLoaderRoute: typeof UnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/terms-of-service': {
       id: '/terms-of-service'
       path: '/terms-of-service'
@@ -988,6 +1036,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/email-automation': {
+      id: '/api/public/hooks/email-automation'
+      path: '/api/public/hooks/email-automation'
+      fullPath: '/api/public/hooks/email-automation'
+      preLoaderRoute: typeof ApiPublicHooksEmailAutomationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/email/unsubscribe': {
+      id: '/api/public/email/unsubscribe'
+      path: '/api/public/email/unsubscribe'
+      fullPath: '/api/public/email/unsubscribe'
+      preLoaderRoute: typeof ApiPublicEmailUnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -1069,6 +1131,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsOfServiceRoute: TermsOfServiceRoute,
+  UnsubscribeRoute: UnsubscribeRoute,
   BlogSlugRoute: BlogSlugRoute,
   CheckoutReturnRoute: CheckoutReturnRoute,
   GoCodeRoute: GoCodeRoute,
@@ -1080,6 +1143,8 @@ const rootRouteChildren: RootRouteChildren = {
   ShopIndexRoute: ShopIndexRoute,
   ApiPublicDownloadRoute: ApiPublicDownloadRoute,
   ShopPSlugRoute: ShopPSlugRoute,
+  ApiPublicEmailUnsubscribeRoute: ApiPublicEmailUnsubscribeRoute,
+  ApiPublicHooksEmailAutomationRoute: ApiPublicHooksEmailAutomationRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
 }
 export const routeTree = rootRouteImport
