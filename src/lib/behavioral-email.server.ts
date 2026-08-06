@@ -452,7 +452,7 @@ async function buildSavedCandidates(
 
     // STEP 1 — 3 days after saving
     const age = now - new Date(s.saved_at).getTime();
-    if (age >= 3 * DAY) {
+    if (age >= 3 * DAY && age <= 30 * DAY) {
       out.push({
         email,
         sequence: "saved_items",
