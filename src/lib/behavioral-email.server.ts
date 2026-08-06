@@ -4,12 +4,18 @@ import { createHmac } from "crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { sendEmail } from "./resend.server";
 import {
+  DEADLINE_CART_FALLBACK,
+  DEADLINE_DROP_FALLBACK,
+  DEADLINE_SAVED_FALLBACK,
   renderAbandonedCart,
   renderPriceDrop,
   renderSavedItemsNudge,
+  saleDeadlineText,
   SITE_URL,
+  type DropProduct,
   type EmailProduct,
 } from "./behavioral-email-templates.server";
+
 
 const FROM = "Plugin Warehouse <hello@thepluginwarehouse.com>";
 const HOUR = 3600_000;
