@@ -10,6 +10,7 @@ export const Route = createFileRoute("/api/public/hooks/email-automation")({
           process.env.SUPABASE_ANON_KEY,
           process.env.SUPABASE_PUBLISHABLE_KEY,
           process.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"] as string | undefined,
         ].filter(Boolean) as string[];
         const expected = allowed.includes(key) ? key : "";
 
