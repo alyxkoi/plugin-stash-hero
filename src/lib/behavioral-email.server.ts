@@ -193,10 +193,10 @@ export async function runBehavioralEmailJob(
 
   const candidates: Candidate[] = [];
 
-  if (enabled.get("abandoned_cart") !== false) {
+  if (dryRun || enabled.get("abandoned_cart") !== false) {
     candidates.push(...(await buildCartCandidates(now, products, sales, sentKeys, dryRun)));
   }
-  if (enabled.get("saved_items") !== false) {
+  if (dryRun || enabled.get("saved_items") !== false) {
     candidates.push(...(await buildSavedCandidates(now, products, sales, dryRun)));
   }
 
