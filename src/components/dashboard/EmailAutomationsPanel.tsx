@@ -339,31 +339,36 @@ export function EmailAutomationsPanel() {
             Sends the chosen template to one address using sample product data. It never reads a customer's
             cart or saved items, isn't logged, and doesn't count toward any stats.
           </p>
-          <div className="flex flex-wrap gap-2">
-            {TEST_TEMPLATE_LABELS.map((t) => (
-              <button
-                key={t.key}
-                onClick={() => setTestTemplate(t.key)}
-                className={`rounded-full px-3.5 py-1.5 text-[10px] font-mono uppercase tracking-widest transition-colors ${
-                  testTemplate === t.key
-                    ? "bg-[var(--accent-red)] text-white shadow-[0_0_16px_rgba(255,0,60,0.3)]"
-                    : "border border-white/12 text-white/50 hover:border-white/30 hover:text-white"
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <Select value={testTemplate} onValueChange={(v) => setTestTemplate(v as TestTemplateKey)}>
+              <SelectTrigger className="h-[38px] w-full rounded-md border-white/12 bg-[#190737] px-3 py-2 text-[12px] text-[#C9BEDD] focus:border-white/30 focus:ring-0 sm:w-52">
+                <SelectValue placeholder="Choose a template" />
+              </SelectTrigger>
+              <SelectContent
+                position="popper"
+                sideOffset={6}
+                className="z-[80] rounded-md border-white/12 bg-[#190737] text-[#C9BEDD]"
+              >
+                {TEST_TEMPLATE_LABELS.map((t) => (
+                  <SelectItem
+                    key={t.key}
+                    value={t.key}
+                    className="text-[12px] text-[#C9BEDD] focus:bg-white/10 focus:text-white data-[state=checked]:text-white"
+                  >
+                    {t.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <input
               value={testTo}
               onChange={(e) => setTestTo(e.target.value)}
               placeholder="you@address.com"
-              className="w-full rounded-md border border-white/12 bg-white/[0.04] px-3 py-2 text-[12px] outline-none placeholder:text-white/25 focus:border-white/30 sm:w-64"
+              className="h-[38px] w-full rounded-md border border-white/12 bg-[#190737] px-3 py-2 text-[12px] text-[#C9BEDD] outline-none placeholder:text-white/25 focus:border-white/30 sm:w-64"
             />
             <button
               onClick={() => setTestMulti((v) => !v)}
-              className={`whitespace-nowrap rounded-md px-3.5 py-2 text-[10px] font-mono uppercase tracking-widest transition-colors ${
+              className={`h-[38px] whitespace-nowrap rounded-md px-3.5 text-[10px] font-mono uppercase tracking-widest transition-colors ${
                 testMulti
                   ? "border border-[var(--accent-red)]/50 bg-[var(--accent-red)]/[0.12] text-[var(--accent-red-glow)]"
                   : "border border-white/12 text-white/50 hover:border-white/30 hover:text-white"
@@ -374,7 +379,7 @@ export function EmailAutomationsPanel() {
             <button
               disabled={testSend.isPending || !testTo.trim()}
               onClick={() => testSend.mutate()}
-              className="whitespace-nowrap rounded-md border border-white/20 px-4 py-2 text-[11px] font-mono uppercase tracking-wider text-white/70 transition-colors hover:border-white/40 hover:text-white disabled:opacity-50 sm:ml-auto"
+              className="h-[38px] whitespace-nowrap rounded-md border border-white/20 px-4 text-[11px] font-mono uppercase tracking-wider text-white/70 transition-colors hover:border-white/40 hover:text-white disabled:opacity-50 sm:ml-auto"
             >
               {testSend.isPending ? "Sending…" : "Send test email"}
             </button>
@@ -382,30 +387,6 @@ export function EmailAutomationsPanel() {
         </div>
       </DashCard>
 
-      <DashCard title="Dry run">
-
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <p className="flex-1 text-[12px] leading-relaxed text-white/50">
-            Evaluates every rule and records the outcome in the log without sending anything through Resend. Leave
-            blank to simulate the whole queue, or enter one address to scope it.
-          </p>
-          <div className="flex gap-2">
-            <input
-              value={testEmail}
-              onChange={(e) => setTestEmail(e.target.value)}
-              placeholder="test@address.com"
-              className="w-full rounded-md border border-white/12 bg-white/[0.04] px-3 py-2 text-[12px] outline-none placeholder:text-white/25 focus:border-white/30 sm:w-56"
-            />
-            <button
-              disabled={dryRun.isPending}
-              onClick={() => dryRun.mutate()}
-              className="whitespace-nowrap rounded-md border border-white/20 px-4 py-2 text-[11px] font-mono uppercase tracking-wider text-white/70 transition-colors hover:border-white/40 hover:text-white disabled:opacity-50"
-            >
-              {dryRun.isPending ? "Running…" : "Run dry run"}
-            </button>
-          </div>
-        </div>
-      </DashCard>
     </div>
   );
 }
