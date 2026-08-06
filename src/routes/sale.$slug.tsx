@@ -79,18 +79,22 @@ function SaleEvent() {
   const FLOOR_MS = 24 * 3600_000; // 24h
   const CYCLE_MS = START_MS - FLOOR_MS; // 46h
   const computeRemaining = () => START_MS - (Date.now() % CYCLE_MS);
-  const [remaining, setRemaining] = useState(computeRemaining);
+  // Time-dependent, so it must not render during SSR (hydration mismatch).
+  const [remaining, setRemaining] = useState<number | null>(null);
   useEffect(() => {
+    setRemaining(computeRemaining());
     const i = setInterval(() => setRemaining(computeRemaining()), 1000);
     return () => clearInterval(i);
   }, []);
 
   const expired = false;
-  const d = Math.max(0, Math.floor(remaining / 86400000));
-  const h = Math.max(0, Math.floor((remaining % 86400000) / 3600000));
-  const m = Math.max(0, Math.floor((remaining % 3600000) / 60000));
-  const s = Math.max(0, Math.floor((remaining % 60000) / 1000));
-  const urgent = remaining < 86400000;
+  const shown = remaining ?? START_MS;
+  const d = Math.max(0, Math.floor(shown / 86400000));
+  const h = Math.max(0, Math.floor((shown % 86400000) / 3600000));
+  const m = Math.max(0, Math.floor((shown % 3600000) / 60000));
+  const s = Math.max(0, Math.floor((shown % 60000) / 1000));
+  const urgent = remaining != null && remaining < 86400000;
+
   const accent = "#FF2D6E";
   const pct = sale.discount_pct ?? 35;
   const headline = `GAME ON. ${pct}% OFF EVERYTHING.`;
