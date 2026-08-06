@@ -17,9 +17,12 @@ function CartSync() {
 }
 
 function UtmSync() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
   useUtmCapture();
+  usePwCidUrlPersistence(pathname);
   return null;
 }
+
 
 
 export function Shell() {
