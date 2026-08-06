@@ -6,6 +6,8 @@ import { ChevronDown, Copy as CopyIcon, MoreHorizontal, GripVertical } from "luc
 import { DashboardShell, DashCard } from "@/components/DashboardShell";
 import { supabase } from "@/integrations/supabase/client";
 import { slugifyUtm, generateShareCode, normalizePath } from "@/lib/campaign-links";
+import { normalizeUtmSource } from "@/lib/utm";
+
 
 // Legacy route — the tool now lives inside /dashboard/marketing?tab=campaign.
 // Permanent redirect so existing bookmarks/URLs keep working.
