@@ -20,7 +20,7 @@ export const getEmailAutomationStats = createServerFn({ method: "GET" })
 
     const { data: logs } = await supabase
       .from("email_automation_log")
-      .select("customer_email, sequence_type, step, status, skip_reason, sent_at, created_at")
+      .select("customer_email, sequence_type, step, status, skip_reason, sent_at, created_at, dry_run")
       .gte("created_at", since30)
       .order("created_at", { ascending: false })
       .limit(5000);
