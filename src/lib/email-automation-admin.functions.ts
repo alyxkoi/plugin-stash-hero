@@ -151,3 +151,27 @@ export const runEmailAutomationDryRun = createServerFn({ method: "POST" })
     const { runBehavioralEmailJob } = await import("@/lib/behavioral-email.server");
     return await runBehavioralEmailJob({ dryRun: true, onlyEmail: data.onlyEmail });
   });
+
+export const TEST_TEMPLATES = ["cart_1h", "cart_24h", "cart_72h", "saved_3day", "price_drop"] as const;
+export type TestTemplateKey = (typeof TEST_TEMPLATES)[number];
+
+// One-off test send. Uses sample product data only: it never reads a customer's
+// cart/saved items, never writes to email_automation_log and never counts in stats.
+export const sendBehavioralTestEmail = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        template: z.enum(TEST_TEMPLATES),
+        to: z.string().trim().email(),
+        multipleItems: z.boolean().default(false),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase as never, context.userId);
+    const { sendBehavioralTestEmail: send } = await import("@/lib/behavioral-email-test.server");
+    const res = await send({ template: data.template, to: data.to, multipleItems: data.multipleItems });
+    if (res.error) throw new Error(res.error);
+    return { ok: true as const, to: data.to, subject: res.subject };
+  });
