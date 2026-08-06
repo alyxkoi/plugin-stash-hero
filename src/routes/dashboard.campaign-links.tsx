@@ -301,6 +301,19 @@ export function CampaignLinksPage({ embedded = false }: { embedded?: boolean } =
                     <div className="text-[10px] font-mono text-white/45 mt-0.5">
                       {roll.count} link{roll.count === 1 ? "" : "s"} · {roll.clicks} clicks · {roll.purchases} purchases · {conv}% conv
                     </div>
+                    {(() => {
+                      const src = normalizeUtmSource(g.source_platform);
+                      const n = src ? unattributed.get(src) ?? 0 : 0;
+                      if (!n) return null;
+                      return (
+                        <div className="text-[10px] font-mono text-white/30 mt-0.5">
+                          {n} order{n === 1 ? "" : "s"} tagged {src} with no matching link click
+                        </div>
+                      );
+                    })()}
+                    <div className="hidden">
+
+                    </div>
                   </div>
                   <GroupActions group={g} onChanged={reload} />
                 </div>
