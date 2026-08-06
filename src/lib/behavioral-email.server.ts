@@ -36,6 +36,8 @@ type Candidate = {
   sequence: SequenceType;
   step: 1 | 2 | 3;
   triggerRef: string;
+  // event-driven emails (saved-items price drop) may fire without the earlier step
+  exemptFromSequencing?: boolean;
   render: () => { subject: string; html: string; text: string };
   // guard evaluated again immediately before send
   guard: () => Promise<string | null>; // returns skip reason or null
@@ -48,9 +50,11 @@ type LogRow = {
   step: number;
   trigger_ref: string;
   status: "sent" | "failed" | "skipped";
+  skip_reason: string | null;
   attempts: number;
   sent_at: string | null;
 };
+
 
 // ---------- pricing ----------
 
