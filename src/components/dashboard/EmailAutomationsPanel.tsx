@@ -98,6 +98,14 @@ export function EmailAutomationsPanel() {
     onError: (e: Error) => toast.error(e.message || "Dry run failed"),
   });
 
+  const testSend = useMutation({
+    mutationFn: () =>
+      testSendFn({ data: { template: testTemplate, to: testTo.trim(), multipleItems: testMulti } }),
+    onSuccess: (r) => toast.success(`Test email sent to ${r.to}`),
+    onError: (e: Error) => toast.error(e.message || "Couldn't send the test email"),
+  });
+
+
   if (isError) {
     return (
       <DashCard title="Behavioral emails">
