@@ -138,50 +138,19 @@ function SaleEvent() {
           ))}
         </div>
 
-        <div className="relative grid lg:grid-cols-2 gap-12 items-center min-h-[70vh]">
-          <div>
-            <div className="font-mono text-xs tracking-[0.2em] mb-6 flex items-center gap-2" style={{ color: accent }}>
-              <span className="inline-block w-2 h-2 rounded-full animate-pulse" style={{ background: accent, boxShadow: `0 0 10px ${accent}` }} />
-              {eyebrow}
-            </div>
-            <h1 className="font-black chrome-text leading-[0.92] mb-6" style={{ fontSize: "clamp(3rem, 7vw, 6rem)", textShadow: `0 0 40px ${accent}55` }}>{headline}</h1>
-            <p className="text-white/70 text-lg mb-6 max-w-xl">{sub}</p>
-            {expired ? (
-              <div className="inline-block font-mono font-bold text-xl mb-8 px-5 py-3 rounded-2xl border border-white/15 bg-white/5 text-white/60">
-                THIS SALE HAS ENDED
-              </div>
-            ) : (
-              <div
-                className={`inline-block font-mono font-bold text-xl md:text-2xl mb-8 px-5 py-3 rounded-2xl border ${urgent ? "" : "border-white/15 bg-white/5"}`}
-                style={urgent ? { borderColor: accent, background: `${accent}26`, color: accent } : undefined}
-              >
-                FINAL WHISTLE IN: {d}D {String(h).padStart(2, "0")}H {String(m).padStart(2, "0")}M {String(s).padStart(2, "0")}S
-              </div>
-            )}
-            <div className="flex gap-3 flex-wrap">
-              <a href="#grid" className="btn-primary !text-base !py-4 !px-8">SHOP THE SALE →</a>
-              <Link to="/shop" className="btn-ghost !text-base !py-4 !px-8">WHAT'S NEW</Link>
-            </div>
-          </div>
-          <div className="relative h-[420px] hidden lg:block">
-            {spotlight.slice(0, 3).map((p, i) => (
-              <div key={p.slug} className="absolute w-60" style={{ top: `${i * 50}px`, left: `${i * 80}px`, transform: `rotate(${(i - 1) * 4}deg)`, zIndex: 3 - i }}>
-                <div className="glass-card glass-card--heavy p-3 relative">
-                  <div className="chromatic-edge" /><div className="glass-noise" />
-                  <div className="aspect-square rounded-xl flex items-center justify-center" style={{ background: p.coverGradient }}>
-                    <div className="text-center">
-                      <div className="font-mono text-[10px] text-white/60">{p.maker.toUpperCase()}</div>
-                      <div className="font-black text-2xl chrome-text">{p.name}</div>
-                    </div>
-                    <div className="absolute top-2 right-2 px-2 py-1 rounded-md font-mono text-[10px] font-bold text-white" style={{ background: accent, boxShadow: `0 0 12px ${accent}` }}>
-                      {pct}% OFF
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+        <div className="relative flex flex-col items-center justify-center text-center min-h-[70vh] gap-8 md:gap-10">
+          <h1 className="font-black chrome-text leading-[0.95] max-w-4xl mx-auto text-balance" style={{ fontSize: "clamp(2.25rem, 6.5vw, 6rem)", textShadow: "0 0 40px rgba(255,255,255,0.35)" }}>{headline}</h1>
+          <p className="text-white/70 text-base md:text-lg max-w-2xl mx-auto">{sub}</p>
+          <a
+            href="#grid"
+            onClick={scrollToGrid}
+            className="btn-primary !text-base !py-4 !px-8 !bg-transparent !shadow-none !text-white transition-colors duration-200 hover:!bg-[#FF003C]"
+            style={{ border: "1.5px solid rgba(255,255,255,0.7)" }}
+          >
+            SHOP THE SALE →
+          </a>
         </div>
+
       </section>
 
 
