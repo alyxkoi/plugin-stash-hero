@@ -9,10 +9,11 @@ import { createHash } from "crypto";
 import { generateClickId } from "@/lib/utm";
 
 
-// Maintained bot / crawler / preview / scripting UA fragments.
-// Match case-insensitively as a substring — cheap and effective.
+// Confident bot / crawler / scripting signals only.
+// Anything ambiguous (including a missing UA) is counted — under-counting
+// real humans is worse than the occasional stray hit.
 const BOT_UA_RE =
-  /(bot|crawler|spider|slurp|facebookexternalhit|facebot|twitterbot|slackbot|discordbot|telegrambot|whatsapp|linkedinbot|pinterest|redditbot|googlebot|bingbot|duckduckbot|yandexbot|baiduspider|ahrefsbot|semrushbot|mj12bot|applebot|petalbot|headlesschrome|phantomjs|puppeteer|playwright|selenium|lighthouse|pagespeed|gtmetrix|pingdom|uptimerobot|curl|wget|python-requests|python-urllib|axios|node-fetch|go-http-client|okhttp|java\/|ruby|libwww-perl|httpclient|scrapy|monitor|preview|prerender|scanner|nikto|acunetix|nuclei|zgrab)/i;
+  /(bot\b|bot\/|crawler|spider|slurp|facebookexternalhit|facebot|twitterbot|slackbot|discordbot|telegrambot|linkedinbot|pinterestbot|redditbot|googlebot|bingbot|duckduckbot|yandex|baiduspider|ahrefs|semrushbot|mj12bot|applebot|petalbot|headlesschrome|phantomjs|puppeteer|playwright|selenium|lighthouse|pagespeed|gtmetrix|pingdom|uptimerobot|curl\/|wget|python-requests|python-urllib|node-fetch|go-http-client|scrapy|prerender|nikto|acunetix|nuclei|zgrab)/i;
 
 function isPrefetch(headers: Headers): boolean {
   const purpose = (headers.get("purpose") || headers.get("x-purpose") || "").toLowerCase();
@@ -37,6 +38,10 @@ function sha256(input: string): string {
   return createHash("sha256").update(input).digest("hex");
 }
 
+// Short dedup window: only collapses double-fires of the same navigation,
+// never a genuine repeat visit later in the day.
+const DEDUP_MS = 5 * 60 * 1000;
+
 async function logAndRedirect(
   request: Request,
   code: string,
@@ -52,45 +57,34 @@ async function logAndRedirect(
 
   const ua = request.headers.get("user-agent") || "";
   const ip = firstIp(request.headers);
-  const isBot = !ua || BOT_UA_RE.test(ua);
+  const isBot = BOT_UA_RE.test(ua);
   const prefetch = isPrefetch(request.headers);
   const ipUaHash = ip || ua ? sha256(`${ip}|${ua}`) : null;
-  const ipHash = ip ? sha256(ip) : null;
 
-  // Ignore list (admin IPs / test devices) — hashed IP only
-  let onIgnoreList = false;
-  if (ipHash) {
-    const { data: ig } = await (supabaseAdmin as any)
-      .from("campaign_click_ignored_ips")
-      .select("ip_hash")
-      .eq("ip_hash", ipHash)
-      .maybeSingle();
-    onIgnoreList = !!ig;
+  let counted = countable && !isBot && !prefetch;
+
+  // Collapse instant double-fires of the same navigation.
+  if (counted && ipUaHash) {
+    try {
+      const since = new Date(Date.now() - DEDUP_MS).toISOString();
+      const { data: recent } = await (supabaseAdmin as any)
+        .from("campaign_link_clicks")
+        .select("id")
+        .eq("link_id", link.id)
+        .eq("ip_ua_hash", ipUaHash)
+        .eq("counted", true)
+        .gte("created_at", since)
+        .limit(1)
+        .maybeSingle();
+      if (recent) counted = false;
+    } catch { /* dedup lookup failure must never drop a real click */ }
   }
 
-  // Dedup: same visitor on same link within 45 min → don't count again
-  let dupWithinWindow = false;
-  if (countable && !isBot && !prefetch && !onIgnoreList && ipUaHash) {
-    const since = new Date(Date.now() - 45 * 60 * 1000).toISOString();
-    const { data: recent } = await (supabaseAdmin as any)
-      .from("campaign_link_clicks")
-      .select("id")
-      .eq("link_id", link.id)
-      .eq("ip_ua_hash", ipUaHash)
-      .eq("counted", true)
-      .gte("created_at", since)
-      .limit(1)
-      .maybeSingle();
-    dupWithinWindow = !!recent;
-  }
-
-  const counted = countable && !isBot && !prefetch && !onIgnoreList && !dupWithinWindow;
-
-  // Mint a click id for every countable, non-bot navigation so orders can be
-  // attributed via pw_cid even when UTMs get stripped downstream.
+  // Mint a click id for every counted navigation so orders can be attributed
+  // via pw_cid even when UTMs get stripped downstream.
   const clickId = counted ? generateClickId() : null;
 
-  // Fire-and-log; a log failure must never block the redirect.
+  // Write the record BEFORE redirecting; a log failure never blocks the link.
   try {
     await (supabaseAdmin as any).from("campaign_link_clicks").insert({
       link_id: link.id as string,
