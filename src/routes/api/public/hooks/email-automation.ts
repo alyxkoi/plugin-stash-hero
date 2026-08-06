@@ -6,7 +6,13 @@ export const Route = createFileRoute("/api/public/hooks/email-automation")({
     handlers: {
       POST: async ({ request }) => {
         const key = request.headers.get("apikey") ?? "";
-        const expected = process.env.SUPABASE_ANON_KEY ?? "";
+        const allowed = [
+          process.env.SUPABASE_ANON_KEY,
+          process.env.SUPABASE_PUBLISHABLE_KEY,
+          process.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        ].filter(Boolean) as string[];
+        const expected = allowed.includes(key) ? key : "";
+
         if (!key || !expected || key !== expected) {
           return new Response(JSON.stringify({ error: "Unauthorized" }), {
             status: 401,
