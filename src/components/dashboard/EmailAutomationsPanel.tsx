@@ -73,7 +73,7 @@ export function EmailAutomationsPanel() {
   const [range, setRange] = useState<RangeKey>("30d");
   const [skipsOpen, setSkipsOpen] = useState(false);
   const [testTemplate, setTestTemplate] = useState<TestTemplateKey>("cart_1h");
-  const [testTo, setTestTo] = useState("pluginwh@gmail.com");
+  const [testTo, setTestTo] = useState("alexrunsit@gmail.com");
   const [testMulti, setTestMulti] = useState(false);
 
 
