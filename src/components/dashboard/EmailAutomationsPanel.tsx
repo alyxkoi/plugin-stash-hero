@@ -61,10 +61,15 @@ export function EmailAutomationsPanel() {
   const fetchStats = useServerFn(getEmailAutomationStats);
   const toggleFn = useServerFn(setEmailSequenceEnabled);
   const dryRunFn = useServerFn(runEmailAutomationDryRun);
+  const testSendFn = useServerFn(sendBehavioralTestEmail);
   const qc = useQueryClient();
   const [testEmail, setTestEmail] = useState("");
   const [range, setRange] = useState<RangeKey>("30d");
   const [skipsOpen, setSkipsOpen] = useState(false);
+  const [testTemplate, setTestTemplate] = useState<TestTemplateKey>("cart_1h");
+  const [testTo, setTestTo] = useState("pluginwh@gmail.com");
+  const [testMulti, setTestMulti] = useState(false);
+
 
   const { data, isLoading, isFetching, isError, refetch } = useQuery({
     queryKey: ["email-automation-stats", range],
