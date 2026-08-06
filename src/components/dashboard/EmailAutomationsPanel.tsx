@@ -94,16 +94,8 @@ export function EmailAutomationsPanel() {
     onError: (e: Error) => toast.error(e.message || "Couldn't update sequence"),
   });
 
-  const dryRun = useMutation({
-    mutationFn: () => dryRunFn({ data: testEmail.trim() ? { onlyEmail: testEmail.trim() } : {} }),
-    onSuccess: (r) => {
-      qc.invalidateQueries({ queryKey: ["email-automation-stats"] });
-      toast.success(
-        `Dry run: ${r.sent} would send · ${r.skipped} skipped · ${r.deferred} deferred · ${r.failed} failed`,
-      );
-    },
-    onError: (e: Error) => toast.error(e.message || "Dry run failed"),
-  });
+
+
 
   const testSend = useMutation({
     mutationFn: () =>
