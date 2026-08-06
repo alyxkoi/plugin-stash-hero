@@ -470,6 +470,7 @@ async function buildSavedCandidates(
   now: number,
   products: Map<string, ProductRow>,
   sales: ActiveSale[],
+  _dryRun: boolean,
 ): Promise<Candidate[]> {
   const { data: saved } = await supabaseAdmin
     .from("saved_items")
