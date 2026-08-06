@@ -96,32 +96,21 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (fileErr || !fileRow?.zip_url) return json({ error: "Plugin file not found." }, 404);
 
-    // IMPORTANT (>2GB downloads): serve the file from the R2 custom domain
-    // https://thepluginwarehousefiles.com (falls back to CLOUDFLARE_R2_PUBLIC_URL).
-    // The browser navigates there directly and streams bytes straight from R2 —
-    // nothing is buffered in JS on the client or the server, Range requests are
-    // honored natively (Accept-Ranges / 206), and sizes are 64-bit safe.
-    // The S3 API endpoint (…r2.cloudflarestorage.com) truncates single GETs at
-    // 2GiB, which is what broke 2GB+ plugin downloads. Presigned S3 URLs are
-    // only used as a fallback when no custom domain is configured.
+    // SECURITY: download links must expire. We issue a short-lived (15 min)
+    // SigV4 presigned URL against the R2 S3 endpoint. The browser navigates
+    // there directly and streams bytes from R2 (Range requests honored), so
+    // nothing is buffered in JS. The public custom domain is NOT used because
+    // it serves objects unauthenticated forever — a leaked link there would
+    // let anyone download a paid plugin.
     const filename = fileRow.zip_file_name || fileRow.zip_url.split("/").pop() || "download.zip";
-    const FILES_DOMAIN = "https://thepluginwarehousefiles.com";
-    let url: string;
-    try {
-      url = `${FILES_DOMAIN}/${fileRow.zip_url.split("/").map(encodeURIComponent).join("/")}`;
-    } catch {
-      try {
-        url = r2PublicUrl(fileRow.zip_url);
-      } catch {
-      url = await presign({
-        method: "GET",
-        key: fileRow.zip_url,
-        expiresIn: 3600,
-        responseContentDisposition: `attachment; filename="${filename.replace(/"/g, "")}"`,
-        responseContentType: "application/zip",
-        });
-      }
-    }
+    const url = await presign({
+      method: "GET",
+      key: fileRow.zip_url,
+      expiresIn: 900,
+      responseContentDisposition: `attachment; filename="${filename.replace(/"/g, "")}"`,
+      responseContentType: "application/zip",
+    });
+
 
 
     if (downloadUserId) {
