@@ -74,34 +74,16 @@ export const Route = createFileRoute("/sale/$slug")({
 
 function SaleEvent() {
   const { sale } = Route.useLoaderData();
-  // Perpetual countdown: starts at 2d 22h, counts down to 1d, then resets.
-  const START_MS = (2 * 24 + 22) * 3600_000; // 70h
-  const FLOOR_MS = 24 * 3600_000; // 24h
-  const CYCLE_MS = START_MS - FLOOR_MS; // 46h
-  const computeRemaining = () => START_MS - (Date.now() % CYCLE_MS);
-  // Time-dependent, so it must not render during SSR (hydration mismatch).
-  const [remaining, setRemaining] = useState<number | null>(null);
-  useEffect(() => {
-    setRemaining(computeRemaining());
-    const i = setInterval(() => setRemaining(computeRemaining()), 1000);
-    return () => clearInterval(i);
-  }, []);
-
-  const expired = false;
-  const shown = remaining ?? START_MS;
-  const d = Math.max(0, Math.floor(shown / 86400000));
-  const h = Math.max(0, Math.floor((shown % 86400000) / 3600000));
-  const m = Math.max(0, Math.floor((shown % 3600000) / 60000));
-  const s = Math.max(0, Math.floor((shown % 60000) / 1000));
-  const urgent = remaining != null && remaining < 86400000;
 
   const accent = "#FF2D6E";
   const pct = sale.discount_pct ?? 35;
-  const headline = `GAME ON. ${pct}% OFF EVERYTHING.`;
-  const sub = "Pro plugins at knockout prices. Every team. Every sound. Until the final whistle.";
-  const eyebrow = `WORLD CUP SALE — ${expired ? "ENDED" : "ACTIVE"}`;
+  const headline = `SUMMER'S HERE. ${pct}% OFF EVERYTHING.`;
+  const sub = "Pro plugins at summer prices. Every sound you need, while the sun's still out.";
 
-  const spotlight = products.filter((p) => p.isFeatured).slice(0, 4);
+  const scrollToGrid = (e: React.MouseEvent) => {
+    e.preventDefault();
+    document.getElementById("grid")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   return (
     <div>
