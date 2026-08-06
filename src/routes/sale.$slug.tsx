@@ -1,8 +1,7 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
 import { ShopPage } from "@/components/ShopPage";
-import { products } from "@/lib/mock-data";
 import { supabase } from "@/integrations/supabase/client";
+
 
 type SaleRow = {
   id: string;
