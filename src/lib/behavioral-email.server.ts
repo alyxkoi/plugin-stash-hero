@@ -335,7 +335,10 @@ async function buildCartCandidates(
     const email = emailByUser.get(userId) ?? "";
     const activity = Math.max(...rows.map((r) => new Date(r.updated_at ?? r.created_at).getTime()));
     const age = now - activity;
+    // Stale carts (older than a week) are past the sequence window — never back-blast them.
+    if (age > 7 * DAY) continue;
     const step: 1 | 2 | 3 | null = age >= 72 * HOUR ? 3 : age >= 24 * HOUR ? 2 : age >= 1 * HOUR ? 1 : null;
+
     if (!step) continue;
 
     const triggerRef = `${userId}:${new Date(activity).toISOString()}`;
