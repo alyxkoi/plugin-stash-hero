@@ -33,16 +33,22 @@ export const getEmailAutomationStats = createServerFn({ method: "GET" })
       const d30 = mk();
       let failed = 0;
       let skipped = 0;
+      let dryRun = 0;
       for (const r of rows) {
         if (r.sequence_type !== seq) continue;
+        if (r.dry_run) {
+          dryRun++;
+          continue;
+        }
         if (r.status === "sent" && r.sent_at) {
           d30[r.step] = (d30[r.step] ?? 0) + 1;
           if (r.sent_at >= since7) d7[r.step] = (d7[r.step] ?? 0) + 1;
         } else if (r.status === "failed") failed++;
         else if (r.status === "skipped") skipped++;
       }
-      return { last7: d7, last30: d30, failed, skipped };
+      return { last7: d7, last30: d30, failed, skipped, dryRun };
     };
+
 
     // Recovered orders: completed within 24h after a sequence email to that address
     const sentRows = rows.filter((r) => r.status === "sent" && r.sent_at);
