@@ -20,8 +20,15 @@ export const Route = createFileRoute("/api/public/hooks/email-automation")({
           });
         }
         try {
+          const body = (await request.json().catch(() => ({}))) as {
+            dryRun?: boolean;
+            onlyEmail?: string;
+          };
           const { runBehavioralEmailJob } = await import("@/lib/behavioral-email.server");
-          const stats = await runBehavioralEmailJob();
+          const stats = await runBehavioralEmailJob({
+            dryRun: body.dryRun === true,
+            onlyEmail: body.onlyEmail,
+          });
           console.log("[email-automation]", stats);
           return new Response(JSON.stringify({ ok: true, ...stats }), {
             headers: { "Content-Type": "application/json" },
