@@ -80,7 +80,7 @@ export function CampaignLinksPage({ embedded = false }: { embedded?: boolean } =
 
   const reload = async () => {
     const anySb = supabase as any;
-    const [g, l, c, o] = await Promise.all([
+    const [g, l, s, o, cids] = await Promise.all([
       anySb.from("campaign_link_groups")
         .select("id,name,archived_at,source_platform,start_date,end_date,sort_order")
         .order("sort_order", { ascending: true })
@@ -89,38 +89,41 @@ export function CampaignLinksPage({ embedded = false }: { embedded?: boolean } =
         .select("id,group_id,label,code,utm_source,utm_campaign,utm_content,destination_path,archived_at,sort_order")
         .order("sort_order", { ascending: true })
         .order("created_at", { ascending: false }),
-      // click_id is what purchases are matched on — precise, no fuzzy matching.
-      anySb.from("campaign_link_clicks").select("link_id, click_id").eq("counted", true),
+      // Clicks + purchases are aggregated server-side: the raw click table is
+      // far bigger than the API row cap, so counting it in the browser
+      // silently truncated (or returned nothing) and every row read 0.
+      anySb.rpc("admin_campaign_link_stats"),
       // Fully refunded orders stop counting as campaign purchases ($0 excluded too).
       anySb.from("orders").select("pw_cid, utm_source").in("status", ["completed", "partial"]).gt("total", 0),
+      anySb.from("campaign_link_clicks").select("click_id").eq("counted", true).not("click_id", "is", null),
     ]);
     setGroups((g.data ?? []) as Group[]);
     setLinks((l.data ?? []) as LinkRow[]);
 
-    const clickRows = (c.data ?? []) as { link_id: string; click_id: string | null }[];
+    const statRows = (s.data ?? []) as { link_id: string; clicks: number; purchases: number }[];
     const clickAgg: ClickAgg = new Map();
-    const cidToLink = new Map<string, string>();
-    for (const row of clickRows) {
-      clickAgg.set(row.link_id, (clickAgg.get(row.link_id) ?? 0) + 1);
-      if (row.click_id) cidToLink.set(row.click_id, row.link_id);
+    const orderAgg: OrderAgg = new Map();
+    for (const row of statRows) {
+      clickAgg.set(row.link_id, Number(row.clicks) || 0);
+      orderAgg.set(row.link_id, Number(row.purchases) || 0);
     }
     setClicks(clickAgg);
+    setPurchases(orderAgg);
 
-    const orderAgg: OrderAgg = new Map();
+    // Diagnostic only: orders tagged with a source whose click id matches no link.
+    const knownCids = new Set(
+      ((cids.data ?? []) as { click_id: string | null }[]).map(r => r.click_id).filter(Boolean) as string[],
+    );
     const unmatched = new Map<string, number>();
     for (const row of (o.data ?? []) as { pw_cid: string | null; utm_source: string | null }[]) {
-      const linkId = row.pw_cid ? cidToLink.get(row.pw_cid) : undefined;
-      if (linkId) {
-        orderAgg.set(linkId, (orderAgg.get(linkId) ?? 0) + 1);
-        continue;
-      }
+      if (row.pw_cid && knownCids.has(row.pw_cid)) continue;
       const src = normalizeUtmSource(row.utm_source);
       if (src) unmatched.set(src, (unmatched.get(src) ?? 0) + 1);
     }
-    setPurchases(orderAgg);
     setUnattributed(unmatched);
     setHasLoadedOnce(true);
   };
+
 
   useEffect(() => { void reload(); }, []);
 

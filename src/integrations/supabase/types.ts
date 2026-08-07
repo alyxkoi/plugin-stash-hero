@@ -1503,6 +1503,14 @@ export type Database = {
         Args: { _from: string; _to: string }
         Returns: Json
       }
+      admin_campaign_link_stats: {
+        Args: never
+        Returns: {
+          clicks: number
+          link_id: string
+          purchases: number
+        }[]
+      }
       admin_customer_list: {
         Args: {
           _filter?: string
