@@ -2576,3 +2576,9 @@ a, button, [role="button"], summary, label, select, input[type="submit"],
    incoming one; keep it out of the hit-testing path so the first tap after a
    navigation always lands on the new page. */
 .route-transition-page[style*="opacity: 0"] { pointer-events: none; }
+
+/* Content that used to be revealed by hover must be visible on touch — a tap
+   should never be spent just "hovering" a card. */
+@media (hover: none) {
+  .rotation-overlay { transform: translateY(0); opacity: 1; }
+}
