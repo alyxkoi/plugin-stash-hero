@@ -475,8 +475,12 @@ select.input-glass option:checked, .select-glass option:checked {
   transition: background 0.15s, color 0.15s;
   cursor: pointer;
 }
+.smoked-item:focus-visible {
+  background: rgba(255, 0, 60, 0.10);
+  color: var(--accent-red);
+}
 @media (hover: hover) and (pointer: fine) {
-.smoked-item:hover, .smoked-item:focus-visible {
+.smoked-item:hover {
   background: rgba(255, 0, 60, 0.10);
   color: var(--accent-red);
 }
