@@ -2542,3 +2542,37 @@ select.input-glass option:checked, .select-glass option:checked {
   0% { transform: translateX(-100%); }
   100% { transform: translateX(300%); }
 }
+
+/* ===== TOUCH RESPONSIVENESS =====
+   Touch devices previously needed a "priming" tap because hover styles were
+   applied on first touch (now gated behind @media (hover: hover)) and because
+   the browser waited on double-tap-zoom detection before dispatching click.
+   Everything below is presentational only — no behaviour changes. */
+
+a, button, [role="button"], summary, label, select, input[type="submit"],
+.btn-primary, .btn-ghost, .drawer-item, .console-tab, .carousel-ctrl,
+.rotation-card, .recipe-card, .recipe-tile, .vault-row, .difference-card,
+.difference-card-light, .difference-card-dark, .smoked-item {
+  touch-action: manipulation;              /* kills the ~300ms dbl-tap wait */
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (hover: none) {
+  /* Comfortable, first-tap-reliable hit areas for the compact icon buttons. */
+  button, a, [role="button"] { -webkit-touch-callout: none; }
+  nav a, nav button, header button, .drawer-item, .console-tab {
+    min-height: 44px;
+  }
+
+  /* Fixed background attachment repaints the full-page gradient on every
+     scroll frame on mobile GPUs — the main source of the choppiness. */
+  body { background-attachment: scroll; }
+
+  /* Native momentum scrolling wins over JS-smooth scrolling on touch. */
+  html { scroll-behavior: auto; }
+}
+
+/* During the cross-fade the outgoing page shares the grid cell with the
+   incoming one; keep it out of the hit-testing path so the first tap after a
+   navigation always lands on the new page. */
+.route-transition-page[style*="opacity: 0"] { pointer-events: none; }
