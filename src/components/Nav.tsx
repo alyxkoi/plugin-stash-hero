@@ -184,10 +184,10 @@ export function Nav() {
 
             {/* Mobile + tablet icons */}
             <div className="flex xl:hidden items-center gap-1 shrink-0">
-              <button onClick={() => setSearchOpen(true)} aria-label="Search" className="p-2.5 rounded-full hover:bg-white/5 transition">
+              <button onClick={() => setSearchOpen(true)} aria-label="Search" className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-white/5 transition">
                 <Search className="w-5 h-5" />
               </button>
-              <button onClick={() => setDrawerOpen(true)} aria-label="Open menu" className="p-2.5 rounded-full hover:bg-white/5 transition relative">
+              <button onClick={() => setDrawerOpen(true)} aria-label="Open menu" className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-white/5 transition relative">
                 <Menu className="w-5 h-5" />
                 {count > 0 && <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[var(--accent-red)]" />}
               </button>
