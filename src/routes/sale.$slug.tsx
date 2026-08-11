@@ -127,7 +127,7 @@ function SaleEvent() {
         <div
           className="absolute inset-x-0 bottom-0 h-[45%] md:h-[38%] pointer-events-none"
           style={{
-            background: "linear-gradient(to bottom, rgba(11,0,24,0) 0%, rgba(11,0,24,0.7) 55%, #0B0018 100%)",
+            background: "linear-gradient(to bottom, rgba(19,0,44,0) 0%, rgba(19,0,44,0.65) 50%, rgba(19,0,44,0.92) 80%, #13002C 100%)",
           }}
         />
 
