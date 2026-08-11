@@ -1,7 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { GlassCard } from "@/components/GlassCard";
 import { FadeIn } from "@/components/SectionTitle";
 import { AuroraTitle } from "@/components/AuroraTitle";
@@ -16,17 +15,11 @@ import {
   Check,
   ArrowUpRight,
   Plus,
-  Piano,
-  Sliders,
-  Library,
-  AudioWaveform,
-  AppWindow,
-  Gift,
-  type LucideIcon,
 } from "lucide-react";
 import { type Product } from "@/lib/mock-data";
 import { actions, useStore } from "@/lib/store";
-import { usePublishedProducts, useBestsellerIds } from "@/hooks/useProducts";
+import { usePublishedProducts, useBestsellerIds, useLatestProducts } from "@/hooks/useProducts";
+import { ProductCard } from "@/components/ProductCard";
 import { useSalePricing } from "@/lib/sale-pricing";
 import { useActiveSale } from "@/hooks/useActiveSale";
 import heroVideoAsset from "@/assets/hero_vid_3.mp4.asset.json";
@@ -151,7 +144,7 @@ function Index() {
       <Ticker />
       <OnRotation />
       <PluginRecipes />
-      <BrowseTheVault />
+      <JustAdded />
       <SoundsOfTheDecade />
       <PluginOfTheWeek />
       <Difference />
