@@ -60,6 +60,25 @@ export function usePublishedProducts() {
   });
 }
 
+async function fetchLatest(limit: number): Promise<Product[]> {
+  const { data, error } = await supabase
+    .from("products")
+    .select("id,slug,name,maker,category,formats,daws,version,library_type,tags,platforms,price,compare_at_price,description,cover_url,cover_gradient,is_free,is_featured,is_bestseller,updated_at,published_at")
+    .eq("status", "published")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw new Error(error.message);
+  return (data as Row[] ?? []).map(mapRow);
+}
+
+export function useLatestProducts(limit = 8) {
+  return useQuery({
+    queryKey: ["storefront-latest-products", limit],
+    queryFn: () => fetchLatest(limit),
+    staleTime: 30_000,
+  });
+}
+
 async function fetchBestsellerIds(limit = 20): Promise<string[]> {
   const { data, error } = await supabase.rpc("get_bestseller_product_ids", { _limit: limit });
   if (error) return [];
