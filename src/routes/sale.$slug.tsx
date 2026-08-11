@@ -86,19 +86,35 @@ function SaleEvent() {
 
   return (
     <div>
-      <section className="relative px-4 md:px-12 py-16 md:py-24 overflow-hidden">
-        {/* Summer background image: desktop on md+, mobile/tablet below */}
-        <picture className="absolute inset-0 w-full h-full">
-          <source
-            media="(min-width: 768px)"
-            srcSet="https://ovhpoysgvuupqydprsjx.supabase.co/storage/v1/object/public/imagesvideos/summerdesktop.png"
-          />
-          <img
-            src="https://ovhpoysgvuupqydprsjx.supabase.co/storage/v1/object/public/imagesvideos/summermobile.png"
-            alt=""
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-        </picture>
+      <section className="relative -mt-24 md:-mt-28 px-4 md:px-12 pt-40 md:pt-48 pb-16 md:pb-24 overflow-hidden">
+        {/* Summer background image: desktop on md+, mobile/tablet below — blurred layer */}
+        <div className="absolute inset-0 overflow-hidden" style={{ maskImage: "linear-gradient(to bottom, #000 38%, rgba(0,0,0,0.15) 68%, transparent 80%)", WebkitMaskImage: "linear-gradient(to bottom, #000 38%, rgba(0,0,0,0.15) 68%, transparent 80%)" }}>
+          <picture>
+            <source
+              media="(min-width: 768px)"
+              srcSet="https://ovhpoysgvuupqydprsjx.supabase.co/storage/v1/object/public/imagesvideos/summerdesktop.png"
+            />
+            <img
+              src="https://ovhpoysgvuupqydprsjx.supabase.co/storage/v1/object/public/imagesvideos/summermobile.png"
+              alt=""
+              className="absolute inset-0 w-full h-full object-cover"
+              style={{ filter: "blur(8px)", transform: "scale(1.06)" }}
+            />
+          </picture>
+        </div>
+
+        {/* Dotted halftone texture */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage: "radial-gradient(rgba(255,255,255,0.18) 1px, transparent 1.1px)",
+            backgroundSize: "5px 5px",
+            opacity: 0.35,
+            mixBlendMode: "overlay",
+            maskImage: "linear-gradient(to bottom, #000 38%, rgba(0,0,0,0.15) 68%, transparent 80%)",
+            WebkitMaskImage: "linear-gradient(to bottom, #000 38%, rgba(0,0,0,0.15) 68%, transparent 80%)",
+          }}
+        />
 
         {/* Contrast scrim: stronger behind the content, fading toward edges */}
         <div
@@ -108,6 +124,15 @@ function SaleEvent() {
               "radial-gradient(ellipse 80% 60% at 50% 55%, rgba(11,0,24,0.55) 0%, rgba(11,0,24,0.25) 45%, transparent 75%)",
           }}
         />
+
+        {/* Bottom fade into the page background */}
+        <div
+          className="absolute inset-x-0 bottom-0 h-[45%] md:h-[38%] pointer-events-none"
+          style={{
+            background: "linear-gradient(to bottom, rgba(19,0,44,0) 0%, rgba(19,0,44,0.45) 40%, rgba(19,0,44,0.8) 75%, #13002C 100%)",
+          }}
+        />
+
 
         <div className="relative flex flex-col items-center justify-center text-center min-h-[70vh] gap-8 md:gap-10">
           <h1 className="font-black chrome-text leading-[0.95] max-w-4xl mx-auto text-balance" style={{ fontSize: "clamp(2.25rem, 6.5vw, 6rem)", textShadow: "0 0 40px rgba(255,255,255,0.35)" }}>{headline}</h1>
