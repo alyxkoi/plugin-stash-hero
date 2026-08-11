@@ -120,7 +120,6 @@ function SaleEvent() {
               decoding="async"
               fetchPriority="high"
               className="absolute inset-0 w-full h-full object-cover"
-              style={{ filter: "blur(8px)", transform: "scale(1.06)" }}
             />
           </picture>
         </div>

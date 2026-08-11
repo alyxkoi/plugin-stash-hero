@@ -1893,7 +1893,7 @@ a, button, [role="button"], summary, label, select, input[type="submit"],
   background-image: var(--hero-lqip-mobile);
   background-size: cover;
   background-position: center;
-  filter: blur(6px);
+  filter: blur(8px);
   transform: scale(1.06);
 }
 @media (min-width: 768px) {
