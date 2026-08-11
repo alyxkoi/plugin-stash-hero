@@ -1887,3 +1887,15 @@ a, button, [role="button"], summary, label, select, input[type="submit"],
 @media (hover: none) {
   .rotation-overlay { transform: translateY(0); opacity: 1; }
 }
+
+/* Deals hero: inline low-quality preview paints instantly behind the real image */
+.hero-lqip {
+  background-image: var(--hero-lqip-mobile);
+  background-size: cover;
+  background-position: center;
+  filter: blur(6px);
+  transform: scale(1.06);
+}
+@media (min-width: 768px) {
+  .hero-lqip { background-image: var(--hero-lqip-desktop); }
+}

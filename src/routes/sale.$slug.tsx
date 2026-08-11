@@ -1,6 +1,14 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { ShopPage } from "@/components/ShopPage";
 import { supabase } from "@/integrations/supabase/client";
+import heroDesktopAsset from "@/assets/summer-hero-desktop.webp.asset.json";
+import heroMobileAsset from "@/assets/summer-hero-mobile.webp.asset.json";
+
+const HERO_DESKTOP = heroDesktopAsset.url;
+const HERO_MOBILE = heroMobileAsset.url;
+// Tiny inline previews so the (already blurred) hero paints on first frame.
+const HERO_LQIP_DESKTOP = "data:image/webp;base64,UklGRp4AAABXRUJQVlA4IJIAAAAwBACdASoYAA0APt1apkyopSOiMAgBEBuJZQCsICXC/QZgztxc6/deQwAA/tRmRXz33vUO5P/TWF9SnXKhX/KMzrSaFKaK5C7qbCCTkf9MilRyPV+YdgAckAB9VCQyxs4QxvM4OiZOYC9gHIomrnNWdfU8UVqFNT04bbtq/ZCxujlYKcxXv1YnChhCYhUpHPWSAA==";
+const HERO_LQIP_MOBILE = "data:image/webp;base64,UklGRg4BAABXRUJQVlA4IAIBAAAwBwCdASoYACQAPt1apU2opKMiMBVdURAbiUATpmsfxqMQG8iZKiC2D2r2ljHaK8uusfvo5VuUcXX5gA/MPnv6sQAA/pFpVJWfq69rqbZgA7D5UpV2F471VSeM3uh25OUlJi2ig10jLCOZFN1VvUoOadaVDcj5wdolwaazjNNTg9F7ISZsvDaw1rwAvCI4m6NW1pWaImFakS+xS4gVWBs1Ky+H+mws/P+QDfPUfcDamScEC2TQE7lepYP1+2pe70nCK/dvqS9Sk0RuKnniLC0HIdwsAo38DxuPHXavLu/3CPiN+f2IyjeUXxty4su1YUaIZoitN7soB92fG1E6AIAAAAA=";
 
 
 type SaleRow = {
@@ -64,7 +72,11 @@ export const Route = createFileRoute("/sale/$slug")({
         { name: "twitter:title", content: title },
         { name: "twitter:description", content: desc },
       ],
-      links: [{ rel: "canonical", href: url }],
+      links: [
+        { rel: "canonical", href: url },
+        { rel: "preload", as: "image", href: HERO_MOBILE, media: "(max-width: 767px)", fetchpriority: "high" },
+        { rel: "preload", as: "image", href: HERO_DESKTOP, media: "(min-width: 768px)", fetchpriority: "high" },
+      ],
     };
   },
   component: SaleEvent,
@@ -88,15 +100,25 @@ function SaleEvent() {
     <div>
       <section className="relative -mt-24 md:-mt-28 px-4 md:px-12 pt-40 md:pt-48 pb-16 md:pb-24 overflow-hidden">
         {/* Summer background image: desktop on md+, mobile/tablet below — blurred layer */}
-        <div className="absolute inset-0 overflow-hidden" style={{ maskImage: "linear-gradient(to bottom, #000 38%, rgba(0,0,0,0.15) 68%, transparent 80%)", WebkitMaskImage: "linear-gradient(to bottom, #000 38%, rgba(0,0,0,0.15) 68%, transparent 80%)" }}>
+        <div
+          className="absolute inset-0 overflow-hidden hero-lqip"
+          style={{
+            maskImage: "linear-gradient(to bottom, #000 38%, rgba(0,0,0,0.15) 68%, transparent 80%)",
+            WebkitMaskImage: "linear-gradient(to bottom, #000 38%, rgba(0,0,0,0.15) 68%, transparent 80%)",
+            ["--hero-lqip-mobile" as string]: `url("${HERO_LQIP_MOBILE}")`,
+            ["--hero-lqip-desktop" as string]: `url("${HERO_LQIP_DESKTOP}")`,
+          }}
+        >
           <picture>
-            <source
-              media="(min-width: 768px)"
-              srcSet="https://ovhpoysgvuupqydprsjx.supabase.co/storage/v1/object/public/imagesvideos/summerdesktop.png"
-            />
+            <source media="(min-width: 768px)" srcSet={HERO_DESKTOP} type="image/webp" />
             <img
-              src="https://ovhpoysgvuupqydprsjx.supabase.co/storage/v1/object/public/imagesvideos/summermobile.png"
+              src={HERO_MOBILE}
               alt=""
+              width={900}
+              height={1342}
+              loading="eager"
+              decoding="async"
+              fetchPriority="high"
               className="absolute inset-0 w-full h-full object-cover"
               style={{ filter: "blur(8px)", transform: "scale(1.06)" }}
             />
