@@ -88,7 +88,7 @@ function SaleEvent() {
     <div>
       <section className="relative -mt-24 md:-mt-28 px-4 md:px-12 pt-40 md:pt-48 pb-16 md:pb-24 overflow-hidden">
         {/* Summer background image: desktop on md+, mobile/tablet below — blurred layer */}
-        <div className="absolute inset-0 overflow-hidden" style={{ maskImage: "linear-gradient(to bottom, #000 40%, rgba(0,0,0,0.35) 82%, transparent 100%)", WebkitMaskImage: "linear-gradient(to bottom, #000 40%, rgba(0,0,0,0.35) 82%, transparent 100%)" }}>
+        <div className="absolute inset-0 overflow-hidden" style={{ maskImage: "linear-gradient(to bottom, #000 40%, rgba(0,0,0,0.25) 78%, transparent 92%)", WebkitMaskImage: "linear-gradient(to bottom, #000 40%, rgba(0,0,0,0.25) 78%, transparent 92%)" }}>
           <picture>
             <source
               media="(min-width: 768px)"
@@ -111,8 +111,8 @@ function SaleEvent() {
             backgroundSize: "5px 5px",
             opacity: 0.35,
             mixBlendMode: "overlay",
-            maskImage: "linear-gradient(to bottom, #000 40%, rgba(0,0,0,0.35) 82%, transparent 100%)",
-            WebkitMaskImage: "linear-gradient(to bottom, #000 40%, rgba(0,0,0,0.35) 82%, transparent 100%)",
+            maskImage: "linear-gradient(to bottom, #000 40%, rgba(0,0,0,0.25) 78%, transparent 92%)",
+            WebkitMaskImage: "linear-gradient(to bottom, #000 40%, rgba(0,0,0,0.25) 78%, transparent 92%)",
           }}
         />
 
@@ -129,7 +129,7 @@ function SaleEvent() {
         <div
           className="absolute inset-x-0 bottom-0 h-[45%] md:h-[38%] pointer-events-none"
           style={{
-            background: "linear-gradient(to bottom, rgba(19,0,44,0) 0%, rgba(19,0,44,0.5) 45%, rgba(19,0,44,0.75) 72%, rgba(19,0,44,0.3) 92%, rgba(19,0,44,0) 100%)",
+            background: "linear-gradient(to bottom, rgba(19,0,44,0) 0%, rgba(19,0,44,0.5) 45%, rgba(19,0,44,0.7) 70%, rgba(19,0,44,0.25) 88%, rgba(19,0,44,0) 100%)",
           }}
         />
 
