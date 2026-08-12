@@ -80,13 +80,49 @@ export async function downloadPlugin({ productId, sessionId, guest }: DownloadAr
     return false;
   }
 
+  try {
+    assertCustomDomain(url);
+  } catch (e) {
+    console.error("[download] blocked bad download host", e);
+    toast.error("Download blocked: misconfigured file host. Please contact support.");
+    return false;
+  }
+
   navigateToFile(url);
   return true;
 }
 
+/** The ONLY host allowed to serve plugin files. See the header comment. */
+export const DOWNLOAD_HOST = "thepluginwarehousefiles.com";
+
+/**
+ * Regression guard. A URL on the R2 S3 API endpoint (or any presigned URL,
+ * which can only exist on that endpoint) truncates at exactly 2 GB — so we
+ * refuse to serve it instead of handing the user a corrupt file.
+ */
+function assertCustomDomain(url: string) {
+  let host: string;
+  try {
+    host = new URL(url).host.toLowerCase();
+  } catch {
+    throw new Error(`Download URL is not a valid URL: ${url}`);
+  }
+  if (host !== DOWNLOAD_HOST) {
+    throw new Error(
+      `Download URL host is "${host}" but must be "${DOWNLOAD_HOST}". ` +
+        `The R2 S3 API endpoint truncates at 2 GB and custom domains do not support ` +
+        `presigned URLs — the download path must never presign.`,
+    );
+  }
+  if (/[?&]X-Amz-(Signature|Credential)=/i.test(url)) {
+    throw new Error("Download URL is presigned; presigned URLs truncate at 2 GB.");
+  }
+}
+
 /**
  * Plain anchor navigation. No fetch, no blob, no `download` attribute (it is
- * ignored cross-origin anyway — the filename comes from Content-Disposition).
+ * ignored cross-origin anyway — the filename comes from the object key /
+ * Content-Disposition stored on the object).
  * The browser streams R2 -> disk with zero JS involvement, so size is
  * unbounded and 64-bit safe by construction.
  */
