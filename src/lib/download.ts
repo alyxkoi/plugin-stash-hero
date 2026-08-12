@@ -18,19 +18,24 @@
  * always because someone wanted a friendly filename via `a.download` (which is
  * ignored for cross-origin URLs, so blobs "fix" it).
  *
- * That is already solved at the source: the entitlement endpoint issues a
- * short-lived presigned R2 URL carrying
- *   Content-Disposition: attachment; filename="<Product Name>.zip"
- * so plain browser navigation saves the correct filename, streams straight
- * from R2 to disk, supports Range requests / 206 Partial Content (resumable),
- * and has no size ceiling at all.
+ * SECOND, EQUALLY IMPORTANT RULE — THE HOST MATTERS:
+ *
+ *   Downloads MUST be served from the R2 CUSTOM DOMAIN
+ *   (https://thepluginwarehousefiles.com/...).
+ *
+ *   The R2 S3 API endpoint (*.r2.cloudflarestorage.com) TRUNCATES responses at
+ *   exactly 2 GB. Presigned URLs are ONLY possible on that S3 endpoint —
+ *   R2 custom domains do NOT support presigning — so introducing a presigned
+ *   URL anywhere in the download path silently reintroduces the 2 GB ceiling.
+ *   DO NOT PRESIGN DOWNLOADS. Entitlement is verified server-side; access
+ *   control after that comes from the long, unguessable random object path.
  *
  * THE ONLY CORRECT SHAPE:
- *   1. ask the server to verify entitlement and hand back a URL
+ *   1. ask the server to verify entitlement and hand back a custom-domain URL
  *   2. navigate the browser to that URL
  *
- * An ESLint rule (see eslint.config.js) fails the build if buffering APIs
- * appear anywhere in src/. Keep it that way.
+ * ESLint rules (see eslint.config.js) fail the build if buffering APIs, the S3
+ * endpoint, or presign helpers appear anywhere in src/. Keep it that way.
  * ========================================================================= */
 
 import { supabase } from "@/integrations/supabase/client";
