@@ -459,7 +459,8 @@ export const guestDownloadUrl = createServerFn({ method: "POST" })
       return { error: "Order not paid yet." };
     }
 
-    // Delegate signing to the r2-download-url edge function (session_id path).
+    // Resolve the custom-domain download URL via the r2-download-url edge function
+    // (session_id path). Never presign: presigned URLs truncate at 2 GB.
     const signRes = await fetch(`${process.env.SUPABASE_URL}/functions/v1/r2-download-url`, {
       method: "POST",
       headers: {
