@@ -67,6 +67,11 @@ export default tseslint.config(
             "The R2 S3 API endpoint truncates downloads at 2GB. Serve files from the custom domain thepluginwarehousefiles.com (see @/lib/download).",
         },
         {
+          selector: "TemplateElement[value.raw=/X-Amz-Signature/]",
+          message:
+            "Presigned URLs only work on the R2 S3 endpoint, which truncates at 2GB. Never presign downloads (see @/lib/download).",
+        },
+        {
           selector: "Literal[value=/X-Amz-Signature/]",
           message:
             "Presigned URLs only work on the R2 S3 endpoint, which truncates at 2GB. Never presign downloads (see @/lib/download).",
