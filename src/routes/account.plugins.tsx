@@ -5,6 +5,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { downloadPlugin } from "@/lib/download";
 
 const INSTALL_GUIDE_URL =
   "https://thepluginwarehousefiles.com/other%20files/the_plugin_warehouse_installation_guide.pdf";

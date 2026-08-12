@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { productCategories } from "@/lib/dashboard-mock";
 import { Upload, X, Sparkles, RefreshCw, AlertTriangle, Download } from "lucide-react";
 import { toast } from "sonner";
+import { downloadPlugin } from "@/lib/download";
 import { uploadZipMultipart, type MultipartHandle } from "@/lib/multipart-upload";
 
 const FORMATS = ["VST", "VST3", "AU", "AAX"];

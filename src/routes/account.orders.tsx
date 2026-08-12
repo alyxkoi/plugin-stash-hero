@@ -5,6 +5,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, signOut } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { downloadPlugin } from "@/lib/download";
 import { sumNetRevenue } from "@/lib/revenue";
 
 const INSTALL_GUIDE_URL =
