@@ -96,20 +96,18 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (fileErr || !fileRow?.zip_url) return json({ error: "Plugin file not found." }, 404);
 
-    // SECURITY: download links must expire. We issue a short-lived (15 min)
-    // SigV4 presigned URL against the R2 S3 endpoint. The browser navigates
-    // there directly and streams bytes from R2 (Range requests honored), so
-    // nothing is buffered in JS. The public custom domain is NOT used because
-    // it serves objects unauthenticated forever — a leaked link there would
-    // let anyone download a paid plugin.
-    const filename = fileRow.zip_file_name || fileRow.zip_url.split("/").pop() || "download.zip";
-    const url = await presign({
-      method: "GET",
-      key: fileRow.zip_url,
-      expiresIn: 900,
-      responseContentDisposition: `attachment; filename="${filename.replace(/"/g, "")}"`,
-      responseContentType: "application/zip",
-    });
+    // ┌─────────────────────────────────────────────────────────────────────┐
+    // │ DOWNLOADS MUST BE SERVED FROM THE R2 CUSTOM DOMAIN.                 │
+    // │ The R2 S3 API endpoint (*.r2.cloudflarestorage.com) TRUNCATES       │
+    // │ responses at exactly 2 GB. Presigned URLs only work on the S3       │
+    // │ endpoint — R2 custom domains do NOT support presigning — so ANY     │
+    // │ presigned URL here reintroduces the 2 GB ceiling. Never presign a   │
+    // │ download. Access control comes from the long, unguessable random    │
+    // │ object path plus the entitlement check above.                       │
+    // └─────────────────────────────────────────────────────────────────────┘
+    const url = customDomainUrl(fileRow.zip_url);
+
+
 
 
 
