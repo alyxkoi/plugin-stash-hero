@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { productCategories } from "@/lib/dashboard-mock";
 import { Upload, X, Sparkles, RefreshCw, AlertTriangle, Download } from "lucide-react";
 import { toast } from "sonner";
+import { downloadPlugin } from "@/lib/download";
 import { uploadZipMultipart, type MultipartHandle } from "@/lib/multipart-upload";
 
 const FORMATS = ["VST", "VST3", "AU", "AAX"];
@@ -503,14 +504,8 @@ function EditProduct() {
                   onClick={async () => {
                     const t = toast.loading("Preparing download…");
                     try {
-                      const { data, error } = await supabase.functions.invoke("r2-download-url", { body: { productId: id } });
-                      if (error || !data?.url) throw new Error(data?.error ?? error?.message ?? "Download failed");
-                      const a = document.createElement("a");
-                      a.href = data.url;
-                      a.download = data.filename ?? fileRow.zip_file_name ?? "download.zip";
-                      document.body.appendChild(a);
-                      a.click();
-                      a.remove();
+                      const ok = await downloadPlugin({ productId: id });
+                      if (!ok) throw new Error("Download failed");
                       toast.success("Download started", { id: t });
                     } catch (e) {
                       toast.error((e as Error).message, { id: t });

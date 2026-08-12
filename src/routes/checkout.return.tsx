@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { CheckCircle2, Download } from "lucide-react";
-import { getOrderBySession, guestDownloadUrl } from "@/lib/checkout.functions";
+import { getOrderBySession } from "@/lib/checkout.functions";
+import { downloadPlugin } from "@/lib/download";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -62,31 +63,8 @@ function CheckoutReturn() {
     return () => { cancelled = true; };
   }, [session_id]);
 
-  async function download(productId: string | null, name: string) {
-    if (!productId) { toast.error("Missing product id"); return; }
-    // Logged-in path: use edge fn with auth
-    if (user) {
-      const { data, error } = await supabase.functions.invoke("r2-download-url", { body: { productId } });
-      if (error || !data?.url) { toast.error(data?.error ?? error?.message ?? "Download failed"); return; }
-      triggerDownload(data.url, data.filename ?? `${name}.zip`);
-      return;
-    }
-    // Guest path: verify via session_id
-    if (!session_id) { toast.error("Missing session id"); return; }
-    const res = await guestDownloadUrl({ data: { sessionId: session_id, productId } });
-    if (res.error || !res.url) { toast.error(res.error ?? "Download failed"); return; }
-    triggerDownload(res.url, res.filename ?? `${name}.zip`);
-  }
-
-  function triggerDownload(url: string, filename: string) {
-    // Direct browser -> R2 via anchor navigation. No fetch/blob/createObjectURL —
-    // the browser streams straight from R2 to disk, so there is no 2GB memory cap.
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+  async function download(productId: string | null) {
+    await downloadPlugin({ productId, sessionId: session_id, guest: !user });
   }
 
   if (status === "invalid") {
@@ -136,7 +114,7 @@ function CheckoutReturn() {
                 <div className="font-bold truncate text-base">{it.name}</div>
                 <div className="font-mono text-xs text-white/50 mt-0.5">${Number(it.price).toFixed(2)}</div>
               </div>
-              <button onClick={() => download(it.product_id, it.name)} className="btn-primary !text-xs !py-2.5 !px-4 inline-flex items-center gap-1.5">
+              <button onClick={() => download(it.product_id)} className="btn-primary !text-xs !py-2.5 !px-4 inline-flex items-center gap-1.5">
                 <Download className="w-4 h-4" /> Download
               </button>
             </div>
