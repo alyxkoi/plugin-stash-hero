@@ -1,12 +1,29 @@
-// Generates a short-lived signed GET URL for a purchased plugin zip.
+// Resolves the download URL for a purchased plugin zip.
 // Verifies the requesting user owns a paid order containing the product,
 // OR a guest presents a valid Stripe session_id from a paid order that
 // includes the product.
+//
+// !!! DOWNLOADS MUST BE SERVED FROM THE R2 CUSTOM DOMAIN !!!
+// The R2 S3 API endpoint (*.r2.cloudflarestorage.com) truncates responses at
+// exactly 2 GB. R2 custom domains do NOT support presigned URLs, so presigning
+// anything here silently forces the S3 endpoint and reintroduces that 2 GB
+// ceiling. Never import or call presign() in this file.
 import { corsHeaders, adminClient, json } from "../_shared/auth.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { presign } from "../_shared/r2.ts";
 
+// The R2 custom domain. Streams unbounded (30 GB+ verified) and honors Range
+// requests. Access control = entitlement check below + long random object path.
+const DOWNLOAD_HOST = "thepluginwarehousefiles.com";
 
+/** Builds a custom-domain download URL from an R2 object key. Never signs. */
+function customDomainUrl(key: string) {
+  const clean = String(key).replace(/^https?:\/\/[^/]+\//, "").replace(/^\/+/, "");
+  const url = `https://${DOWNLOAD_HOST}/${clean.split("/").map(encodeURIComponent).join("/")}`;
+  if (new URL(url).host !== DOWNLOAD_HOST) {
+    throw new Error(`Refusing download from unexpected host: ${url}`);
+  }
+  return url;
+}
 
 // Live entitlement check: a fully refunded order ("refunded") loses access
 // immediately. "partial" (partially refunded) keeps access.
