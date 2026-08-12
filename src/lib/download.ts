@@ -18,19 +18,24 @@
  * always because someone wanted a friendly filename via `a.download` (which is
  * ignored for cross-origin URLs, so blobs "fix" it).
  *
- * That is already solved at the source: the entitlement endpoint issues a
- * short-lived presigned R2 URL carrying
- *   Content-Disposition: attachment; filename="<Product Name>.zip"
- * so plain browser navigation saves the correct filename, streams straight
- * from R2 to disk, supports Range requests / 206 Partial Content (resumable),
- * and has no size ceiling at all.
+ * SECOND, EQUALLY IMPORTANT RULE — THE HOST MATTERS:
+ *
+ *   Downloads MUST be served from the R2 CUSTOM DOMAIN
+ *   (https://thepluginwarehousefiles.com/...).
+ *
+ *   The R2 S3 API endpoint (*.r2.cloudflarestorage.com) TRUNCATES responses at
+ *   exactly 2 GB. Presigned URLs are ONLY possible on that S3 endpoint —
+ *   R2 custom domains do NOT support presigning — so introducing a presigned
+ *   URL anywhere in the download path silently reintroduces the 2 GB ceiling.
+ *   DO NOT PRESIGN DOWNLOADS. Entitlement is verified server-side; access
+ *   control after that comes from the long, unguessable random object path.
  *
  * THE ONLY CORRECT SHAPE:
- *   1. ask the server to verify entitlement and hand back a URL
+ *   1. ask the server to verify entitlement and hand back a custom-domain URL
  *   2. navigate the browser to that URL
  *
- * An ESLint rule (see eslint.config.js) fails the build if buffering APIs
- * appear anywhere in src/. Keep it that way.
+ * ESLint rules (see eslint.config.js) fail the build if buffering APIs, the S3
+ * endpoint, or presign helpers appear anywhere in src/. Keep it that way.
  * ========================================================================= */
 
 import { supabase } from "@/integrations/supabase/client";
@@ -75,13 +80,49 @@ export async function downloadPlugin({ productId, sessionId, guest }: DownloadAr
     return false;
   }
 
+  try {
+    assertCustomDomain(url);
+  } catch (e) {
+    console.error("[download] blocked bad download host", e);
+    toast.error("Download blocked: misconfigured file host. Please contact support.");
+    return false;
+  }
+
   navigateToFile(url);
   return true;
 }
 
+/** The ONLY host allowed to serve plugin files. See the header comment. */
+export const DOWNLOAD_HOST = "thepluginwarehousefiles.com";
+
+/**
+ * Regression guard. A URL on the R2 S3 API endpoint (or any presigned URL,
+ * which can only exist on that endpoint) truncates at exactly 2 GB — so we
+ * refuse to serve it instead of handing the user a corrupt file.
+ */
+function assertCustomDomain(url: string) {
+  let host: string;
+  try {
+    host = new URL(url).host.toLowerCase();
+  } catch {
+    throw new Error(`Download URL is not a valid URL: ${url}`);
+  }
+  if (host !== DOWNLOAD_HOST) {
+    throw new Error(
+      `Download URL host is "${host}" but must be "${DOWNLOAD_HOST}". ` +
+        `The R2 S3 API endpoint truncates at 2 GB and custom domains do not support ` +
+        `presigned URLs — the download path must never presign.`,
+    );
+  }
+  if (/[?&]X-Amz-(Signature|Credential)=/i.test(url)) {
+    throw new Error("Download URL is presigned; presigned URLs truncate at 2 GB.");
+  }
+}
+
 /**
  * Plain anchor navigation. No fetch, no blob, no `download` attribute (it is
- * ignored cross-origin anyway — the filename comes from Content-Disposition).
+ * ignored cross-origin anyway — the filename comes from the object key /
+ * Content-Disposition stored on the object).
  * The browser streams R2 -> disk with zero JS involvement, so size is
  * unbounded and 64-bit safe by construction.
  */

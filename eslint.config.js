@@ -56,6 +56,36 @@ export default tseslint.config(
           message:
             "FileReader buffers bytes in memory and breaks large downloads. See @/lib/download.",
         },
+        {
+          selector: "Literal[value=/r2\\.cloudflarestorage\\.com/]",
+          message:
+            "The R2 S3 API endpoint truncates downloads at 2GB. Serve files from the custom domain thepluginwarehousefiles.com (see @/lib/download).",
+        },
+        {
+          selector: "TemplateElement[value.raw=/r2\\.cloudflarestorage\\.com/]",
+          message:
+            "The R2 S3 API endpoint truncates downloads at 2GB. Serve files from the custom domain thepluginwarehousefiles.com (see @/lib/download).",
+        },
+        {
+          selector: "TemplateElement[value.raw=/X-Amz-Signature/]",
+          message:
+            "Presigned URLs only work on the R2 S3 endpoint, which truncates at 2GB. Never presign downloads (see @/lib/download).",
+        },
+        {
+          selector: "Literal[value=/X-Amz-Signature/]",
+          message:
+            "Presigned URLs only work on the R2 S3 endpoint, which truncates at 2GB. Never presign downloads (see @/lib/download).",
+        },
+        {
+          selector: "CallExpression[callee.name=/^(presign|getSignedUrl)$/]",
+          message:
+            "Presigned download URLs force the R2 S3 endpoint and truncate at 2GB. Use the custom domain (see @/lib/download).",
+        },
+        {
+          selector: "CallExpression > MemberExpression[property.name='getSignedUrl']",
+          message:
+            "Presigned download URLs force the R2 S3 endpoint and truncate at 2GB. Use the custom domain (see @/lib/download).",
+        },
       ],
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
       "@typescript-eslint/no-unused-vars": "off",

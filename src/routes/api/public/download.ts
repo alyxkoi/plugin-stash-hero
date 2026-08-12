@@ -1,12 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-// Redirects to a fresh signed R2 URL for a purchased plugin. Verifies purchase
-// via the checkout session id (works for both guest and logged-in orders).
+// 302-redirects to the R2 CUSTOM DOMAIN URL for a purchased plugin. Verifies
+// purchase via the checkout session id (works for guest and logged-in orders).
 //
 // Query params: session_id, product_id
 //
-// Delegates verification + presigning to the r2-download-url edge function
-// (guest path: sessionId + productId).
+// Delegates verification + URL resolution to the r2-download-url edge function
+// (guest path: sessionId + productId). This route only ever returns a 302 —
+// it must NEVER stream the file body (that would buffer and cap at 2 GB), and
+// the target must be on thepluginwarehousefiles.com: the R2 S3 API endpoint
+// truncates at 2 GB and custom domains do not support presigned URLs.
 
 export const Route = createFileRoute("/api/public/download")({
   server: {
