@@ -5,7 +5,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { formatDate } from "@/lib/account-data";
-import { toast } from "sonner";
+import { downloadPlugin } from "@/lib/download";
 
 type OwnedProduct = {
   id: string;
@@ -85,26 +85,13 @@ export function LibraryView() {
   );
 }
 
-function triggerAnchorDownload(url: string, filename: string) {
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-}
-
 function LibraryCard({ item }: { item: OwnedProduct }) {
   const [busy, setBusy] = useState(false);
 
   const download = async () => {
     setBusy(true);
-    const { data, error } = await supabase.functions.invoke("r2-download-url", { body: { productId: item.id } });
+    await downloadPlugin({ productId: item.id });
     setBusy(false);
-    if (error || !data?.url) { toast.error(data?.error ?? error?.message ?? "Download failed"); return; }
-    // Direct browser -> R2 via anchor navigation. No fetch, no blob, no memory
-    // cap — the browser streams the file straight from R2 to disk.
-    triggerAnchorDownload(data.url, data.filename ?? `${item.name}.zip`);
   };
 
   return (

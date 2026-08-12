@@ -160,14 +160,8 @@ function PluginsPage() {
   };
 
   async function download(productId: string, name: string) {
-    const { data, error } = await supabase.functions.invoke("r2-download-url", { body: { productId } });
-    if (error || !data?.url) { toast.error(data?.error ?? error?.message ?? "Download failed"); return; }
-    const a = document.createElement("a");
-    a.href = data.url;
-    a.download = data.filename ?? `${name}.zip`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    const ok = await downloadPlugin({ productId });
+    if (!ok) return;
     // acknowledge update
     if (updatedIds.has(productId)) {
       await (supabase as any).rpc("acknowledge_product_files", { _product_ids: [productId] });

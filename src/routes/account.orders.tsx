@@ -164,15 +164,7 @@ function OrderCard({ order, updatedProductIds, onOpen }: { order: Order; updated
   };
 
   async function download(productId: string | null, name: string) {
-    if (!productId) { toast.error("Missing product id"); return; }
-    const { data, error } = await supabase.functions.invoke("r2-download-url", { body: { productId } });
-    if (error || !data?.url) { toast.error(data?.error ?? error?.message ?? "Download failed"); return; }
-    const a = document.createElement("a");
-    a.href = data.url;
-    a.download = data.filename ?? `${name}.zip`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    await downloadPlugin({ productId });
   }
 
   return (
