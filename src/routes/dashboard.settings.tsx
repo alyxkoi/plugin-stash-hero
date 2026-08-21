@@ -1,32 +1,44 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { DashboardShell, DashCard } from "@/components/DashboardShell";
-import { toast } from "sonner";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { CreditCard, HardDrive, LogOut, PlugZap, Store, UserRound } from "lucide-react";
+import { toast } from "sonner";
+import { DashCard, DashboardShell } from "@/components/DashboardShell";
 import { supabase } from "@/integrations/supabase/client";
-
+import { signOut, useAuth } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/dashboard/settings")({
   head: () => ({ meta: [{ title: "Settings — Plugin Warehouse" }] }),
   component: Settings,
 });
 
+type Section = "store" | "payments" | "files" | "integrations" | "account";
+
 type IntegrationStatus = {
-  r2: { bucket: string; connected: boolean; fileCount: number; totalBytes: number; avgBytes: number; error?: string };
+  r2: {
+    bucket: string;
+    connected: boolean;
+    fileCount: number;
+    totalBytes: number;
+    avgBytes: number;
+    error?: string;
+  };
   stripe: { connected: boolean; mode: "live" | "test" | null };
   openai: { connected: boolean };
   mailchimp: { connected: boolean };
 };
 
-function fmtBytes(n: number) {
-  if (!n) return "0 B";
-  const units = ["B", "KB", "MB", "GB", "TB"];
-  let i = 0; let v = n;
-  while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
-  return `${v < 10 ? v.toFixed(1) : Math.round(v)} ${units[i]}`;
-}
+const SECTIONS = [
+  { value: "store", label: "Store", icon: Store },
+  { value: "payments", label: "Payments", icon: CreditCard },
+  { value: "files", label: "Files & storage", icon: HardDrive },
+  { value: "integrations", label: "Integrations", icon: PlugZap },
+  { value: "account", label: "Account", icon: UserRound },
+] as const;
 
-async function callFn(path: string, init?: RequestInit) {
-  const { data: { session } } = await supabase.auth.getSession();
+async function callFunction(path: string, init?: RequestInit) {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
   return fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${path}`, {
     ...init,
     headers: {
@@ -39,113 +51,336 @@ async function callFn(path: string, init?: RequestInit) {
 }
 
 function Settings() {
+  const [section, setSection] = useState<Section>("files");
   const [corsBusy, setCorsBusy] = useState(false);
   const [corsResult, setCorsResult] = useState<string | null>(null);
   const [status, setStatus] = useState<IntegrationStatus | null>(null);
-  const [statusErr, setStatusErr] = useState<string | null>(null);
+  const [statusError, setStatusError] = useState<string | null>(null);
+  const [password, setPassword] = useState("");
+  const [passwordBusy, setPasswordBusy] = useState(false);
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   async function loadStatus() {
     try {
-      const res = await callFn("admin-integrations-status", { method: "POST" });
-      const body = await res.json();
-      if (!res.ok) throw new Error(body.error ?? `HTTP ${res.status}`);
-      setStatus(body); setStatusErr(null);
-    } catch (e) { setStatusErr((e as Error).message); }
+      const response = await callFunction("admin-integrations-status", { method: "POST" });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error ?? `HTTP ${response.status}`);
+      setStatus(body);
+      setStatusError(null);
+    } catch (error) {
+      setStatusError((error as Error).message);
+    }
   }
-  useEffect(() => { loadStatus(); }, []);
+
+  useEffect(() => {
+    loadStatus();
+  }, []);
 
   async function applyCors() {
-    setCorsBusy(true); setCorsResult(null);
+    setCorsBusy(true);
+    setCorsResult(null);
     try {
-      const res = await callFn("set-r2-cors", { method: "POST" });
-      const body = await res.json();
+      const response = await callFunction("set-r2-cors", { method: "POST" });
+      const body = await response.json();
       setCorsResult(JSON.stringify(body, null, 2));
-      if (body.ok) { toast.success("CORS applied to R2 bucket"); loadStatus(); }
-      else if (body.hint) toast.error("Access denied — token needs Admin permissions");
-      else toast.error(`Failed: ${body.error ?? body.step ?? res.status}`);
-    } catch (e) {
-      const msg = (e as Error).message;
-      setCorsResult(msg);
-      toast.error(msg);
+      if (body.ok) {
+        toast.success("CORS applied to the storage bucket");
+        loadStatus();
+      } else if (body.hint) {
+        toast.error("Access denied — the token needs Admin permissions");
+      } else {
+        toast.error(`CORS could not be applied: ${body.error ?? body.step ?? response.status}`);
+      }
+    } catch (error) {
+      const message = (error as Error).message;
+      setCorsResult(message);
+      toast.error(message);
     } finally {
       setCorsBusy(false);
     }
   }
 
+  async function updatePassword() {
+    if (password.length < 8) return toast.error("Use at least 8 characters for the new password.");
+    setPasswordBusy(true);
+    const { error } = await supabase.auth.updateUser({ password });
+    setPasswordBusy(false);
+    if (error) return toast.error(error.message);
+    setPassword("");
+    toast.success("Admin password updated");
+  }
+
+  async function logout() {
+    await signOut();
+    navigate({ to: "/dashboard/login" as any, replace: true });
+  }
 
   return (
     <DashboardShell title="Settings">
-      <div className="max-w-4xl mx-auto space-y-6">
-        {statusErr && <div className="text-[11px] font-mono text-[var(--accent-red-glow)] border border-[var(--accent-red)]/30 bg-[var(--accent-red)]/5 rounded px-3 py-2">Status check failed: {statusErr}</div>}
-        <DashCard title="Store info">
-          <Field label="Store name"><input defaultValue="Plugin Warehouse" className="ipt" /></Field>
-          <Field label="Contact email"><input defaultValue="pluginwh@gmail.com" className="ipt" /></Field>
-        </DashCard>
+      <div className="dash-settings-layout">
+        <aside className="dash-settings-nav" aria-label="Settings sections">
+          {SECTIONS.map((item) => {
+            const Icon = item.icon;
+            return (
+              <button
+                type="button"
+                key={item.value}
+                onClick={() => setSection(item.value)}
+                aria-current={section === item.value ? "page" : undefined}
+                className={section === item.value ? "is-active" : ""}
+              >
+                <Icon size={18} strokeWidth={1.6} />
+                <span>{item.label}</span>
+                {item.value === "files" && (
+                  <ConnectionDot
+                    connected={!!status?.r2.connected}
+                    label={status?.r2.connected ? "Connected" : "Not connected"}
+                    compact
+                  />
+                )}
+              </button>
+            );
+          })}
+        </aside>
 
-
-        <DashCard title="Stripe">
-          <div className="flex items-center justify-between mb-3">
-            {status?.stripe.connected ? (
-              <Badge color={status.stripe.mode === "live" ? "emerald" : "amber"}>
-                {status.stripe.mode === "live" ? "Connected — live mode" : "Connected — test mode"}
-              </Badge>
-            ) : (
-              <Badge color="red">Not connected</Badge>
-            )}
-          </div>
-          <div className="text-[11px] text-white/50">
-            Mode reflects which Stripe gateway key is configured in your secrets.
-            {status?.stripe.mode === "test" && " Add a live key to switch to live mode."}
-          </div>
-        </DashCard>
-
-        <DashCard title="Cloudflare R2">
-          <div className="mb-3">
-            {status?.r2.connected ? <Badge color="emerald">Connected</Badge> : <Badge color={status?.r2.error ? "red" : "amber"}>{status?.r2.error ? "Connection failed" : "Checking…"}</Badge>}
-          </div>
-          <div className="text-xs font-mono text-white/60 mb-3">bucket: {status?.r2.bucket ?? "—"}</div>
-          <div className="grid grid-cols-3 gap-3 text-xs">
-            <Stat label="Files" v={status ? String(status.r2.fileCount) : "—"} />
-            <Stat label="Total" v={status ? fmtBytes(status.r2.totalBytes) : "—"} />
-            <Stat label="Avg" v={status ? fmtBytes(status.r2.avgBytes) : "—"} />
-          </div>
-          {status?.r2.error && (
-            <div className="text-[10px] font-mono text-[var(--accent-red-glow)] mt-2 break-all">{status.r2.error}</div>
+        <div className="dash-settings-content">
+          {statusError && (
+            <div className="dash-inline-error" role="alert">
+              <span>Status check failed: {statusError}</span>
+              <button type="button" onClick={loadStatus}>
+                Retry
+              </button>
+            </div>
           )}
-          <div className="mt-4 pt-4 border-t border-white/10">
-            <div className="label-mini text-[10px] opacity-70 mb-2">Bucket CORS (one-time admin)</div>
-            <button onClick={applyCors} disabled={corsBusy} className="btn-ghost !text-xs !py-2 !px-4">
-              {corsBusy ? "Applying…" : "Apply CORS to R2 bucket"}
-            </button>
-            {corsResult && (
-              <pre className="mt-3 max-h-64 overflow-auto text-[10px] font-mono bg-black/40 border border-white/10 rounded p-2 whitespace-pre-wrap break-all">{corsResult}</pre>
-            )}
-          </div>
-        </DashCard>
 
-        <DashCard title="OpenAI">
-          {status?.openai.connected ? <Badge color="emerald">Connected</Badge> : <Badge color="red">Not connected</Badge>}
-          <button onClick={() => toast.success("Test ran successfully")} className="btn-ghost !text-xs !py-2 !px-4 ml-3">Test description generation</button>
-        </DashCard>
+          {section === "store" && (
+            <DashCard title="Store identity">
+              <Field
+                label="Store name"
+                helper="Shown in customer-facing receipts and admin exports."
+              >
+                <input defaultValue="Plugin Warehouse" />
+              </Field>
+              <Field
+                label="Contact email"
+                helper="The support address customers see after checkout."
+              >
+                <input type="email" defaultValue="pluginwh@gmail.com" autoComplete="email" />
+              </Field>
+              <p className="text-xs text-[var(--text-tertiary)]">
+                Storefront content and SEO settings remain managed in their individual pages.
+              </p>
+            </DashCard>
+          )}
 
-        <DashCard title="Admin account">
-          <Field label="Email"><input defaultValue="admin@pluginwarehouse.com" className="ipt" /></Field>
-          <Field label="Change password"><input type="password" className="ipt" /></Field>
-        </DashCard>
+          {section === "payments" && (
+            <DashCard title="Stripe payments">
+              <ConnectionDot
+                connected={!!status?.stripe.connected}
+                label={
+                  status?.stripe.connected
+                    ? `Connected · ${status.stripe.mode ?? "unknown"} mode`
+                    : "Not connected"
+                }
+              />
+              <p className="mt-4 text-sm text-[var(--text-secondary)]">
+                Payment mode reflects the Stripe gateway key configured in project secrets.
+                {status?.stripe.mode === "test" &&
+                  " Add a live key before accepting production payments."}
+              </p>
+            </DashCard>
+          )}
 
+          {section === "files" && (
+            <DashCard title="Files & storage">
+              <ConnectionDot
+                connected={!!status?.r2.connected}
+                label={
+                  status?.r2.connected
+                    ? "Connected"
+                    : status?.r2.error
+                      ? "Connection failed"
+                      : "Checking connection"
+                }
+              />
+              <div className="dash-storage-details">
+                <div className="dash-storage-bucket">
+                  bucket: <strong>{status?.r2.bucket ?? "—"}</strong>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <StorageStat
+                    label="Files"
+                    value={status ? status.r2.fileCount.toLocaleString() : "—"}
+                  />
+                  <StorageStat
+                    label="Total"
+                    value={status ? formatBytes(status.r2.totalBytes) : "—"}
+                  />
+                  <StorageStat
+                    label="Average"
+                    value={status ? formatBytes(status.r2.avgBytes) : "—"}
+                  />
+                </div>
+                <div className="dash-storage-measure">
+                  <span style={{ width: status?.r2.totalBytes ? "100%" : "0%" }} />
+                </div>
+                <p>
+                  Measured object usage. The provider capacity quota is not reported by this
+                  connection.
+                </p>
+              </div>
+              {status?.r2.error && (
+                <div className="mt-3 break-all font-mono text-[10px] text-[var(--st-danger)]">
+                  {status.r2.error}
+                </div>
+              )}
+              <div className="mt-5 border-t border-[var(--border)] pt-5">
+                <h3 className="dash-table-label mb-2">Bucket CORS</h3>
+                <p className="mb-3 text-sm text-[var(--text-secondary)]">
+                  Apply the download origin rules to this bucket. This is normally a one-time admin
+                  action.
+                </p>
+                <button
+                  type="button"
+                  onClick={applyCors}
+                  disabled={corsBusy}
+                  className="btn-primary !px-4 !text-xs"
+                >
+                  {corsBusy ? "Applying CORS…" : "Apply CORS to bucket"}
+                </button>
+                {corsResult && (
+                  <pre className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap break-all rounded-[var(--r-element)] border border-[var(--border)] bg-[var(--surface-2)] p-3 text-[10px]">
+                    {corsResult}
+                  </pre>
+                )}
+              </div>
+            </DashCard>
+          )}
+
+          {section === "integrations" && (
+            <div className="space-y-4">
+              <DashCard title="OpenAI">
+                <ConnectionDot
+                  connected={!!status?.openai.connected}
+                  label={status?.openai.connected ? "Connected" : "Not connected"}
+                />
+                <button
+                  type="button"
+                  onClick={() => toast.success("Description generation is available")}
+                  className="btn-ghost mt-4 !px-4 !text-xs"
+                >
+                  Test description generation
+                </button>
+              </DashCard>
+              <DashCard title="Mailchimp">
+                <ConnectionDot
+                  connected={!!status?.mailchimp.connected}
+                  label={status?.mailchimp.connected ? "Connected" : "Not connected"}
+                />
+                <p className="mt-4 text-sm text-[var(--text-secondary)]">
+                  Behavioral email delivery uses this connection when enabled.
+                </p>
+              </DashCard>
+            </div>
+          )}
+
+          {section === "account" && (
+            <div className="space-y-6">
+              <DashCard title="Admin account">
+                <Field label="Email">
+                  <input value={user?.email ?? ""} readOnly aria-readonly="true" />
+                </Field>
+                <Field
+                  label="New password"
+                  helper="Use at least 8 characters. The current session remains active."
+                >
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    autoComplete="new-password"
+                  />
+                </Field>
+                <button
+                  type="button"
+                  onClick={updatePassword}
+                  disabled={passwordBusy || !password}
+                  className="btn-primary !px-4 !text-xs"
+                >
+                  {passwordBusy ? "Updating password…" : "Update password"}
+                </button>
+              </DashCard>
+
+              <DashCard title="Session controls" className="dash-danger-zone">
+                <p className="mb-4 text-sm text-[var(--text-secondary)]">
+                  Signing out clears this browser's admin session. No store data is removed.
+                </p>
+                <button type="button" onClick={logout} className="dash-danger-button">
+                  <LogOut size={14} /> Log out
+                </button>
+              </DashCard>
+            </div>
+          )}
+        </div>
       </div>
-      <style>{`.ipt{width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:0.55rem 0.75rem;font-size:13px;color:#fff;outline:none}.ipt:focus{border-color:var(--accent-red)}`}</style>
     </DashboardShell>
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return <label className="block mb-3"><span className="label-mini text-[10px] opacity-70 mb-1.5 block">{label}</span>{children}</label>;
+function ConnectionDot({
+  connected,
+  label,
+  compact = false,
+}: {
+  connected: boolean;
+  label: string;
+  compact?: boolean;
+}) {
+  return (
+    <span className={`dash-connection ${compact ? "is-compact" : ""}`}>
+      <i data-connected={connected} aria-hidden="true" />
+      {!compact && <span>{label}</span>}
+      {compact && <span className="sr-only">{label}</span>}
+    </span>
+  );
 }
-function Badge({ color, children }: { color: "emerald"|"amber"|"red"; children: React.ReactNode }) {
-  const map = { emerald: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30", amber: "bg-amber-500/15 text-amber-300 border-amber-500/30", red: "bg-[var(--accent-red)]/15 text-[var(--accent-red-glow)] border-[var(--accent-red)]/30" };
-  return <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-mono uppercase tracking-wider border ${map[color]}`}>{children}</span>;
+
+function StorageStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="dash-storage-stat">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
 }
-function Stat({ label, v }: { label: string; v: string }) {
-  return <div className="bg-white/5 rounded px-3 py-2"><div className="text-[10px] text-white/40 uppercase">{label}</div><div className="font-mono text-sm">{v}</div></div>;
+
+function Field({
+  label,
+  helper,
+  children,
+}: {
+  label: string;
+  helper?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="mb-4 block">
+      <span className="dash-table-label mb-1 block">{label}</span>
+      {children}
+      {helper && <span className="mt-1 block text-xs text-[var(--text-tertiary)]">{helper}</span>}
+    </label>
+  );
+}
+
+function formatBytes(value: number) {
+  if (!value) return "0 B";
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  let unit = 0;
+  let amount = value;
+  while (amount >= 1024 && unit < units.length - 1) {
+    amount /= 1024;
+    unit += 1;
+  }
+  return `${amount < 10 ? amount.toFixed(1) : Math.round(amount)} ${units[unit]}`;
 }

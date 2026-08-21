@@ -1,18 +1,42 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { DashboardShell, DashCard, StatCard, StatusBadge } from "@/components/DashboardShell";
+import { useReducedMotion } from "framer-motion";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  Line,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import { Clock3, Download, MonitorX, RotateCcw, TicketPercent } from "lucide-react";
+import {
+  ChargedPanel,
+  DashCard,
+  DashboardShell,
+  DomainChip,
+  RangeControl,
+  StatusBadge,
+} from "@/components/DashboardShell";
 import { OrderDrawer } from "@/components/AdminDrawers";
-import { Plus, Tag, Ticket } from "lucide-react";
-import { ResponsiveContainer, Tooltip, XAxis, YAxis, Area, AreaChart, CartesianGrid } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
-import { keptRatio, saleOrders, sumNetRevenue, netRevenue } from "@/lib/revenue";
-import { useIsMobile } from "@/hooks/use-mobile";
-
+import { keptRatio, netRevenue, saleOrders, sumNetRevenue } from "@/lib/revenue";
 
 export const Route = createFileRoute("/dashboard/")({
   head: () => ({ meta: [{ title: "Overview — Plugin Warehouse" }] }),
   component: Overview,
 });
+
+type OverviewRange = "today" | "7d" | "30d" | "mtd";
+
+const RANGE_OPTIONS = [
+  { value: "today", label: "Today" },
+  { value: "7d", label: "7D" },
+  { value: "30d", label: "30D" },
+  { value: "mtd", label: "MTD" },
+] as const;
 
 type OrderRow = {
   id: string;
@@ -20,314 +44,615 @@ type OrderRow = {
   total: number;
   status: string;
   refunded_amount_cents: number | null;
+  refunded_at: string | null;
+  download_count: number;
   created_at: string;
   customer_id: string | null;
   guest_email: string | null;
   customer_name: string | null;
-  order_items: { name: string; price: number; product_id: string | null; cover_gradient: string | null; cover_url: string | null }[];
+  order_items: {
+    name: string;
+    price: number;
+    product_id: string | null;
+    cover_gradient: string | null;
+    cover_url: string | null;
+  }[];
 };
 
+type CustomerLite = {
+  id: string;
+  name: string | null;
+  email: string;
+  created_at: string;
+};
 
-type CustomerLite = { id: string; name: string | null; email: string; last_purchase_at: string | null };
+type AttentionProduct = {
+  id: string;
+  category: string;
+  supports_windows: boolean;
+  supports_mac: boolean;
+};
 
-function formatMoney(n: number) {
-  return `$${Number(n || 0).toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
-}
-function relativeTime(iso: string | null) {
-  if (!iso) return "";
-  const s = (Date.now() - new Date(iso).getTime()) / 1000;
-  if (isNaN(s)) return "";
-  if (s < 60) return "just now";
-  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
-  if (s < 86400 * 30) return `${Math.floor(s / 86400)}d ago`;
-  return new Date(iso).toLocaleDateString("en", { month: "short", day: "numeric" });
-}
-function initialsFrom(name: string | null, email: string) {
-  const src = (name || email || "").trim();
-  return src.split(/[\s@._-]+/).filter(Boolean).map(p => p[0]).slice(0, 2).join("").toUpperCase() || "?";
-}
+type AttentionSale = {
+  id: string;
+  start_at: string;
+  end_at: string;
+  status: string;
+};
 
-function startOfMonth(d = new Date()) { return new Date(d.getFullYear(), d.getMonth(), 1); }
-
-type Grouping = "daily" | "wtd" | "mtd";
-const GROUPING_LABEL: Record<Grouping, string> = { daily: "Daily", wtd: "Week to date", mtd: "Month to date" };
+type AttentionCode = {
+  id: string;
+  uses: number;
+  usage_limit: number | null;
+  status: string;
+};
 
 function Overview() {
-  const [grouping, setGrouping] = useState<Grouping>("daily");
-  const isMobile = useIsMobile();
+  const [range, setRange] = useState<OverviewRange>("30d");
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [customers, setCustomers] = useState<CustomerLite[]>([]);
-  const [newCustomers, setNewCustomers] = useState<number | null>(null);
+  const [products, setProducts] = useState<AttentionProduct[]>([]);
+  const [sales, setSales] = useState<AttentionSale[]>([]);
+  const [codes, setCodes] = useState<AttentionCode[]>([]);
   const [loading, setLoading] = useState(true);
   const [openOrderId, setOpenOrderId] = useState<string | null>(null);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
-      const [{ data: o }, { data: c }] = await Promise.all([
+      const [ordersRes, customersRes, productsRes, salesRes, codesRes] = await Promise.all([
         supabase
           .from("orders")
-          .select("id, number, total, status, refunded_amount_cents, created_at, customer_id, guest_email, customer_name, order_items(name, price, product_id, cover_gradient, cover_url)")
+          .select(
+            "id, number, total, status, refunded_amount_cents, refunded_at, download_count, created_at, customer_id, guest_email, customer_name, order_items(name, price, product_id, cover_gradient, cover_url)",
+          )
           .order("created_at", { ascending: false })
           .limit(1000),
-        supabase.from("customers").select("id, name, email, last_purchase_at"),
+        supabase.from("customers").select("id, name, email, created_at"),
+        supabase.from("products").select("id, category, supports_windows, supports_mac"),
+        supabase.from("sale_events").select("id, start_at, end_at, status"),
+        supabase.from("discount_codes").select("id, uses, usage_limit, status"),
       ]);
 
-      setOrders((o ?? []) as any);
-      setCustomers((c ?? []) as any);
+      if (cancelled) return;
+      setOrders((ordersRes.data ?? []) as OrderRow[]);
+      setCustomers((customersRes.data ?? []) as CustomerLite[]);
+      setProducts((productsRes.data ?? []) as AttentionProduct[]);
+      setSales((salesRes.data ?? []) as AttentionSale[]);
+      setCodes((codesRes.data ?? []) as AttentionCode[]);
       setLoading(false);
     })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  // New customers this month = distinct normalized emails whose FIRST EVER order
-  // is in the current Central-time calendar month (shared identity logic).
-  useEffect(() => {
-    (async () => {
-      const { data, error } = await supabase.rpc("admin_new_customers_this_month");
-      if (error) { console.warn("[overview] new customers failed", error); return; }
-      setNewCustomers(Number(data ?? 0));
-    })();
-  }, []);
-
-  // Revenue everywhere is NET (total − refunds) and only counts orders that are
-  // still sales — see src/lib/revenue.ts.
+  const bounds = useMemo(() => comparisonBounds(range), [range]);
   const completed = useMemo(() => saleOrders(orders), [orders]);
-  const monthStart = startOfMonth();
-  const completedThisMonth = completed.filter(o => new Date(o.created_at) >= monthStart);
-  const todayCentralKey = centralDayKey(new Date());
-  const todayRev = sumNetRevenue(completed.filter(o => centralDayKey(new Date(o.created_at)) === todayCentralKey));
-  const monthRev = sumNetRevenue(completedThisMonth);
+  const currentOrders = useMemo(
+    () =>
+      completed.filter((order) => within(order.created_at, bounds.currentStart, bounds.currentEnd)),
+    [completed, bounds],
+  );
+  const previousOrders = useMemo(
+    () =>
+      completed.filter((order) =>
+        within(order.created_at, bounds.previousStart, bounds.previousEnd),
+      ),
+    [completed, bounds],
+  );
+  const currentRevenue = sumNetRevenue(currentOrders);
+  const previousRevenue = sumNetRevenue(previousOrders);
+  const currentAov = currentOrders.length ? currentRevenue / currentOrders.length : 0;
+  const previousAov = previousOrders.length ? previousRevenue / previousOrders.length : 0;
+  const currentCustomers = customers.filter((customer) =>
+    within(customer.created_at, bounds.currentStart, bounds.currentEnd),
+  ).length;
+  const previousCustomers = customers.filter((customer) =>
+    within(customer.created_at, bounds.previousStart, bounds.previousEnd),
+  ).length;
+  const revenueDelta = percentDelta(currentRevenue, previousRevenue);
+  const ordersDelta = percentDelta(currentOrders.length, previousOrders.length);
+  const customersDelta = percentDelta(currentCustomers, previousCustomers);
+  const aovDelta = percentDelta(currentAov, previousAov);
 
   const series = useMemo(
-    () => buildSeries(completed, grouping, isMobile ? 5 : 7),
-    [completed, grouping, isMobile],
+    () => buildComparisonSeries(completed, bounds, range),
+    [completed, bounds, range],
+  );
+  const recent = orders.slice(0, 7);
+  const customerLookup = useMemo(
+    () => new Map(customers.map((customer) => [customer.id, customer])),
+    [customers],
   );
 
-
-  const recent = useMemo(() => [...orders].slice(0, 10), [orders]);
-
   const best = useMemo(() => {
-    const map = new Map<string, { name: string; cover: string | null; coverUrl: string | null; units: number; revenue: number }>();
-    for (const o of completedThisMonth) {
-      // Partially refunded orders contribute pro-rated line revenue.
-      const ratio = keptRatio(o);
-      for (const it of o.order_items ?? []) {
-        const key = it.product_id || it.name;
-        const cur = map.get(key) ?? { name: it.name, cover: it.cover_gradient, coverUrl: it.cover_url ?? null, units: 0, revenue: 0 };
-        if (!cur.coverUrl && it.cover_url) cur.coverUrl = it.cover_url;
-        cur.units += 1;
-        cur.revenue += Number(it.price || 0) * ratio;
-        map.set(key, cur);
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+    const monthOrders = completed.filter((order) => new Date(order.created_at) >= monthStart);
+    const map = new Map<
+      string,
+      {
+        name: string;
+        cover: string | null;
+        coverUrl: string | null;
+        units: number;
+        revenue: number;
+      }
+    >();
+
+    for (const order of monthOrders) {
+      const ratio = keptRatio(order);
+      for (const item of order.order_items ?? []) {
+        const key = item.product_id || item.name;
+        const current = map.get(key) ?? {
+          name: item.name,
+          cover: item.cover_gradient,
+          coverUrl: item.cover_url,
+          units: 0,
+          revenue: 0,
+        };
+        current.units += 1;
+        current.revenue += Number(item.price || 0) * ratio;
+        if (!current.coverUrl && item.cover_url) current.coverUrl = item.cover_url;
+        map.set(key, current);
       }
     }
     return [...map.values()].sort((a, b) => b.units - a.units).slice(0, 5);
-  }, [completedThisMonth]);
+  }, [completed]);
+  const bestMax = Math.max(1, ...best.map((item) => item.units));
 
-
-  const customerLookup = useMemo(() => new Map(customers.map(c => [c.id, c])), [customers]);
+  const now = Date.now();
+  const sevenDaysAgo = now - 7 * 86400_000;
+  const fortyEightHours = now + 48 * 3600_000;
+  const attention = [
+    {
+      label: "Refunds in the last 7 days",
+      count: orders.filter(
+        (order) => order.refunded_at && new Date(order.refunded_at).getTime() >= sevenDaysAgo,
+      ).length,
+      tone: "danger",
+      icon: RotateCcw,
+      to: "/dashboard/orders",
+    },
+    {
+      label: "Orders with an unclaimed download",
+      count: orders.filter(
+        (order) => order.status === "completed" && Number(order.download_count || 0) === 0,
+      ).length,
+      tone: "warning",
+      icon: Download,
+      to: "/dashboard/orders",
+    },
+    {
+      label: "Products missing platform tags",
+      count: products.filter(
+        (product) =>
+          product.category !== "libraries" && !product.supports_windows && !product.supports_mac,
+      ).length,
+      tone: "warning",
+      icon: MonitorX,
+      to: "/dashboard/products",
+    },
+    {
+      label: "Sales ending in under 48 hours",
+      count: sales.filter((sale) => {
+        const starts = new Date(sale.start_at).getTime();
+        const ends = new Date(sale.end_at).getTime();
+        return sale.status !== "draft" && starts <= now && ends > now && ends <= fortyEightHours;
+      }).length,
+      tone: "warning",
+      icon: Clock3,
+      to: "/dashboard/sales",
+    },
+    {
+      label: "Codes near their usage limit",
+      count: codes.filter(
+        (code) =>
+          code.status === "active" && code.usage_limit && code.uses / code.usage_limit >= 0.8,
+      ).length,
+      tone: "neutral",
+      icon: TicketPercent,
+      to: "/dashboard/marketing",
+    },
+  ] as const;
 
   return (
-    <DashboardShell title="Overview">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard label="Revenue today" value={formatMoney(todayRev)} />
-        <StatCard label="Revenue this month" value={formatMoney(monthRev)} />
-        <StatCard label="Orders this month" value={completedThisMonth.length.toString()} />
-        <StatCard label="New customers this month" value={(newCustomers ?? 0).toString()} />
-      </div>
-
-      <DashCard
-        title="Revenue over time"
-        className="mb-6"
-        action={
-          <div className="flex gap-1 p-0.5 rounded-lg border border-white/10">
-            {(["daily", "wtd", "mtd"] as const).map(g => (
-              <button key={g} onClick={() => setGrouping(g)} className={`px-2.5 py-1 rounded-md text-[10px] uppercase tracking-wider font-mono whitespace-nowrap transition ${grouping === g ? "bg-[var(--accent-red)] text-white" : "text-white/60 hover:text-white"}`}>{GROUPING_LABEL[g]}</button>
-            ))}
-          </div>
-        }
-
-      >
-        <div className="h-64">
-          {loading || series.length === 0 ? (
-            <div className="h-full flex items-center justify-center text-white/40 text-xs font-mono">
-              {loading ? "Loading…" : "No revenue yet. Live data will appear here after your first completed order."}
+    <DashboardShell
+      title="Overview"
+      action={<RangeControl value={range} onChange={setRange} options={RANGE_OPTIONS} />}
+    >
+      <div className="space-y-6">
+        <ChargedPanel domain="money" title="Revenue">
+          <div className="dash-hero-layout">
+            <div className="dash-hero-topline">
+              <div className="dash-hero-value">{formatMoney(currentRevenue)}</div>
+              <div className="dash-hero-comparison">
+                {revenueDelta.arrow} {revenueDelta.label} vs previous period
+              </div>
             </div>
-          ) : (
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={series} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="rev" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#FF003C" stopOpacity={0.45} />
-                    <stop offset="100%" stopColor="#FF003C" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
-                <XAxis dataKey="label" stroke="rgba(255,255,255,0.4)" fontSize={10} tickLine={false} axisLine={false} interval="preserveStartEnd" minTickGap={24} tickMargin={8} />
+            <div
+              className="dash-hero-chart"
+              role="img"
+              aria-label={`Revenue trend for the selected range: ${formatMoney(currentRevenue)}, ${revenueDelta.label} versus the previous period.`}
+            >
+              {loading ? (
+                <div className="skeleton-block h-full" />
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={series} margin={{ top: 8, right: 6, left: -18, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="overview-revenue-fill" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#FFFFFF" stopOpacity={0.28} />
+                        <stop offset="100%" stopColor="#FFFFFF" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid stroke="rgba(255,255,255,0.18)" vertical={false} />
+                    <XAxis
+                      dataKey="label"
+                      tickLine={false}
+                      axisLine={false}
+                      minTickGap={24}
+                      tick={{ fill: "rgba(255,255,255,0.72)", fontSize: 10 }}
+                    />
+                    <YAxis
+                      tickLine={false}
+                      axisLine={false}
+                      width={54}
+                      tickFormatter={(value) => `$${value}`}
+                      tick={{ fill: "rgba(255,255,255,0.72)", fontSize: 10 }}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        background: "#2D1450",
+                        border: "1px solid rgba(255,255,255,.18)",
+                        borderRadius: 10,
+                        boxShadow: "none",
+                        fontFamily: "var(--f-data)",
+                      }}
+                      formatter={(value: number, key: string) => [
+                        moneyExact(value),
+                        key === "current" ? "Current" : "Previous",
+                      ]}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="previous"
+                      stroke="rgba(255,255,255,0.38)"
+                      strokeWidth={1.5}
+                      strokeDasharray="5 5"
+                      dot={false}
+                      isAnimationActive={false}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="current"
+                      stroke="#FFFFFF"
+                      strokeWidth={2}
+                      fill="url(#overview-revenue-fill)"
+                      dot={false}
+                      isAnimationActive={!reduceMotion}
+                      animationDuration={500}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </div>
+          <div className="dash-charged-stat-grid">
+            <ChargedStat label="Revenue" value={formatMoney(currentRevenue)} delta={revenueDelta} />
+            <ChargedStat
+              label="Orders"
+              value={currentOrders.length.toLocaleString()}
+              delta={ordersDelta}
+            />
+            <ChargedStat
+              label="New customers"
+              value={currentCustomers.toLocaleString()}
+              delta={customersDelta}
+            />
+            <ChargedStat label="Average order" value={moneyExact(currentAov)} delta={aovDelta} />
+          </div>
+        </ChargedPanel>
 
-                <YAxis stroke="rgba(255,255,255,0.4)" fontSize={10} tickFormatter={(v) => `$${v}`} tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={{ background: "#1F0540", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, fontSize: 12 }} formatter={(v: number) => formatMoney(v)} />
-                <Area type="monotone" dataKey="value" stroke="#FF003C" strokeWidth={2} fill="url(#rev)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          )}
-        </div>
-      </DashCard>
+        <DashCard title="Needs attention">
+          <div className="dash-attention-grid dash-attention-edge">
+            {attention.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.label}
+                  to={item.to as any}
+                  className="dash-attention-item"
+                  data-tone={item.count === 0 ? "neutral" : item.tone}
+                >
+                  <Icon size={20} strokeWidth={1.6} aria-hidden="true" />
+                  <span className="dash-attention-count">{item.count}</span>
+                  <span className="dash-attention-label">{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </DashCard>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
-        <div className="lg:col-span-3">
-          <DashCard title="Recent orders" action={<Link to="/dashboard/orders" className="text-xs text-white/60 hover:text-white">View all →</Link>}>
-            <div className="overflow-x-auto -mx-2">
-              <table className="w-full text-sm">
-                <thead className="text-[10px] uppercase tracking-wider text-white/40">
-                  <tr><th className="text-left px-2 py-2">Order</th><th className="text-left px-2 py-2">Customer</th><th className="text-left px-2 py-2">Items</th><th className="text-right px-2 py-2">Total</th><th className="text-left px-2 py-2">Status</th><th className="text-right px-2 py-2">Time</th></tr>
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+          <DashCard
+            title="Recent orders"
+            className="xl:col-span-7"
+            action={
+              <Link
+                to="/dashboard/orders"
+                className="text-xs text-[var(--text-tertiary)] hover:text-white"
+              >
+                View all →
+              </Link>
+            }
+          >
+            <div className="dash-desktop-table -m-5 overflow-x-auto">
+              <table>
+                <thead>
+                  <tr>
+                    <th className="text-left px-4">Order</th>
+                    <th className="text-left px-4">Customer</th>
+                    <th className="text-left px-4">Items</th>
+                    <th className="text-right px-4">Total</th>
+                    <th className="text-left px-4">Status</th>
+                    <th className="text-right px-4">Time</th>
+                  </tr>
                 </thead>
                 <tbody>
-                  {recent.map(o => {
-                    const cust = o.customer_id ? customerLookup.get(o.customer_id) : null;
-                    const displayName = o.customer_name || cust?.name || null;
-                    const label = displayName || cust?.email || o.guest_email || "Guest";
-                    const sub = displayName ? (cust?.email || o.guest_email || null) : null;
-                    const ini = initialsFrom(displayName, cust?.email || o.guest_email || "?");
+                  {recent.map((order) => {
+                    const customer = order.customer_id
+                      ? customerLookup.get(order.customer_id)
+                      : null;
+                    const displayName = order.customer_name || customer?.name || null;
+                    const email = customer?.email || order.guest_email || "";
                     return (
-                      <tr key={o.id} onClick={() => setOpenOrderId(o.id)} className="border-t border-white/5 hover:bg-white/[0.03] cursor-pointer">
-                        <td className="px-2 py-3 font-mono text-xs text-white hover:text-[var(--accent-red-glow)]">{o.number}</td>
-                        <td className="px-2 py-3">
-                          <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[var(--accent-red)] to-[var(--accent-blue)] flex items-center justify-center text-[9px] font-bold">{ini}</div>
-                            <span className="min-w-0">
-                              <span className="block text-xs truncate max-w-[160px]">{label}</span>
-                              {sub && <span className="block font-mono text-[10px] text-white/45 truncate max-w-[160px]">{sub}</span>}
-                            </span>
-                          </div>
-
+                      <tr
+                        key={order.id}
+                        onClick={() => setOpenOrderId(order.id)}
+                        className="cursor-pointer"
+                      >
+                        <td className="px-4 font-mono text-xs text-[var(--c-volume)]">
+                          {order.number}
                         </td>
-                        <td className="px-2 py-3 text-xs text-white/60">{o.order_items?.length ?? 0}</td>
-                        <td className="px-2 py-3 text-right font-mono text-xs">{formatMoney(Number(o.total))}</td>
-                        <td className="px-2 py-3"><StatusBadge status={o.status} /></td>
-                        <td className="px-2 py-3 text-right font-mono text-[10px] text-white/50">{relativeTime(o.created_at)}</td>
+                        <td className="px-4">
+                          <div className="text-sm text-white">
+                            {displayName || email || "Guest"}
+                          </div>
+                          {displayName && email && (
+                            <div className="font-mono text-[10px] text-[var(--text-tertiary)]">
+                              {email}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-4 text-xs">{order.order_items?.length ?? 0}</td>
+                        <td
+                          className={`px-4 text-right font-mono text-xs ${Number(order.total) === 0 ? "text-[var(--text-disabled)]" : "text-white"}`}
+                        >
+                          {moneyExact(netRevenue(order))}
+                        </td>
+                        <td className="px-4">
+                          <StatusBadge status={order.status} />
+                        </td>
+                        <td className="px-4 text-right font-mono text-[10px] text-[var(--text-tertiary)]">
+                          {relativeTime(order.created_at)}
+                        </td>
                       </tr>
                     );
                   })}
-                  {recent.length === 0 && (
-                    <tr><td colSpan={6} className="px-2 py-12 text-center text-white/40 text-sm">{loading ? "Loading…" : "No orders yet."}</td></tr>
-                  )}
                 </tbody>
               </table>
             </div>
+
+            <ul className="dash-mobile-list -mx-4 -my-4">
+              {recent.map((order) => (
+                <li key={order.id} className="border-b border-[var(--border)] last:border-b-0">
+                  <button
+                    type="button"
+                    onClick={() => setOpenOrderId(order.id)}
+                    className="w-full min-h-[72px] grid grid-cols-[minmax(0,1fr)_auto] gap-3 items-center px-4 py-3 text-left"
+                  >
+                    <span className="min-w-0">
+                      <span className="block font-mono text-xs text-[var(--c-volume)]">
+                        {order.number}
+                      </span>
+                      <span className="block truncate text-sm text-white">
+                        {order.customer_name || order.guest_email || "Guest"}
+                      </span>
+                      <span className="block text-[10px] font-mono text-[var(--text-tertiary)]">
+                        {relativeTime(order.created_at)}
+                      </span>
+                    </span>
+                    <span className="text-right">
+                      <span className="block font-mono text-sm text-white">
+                        {moneyExact(netRevenue(order))}
+                      </span>
+                      <StatusBadge status={order.status} />
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+
+            {!loading && recent.length === 0 && (
+              <div className="dash-empty">
+                <p>No orders yet. Completed purchases will appear here.</p>
+              </div>
+            )}
           </DashCard>
-        </div>
-        <div className="lg:col-span-2">
-          <DashCard title="Best sellers this month" action={<Link to="/dashboard/analytics" className="text-xs text-white/60 hover:text-white">View all →</Link>}>
+
+          <DashCard
+            title="Best sellers this month"
+            className="xl:col-span-5"
+            action={
+              <Link
+                to="/dashboard/analytics"
+                className="text-xs text-[var(--text-tertiary)] hover:text-white"
+              >
+                View all →
+              </Link>
+            }
+          >
             {best.length === 0 ? (
-              <div className="py-8 text-center text-white/40 text-xs font-mono">{loading ? "Loading…" : "No sales this month yet."}</div>
+              <div className="dash-empty">
+                <p>{loading ? "Loading best sellers…" : "No products sold this month yet."}</p>
+              </div>
             ) : (
-              <ul className="space-y-3">
-                {best.map((b, i) => (
-                  <li key={b.name + i} className="flex items-center gap-3">
-                    <span className="font-mono text-sm text-white/40 w-5">{i + 1}</span>
-                    <div
-                      className="w-10 h-10 rounded-md flex-shrink-0 bg-cover bg-center"
+              <ol className="dash-rank-list">
+                {best.map((item, index) => (
+                  <li key={`${item.name}-${index}`} className="dash-rank-row">
+                    <span className="dash-rank-number" aria-hidden="true">
+                      {index + 1}
+                    </span>
+                    <span
+                      className="dash-rank-thumb"
                       style={{
-                        background: b.coverUrl
-                          ? `url(${b.coverUrl}) center/cover`
-                          : (b.cover || "linear-gradient(135deg,#FF003C,#4066FF)"),
+                        backgroundImage: item.coverUrl
+                          ? `url(${item.coverUrl})`
+                          : item.cover || "linear-gradient(135deg,#2D1450,#3DE0F5)",
                       }}
                     />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs text-white truncate">{b.name}</div>
-                      <div className="text-[10px] text-white/50 font-mono">{formatMoney(b.revenue)}</div>
-                    </div>
-                    <span className="font-mono text-sm">{b.units}</span>
+                    <span className="dash-rank-main">
+                      <span className="dash-rank-name">{item.name}</span>
+                      <span className="dash-rank-bar">
+                        <span style={{ width: `${Math.max(4, (item.units / bestMax) * 100)}%` }} />
+                      </span>
+                      {item.revenue === 0 && (
+                        <DomainChip domain="neutral" className="mt-1">
+                          Zero revenue
+                        </DomainChip>
+                      )}
+                    </span>
+                    <span className="dash-rank-metric">
+                      <small>Units</small>
+                      {item.units}
+                    </span>
+                    <span className="dash-rank-metric">
+                      <small>Revenue</small>
+                      {moneyExact(item.revenue)}
+                    </span>
                   </li>
                 ))}
-
-              </ul>
+              </ol>
             )}
           </DashCard>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <QuickTile icon={<Plus size={18} />} title="Add product" to="/dashboard/products/new" />
-        <QuickTile icon={<Tag size={18} />} title="Create sale event" to="/dashboard/sales/new" />
-        <QuickTile icon={<Ticket size={18} />} title="Generate discount code" to="/dashboard/marketing" />
-      </div>
-
-      <OrderDrawer open={!!openOrderId} orderId={openOrderId} onClose={() => setOpenOrderId(null)} />
+      <OrderDrawer
+        open={!!openOrderId}
+        orderId={openOrderId}
+        onClose={() => setOpenOrderId(null)}
+      />
     </DashboardShell>
   );
 }
 
-/* ---- Central-time (America/Chicago) day bucketing ---------------------- */
-
-const CENTRAL_TZ = "America/Chicago";
-const CENTRAL_DAY_FMT = new Intl.DateTimeFormat("en-CA", { timeZone: CENTRAL_TZ, year: "numeric", month: "2-digit", day: "2-digit" });
-const CENTRAL_WEEKDAY_FMT = new Intl.DateTimeFormat("en-US", { timeZone: CENTRAL_TZ, weekday: "short" });
-const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-/** "YYYY-MM-DD" for the Central-time calendar day containing `d`. */
-function centralDayKey(d: Date) {
-  return CENTRAL_DAY_FMT.format(d);
-}
-
-/** A stable noon-UTC anchor for a Central calendar day key, for labels/math. */
-function anchorFor(key: string) {
-  const [y, m, day] = key.split("-").map(Number);
-  return new Date(Date.UTC(y, m - 1, day, 12));
-}
-
-function keyFromAnchor(d: Date) {
-  return d.toISOString().slice(0, 10);
-}
-
-/**
- * Daily buckets in Central time. Windows:
- *  - daily: the last `dailyWindow` days ending today (5 on mobile, 7 elsewhere)
- *  - wtd:   most recent Sunday → today
- *  - mtd:   1st of the current month → today
- * Every day in the window is emitted (zero-filled) so the x-axis is continuous.
- */
-function buildSeries(orders: OrderRow[], grouping: Grouping, dailyWindow: number) {
-  const now = new Date();
-  const todayKey = centralDayKey(now);
-  const today = anchorFor(todayKey);
-
-  let days: number;
-  if (grouping === "wtd") {
-    days = WEEKDAYS.indexOf(CENTRAL_WEEKDAY_FMT.format(now)) + 1;
-  } else if (grouping === "mtd") {
-    days = Number(todayKey.slice(8, 10));
-  } else {
-    days = dailyWindow;
-  }
-  if (!days || days < 1) days = 1;
-
-  const buckets = new Map<string, number>();
-  for (const o of orders) buckets.set(centralDayKey(new Date(o.created_at)), (buckets.get(centralDayKey(new Date(o.created_at))) ?? 0) + netRevenue(o));
-
-  const out: { key: string; label: string; value: number }[] = [];
-  for (let i = days - 1; i >= 0; i--) {
-    const d = new Date(today.getTime() - i * 86400_000);
-    const key = keyFromAnchor(d);
-    out.push({
-      key,
-      label: d.toLocaleDateString("en", { timeZone: "UTC", month: "short", day: "numeric" }),
-      value: Math.round((buckets.get(key) ?? 0) * 100) / 100,
-    });
-  }
-  return out;
-}
-
-
-function QuickTile({ icon, title, to }: { icon: React.ReactNode; title: string; to: string }) {
+function ChargedStat({
+  label,
+  value,
+  delta,
+}: {
+  label: string;
+  value: string;
+  delta: { label: string; positive: boolean | null; arrow: string };
+}) {
   return (
-    <Link to={to as any} className="glass-card p-5 flex items-center gap-3 hover:translate-y-[-2px] transition group">
-      <div className="chromatic-edge" />
-      <div className="relative z-10 flex items-center gap-3 w-full">
-        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[var(--accent-red)]/30 to-[var(--accent-blue)]/30 flex items-center justify-center text-[var(--accent-red-glow)]">{icon}</div>
-        <span className="text-sm">{title}</span>
-        <span className="ml-auto text-white/40 group-hover:text-white transition">→</span>
+    <div className="dash-charged-stat">
+      <div className="dash-charged-stat-label">{label}</div>
+      <div className="dash-charged-stat-value">
+        {value}{" "}
+        <small className="text-[11px] opacity-75">
+          {delta.arrow}
+          {delta.label}
+        </small>
       </div>
-    </Link>
+    </div>
   );
+}
+
+function comparisonBounds(range: OverviewRange) {
+  const currentEnd = new Date();
+  const currentStart = new Date(currentEnd);
+  if (range === "today") {
+    currentStart.setHours(0, 0, 0, 0);
+  } else if (range === "7d") {
+    currentStart.setDate(currentStart.getDate() - 6);
+    currentStart.setHours(0, 0, 0, 0);
+  } else if (range === "30d") {
+    currentStart.setDate(currentStart.getDate() - 29);
+    currentStart.setHours(0, 0, 0, 0);
+  } else {
+    currentStart.setDate(1);
+    currentStart.setHours(0, 0, 0, 0);
+  }
+  const duration = currentEnd.getTime() - currentStart.getTime();
+  const previousEnd = new Date(currentStart.getTime() - 1);
+  const previousStart = new Date(previousEnd.getTime() - duration);
+  return { currentStart, currentEnd, previousStart, previousEnd };
+}
+
+function buildComparisonSeries(
+  orders: OrderRow[],
+  bounds: ReturnType<typeof comparisonBounds>,
+  range: OverviewRange,
+) {
+  const hourly = range === "today";
+  const step = hourly ? 3600_000 : 86400_000;
+  const points = hourly
+    ? 24
+    : Math.max(1, Math.ceil((bounds.currentEnd.getTime() - bounds.currentStart.getTime()) / step));
+  return Array.from({ length: points }, (_, index) => {
+    const currentStart = new Date(bounds.currentStart.getTime() + index * step);
+    const currentEnd = new Date(currentStart.getTime() + step);
+    const previousStart = new Date(bounds.previousStart.getTime() + index * step);
+    const previousEnd = new Date(previousStart.getTime() + step);
+    return {
+      label: hourly
+        ? currentStart.toLocaleTimeString("en", { hour: "numeric" })
+        : currentStart.toLocaleDateString("en", { month: "short", day: "numeric" }),
+      current: sumNetRevenue(
+        orders.filter((order) => within(order.created_at, currentStart, currentEnd)),
+      ),
+      previous: sumNetRevenue(
+        orders.filter((order) => within(order.created_at, previousStart, previousEnd)),
+      ),
+    };
+  });
+}
+
+function within(iso: string, start: Date, end: Date) {
+  const time = new Date(iso).getTime();
+  return time >= start.getTime() && time <= end.getTime();
+}
+
+function percentDelta(current: number, previous: number) {
+  if (current === 0 && previous === 0) return { label: "0%", positive: null, arrow: "→ " };
+  if (previous === 0) return { label: "100%", positive: true, arrow: "↑ " };
+  const value = Math.round(Math.abs((current - previous) / previous) * 100);
+  return {
+    label: `${value}%`,
+    positive: current === previous ? null : current > previous,
+    arrow: current === previous ? "→ " : current > previous ? "↑ " : "↓ ",
+  };
+}
+
+function formatMoney(value: number) {
+  return `$${Number(value || 0).toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
+}
+
+function moneyExact(value: number) {
+  return `$${Number(value || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function relativeTime(iso: string) {
+  const seconds = (Date.now() - new Date(iso).getTime()) / 1000;
+  if (seconds < 60) return "just now";
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+  if (seconds < 86400 * 30) return `${Math.floor(seconds / 86400)}d ago`;
+  return new Date(iso).toLocaleDateString("en", { month: "short", day: "numeric" });
 }

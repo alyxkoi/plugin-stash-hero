@@ -1,9 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
-import { DashboardShell, DashCard } from "@/components/DashboardShell";
-import { CustomerDrawer, type CustomerDrawerData } from "@/components/AdminDrawers";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Search } from "lucide-react";
+import {
+  ChargedPanel,
+  DashCard,
+  DashboardShell,
+  DomainChip,
+  StatCard,
+} from "@/components/DashboardShell";
+import { CustomerDrawer, type CustomerDrawerData } from "@/components/AdminDrawers";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchOrderIdentity, type IdentityMap } from "@/lib/customer-identity";
+import { netRevenue } from "@/lib/revenue";
 
 export const Route = createFileRoute("/dashboard/customers/")({
   head: () => ({ meta: [{ title: "Customers — Plugin Warehouse" }] }),
@@ -27,29 +35,27 @@ type Row = {
   total_count: number;
 };
 
-type DrawerOrder = { id: string; number: string; total: number; status: string; created_at: string };
-
-function money(n: number) {
-  return `$${Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
-function relTime(iso: string | null) {
-  if (!iso) return "—";
-  const s = (Date.now() - new Date(iso).getTime()) / 1000;
-  if (s < 60) return "just now";
-  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
-  if (s < 86400 * 30) return `${Math.floor(s / 86400)}d ago`;
-  return new Date(iso).toLocaleDateString("en", { month: "short", day: "numeric", year: "numeric" });
-}
-function initialsFrom(name: string | null, email: string) {
-  const src = (name || email || "").trim();
-  return src.split(/[\s@._-]+/).filter(Boolean).map(p => p[0]).slice(0, 2).join("").toUpperCase() || "?";
-}
+type DrawerOrder = {
+  id: string;
+  number: string;
+  total: number;
+  status: string;
+  created_at: string;
+};
+type MetricOrder = {
+  id: string;
+  total: number;
+  status: string;
+  refunded_amount_cents: number | null;
+  created_at: string;
+};
 
 function CustomersPage() {
   const [rows, setRows] = useState<Row[]>([]);
+  const [topCustomers, setTopCustomers] = useState<Row[]>([]);
+  const [metricOrders, setMetricOrders] = useState<MetricOrder[]>([]);
+  const [identity, setIdentity] = useState<IdentityMap>(() => new Map());
   const [total, setTotal] = useState(0);
-  const [stats, setStats] = useState<{ total_customers: number; new_this_month: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState("");
@@ -60,53 +66,77 @@ function CustomersPage() {
   const [openKey, setOpenKey] = useState<string | null>(null);
   const [drawerOrders, setDrawerOrders] = useState<DrawerOrder[]>([]);
 
-  // Debounce typing so each keystroke doesn't fire a query.
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedQ(q.trim()), 300);
-    return () => clearTimeout(t);
+    const timer = window.setTimeout(() => setDebouncedQ(q.trim()), 300);
+    return () => window.clearTimeout(timer);
   }, [q]);
 
-  // Any change to the query/filters restarts at page 1 (server-side scoped).
-  useEffect(() => { setPage(1); }, [debouncedQ, filter, sort]);
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedQ, filter, sort]);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data, error: err } = await supabase.rpc("admin_customer_list", {
+    const { data, error: loadError } = await supabase.rpc("admin_customer_list", {
       _q: debouncedQ,
       _filter: filter,
       _sort: sort,
       _limit: PAGE_SIZE,
       _offset: (page - 1) * PAGE_SIZE,
     });
-    if (err) {
-      // Surface the real Postgres error — guessing cost us a full regression cycle.
-      console.error("[customers] list failed", err.code, err.message, err.details, err.hint);
-      setError(`Couldn't load customers${err.code ? ` (${err.code})` : ""}: ${err.message}`);
+    if (loadError) {
+      console.error("[customers] list failed", loadError);
+      setError(
+        `Couldn't load customers${loadError.code ? ` (${loadError.code})` : ""}: ${loadError.message}`,
+      );
     } else {
-      setError(null);
       const list = (data ?? []) as Row[];
       setRows(list);
       setTotal(list.length ? Number(list[0].total_count) : 0);
+      setError(null);
     }
     setLoading(false);
   }, [debouncedQ, filter, sort, page]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
-      const { data, error: err } = await supabase.rpc("admin_customer_stats");
-      if (err) { console.warn("[customers] stats failed", err); return; }
-      const s = Array.isArray(data) ? data[0] : data;
-      if (s) setStats(s as any);
+      const [topRes, ordersRes, identityMap] = await Promise.all([
+        supabase.rpc("admin_customer_list", {
+          _q: "",
+          _filter: "all",
+          _sort: "top",
+          _limit: 5,
+          _offset: 0,
+        }),
+        supabase
+          .from("orders")
+          .select("id, total, status, refunded_amount_cents, created_at")
+          .order("created_at", { ascending: false })
+          .limit(5000),
+        fetchOrderIdentity(),
+      ]);
+      if (cancelled) return;
+      if (!topRes.error) setTopCustomers((topRes.data ?? []) as Row[]);
+      setMetricOrders((ordersRes.data ?? []) as MetricOrder[]);
+      setIdentity(identityMap);
     })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const selected = openKey ? rows.find(r => r.key === openKey) ?? null : null;
+  const selected = openKey ? (rows.find((row) => row.key === openKey) ?? null) : null;
 
-  // Orders for the open customer only — no full-table fetch.
   useEffect(() => {
-    if (!selected) { setDrawerOrders([]); return; }
+    if (!selected) {
+      setDrawerOrders([]);
+      return;
+    }
     let cancelled = false;
     (async () => {
       let query = supabase
@@ -117,145 +147,266 @@ function CustomersPage() {
       query = selected.customer_id
         ? query.eq("customer_id", selected.customer_id)
         : query.is("customer_id", null).ilike("guest_email", selected.email);
-      const { data, error: err } = await query;
-      if (cancelled) return;
-      if (err) { console.warn("[customers] drawer orders failed", err); return; }
-      setDrawerOrders((data ?? []).map(o => ({ ...o, total: Number(o.total) })) as DrawerOrder[]);
+      const { data, error: ordersError } = await query;
+      if (cancelled || ordersError) return;
+      setDrawerOrders(
+        (data ?? []).map((order) => ({ ...order, total: Number(order.total) })) as DrawerOrder[],
+      );
     })();
-    return () => { cancelled = true; };
-  }, [selected?.key, selected?.customer_id, selected?.email]);
+    return () => {
+      cancelled = true;
+    };
+  }, [selected]);
+
+  const metrics = useMemo(() => {
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const previousMonthEnd = new Date(monthStart.getTime() - 1);
+    const current = customerMetrics(metricOrders, identity);
+    const prior = customerMetrics(metricOrders, identity, previousMonthEnd);
+    const newCurrent = firstCustomersBetween(identity, monthStart, now);
+    const newPrevious = firstCustomersBetween(identity, previousMonthStart, previousMonthEnd);
+    return { current, prior, newCurrent, newPrevious };
+  }, [metricOrders, identity]);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const totalDelta = percentDelta(metrics.current.total, metrics.prior.total);
+  const newDelta = percentDelta(metrics.newCurrent, metrics.newPrevious);
+  const repeatDelta = percentDelta(metrics.current.repeatRate, metrics.prior.repeatRate);
+  const ltvDelta = percentDelta(metrics.current.averageLtv, metrics.prior.averageLtv);
 
   return (
     <DashboardShell title="Customers">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-        <SummaryStat label="Total customers" value={(stats?.total_customers ?? total).toString()} />
-        <SummaryStat label="New this month" value={(stats?.new_this_month ?? 0).toString()} />
-      </div>
-
-      <div className="flex flex-wrap gap-3 mb-4">
-        <div className="relative flex-1 min-w-[240px] max-w-[360px]">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
-          <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search name or email" className="w-full bg-white/5 border border-white/15 rounded-lg pl-9 pr-3 py-2 text-sm outline-none focus:border-[var(--accent-red)]" />
-        </div>
-        <div className="flex gap-1 p-0.5 rounded-lg border border-white/10">
-          {(["all", "new", "returning"] as const).map(f => (
-            <button key={f} onClick={() => setFilter(f)} className={`px-3 py-1.5 rounded-md text-[10px] uppercase tracking-wider font-mono transition ${filter === f ? "bg-[var(--accent-red)] text-white" : "text-white/60 hover:text-white"}`}>{f === "all" ? "All" : f === "new" ? "New" : "Returning"}</button>
-          ))}
-        </div>
-        <select value={sort} onChange={e => setSort(e.target.value as any)} className="bg-white/5 border border-white/15 rounded-lg px-3 py-2 text-xs">
-          <option value="recent" className="bg-[#1F0540]">Recent</option>
-          <option value="top" className="bg-[#1F0540]">Top spenders</option>
-          <option value="most" className="bg-[#1F0540]">Most orders</option>
-        </select>
-      </div>
-
-      {error && rows.length > 0 && (
-        <div className="mb-3 flex flex-wrap items-center gap-3 rounded-lg border border-[var(--accent-red)]/40 bg-[var(--accent-red)]/10 px-3 py-2 text-[11px] font-mono text-white/80">
-          <span className="truncate">{error}</span>
-          <button onClick={load} className="underline text-[var(--accent-red)]">Retry</button>
-        </div>
-      )}
-
-      <DashCard>
-
-        {/* Desktop: table. Mobile: stacked rows — no horizontal clipping. */}
-        <div className="hidden md:block">
-          <table className="w-full text-sm">
-            <thead className="text-[10px] uppercase tracking-wider text-white/40">
-              <tr>
-                <th className="text-left py-2 px-2">Customer</th>
-                <th className="text-left py-2 px-2">Type</th>
-                <th className="text-left py-2 px-2">Purchases</th>
-                <th className="text-right py-2 px-2">Spent</th>
-                <th className="text-right py-2 px-2">Orders</th>
-                <th className="text-right py-2 px-2">Last purchase</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map(a => (
-                <tr key={a.key} onClick={() => setOpenKey(a.key)} className="border-t border-white/5 hover:bg-white/[0.04] cursor-pointer">
-                  <td className="py-2 px-2">
-                    <div className="flex min-w-0 items-center gap-3">
-                      <Avatar name={a.name} email={a.email} />
-                      <div className="min-w-0">
-                        <div className="text-sm truncate">{a.name || a.email}</div>
-                        {a.name && <div className="text-[10px] text-[#B8ACCC] font-mono truncate">{a.email}</div>}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-2 px-2"><AccountBadge hasAccount={a.has_account} /></td>
-                  <td className="py-2 px-2"><PurchaseBadge count={Number(a.orders_count)} /></td>
-                  <td className="py-2 px-2 text-right font-mono text-xs">{money(Number(a.total_spent))}</td>
-                  <td className="py-2 px-2 text-right font-mono text-xs">{a.orders_count}</td>
-                  <td className="py-2 px-2 text-right text-[10px] font-mono text-[#B8ACCC] whitespace-nowrap">{Number(a.orders_count) > 0 ? relTime(a.last_order_at) : "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <div className="space-y-6">
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+          <StatCard
+            label="Total customers"
+            value={(metrics.current.total || total).toLocaleString()}
+            delta={totalDelta.label}
+            deltaPositive={totalDelta.positive ?? undefined}
+            comparison="vs start of month"
+            domain="people"
+          />
+          <StatCard
+            label="New this month"
+            value={metrics.newCurrent.toLocaleString()}
+            delta={newDelta.label}
+            deltaPositive={newDelta.positive ?? undefined}
+            comparison="vs previous month"
+            domain="people"
+          />
+          <StatCard
+            label="Repeat rate"
+            value={`${Math.round(metrics.current.repeatRate)}%`}
+            delta={repeatDelta.label}
+            deltaPositive={repeatDelta.positive ?? undefined}
+            comparison="vs start of month"
+            domain="people"
+          />
+          <StatCard
+            label="Average LTV"
+            value={money(metrics.current.averageLtv)}
+            delta={ltvDelta.label}
+            deltaPositive={ltvDelta.positive ?? undefined}
+            comparison="vs start of month"
+            domain="money"
+          />
         </div>
 
-        <ul className="md:hidden divide-y divide-white/5">
-          {rows.map(a => (
-            <li key={a.key}>
-              <button onClick={() => setOpenKey(a.key)} className="w-full text-left py-3 active:bg-white/[0.04] transition">
-                <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <Avatar name={a.name} email={a.email} />
-                    <div className="min-w-0">
-                      <div className="text-sm truncate">{a.name || a.email}</div>
-                      {a.name && <div className="text-[11px] text-[#B8ACCC] font-mono truncate">{a.email}</div>}
-                    </div>
-                  </div>
-                  <div className="shrink-0 text-right font-mono text-sm">{money(Number(a.total_spent))}</div>
-                </div>
-                <div className="mt-2 flex flex-wrap items-center gap-2 pl-11">
-                  <PurchaseBadge count={Number(a.orders_count)} />
-                  <AccountBadge hasAccount={a.has_account} />
-                  <span className="text-[10px] font-mono text-[#B8ACCC]">
-                    {Number(a.orders_count) > 0 ? relTime(a.last_order_at) : "—"}
+        <ChargedPanel domain="people" title="Top customers by spend">
+          {topCustomers.length === 0 ? (
+            <div className="dash-empty text-white/75">
+              <p>Top spenders will appear after customer totals load.</p>
+            </div>
+          ) : (
+            <ol className="dash-top-customer-strip">
+              {topCustomers.map((customer, index) => (
+                <li key={customer.key}>
+                  <span className="dash-top-customer-rank" aria-hidden="true">
+                    {index + 1}
                   </span>
-                </div>
-              </button>
-            </li>
-          ))}
-        </ul>
+                  <Avatar name={customer.name} email={customer.email} large />
+                  <span className="dash-top-customer-name">{customer.name || customer.email}</span>
+                  <strong>{money(Number(customer.total_spent))}</strong>
+                  <small>{Number(customer.orders_count).toLocaleString()} orders</small>
+                </li>
+              ))}
+            </ol>
+          )}
+        </ChargedPanel>
 
-        {rows.length === 0 && (
-          <div className="py-16 text-center text-white/40 text-sm">
-            {loading ? "Loading…" : error ? (
-              <span>
-                {error}{" "}
-                <button onClick={load} className="underline text-[var(--accent-red)]">Retry</button>
-              </span>
-            ) : "No customers yet. This list populates automatically as orders come in."}
+        <div className="dash-filter-bar" aria-label="Customer filters">
+          <label className="dash-search-field">
+            <span className="sr-only">Search customers</span>
+            <Search size={16} aria-hidden="true" />
+            <input
+              value={q}
+              onChange={(event) => setQ(event.target.value)}
+              placeholder="Search name or email"
+            />
+          </label>
+          <div className="dash-segmented" role="group" aria-label="Customer type">
+            {(["all", "new", "returning"] as const).map((value) => (
+              <button
+                type="button"
+                key={value}
+                onClick={() => setFilter(value)}
+                aria-pressed={filter === value}
+              >
+                {value === "all" ? "All" : value === "new" ? "New" : "Returning"}
+              </button>
+            ))}
+          </div>
+          <label className="dash-compact-select">
+            <span className="sr-only">Sort customers</span>
+            <select value={sort} onChange={(event) => setSort(event.target.value as typeof sort)}>
+              <option value="recent">Recent</option>
+              <option value="top">Top spenders</option>
+              <option value="most">Most orders</option>
+            </select>
+          </label>
+        </div>
+
+        {error && (
+          <div className="dash-inline-error" role="alert">
+            <span>{error}</span>
+            <button type="button" onClick={load}>
+              Retry
+            </button>
           </div>
         )}
 
+        <DashCard>
+          <div className="dash-desktop-table -m-5 overflow-x-auto">
+            <table className="min-w-[820px]">
+              <thead>
+                <tr>
+                  <th className="text-left px-4">Customer</th>
+                  <th className="text-left px-4">Purchases</th>
+                  <th className="text-left px-4">Type</th>
+                  <th className="text-right px-4">Spend</th>
+                  <th className="text-right px-4">Orders</th>
+                  <th className="text-right px-4">Last purchase</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((customer) => (
+                  <tr
+                    key={customer.key}
+                    onClick={() => setOpenKey(customer.key)}
+                    className="cursor-pointer"
+                  >
+                    <td className="px-4">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <Avatar name={customer.name} email={customer.email} />
+                        <div className="min-w-0">
+                          <div className="max-w-[240px] truncate text-sm font-semibold text-white">
+                            {customer.name || customer.email}
+                          </div>
+                          {customer.name && (
+                            <div className="max-w-[240px] truncate font-mono text-[10px] text-[var(--text-tertiary)]">
+                              {customer.email}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4">
+                      <PurchaseBadge count={Number(customer.orders_count)} />
+                    </td>
+                    <td className="px-4">
+                      <AccountBadge hasAccount={customer.has_account} />
+                    </td>
+                    <td className="px-4 text-right font-mono text-xs text-[var(--c-money)]">
+                      {money(Number(customer.total_spent))}
+                    </td>
+                    <td className="px-4 text-right font-mono text-xs">{customer.orders_count}</td>
+                    <td className="px-4 text-right font-mono text-[10px] text-[var(--text-tertiary)] whitespace-nowrap">
+                      {Number(customer.orders_count) > 0
+                        ? relativeTime(customer.last_order_at)
+                        : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-        <div className="mt-4 pt-3 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="text-[11px] font-mono text-[#B8ACCC] text-center sm:text-left">
-            Page {page} of {totalPages} · {total} customer{total === 1 ? "" : "s"}
-          </div>
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <button
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-              disabled={page <= 1 || loading}
-              className="flex-1 sm:flex-none min-h-[44px] px-4 rounded-lg border border-white/15 text-xs font-mono uppercase tracking-wider text-white/80 transition hover:border-white/35 disabled:opacity-30"
-            >
-              Prev
-            </button>
-            <button
-              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-              disabled={page >= totalPages || loading}
-              className="flex-1 sm:flex-none min-h-[44px] px-4 rounded-lg bg-[var(--accent-red)] text-xs font-mono uppercase tracking-wider text-white transition hover:brightness-110 disabled:opacity-30"
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      </DashCard>
+          <ul className="dash-mobile-list -mx-4 -my-4">
+            {rows.map((customer) => (
+              <li key={customer.key} className="border-b border-[var(--border)] last:border-b-0">
+                <button
+                  type="button"
+                  onClick={() => setOpenKey(customer.key)}
+                  className="w-full min-h-[88px] px-4 py-3 text-left"
+                >
+                  <span className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+                    <span className="flex min-w-0 items-center gap-3">
+                      <Avatar name={customer.name} email={customer.email} />
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-semibold text-white">
+                          {customer.name || customer.email}
+                        </span>
+                        {customer.name && (
+                          <span className="block truncate font-mono text-[10px] text-[var(--text-tertiary)]">
+                            {customer.email}
+                          </span>
+                        )}
+                      </span>
+                    </span>
+                    <span className="font-mono text-sm text-[var(--c-money)]">
+                      {money(Number(customer.total_spent))}
+                    </span>
+                  </span>
+                  <span className="mt-2 flex flex-wrap items-center gap-2 pl-11">
+                    <PurchaseBadge count={Number(customer.orders_count)} />
+                    <AccountBadge hasAccount={customer.has_account} />
+                    <span className="font-mono text-[10px] text-[var(--text-tertiary)]">
+                      {relativeTime(customer.last_order_at)}
+                    </span>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+
+          {rows.length === 0 && (
+            <div className="dash-empty">
+              <p>
+                {loading
+                  ? "Loading customers…"
+                  : "No customers match these filters. New purchasers will appear automatically."}
+              </p>
+            </div>
+          )}
+
+          <footer className="dash-table-footer">
+            <span>
+              Page {page} of {totalPages} · {total.toLocaleString()} customers
+            </span>
+            <div>
+              <button
+                type="button"
+                onClick={() => setPage((current) => Math.max(1, current - 1))}
+                disabled={page <= 1 || loading}
+              >
+                Previous
+              </button>
+              <span>
+                {page} / {totalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+                disabled={page >= totalPages || loading}
+              >
+                Next
+              </button>
+            </div>
+          </footer>
+        </DashCard>
+      </div>
 
       <CustomerDrawer
         open={!!selected}
@@ -266,57 +417,123 @@ function CustomersPage() {
   );
 }
 
-function toDrawerData(a: Row, orders: DrawerOrder[]): CustomerDrawerData {
+function customerMetrics(orders: MetricOrder[], identity: IdentityMap, cutoff?: Date) {
+  const grouped = new Map<string, { orders: number; revenue: number }>();
+  for (const order of orders) {
+    if (cutoff && new Date(order.created_at) > cutoff) continue;
+    const identityRow = identity.get(order.id);
+    if (!identityRow?.normalized_email) continue;
+    const current = grouped.get(identityRow.normalized_email) ?? { orders: 0, revenue: 0 };
+    current.orders += 1;
+    current.revenue += netRevenue(order);
+    grouped.set(identityRow.normalized_email, current);
+  }
+  const total = grouped.size;
+  const repeat = [...grouped.values()].filter((customer) => customer.orders > 1).length;
+  const revenue = [...grouped.values()].reduce((sum, customer) => sum + customer.revenue, 0);
   return {
-    key: a.key,
-    userId: a.user_id,
-    name: a.name,
-    email: a.email,
-    hasAccount: a.has_account,
-    memberSince: a.first_order_at,
-    totalSpent: Number(a.total_spent),
-    completedCount: Number(a.completed_count),
-    ordersCount: Number(a.orders_count),
+    total,
+    repeatRate: total ? (repeat / total) * 100 : 0,
+    averageLtv: total ? revenue / total : 0,
+  };
+}
+
+function firstCustomersBetween(identity: IdentityMap, start: Date, end: Date) {
+  const emails = new Set<string>();
+  for (const row of identity.values()) {
+    if (!row.is_first_order) continue;
+    const time = new Date(row.created_at).getTime();
+    if (time >= start.getTime() && time <= end.getTime()) emails.add(row.normalized_email);
+  }
+  return emails.size;
+}
+
+function percentDelta(current: number, previous: number) {
+  if (current === 0 && previous === 0) return { label: "0%", positive: null as boolean | null };
+  if (previous === 0) return { label: "100%", positive: true as boolean | null };
+  const raw = ((current - previous) / previous) * 100;
+  return { label: `${Math.round(Math.abs(raw))}%`, positive: raw === 0 ? null : raw > 0 };
+}
+
+function toDrawerData(customer: Row, orders: DrawerOrder[]): CustomerDrawerData {
+  return {
+    key: customer.key,
+    userId: customer.user_id,
+    name: customer.name,
+    email: customer.email,
+    hasAccount: customer.has_account,
+    memberSince: customer.first_order_at,
+    totalSpent: Number(customer.total_spent),
+    completedCount: Number(customer.completed_count),
+    ordersCount: Number(customer.orders_count),
     orders,
   };
 }
 
-function SummaryStat({ label, value }: { label: string; value: string }) {
+function Avatar({
+  name,
+  email,
+  large = false,
+}: {
+  name: string | null;
+  email: string;
+  large?: boolean;
+}) {
+  const hue = hashHue(email);
   return (
-    <DashCard>
-      <div className="label-mini opacity-60 text-[10px] mb-2">{label}</div>
-      <div className="font-mono text-2xl md:text-3xl text-white">{value}</div>
-    </DashCard>
-  );
-}
-
-function Avatar({ name, email }: { name: string | null; email: string }) {
-  return (
-    <div className="w-8 h-8 shrink-0 rounded-full bg-gradient-to-br from-[var(--accent-red)] to-[var(--accent-blue)] flex items-center justify-center text-[10px] font-bold">
+    <span
+      className={`dash-customer-avatar ${large ? "is-large" : ""}`}
+      style={{
+        background: `linear-gradient(135deg, hsl(${hue} 82% 58%), hsl(${(hue + 58) % 360} 78% 46%))`,
+      }}
+      aria-hidden="true"
+    >
       {initialsFrom(name, email)}
-    </div>
-  );
-}
-
-function AccountBadge({ hasAccount }: { hasAccount: boolean }) {
-  return hasAccount
-    ? <span className="inline-flex items-center h-6 px-2 rounded-md text-[10px] font-mono uppercase tracking-wider bg-[var(--accent-blue)]/15 text-[var(--accent-blue-glow)] border border-[var(--accent-blue)]/40">Account</span>
-    : <span className="inline-flex items-center h-6 px-2 rounded-md text-[10px] font-mono uppercase tracking-wider bg-white/5 text-[#B8ACCC] border border-white/15">Guest</span>;
-}
-
-/**
- * ONE pill, never two — "NEW" or "REPEAT ×N". Uses total order count, matching
- * the shared new/returning definition (any prior order makes them returning).
- */
-function PurchaseBadge({ count }: { count: number }) {
-  if (count <= 0) return <span className="text-[10px] text-white/30 font-mono">—</span>;
-  if (count === 1) {
-    return <span className="inline-flex items-center h-6 px-2 rounded-md text-[10px] font-mono uppercase tracking-wider bg-white/5 text-[#C9BEDD] border border-white/15">New</span>;
-  }
-  return (
-    <span className="inline-flex items-center h-6 px-2 rounded-md whitespace-nowrap text-[10px] font-mono uppercase tracking-wider bg-gradient-to-r from-[var(--accent-red)]/25 to-[var(--accent-blue)]/25 text-white border border-[var(--accent-red)]/40 shadow-[0_0_12px_rgba(255,0,60,0.25)]">
-      Repeat ×{count}
     </span>
   );
 }
 
+function AccountBadge({ hasAccount }: { hasAccount: boolean }) {
+  return <DomainChip domain="neutral">{hasAccount ? "Account" : "Guest"}</DomainChip>;
+}
+
+function PurchaseBadge({ count }: { count: number }) {
+  if (count <= 0) return <span className="font-mono text-xs text-[var(--text-disabled)]">—</span>;
+  if (count === 1) return <DomainChip domain="neutral">New</DomainChip>;
+  return <DomainChip domain="people">Repeat ×{count}</DomainChip>;
+}
+
+function initialsFrom(name: string | null, email: string) {
+  return (name || email || "?")
+    .split(/[\s@._-]+/)
+    .filter(Boolean)
+    .map((part) => part[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
+
+function hashHue(value: string) {
+  let hash = 0;
+  for (let index = 0; index < value.length; index += 1)
+    hash = (hash * 31 + value.charCodeAt(index)) % 360;
+  return hash;
+}
+
+function money(value: number) {
+  return `$${Number(value || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function relativeTime(iso: string | null) {
+  if (!iso) return "—";
+  const seconds = (Date.now() - new Date(iso).getTime()) / 1000;
+  if (seconds < 60) return "just now";
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+  if (seconds < 86400 * 30) return `${Math.floor(seconds / 86400)}d ago`;
+  return new Date(iso).toLocaleDateString("en", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}

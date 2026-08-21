@@ -1,62 +1,42 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { DashboardShell, DashCard, StatCard } from "@/components/DashboardShell";
+import { useReducedMotion } from "framer-motion";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  Line,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import {
+  ChargedPanel,
+  DashCard,
+  DashboardShell,
+  DomainChip,
+  RangeControl,
+  StatusBadge,
+} from "@/components/DashboardShell";
 import { type AnalyticsRange, RANGE_LABEL } from "@/lib/dashboard-mock";
-import { ResponsiveContainer, AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip, PieChart, Pie, Cell } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { deriveSaleStatus, formatInSaleTimeZone } from "@/lib/sale-time";
 import { normalizeUtmSource } from "@/lib/utm";
 import { countsAsSale, keptRatio, netRevenue, saleOrders, sumNetRevenue } from "@/lib/revenue";
 import { fetchOrderIdentity, splitNewReturning, type IdentityMap } from "@/lib/customer-identity";
 
-
-
-
-
 export const Route = createFileRoute("/dashboard/analytics")({
   head: () => ({ meta: [{ title: "Analytics — Plugin Warehouse" }] }),
   component: Analytics,
 });
 
-const RANGES: AnalyticsRange[] = ["wtd", "mtd", "last-month", "30d", "12mo", "all"];
-const SHORT: Record<AnalyticsRange, string> = {
-  "wtd": "WTD", "mtd": "MTD", "last-month": "LAST MO", "30d": "30D", "12mo": "12MO", "all": "ALL",
-};
-
-function fmtMoney(n: number) {
-  return `$${Number(n || 0).toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
-}
-
-const TOOLTIP_STYLE = {
-  background: "rgba(20,6,44,0.92)",
-  border: "1px solid rgba(255,31,92,0.45)",
-  borderRadius: 10,
-  fontSize: 12,
-  boxShadow: "0 8px 24px rgba(0,0,0,0.5), 0 0 20px rgba(255,0,60,0.25)",
-  backdropFilter: "blur(10px)",
-  color: "#fff",
-} as const;
-const TOOLTIP_LABEL_STYLE = { color: "rgba(255,255,255,0.7)", fontSize: 11 } as const;
-const TOOLTIP_ITEM_STYLE = { color: "#fff" } as const;
-const BAR_CURSOR = { fill: "rgba(255,31,92,0.14)" } as const;
-const AXIS_TICK = { fill: "rgba(255,255,255,0.65)" } as const;
-
-
-function rangeBounds(r: AnalyticsRange): { start: Date; end: Date } {
-  const end = new Date();
-  const start = new Date();
-  const now = new Date();
-  if (r === "wtd") { start.setDate(now.getDate() - now.getDay()); start.setHours(0, 0, 0, 0); }
-  else if (r === "mtd") { start.setFullYear(now.getFullYear(), now.getMonth(), 1); start.setHours(0, 0, 0, 0); }
-  else if (r === "last-month") {
-    start.setFullYear(now.getFullYear(), now.getMonth() - 1, 1); start.setHours(0, 0, 0, 0);
-    end.setFullYear(now.getFullYear(), now.getMonth(), 0); end.setHours(23, 59, 59, 999);
-  }
-  else if (r === "30d") start.setDate(now.getDate() - 30);
-  else if (r === "12mo") start.setFullYear(now.getFullYear() - 1);
-  else start.setTime(0);
-  return { start, end };
-}
+const RANGES = ["wtd", "mtd", "last-month", "30d", "12mo", "all"] as const;
+const RANGE_OPTIONS = RANGES.map((value) => ({
+  value,
+  label: value === "last-month" ? "Last mo" : value.toUpperCase(),
+  title: RANGE_LABEL[value],
+}));
 
 type OrderRow = {
   id: string;
@@ -66,8 +46,15 @@ type OrderRow = {
   created_at: string;
   customer_id: string | null;
   utm_source: string | null;
+  pw_cid: string | null;
   sale_id: string | null;
-  order_items: { name: string; price: number; product_id: string | null; cover_gradient: string | null }[];
+  order_items: {
+    name: string;
+    price: number;
+    product_id: string | null;
+    cover_gradient: string | null;
+    cover_url: string | null;
+  }[];
 };
 
 type SaleEventRow = {
@@ -75,25 +62,10 @@ type SaleEventRow = {
   name: string;
   slug: string;
   discount_pct: number;
-  theme_color: string | null;
   start_at: string;
   end_at: string;
   status: string;
 };
-
-
-function RangePills({ value, onChange }: { value: AnalyticsRange; onChange: (r: AnalyticsRange) => void }) {
-  return (
-    <div className="flex gap-1 p-0.5 rounded-lg border border-white/10">
-      {RANGES.map(r => (
-        <button key={r} onClick={() => onChange(r)} title={RANGE_LABEL[r]}
-          className={`px-2.5 py-1 rounded-md text-[10px] font-mono tracking-wider transition-colors ${value === r ? "bg-[var(--accent-red)] text-white" : "text-white/60 hover:text-white"}`}>
-          {SHORT[r]}
-        </button>
-      ))}
-    </div>
-  );
-}
 
 function Analytics() {
   const [range, setRange] = useState<AnalyticsRange>("30d");
@@ -102,369 +74,520 @@ function Analytics() {
   const [loading, setLoading] = useState(true);
   const [identity, setIdentity] = useState<IdentityMap>(() => new Map());
   const [now, setNow] = useState(() => Date.now());
-
-  useEffect(() => { fetchOrderIdentity().then(setIdentity); }, []);
-
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
-    const t = window.setInterval(() => setNow(Date.now()), 30_000);
-    return () => window.clearInterval(t);
+    fetchOrderIdentity().then(setIdentity);
+  }, []);
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
-      const [{ data: ordersData }, { data: salesData }] = await Promise.all([
+      const [ordersRes, salesRes] = await Promise.all([
         supabase
           .from("orders")
-          .select("id, total, status, refunded_amount_cents, created_at, customer_id, utm_source, sale_id, order_items(name, price, product_id, cover_gradient)")
+          .select(
+            "id, total, status, refunded_amount_cents, created_at, customer_id, utm_source, pw_cid, sale_id, order_items(name, price, product_id, cover_gradient, cover_url)",
+          )
           .order("created_at", { ascending: false })
           .limit(5000),
         supabase
           .from("sale_events")
-          .select("id, name, slug, discount_pct, theme_color, start_at, end_at, status")
+          .select("id, name, slug, discount_pct, start_at, end_at, status")
           .neq("status", "draft")
           .order("start_at", { ascending: false }),
       ]);
-      setOrders((ordersData ?? []) as any);
-      setSales((salesData ?? []) as any);
+      if (cancelled) return;
+      setOrders((ordersRes.data ?? []) as OrderRow[]);
+      setSales((salesRes.data ?? []) as SaleEventRow[]);
       setLoading(false);
     })();
-
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const { start, end } = useMemo(() => rangeBounds(range), [range]);
-
-  // All money below is NET of refunds (src/lib/revenue.ts), so a refund issued
-  // today correctly shrinks the period the order was placed in.
   const completed = useMemo(() => saleOrders(orders), [orders]);
-  const inRange = useMemo(() => completed.filter(o => {
-    const t = new Date(o.created_at).getTime();
-    return t >= start.getTime() && t <= end.getTime();
-  }), [completed, start, end]);
-
-  const rev = sumNetRevenue(inRange);
-  const aov = inRange.length ? rev / inRange.length : 0;
-  const refundedAll = orders.filter(o => o.status === "refunded" && new Date(o.created_at) >= start && new Date(o.created_at) <= end).length;
-  const totalInRangeAny = inRange.length + refundedAll;
-  const refundRate = totalInRangeAny ? Math.round((refundedAll / totalInRangeAny) * 100) : 0;
-
-  const series = useMemo(() => buildSeries(inRange, range), [inRange, range]);
+  const bounds = useMemo(() => analyticsBounds(range, completed), [range, completed]);
+  const inRange = useMemo(
+    () =>
+      completed.filter((order) => within(order.created_at, bounds.currentStart, bounds.currentEnd)),
+    [completed, bounds],
+  );
+  const previousRange = useMemo(
+    () =>
+      completed.filter((order) =>
+        within(order.created_at, bounds.previousStart, bounds.previousEnd),
+      ),
+    [completed, bounds],
+  );
+  const revenue = sumNetRevenue(inRange);
+  const previousRevenue = sumNetRevenue(previousRange);
+  const aov = inRange.length ? revenue / inRange.length : 0;
+  const previousAov = previousRange.length ? previousRevenue / previousRange.length : 0;
+  const chartSeries = useMemo(
+    () => buildPairedSeries(completed, bounds, range),
+    [completed, bounds, range],
+  );
 
   const top = useMemo(() => {
-    const map = new Map<string, { id: string; name: string; cover: string | null; units: number; revenue: number }>();
-    for (const o of inRange) {
-      const ratio = keptRatio(o);
-      for (const it of o.order_items ?? []) {
-        const key = it.product_id || it.name;
-        const cur = map.get(key) ?? { id: key, name: it.name, cover: it.cover_gradient, units: 0, revenue: 0 };
-        cur.units += 1;
-        cur.revenue += Number(it.price || 0) * ratio;
-        map.set(key, cur);
+    const map = new Map<
+      string,
+      {
+        id: string;
+        name: string;
+        cover: string | null;
+        coverUrl: string | null;
+        units: number;
+        revenue: number;
+      }
+    >();
+    for (const order of inRange) {
+      const ratio = keptRatio(order);
+      for (const item of order.order_items ?? []) {
+        const key = item.product_id || item.name;
+        const current = map.get(key) ?? {
+          id: key,
+          name: item.name,
+          cover: item.cover_gradient,
+          coverUrl: item.cover_url,
+          units: 0,
+          revenue: 0,
+        };
+        current.units += 1;
+        current.revenue += Number(item.price || 0) * ratio;
+        if (!current.coverUrl && item.cover_url) current.coverUrl = item.cover_url;
+        map.set(key, current);
       }
     }
-    return [...map.values()]
-      .filter(p => p.revenue > 0)
-      .sort((a, b) => b.revenue - a.revenue)
-      .slice(0, 5);
+    return [...map.values()].sort((a, b) => b.revenue - a.revenue || b.units - a.units).slice(0, 7);
   }, [inRange]);
-  const topMax = Math.max(1, ...top.map(t => t.revenue));
+  const topMax = Math.max(1, ...top.map((item) => item.revenue || item.units));
 
   const sources = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const o of inRange) {
-      const s = normalizeUtmSource(o.utm_source) || "direct";
-      map.set(s, (map.get(s) ?? 0) + 1);
+    const map = new Map<string, { count: number; revenue: number }>();
+    for (const order of inRange) {
+      const source = normalizeUtmSource(order.utm_source) || (order.pw_cid ? "campaign" : "direct");
+      const current = map.get(source) ?? { count: 0, revenue: 0 };
+      current.count += 1;
+      current.revenue += netRevenue(order);
+      map.set(source, current);
     }
     return [...map.entries()]
-      .map(([source, count]) => ({ source, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 4);
+      .map(([source, data]) => ({ source, ...data }))
+      .sort((a, b) => b.revenue - a.revenue || b.count - a.count)
+      .slice(0, 5);
   }, [inRange]);
-  const sourcesMax = Math.max(1, ...sources.map(s => s.count));
+  const sourceMax = Math.max(1, ...sources.map((source) => source.revenue || source.count));
 
+  const split = useMemo(() => {
+    const allInRange = orders.filter((order) =>
+      within(order.created_at, bounds.currentStart, bounds.currentEnd),
+    );
+    return splitNewReturning(allInRange, identity);
+  }, [orders, identity, bounds]);
+  const splitTotal = split.neu + split.returning;
+  const returningPct = splitTotal ? (split.returning / splitTotal) * 100 : 0;
+  const newPct = splitTotal ? (split.neu / splitTotal) * 100 : 0;
 
-
-  // Per-sale performance: real money captured (post-discount order totals) grouped by sale_id.
-  const salePerf = useMemo(() => {
+  const salePerformance = useMemo(() => {
     const totals = new Map<string, { orders: number; revenue: number }>();
-    for (const o of orders) {
-      if (!countsAsSale(o) || !o.sale_id) continue;
-      const cur = totals.get(o.sale_id) ?? { orders: 0, revenue: 0 };
-      cur.orders += 1;
-      cur.revenue += netRevenue(o);
-      totals.set(o.sale_id, cur);
+    for (const order of orders) {
+      if (!countsAsSale(order) || !order.sale_id) continue;
+      const current = totals.get(order.sale_id) ?? { orders: 0, revenue: 0 };
+      current.orders += 1;
+      current.revenue += netRevenue(order);
+      totals.set(order.sale_id, current);
     }
     return sales
-      .map((s) => {
-        const t = totals.get(s.id) ?? { orders: 0, revenue: 0 };
+      .map((sale) => {
+        const total = totals.get(sale.id) ?? { orders: 0, revenue: 0 };
+        const durationDays = Math.max(
+          1,
+          (new Date(sale.end_at).getTime() - new Date(sale.start_at).getTime()) / 86400_000,
+        );
         return {
-          ...s,
-          orders: t.orders,
-          revenue: t.revenue,
-          liveStatus: deriveSaleStatus(s.start_at, s.end_at, s.status, now),
+          ...sale,
+          ...total,
+          revenuePerDay: total.revenue / durationDays,
+          liveStatus: deriveSaleStatus(sale.start_at, sale.end_at, sale.status, now),
         };
       })
-      .sort((a, b) => new Date(b.start_at).getTime() - new Date(a.start_at).getTime());
+      .sort((a, b) => {
+        if (a.liveStatus === "active" && b.liveStatus !== "active") return -1;
+        if (b.liveStatus === "active" && a.liveStatus !== "active") return 1;
+        return new Date(b.start_at).getTime() - new Date(a.start_at).getTime();
+      });
   }, [orders, sales, now]);
+  const saleDayMax = Math.max(1, ...salePerformance.map((sale) => sale.revenuePerDay));
 
-
-  // New vs returning uses the SHARED identity logic (src/lib/customer-identity.ts):
-  // classification is per-order, keyed on normalized email across ALL orders
-  // ever placed — not just the ones inside the selected range.
-  const split = useMemo(() => {
-    const inRangeAny = orders.filter(o => {
-      const t = new Date(o.created_at).getTime();
-      return t >= start.getTime() && t <= end.getTime();
-    });
-    const { neu, returning } = splitNewReturning(inRangeAny, identity);
-    return [{ name: "New", value: neu }, { name: "Returning", value: returning }];
-  }, [orders, identity, start, end]);
-
+  const revenueDelta = percentDelta(revenue, previousRevenue);
+  const ordersDelta = percentDelta(inRange.length, previousRange.length);
+  const aovDelta = percentDelta(aov, previousAov);
 
   return (
     <DashboardShell
       title="Analytics"
-      action={<RangePills value={range} onChange={setRange} />}
+      action={<RangeControl value={range} onChange={setRange} options={RANGE_OPTIONS} />}
     >
-
-      {/* Shared SVG defs for chart gradients + soft-glow filter used below. */}
-      <svg width="0" height="0" style={{ position: "absolute" }} aria-hidden>
-        <defs>
-          <linearGradient id="pw-red-grad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#FF6188" />
-            <stop offset="55%" stopColor="#FF003C" />
-            <stop offset="100%" stopColor="#8A0022" />
-          </linearGradient>
-          <linearGradient id="pw-blue-grad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#5B58FF" />
-            <stop offset="60%" stopColor="#0E0BD1" />
-            <stop offset="100%" stopColor="#050380" />
-          </linearGradient>
-          <filter id="pw-glow" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="3" result="coloredBlur" />
-            <feMerge>
-              <feMergeNode in="coloredBlur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-      </svg>
-
-      <div key={`kpi-${range}`} className="dash-page grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-        <StatCard label={`Revenue · ${RANGE_LABEL[range]}`} value={fmtMoney(rev)} />
-        <StatCard label="Avg order value" value={fmtMoney(aov)} />
-      </div>
-
-
-      <DashCard title="Revenue" action={<RangePills value={range} onChange={setRange} />} className="mb-6">
-        <div key={`rev-${range}`} className="dash-page h-72">
-          {series.length === 0 ? (
-            <div className="h-full flex items-center justify-center text-xs text-white/40 font-mono">{loading ? "Loading…" : "No revenue in this range."}</div>
-          ) : (
-            <ResponsiveContainer>
-              <AreaChart data={series}>
-                <defs>
-                  <linearGradient id="r2" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#FF003C" stopOpacity={0.45} />
-                    <stop offset="100%" stopColor="#FF003C" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
-                <XAxis dataKey="label" stroke="rgba(255,255,255,0.55)" fontSize={10} tickLine={false} axisLine={false} tick={{ fill: "rgba(255,255,255,0.65)" }} />
-                <YAxis stroke="rgba(255,255,255,0.55)" fontSize={10} tickFormatter={v => `$${v}`} tickLine={false} axisLine={false} tick={{ fill: "rgba(255,255,255,0.65)" }} />
-                <Tooltip
-                  cursor={{ stroke: "rgba(255,31,92,0.55)", strokeWidth: 1, strokeDasharray: "3 3" }}
-                  contentStyle={{ background: "rgba(20,6,44,0.92)", border: "1px solid rgba(255,31,92,0.45)", borderRadius: 10, fontSize: 12, boxShadow: "0 8px 24px rgba(0,0,0,0.5), 0 0 20px rgba(255,0,60,0.25)", backdropFilter: "blur(10px)", color: "#fff" }}
-                  labelStyle={{ color: "rgba(255,255,255,0.7)", fontSize: 11 }}
-                  itemStyle={{ color: "#fff" }}
-                  formatter={(v: number) => fmtMoney(v)}
-                />
-                <Area type="monotone" dataKey="value" stroke="#FF003C" strokeWidth={2} fill="url(#r2)" isAnimationActive animationDuration={800} animationEasing="ease-out" />
-
-              </AreaChart>
-            </ResponsiveContainer>
-          )}
-        </div>
-      </DashCard>
-
-      <DashCard title="Top 5 products" action={<RangePills value={range} onChange={setRange} />} className="mb-6">
-        <div key={`top-${range}`} className="dash-page space-y-3">
-          {top.length === 0 && <div className="text-xs text-white/40 font-mono py-6 text-center">No sales in this range.</div>}
-          {top.map((t, i) => (
-            <div key={t.id} className="flex items-center gap-4">
-              <span className="font-mono text-sm text-white/40 w-5">{i + 1}</span>
-              <div className="w-10 h-10 rounded-md flex-shrink-0" style={{ background: t.cover || "linear-gradient(135deg,#FF003C,#4066FF)" }} />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-baseline justify-between gap-3 mb-1.5">
-                  <div className="text-sm text-white truncate">{t.name}</div>
-                  <div className="flex gap-4 font-mono text-[11px] text-white/70 shrink-0">
-                    <span><span className="text-white/40">SOLD</span> {t.units}</span>
-                    <span className="text-white"><span className="text-white/40">REV</span> {fmtMoney(t.revenue)}</span>
-                  </div>
-                </div>
-                <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                  <div className="bar-fill" style={{ width: `${(t.revenue / topMax) * 100}%` }} />
-                </div>
+      <div className="space-y-6">
+        <ChargedPanel domain="money" title={`Revenue · ${RANGE_LABEL[range]}`}>
+          <div className="dash-analytics-metrics">
+            <AnalyticsMetric label="Revenue" value={money(revenue)} delta={revenueDelta} />
+            <AnalyticsMetric label="Average order" value={money(aov)} delta={aovDelta} />
+            <AnalyticsMetric
+              label="Orders"
+              value={inRange.length.toLocaleString()}
+              delta={ordersDelta}
+            />
+            <AnalyticsMetric label="Conversion" value="—" helper="Visitor tracking not connected" />
+          </div>
+          <div
+            className="dash-hero-chart px-4 pb-4 md:px-6"
+            role="img"
+            aria-label={`Revenue is ${money(revenue)} for ${RANGE_LABEL[range]}, ${revenueDelta.label} versus the prior equivalent period.`}
+          >
+            {loading ? (
+              <div className="skeleton-block h-full" />
+            ) : chartSeries.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-sm text-white/70">
+                No revenue in this range.
               </div>
-            </div>
-          ))}
-        </div>
-      </DashCard>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <DashCard title="New vs returning" action={<RangePills value={range} onChange={setRange} />}>
-          <div key={`split-${range}`} className="dash-page h-56">
-            {split[0].value + split[1].value === 0 ? (
-              <div className="h-full flex items-center justify-center text-xs text-white/40 font-mono">No orders in this range.</div>
             ) : (
-              <ResponsiveContainer>
-                <PieChart>
-                  <Pie
-                    data={split}
-                    dataKey="value"
-                    innerRadius={52}
-                    outerRadius={84}
-                    paddingAngle={3}
-                    stroke="rgba(20,6,44,0.9)"
-                    strokeWidth={2}
-                    isAnimationActive
-                    animationDuration={700}
-                    style={{ filter: "url(#pw-glow)" }}
-                  >
-                    <Cell fill="url(#pw-red-grad)" />
-                    <Cell fill="url(#pw-blue-grad)" />
-                  </Pie>
-                  <Tooltip
-                    contentStyle={TOOLTIP_STYLE}
-                    labelStyle={TOOLTIP_LABEL_STYLE}
-                    itemStyle={TOOLTIP_ITEM_STYLE}
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartSeries} margin={{ top: 8, right: 4, left: -18, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="analytics-revenue-fill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#FFFFFF" stopOpacity={0.28} />
+                      <stop offset="100%" stopColor="#FFFFFF" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid stroke="rgba(255,255,255,0.18)" vertical={false} />
+                  <XAxis
+                    dataKey="label"
+                    tickLine={false}
+                    axisLine={false}
+                    minTickGap={22}
+                    tick={{ fill: "rgba(255,255,255,.72)", fontSize: 10 }}
                   />
-                </PieChart>
+                  <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                    width={56}
+                    tickFormatter={(value) => `$${value}`}
+                    tick={{ fill: "rgba(255,255,255,.72)", fontSize: 10 }}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      background: "#2D1450",
+                      border: "1px solid rgba(255,255,255,.18)",
+                      borderRadius: 10,
+                      boxShadow: "none",
+                      fontFamily: "var(--f-data)",
+                    }}
+                    formatter={(value: number, key: string) => [
+                      money(value),
+                      key === "current" ? "Current" : "Previous",
+                    ]}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="previous"
+                    stroke="rgba(255,255,255,.38)"
+                    strokeWidth={1.5}
+                    strokeDasharray="5 5"
+                    dot={false}
+                    isAnimationActive={false}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="current"
+                    stroke="#FFFFFF"
+                    strokeWidth={2}
+                    fill="url(#analytics-revenue-fill)"
+                    dot={false}
+                    isAnimationActive={!reduceMotion}
+                    animationDuration={500}
+                  />
+                </AreaChart>
               </ResponsiveContainer>
-
             )}
           </div>
-          <div className="flex justify-center gap-4 text-xs">
-            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-sm bg-[var(--accent-red)]" /> New ({split[0].value})</span>
-            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-sm bg-[var(--accent-blue)]" /> Returning ({split[1].value})</span>
-          </div>
-        </DashCard>
+        </ChargedPanel>
 
-        <DashCard title="Where customers come from" action={<RangePills value={range} onChange={setRange} />}>
-          <div key={`src-${range}`} className="dash-page">
-            {sources.length === 0 ? (
-              <div className="h-32 flex items-center justify-center text-xs text-white/40 font-mono">No tracked sources in this range.</div>
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+          <DashCard title="Top products" className="xl:col-span-7">
+            {top.length === 0 ? (
+              <div className="dash-empty">
+                <p>No products sold in this range.</p>
+              </div>
             ) : (
-              <ul className="space-y-3">
-                {sources.map((s) => {
-                  const pct = Math.max(6, Math.round((s.count / sourcesMax) * 100));
-                  return (
-                    <li key={s.source} className="flex items-center gap-3">
-                      <div className="w-20 shrink-0 text-[11px] font-mono uppercase tracking-wider text-white/70 truncate">{s.source}</div>
-                      <div className="flex-1 h-3 rounded-full bg-white/5 overflow-hidden">
-                        <div className="h-full rounded-full bar-fill" style={{ width: `${pct}%` }} />
-                      </div>
-                      <div className="w-10 shrink-0 text-right font-mono text-[11px] text-white">{s.count}</div>
-                    </li>
-                  );
-                })}
+              <ol className="dash-rank-list">
+                {top.map((item, index) => (
+                  <li key={item.id} className="dash-rank-row">
+                    <span className="dash-rank-number" aria-hidden="true">
+                      {index + 1}
+                    </span>
+                    <span
+                      className="dash-rank-thumb"
+                      style={{
+                        backgroundImage: item.coverUrl
+                          ? `url(${item.coverUrl})`
+                          : item.cover || "linear-gradient(135deg,#2D1450,#3DE0F5)",
+                      }}
+                    />
+                    <span className="dash-rank-main">
+                      <span className="dash-rank-name">{item.name}</span>
+                      <span className="dash-rank-bar">
+                        <span
+                          style={{
+                            width: `${Math.max(4, ((item.revenue || item.units) / topMax) * 100)}%`,
+                          }}
+                        />
+                      </span>
+                    </span>
+                    <span className="dash-rank-metric">
+                      <small>Units</small>
+                      {item.units}
+                    </span>
+                    <span className="dash-rank-metric">
+                      <small>Revenue</small>
+                      {money(item.revenue)}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </DashCard>
+
+          <DashCard title="Traffic sources" className="xl:col-span-5">
+            {sources.length === 0 ? (
+              <div className="dash-empty">
+                <p>No attributed traffic in this range.</p>
+              </div>
+            ) : (
+              <ul className="dash-source-list">
+                {sources.map((source) => (
+                  <li key={source.source}>
+                    <div className="dash-source-line">
+                      <DomainChip domain={source.source === "direct" ? "neutral" : "promo"}>
+                        {source.source}
+                      </DomainChip>
+                      <span>{source.count.toLocaleString()} orders</span>
+                      <strong>{money(source.revenue)}</strong>
+                    </div>
+                    <div className="dash-source-bar">
+                      <span
+                        style={{
+                          width: `${Math.max(5, ((source.revenue || source.count) / sourceMax) * 100)}%`,
+                        }}
+                      />
+                    </div>
+                  </li>
+                ))}
               </ul>
             )}
-          </div>
-          <p className="text-[10px] text-white/40 mt-3 font-mono">UTM source captured at checkout. Untagged orders count as "direct".</p>
-        </DashCard>
-      </div>
+          </DashCard>
 
-      <DashCard title="Sale performance">
-        {salePerf.length === 0 ? (
-          <div className="py-8 text-center text-xs text-white/40 font-mono">
-            {loading ? "Loading…" : "No sale events yet."}
-          </div>
-        ) : (
-          <div
-            className="grid grid-cols-1 md:grid-cols-2 gap-3 overflow-y-auto pr-1"
-            style={{ maxHeight: "calc(6 * 5.5rem + 1rem)" }}
-          >
-            {salePerf.map((s) => {
-              const isActive = s.liveStatus === "active";
-              const accent = s.theme_color || "#FF003C";
-              return (
+          <DashCard title="New vs returning" className="xl:col-span-5">
+            {splitTotal === 0 ? (
+              <div className="dash-empty">
+                <p>No customer activity in this range.</p>
+              </div>
+            ) : (
+              <div className="dash-split-wrap">
+                <div className="dash-split-stat">
+                  <span>Repeat-purchase rate</span>
+                  <strong>{Math.round(returningPct)}%</strong>
+                </div>
                 <div
-                  key={s.id}
-                  className="relative rounded-lg border p-3 transition-colors"
-                  style={{
-                    borderColor: isActive ? accent + "88" : "rgba(255,255,255,0.08)",
-                    background: isActive
-                      ? `linear-gradient(135deg, ${accent}18, rgba(25,7,55,0.6))`
-                      : "rgba(255,255,255,0.02)",
-                    boxShadow: isActive ? `0 0 24px ${accent}22` : "none",
-                  }}
+                  className="dash-split-bar"
+                  aria-label={`${Math.round(newPct)} percent new and ${Math.round(returningPct)} percent returning`}
                 >
-                  <div className="flex items-start justify-between gap-2 mb-1.5">
+                  <span className="is-new" style={{ width: `${newPct}%` }} />
+                  <span className="is-returning" style={{ width: `${returningPct}%` }} />
+                </div>
+                <div className="dash-split-legend">
+                  <span>
+                    <i className="is-new" /> New <strong>{split.neu.toLocaleString()}</strong>
+                  </span>
+                  <span>
+                    <i className="is-returning" /> Returning{" "}
+                    <strong>{split.returning.toLocaleString()}</strong>
+                  </span>
+                </div>
+              </div>
+            )}
+          </DashCard>
+
+          <DashCard title="Sale performance" className="xl:col-span-7">
+            {salePerformance.length === 0 ? (
+              <div className="dash-empty">
+                <p>No sale events yet. Run a sale to compare revenue pace here.</p>
+              </div>
+            ) : (
+              <ul className="dash-sale-performance-list">
+                {salePerformance.slice(0, 6).map((sale) => (
+                  <li key={sale.id} className={sale.liveStatus === "active" ? "is-active" : ""}>
                     <div className="min-w-0">
-                      <div className="text-sm text-white truncate font-medium">{s.name}</div>
-                      <div className="text-[10px] font-mono text-white/45 mt-0.5">
-                        {formatInSaleTimeZone(s.start_at, { year: undefined })} — {formatInSaleTimeZone(s.end_at, { year: undefined })}
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="truncate font-semibold text-white">{sale.name}</span>
+                        <StatusBadge status={sale.liveStatus} />
+                      </div>
+                      <div className="font-mono text-[10px] text-[var(--text-tertiary)]">
+                        {formatInSaleTimeZone(sale.start_at, { year: undefined })} —{" "}
+                        {formatInSaleTimeZone(sale.end_at, { year: undefined })}
                       </div>
                     </div>
-                    <span
-                      className="text-[9px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded shrink-0"
-                      style={{
-                        background: isActive ? "#FF003C" : "rgba(255,255,255,0.08)",
-                        color: isActive ? "#fff" : "rgba(255,255,255,0.55)",
-                      }}
-                    >
-                      {isActive ? "Active" : s.liveStatus === "scheduled" ? "Scheduled" : "Ended"}
-                    </span>
-                  </div>
-                  <div className="flex items-baseline gap-4 pt-1.5 border-t border-white/5">
-                    <div>
-                      <div className="text-[9px] font-mono uppercase tracking-wider text-white/40">Purchases</div>
-                      <div className="font-mono text-sm text-white">{s.orders}</div>
+                    <div className="dash-sale-mini-bar">
+                      <span
+                        style={{
+                          width: `${Math.max(3, (sale.revenuePerDay / saleDayMax) * 100)}%`,
+                        }}
+                      />
                     </div>
-                    <div>
-                      <div className="text-[9px] font-mono uppercase tracking-wider text-white/40">Revenue</div>
-                      <div className="font-mono text-sm" style={{ color: isActive ? accent : "#fff" }}>{fmtMoney(s.revenue)}</div>
+                    <div className="dash-sale-number">
+                      <small>Orders</small>
+                      {sale.orders}
                     </div>
-                    <div className="ml-auto text-right">
-                      <div className="text-[9px] font-mono uppercase tracking-wider text-white/40">Discount</div>
-                      <div className="font-mono text-sm text-white/70">{s.discount_pct}%</div>
+                    <div className="dash-sale-number">
+                      <small>Revenue</small>
+                      {money(sale.revenue)}
                     </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </DashCard>
-
+                    <div className="dash-sale-number">
+                      <small>Per day</small>
+                      {money(sale.revenuePerDay)}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </DashCard>
+        </div>
+      </div>
     </DashboardShell>
   );
 }
 
-function buildSeries(orders: OrderRow[], range: AnalyticsRange) {
-  const grouping: "daily" | "weekly" | "monthly" =
-    range === "wtd" || range === "mtd" || range === "30d" || range === "last-month" ? "daily"
-    : range === "12mo" ? "monthly" : "weekly";
-  if (orders.length === 0) return [];
-  const buckets = new Map<string, { key: string; label: string; ts: number; value: number }>();
-  const keyOf = (d: Date) => {
-    if (grouping === "daily") {
-      const k = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-      return { key: k, label: d.toLocaleDateString("en", { month: "short", day: "numeric" }), ts: new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() };
-    }
-    if (grouping === "weekly") {
-      const start = new Date(d); start.setDate(d.getDate() - d.getDay()); start.setHours(0, 0, 0, 0);
-      return { key: `w-${start.getTime()}`, label: start.toLocaleDateString("en", { month: "short", day: "numeric" }), ts: start.getTime() };
-    }
-    return { key: `${d.getFullYear()}-${d.getMonth()}`, label: d.toLocaleDateString("en", { month: "short", year: "2-digit" }), ts: new Date(d.getFullYear(), d.getMonth(), 1).getTime() };
-  };
-  for (const o of orders) {
-    const d = new Date(o.created_at);
-    const { key, label, ts } = keyOf(d);
-    const cur = buckets.get(key) ?? { key, label, ts, value: 0 };
-    cur.value += netRevenue(o);
-    buckets.set(key, cur);
+function AnalyticsMetric({
+  label,
+  value,
+  delta,
+  helper,
+}: {
+  label: string;
+  value: string;
+  delta?: ReturnType<typeof percentDelta>;
+  helper?: string;
+}) {
+  return (
+    <div className="dash-analytics-metric" title={helper}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+      <small>{delta ? `${delta.arrow}${delta.label} vs prior` : helper}</small>
+    </div>
+  );
+}
+
+function analyticsBounds(range: AnalyticsRange, orders: OrderRow[]) {
+  const currentEnd = new Date();
+  const currentStart = new Date(currentEnd);
+  if (range === "wtd") {
+    currentStart.setDate(currentStart.getDate() - currentStart.getDay());
+    currentStart.setHours(0, 0, 0, 0);
+  } else if (range === "mtd") {
+    currentStart.setDate(1);
+    currentStart.setHours(0, 0, 0, 0);
+  } else if (range === "last-month") {
+    currentStart.setFullYear(currentStart.getFullYear(), currentStart.getMonth() - 1, 1);
+    currentStart.setHours(0, 0, 0, 0);
+    currentEnd.setFullYear(currentEnd.getFullYear(), currentEnd.getMonth(), 0);
+    currentEnd.setHours(23, 59, 59, 999);
+  } else if (range === "30d") {
+    currentStart.setDate(currentStart.getDate() - 29);
+    currentStart.setHours(0, 0, 0, 0);
+  } else if (range === "12mo") {
+    currentStart.setFullYear(currentStart.getFullYear() - 1);
+  } else {
+    const earliest = orders.reduce(
+      (time, order) => Math.min(time, new Date(order.created_at).getTime()),
+      Date.now(),
+    );
+    currentStart.setTime(earliest);
+    currentStart.setHours(0, 0, 0, 0);
   }
-  return [...buckets.values()].sort((a, b) => a.ts - b.ts);
+  const duration = Math.max(1, currentEnd.getTime() - currentStart.getTime());
+  const previousEnd = new Date(currentStart.getTime() - 1);
+  const previousStart = new Date(previousEnd.getTime() - duration);
+  return { currentStart, currentEnd, previousStart, previousEnd };
+}
+
+function buildPairedSeries(
+  orders: OrderRow[],
+  bounds: ReturnType<typeof analyticsBounds>,
+  range: AnalyticsRange,
+) {
+  const monthly = range === "12mo" || range === "all";
+  const currentBuckets = makeBuckets(bounds.currentStart, bounds.currentEnd, monthly);
+  const previousBuckets = makeBuckets(bounds.previousStart, bounds.previousEnd, monthly);
+  return currentBuckets.map((bucket, index) => {
+    const previous = previousBuckets[index];
+    return {
+      label: bucket.label,
+      current: sumNetRevenue(
+        orders.filter((order) => within(order.created_at, bucket.start, bucket.end)),
+      ),
+      previous: previous
+        ? sumNetRevenue(
+            orders.filter((order) => within(order.created_at, previous.start, previous.end)),
+          )
+        : 0,
+    };
+  });
+}
+
+function makeBuckets(start: Date, end: Date, monthly: boolean) {
+  const buckets: { start: Date; end: Date; label: string }[] = [];
+  let cursor = new Date(start);
+  cursor.setHours(0, 0, 0, 0);
+  if (monthly) cursor.setDate(1);
+  while (cursor <= end && buckets.length < 60) {
+    const next = new Date(cursor);
+    if (monthly) next.setMonth(next.getMonth() + 1);
+    else next.setDate(next.getDate() + 1);
+    buckets.push({
+      start: new Date(cursor),
+      end: new Date(Math.min(next.getTime() - 1, end.getTime())),
+      label: cursor.toLocaleDateString(
+        "en",
+        monthly ? { month: "short", year: "2-digit" } : { month: "short", day: "numeric" },
+      ),
+    });
+    cursor = next;
+  }
+  return buckets;
+}
+
+function within(iso: string, start: Date, end: Date) {
+  const time = new Date(iso).getTime();
+  return time >= start.getTime() && time <= end.getTime();
+}
+
+function percentDelta(current: number, previous: number) {
+  if (current === 0 && previous === 0) return { label: "0%", positive: null, arrow: "→ " };
+  if (previous === 0) return { label: "100%", positive: true, arrow: "↑ " };
+  const value = Math.round(Math.abs((current - previous) / previous) * 100);
+  return {
+    label: `${value}%`,
+    positive: current === previous ? null : current > previous,
+    arrow: current === previous ? "→ " : current > previous ? "↑ " : "↓ ",
+  };
+}
+
+function money(value: number) {
+  return `$${Number(value || 0).toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
 }

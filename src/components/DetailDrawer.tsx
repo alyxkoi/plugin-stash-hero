@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useRef, useState } from "react";
+import { ReactNode, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { X, ChevronLeft } from "lucide-react";
 
@@ -17,29 +17,76 @@ interface DetailDrawerProps {
  * Mobile: full-width bottom→top sheet with rounded top, swipe-down-to-dismiss.
  * Desktop: right-side panel. Glass #190737 on #0B0018.
  */
-export function DetailDrawer({ open, onClose, title, eyebrow, onBack, children, widthClass }: DetailDrawerProps) {
-  const sheetRef = useRef<HTMLDivElement>(null);
+export function DetailDrawer({
+  open,
+  onClose,
+  title,
+  eyebrow,
+  onBack,
+  children,
+  widthClass,
+}: DetailDrawerProps) {
+  const sheetRef = useRef<HTMLElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+  const titleId = useId();
   const [dragY, setDragY] = useState(0);
   const startY = useRef<number | null>(null);
   const dragging = useRef(false);
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    previousFocusRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const focusableSelector =
+      "a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+      if (e.key !== "Tab" || !sheetRef.current) return;
+      const focusable = Array.from(
+        sheetRef.current.querySelectorAll<HTMLElement>(focusableSelector),
+      );
+      if (!focusable.length) {
+        e.preventDefault();
+        sheetRef.current.focus();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
     window.addEventListener("keydown", onKey);
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    const frame = window.requestAnimationFrame(() => {
+      const first = sheetRef.current?.querySelector<HTMLElement>(focusableSelector);
+      (first ?? sheetRef.current)?.focus();
+    });
     return () => {
+      window.cancelAnimationFrame(frame);
       window.removeEventListener("keydown", onKey);
       document.body.style.overflow = prevOverflow;
+      previousFocusRef.current?.focus({ preventScroll: true });
     };
   }, [open, onClose]);
 
   // Reset drag offset when reopened
-  useEffect(() => { if (open) setDragY(0); }, [open]);
+  useEffect(() => {
+    if (open) setDragY(0);
+  }, [open]);
 
-  const isMobile = () => typeof window !== "undefined" && window.matchMedia("(max-width: 639px)").matches;
+  const isMobile = () =>
+    typeof window !== "undefined" && window.matchMedia("(max-width: 639px)").matches;
 
   const onTouchStart = (e: React.TouchEvent) => {
     if (!isMobile()) return;
@@ -70,16 +117,20 @@ export function DetailDrawer({ open, onClose, title, eyebrow, onBack, children, 
   if (!open) return null;
 
   return createPortal(
-    <div className="dashboard-scope fixed inset-0 z-[120]" role="dialog" aria-modal="true">
+    <div className="dashboard-scope fixed inset-0 z-[120]">
       <div
         className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-[detail-fade_.2s_ease-out]"
         onClick={onClose}
       />
       <aside
         ref={sheetRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={title ? titleId : undefined}
+        tabIndex={-1}
         className={`absolute right-0 bottom-0 sm:top-0 h-[92dvh] sm:h-[100dvh] w-full ${widthClass ?? "sm:w-[480px] md:w-[520px]"} max-w-full flex flex-col border-t sm:border-t-0 sm:border-l border-white/10 rounded-t-2xl sm:rounded-none shadow-[0_-20px_60px_rgba(0,0,0,0.6)] sm:shadow-[0_0_60px_rgba(0,0,0,0.6)] animate-[detail-slide-mobile_.28s_cubic-bezier(.2,.8,.2,1)] sm:animate-[detail-slide_.28s_cubic-bezier(.2,.8,.2,1)]`}
         style={{
-          background: "#190737",
+          background: "var(--surface-1)",
           transform: dragY > 0 ? `translateY(${dragY}px)` : undefined,
           transition: dragging.current ? "none" : "transform .2s ease-out",
         }}
@@ -109,9 +160,15 @@ export function DetailDrawer({ open, onClose, title, eyebrow, onBack, children, 
           )}
           <div className="flex-1 min-w-0">
             {eyebrow && (
-              <div className="text-[10px] font-mono uppercase tracking-[0.18em] text-[#B8ACCC] mb-1">{eyebrow}</div>
+              <div className="text-[10px] font-mono uppercase tracking-[0.18em] text-[#B8ACCC] mb-1">
+                {eyebrow}
+              </div>
             )}
-            {title && <h2 className="font-display text-lg md:text-xl text-white truncate">{title}</h2>}
+            {title && (
+              <h2 id={titleId} className="font-display text-lg md:text-xl text-white truncate">
+                {title}
+              </h2>
+            )}
           </div>
           <button
             onClick={onClose}

@@ -1,24 +1,38 @@
 import { useEffect, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { DetailDrawer } from "./DetailDrawer";
 import { StatusBadge } from "./DashboardShell";
 import { StoreCreditPanel } from "./dashboard/StoreCreditPanel";
-import { getAdminOrderDetail, setOrderRefund, type AdminOrderDetail } from "@/lib/orders-admin.functions";
+import {
+  getAdminOrderDetail,
+  setOrderRefund,
+  type AdminOrderDetail,
+} from "@/lib/orders-admin.functions";
 import { toast } from "sonner";
-import { Mail, Phone, CreditCard, ExternalLink } from "lucide-react";
-
+import { Mail, Phone, CreditCard, ExternalLink, Download, Copy } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 function money(n: number) {
   return `$${Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 function fmtDate(iso: string) {
-  return new Date(iso).toLocaleString("en", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
+  return new Date(iso).toLocaleString("en", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
 
 /* ============================================================ */
 /*  ORDER DRAWER                                                 */
 /* ============================================================ */
 export function OrderDrawer({
-  orderId, open, onClose, onBack,
+  orderId,
+  open,
+  onClose,
+  onBack,
 }: {
   orderId: string | null;
   open: boolean;
@@ -31,7 +45,9 @@ export function OrderDrawer({
 
   useEffect(() => {
     if (!open || !orderId) return;
-    setDetail(null); setError(null); setLoading(true);
+    setDetail(null);
+    setError(null);
+    setLoading(true);
     let cancelled = false;
     (async () => {
       try {
@@ -45,11 +61,14 @@ export function OrderDrawer({
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [orderId, open]);
 
   const custName = detail
-    ? [detail.customer.firstName, detail.customer.lastName].filter(Boolean).join(" ") || (detail.customer.email ?? "Guest")
+    ? [detail.customer.firstName, detail.customer.lastName].filter(Boolean).join(" ") ||
+      (detail.customer.email ?? "Guest")
     : "";
 
   return (
@@ -64,7 +83,9 @@ export function OrderDrawer({
         <div className="py-16 text-center text-xs text-[#B8ACCC] font-mono">Loading order…</div>
       )}
       {error && !loading && (
-        <div className="py-8 text-center text-xs text-[var(--accent-red-glow)] font-mono">{error}</div>
+        <div className="py-8 text-center text-xs text-[var(--accent-red-glow)] font-mono">
+          {error}
+        </div>
       )}
       {detail && (
         <div className="space-y-6">
@@ -78,8 +99,16 @@ export function OrderDrawer({
             <SectionLabel>Customer</SectionLabel>
             <div className="rounded-lg border border-white/10 bg-white/[0.02] p-4 space-y-2">
               <div className="text-sm text-white font-medium">{custName || "—"}</div>
-              <InfoRow icon={<Mail size={13} />} value={detail.customer.email} href={detail.customer.email ? `mailto:${detail.customer.email}` : undefined} />
-              <InfoRow icon={<Phone size={13} />} value={detail.customer.phone} href={detail.customer.phone ? `tel:${detail.customer.phone}` : undefined} />
+              <InfoRow
+                icon={<Mail size={13} />}
+                value={detail.customer.email}
+                href={detail.customer.email ? `mailto:${detail.customer.email}` : undefined}
+              />
+              <InfoRow
+                icon={<Phone size={13} />}
+                value={detail.customer.phone}
+                href={detail.customer.phone ? `tel:${detail.customer.phone}` : undefined}
+              />
               <InfoRow
                 icon={<CreditCard size={13} />}
                 value={detail.payment?.method ?? null}
@@ -93,11 +122,16 @@ export function OrderDrawer({
             <SectionLabel>Plugins purchased</SectionLabel>
             <ul className="space-y-2">
               {detail.items.map((it) => (
-                <li key={it.id} className="flex items-center gap-3 p-2 rounded-lg border border-white/10 bg-white/[0.02]">
+                <li
+                  key={it.id}
+                  className="flex items-center gap-3 p-2 rounded-lg border border-white/10 bg-white/[0.02]"
+                >
                   <div
                     className="w-10 h-10 rounded-md shrink-0 bg-cover bg-center"
                     style={{
-                      background: it.cover_url ? `url(${it.cover_url}) center/cover` : (it.cover_gradient || "linear-gradient(135deg,#FF003C,#0E0BD1)"),
+                      background: it.cover_url
+                        ? `url(${it.cover_url}) center/cover`
+                        : it.cover_gradient || "linear-gradient(135deg,#FF003C,#0E0BD1)",
                     }}
                   />
                   <div className="flex-1 min-w-0">
@@ -112,13 +146,47 @@ export function OrderDrawer({
             </ul>
           </section>
 
+          <section>
+            <SectionLabel>Fulfillment</SectionLabel>
+            <div className="rounded-lg border border-white/10 bg-white/[0.02] p-4 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <span className="inline-flex items-center gap-2 text-sm text-white">
+                  <Download size={14} /> Download claims
+                </span>
+                <span className="font-mono text-sm text-[var(--c-volume)]">
+                  {detail.download_count}
+                </span>
+              </div>
+              <div className="grid gap-1.5">
+                {detail.items
+                  .filter((item) => item.product_slug)
+                  .map((item) => (
+                    <a
+                      key={item.id}
+                      href={`/shop/p/${item.product_slug}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex min-h-[40px] items-center justify-between gap-2 rounded-lg border border-white/10 px-3 text-xs text-[#C9BEDD] hover:border-white/25 hover:text-white"
+                    >
+                      <span className="truncate">{item.name}</span>
+                      <ExternalLink size={13} className="shrink-0" />
+                    </a>
+                  ))}
+              </div>
+            </div>
+          </section>
+
           {/* Totals */}
           <section>
             <SectionLabel>Totals</SectionLabel>
             <div className="rounded-lg border border-white/10 bg-white/[0.02] p-4 font-mono text-xs space-y-1">
               <Row label="Subtotal" value={money(detail.subtotal)} />
               {detail.discount > 0 && (
-                <Row label={`Discount${detail.discount_code ? ` · ${detail.discount_code}` : ""}`} value={`−${money(detail.discount)}`} accent />
+                <Row
+                  label={`Discount${detail.discount_code ? ` · ${detail.discount_code}` : ""}`}
+                  value={`−${money(detail.discount)}`}
+                  accent
+                />
               )}
               {detail.credit_applied > 0 && (
                 <Row label="Store credit" value={`−${money(detail.credit_applied)}`} accent />
@@ -144,11 +212,30 @@ export function OrderDrawer({
             )}
             {detail.credit_applied > 0 && detail.status === "refunded" && (
               <div className="mt-2 rounded-lg border border-white/15 bg-white/[0.03] p-3 text-[11px] text-[#C9BEDD]">
-                This order used {money(detail.credit_applied)} in store credit. Refunding in Stripe does not restore it —
-                re-grant it manually from the customer drawer if appropriate.
+                This order used {money(detail.credit_applied)} in store credit. Refunding in Stripe
+                does not restore it — re-grant it manually from the customer drawer if appropriate.
               </div>
             )}
           </section>
+
+          {detail.stripe_payment_intent_id && (
+            <section>
+              <SectionLabel>Stripe payment ID</SectionLabel>
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(detail.stripe_payment_intent_id!);
+                  toast.success("Payment ID copied");
+                }}
+                className="flex w-full min-h-[44px] items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/[0.02] px-3 text-left"
+              >
+                <span className="min-w-0 truncate font-mono text-[11px] text-[#C9BEDD]">
+                  {detail.stripe_payment_intent_id}
+                </span>
+                <Copy size={13} className="shrink-0 text-[#B8ACCC]" />
+              </button>
+            </section>
+          )}
 
           {/* Refund → Stripe (hidden on $0 orders and orders with no payment) */}
           {detail.stripe_payment_intent_id && detail.total > 0 && (
@@ -164,12 +251,12 @@ export function OrderDrawer({
 
           <ManualRefund
             detail={detail}
-            onDone={(patch: Partial<AdminOrderDetail>) => setDetail((d) => (d ? { ...d, ...patch } : d))}
+            onDone={(patch: Partial<AdminOrderDetail>) =>
+              setDetail((d) => (d ? { ...d, ...patch } : d))
+            }
           />
-
         </div>
       )}
-
     </DetailDrawer>
   );
 }
@@ -184,21 +271,29 @@ export function OrderDrawer({
  * through the same routine, so both paths land on the same numbers.
  */
 function ManualRefund({
-  detail, onDone,
+  detail,
+  onDone,
 }: {
   detail: AdminOrderDetail;
   onDone: (patch: Partial<AdminOrderDetail>) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [amount, setAmount] = useState(() => (detail.refunded > 0 ? detail.refunded.toFixed(2) : detail.total.toFixed(2)));
+  const [amount, setAmount] = useState(() =>
+    detail.refunded > 0 ? detail.refunded.toFixed(2) : detail.total.toFixed(2),
+  );
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
 
   const submit = async (value: number) => {
     setSaving(true);
     try {
-      const res = await setOrderRefund({ data: { orderId: detail.id, refundedAmount: value, note: note.trim() || null } });
-      if ("error" in res) { toast.error(res.error); return; }
+      const res = await setOrderRefund({
+        data: { orderId: detail.id, refundedAmount: value, note: note.trim() || null },
+      });
+      if ("error" in res) {
+        toast.error(res.error);
+        return;
+      }
       onDone({
         status: res.status,
         refunded: res.refunded,
@@ -206,7 +301,9 @@ function ManualRefund({
         refunded_at: res.refunded > 0 ? new Date().toISOString() : null,
         refund_note: note.trim() || detail.refund_note,
       });
-      toast.success(res.refunded === 0 ? "Refund cleared" : `Recorded ${money(res.refunded)} refunded`);
+      toast.success(
+        res.refunded === 0 ? "Refund cleared" : `Recorded ${money(res.refunded)} refunded`,
+      );
       setOpen(false);
     } catch (e: any) {
       toast.error(e?.message ?? "Could not record refund");
@@ -230,8 +327,9 @@ function ManualRefund({
     <section className="rounded-lg border border-[var(--accent-red)]/35 bg-[var(--accent-red)]/[0.05] p-4 space-y-3">
       <SectionLabel>Record refund</SectionLabel>
       <p className="text-[11px] text-[#C9BEDD] leading-relaxed">
-        Enter the <strong className="text-white">total</strong> amount refunded on this order (max {money(detail.total)}).
-        Stripe refunds sync here on their own — use this only for orders that never went through Stripe, or to correct a mismatch.
+        Enter the <strong className="text-white">total</strong> amount refunded on this order (max{" "}
+        {money(detail.total)}). Stripe refunds sync here on their own — use this only for orders
+        that never went through Stripe, or to correct a mismatch.
       </p>
       <div className="flex gap-2">
         <input
@@ -293,16 +391,42 @@ export type CustomerDrawerData = {
   orders: { id: string; number: string; total: number; status: string; created_at: string }[];
 };
 
-
 export function CustomerDrawer({
-  customer, open, onClose,
+  customer,
+  open,
+  onClose,
 }: {
   customer: CustomerDrawerData | null;
   open: boolean;
   onClose: () => void;
 }) {
   const [openOrderId, setOpenOrderId] = useState<string | null>(null);
-  const aov = customer && customer.completedCount > 0 ? customer.totalSpent / customer.completedCount : 0;
+  const [grants, setGrants] = useState<
+    { id: string; granted_at: string; reason: string; products: { name: string } | null }[]
+  >([]);
+  const aov =
+    customer && customer.completedCount > 0 ? customer.totalSpent / customer.completedCount : 0;
+
+  useEffect(() => {
+    if (!open || !customer?.userId) {
+      setGrants([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from("plugin_grants")
+        .select("id, granted_at, reason, products(name)")
+        .eq("customer_id", customer.userId!)
+        .is("revoked_at", null)
+        .order("granted_at", { ascending: false })
+        .limit(20);
+      if (!cancelled && !error) setGrants((data ?? []) as unknown as typeof grants);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, customer?.userId]);
 
   return (
     <>
@@ -318,10 +442,24 @@ export function CustomerDrawer({
             <section>
               <SectionLabel>General info</SectionLabel>
               <div className="rounded-lg border border-white/10 bg-white/[0.02] p-4 space-y-2">
-                <InfoRow icon={<Mail size={13} />} value={customer.email} href={`mailto:${customer.email}`} />
-                <InfoRow icon={<Phone size={13} />} value={customer.phone ?? null} href={customer.phone ? `tel:${customer.phone}` : undefined} placeholder="No phone on file" />
+                <InfoRow
+                  icon={<Mail size={13} />}
+                  value={customer.email}
+                  href={`mailto:${customer.email}`}
+                />
+                <InfoRow
+                  icon={<Phone size={13} />}
+                  value={customer.phone ?? null}
+                  href={customer.phone ? `tel:${customer.phone}` : undefined}
+                  placeholder="No phone on file"
+                />
                 <div className="text-[10px] font-mono text-[#B8ACCC] pt-1">
-                  Member since {new Date(customer.memberSince).toLocaleDateString("en", { month: "short", day: "numeric", year: "numeric" })}
+                  Member since{" "}
+                  {new Date(customer.memberSince).toLocaleDateString("en", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
                 </div>
               </div>
             </section>
@@ -348,7 +486,54 @@ export function CustomerDrawer({
               </section>
             )}
 
+            {customer.userId && (
+              <section>
+                <SectionLabel>Granted plugins</SectionLabel>
+                {grants.length ? (
+                  <ul className="space-y-1.5">
+                    {grants.map((grant) => (
+                      <li
+                        key={grant.id}
+                        className="rounded-lg border border-white/10 bg-white/[0.02] p-3"
+                      >
+                        <div className="text-sm text-white">{grant.products?.name ?? "Plugin"}</div>
+                        <div className="mt-1 font-mono text-[10px] text-[#B8ACCC]">
+                          {fmtDate(grant.granted_at)} · {grant.reason}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="rounded-lg border border-white/10 bg-white/[0.02] p-4 text-[11px] font-mono text-[#B8ACCC]">
+                    No active plugin grants.
+                  </div>
+                )}
+              </section>
+            )}
 
+            {customer.userId && (
+              <section>
+                <SectionLabel>Shortcuts</SectionLabel>
+                <div className="grid grid-cols-2 gap-2">
+                  <Link
+                    to="/dashboard/perks"
+                    search={{ customer: customer.userId, kind: "plugin" } as any}
+                    onClick={onClose}
+                    className="btn-ghost !min-h-[44px] !px-3 !text-xs inline-flex items-center justify-center"
+                  >
+                    Grant plugin
+                  </Link>
+                  <Link
+                    to="/dashboard/perks"
+                    search={{ customer: customer.userId, kind: "credit" } as any}
+                    onClick={onClose}
+                    className="btn-ghost !min-h-[44px] !px-3 !text-xs inline-flex items-center justify-center"
+                  >
+                    Grant credit
+                  </Link>
+                </div>
+              </section>
+            )}
 
             {/* Recent orders */}
             <section>
@@ -357,7 +542,7 @@ export function CustomerDrawer({
                 <div className="text-xs text-[#B8ACCC] py-2 font-mono">No orders yet.</div>
               ) : (
                 <ul className="space-y-2">
-                  {customer.orders.slice(0, 8).map(o => (
+                  {customer.orders.slice(0, 8).map((o) => (
                     <li key={o.id}>
                       <button
                         onClick={() => setOpenOrderId(o.id)}
@@ -367,10 +552,14 @@ export function CustomerDrawer({
                           <span className="font-mono text-xs text-white">{o.number}</span>
                           <div className="flex items-center gap-2">
                             <StatusBadge status={o.status} />
-                            <span className="font-mono text-xs text-white">{money(Number(o.total))}</span>
+                            <span className="font-mono text-xs text-white">
+                              {money(Number(o.total))}
+                            </span>
                           </div>
                         </div>
-                        <div className="text-[10px] font-mono text-[#B8ACCC]">{fmtDate(o.created_at)}</div>
+                        <div className="text-[10px] font-mono text-[#B8ACCC]">
+                          {fmtDate(o.created_at)}
+                        </div>
                       </button>
                     </li>
                   ))}
@@ -384,7 +573,10 @@ export function CustomerDrawer({
       <OrderDrawer
         open={!!openOrderId}
         orderId={openOrderId}
-        onClose={() => { setOpenOrderId(null); onClose(); }}
+        onClose={() => {
+          setOpenOrderId(null);
+          onClose();
+        }}
         onBack={() => setOpenOrderId(null)}
       />
     </>
@@ -401,32 +593,66 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
-function InfoRow({ icon, value, href, placeholder = "—" }: { icon: React.ReactNode; value: string | null; href?: string; placeholder?: string }) {
+function InfoRow({
+  icon,
+  value,
+  href,
+  placeholder = "—",
+}: {
+  icon: React.ReactNode;
+  value: string | null;
+  href?: string;
+  placeholder?: string;
+}) {
   const empty = !value;
   const inner = (
-    <span className={`text-sm truncate ${empty ? "text-white/40 italic" : "text-white hover:text-[var(--accent-red-glow)]"}`}>
+    <span
+      className={`text-sm truncate ${empty ? "text-white/40 italic" : "text-white hover:text-[var(--accent-red-glow)]"}`}
+    >
       {value ?? placeholder}
     </span>
   );
   return (
     <div className="flex items-center gap-2 min-w-0">
       <span className="text-[#B8ACCC] shrink-0">{icon}</span>
-      {href && !empty ? <a href={href} className="min-w-0 flex-1 truncate">{inner}</a> : <span className="min-w-0 flex-1">{inner}</span>}
+      {href && !empty ? (
+        <a href={href} className="min-w-0 flex-1 truncate">
+          {inner}
+        </a>
+      ) : (
+        <span className="min-w-0 flex-1">{inner}</span>
+      )}
     </div>
   );
 }
-function Row({ label, value, bold, accent }: { label: string; value: string; bold?: boolean; accent?: boolean }) {
+function Row({
+  label,
+  value,
+  bold,
+  accent,
+}: {
+  label: string;
+  value: string;
+  bold?: boolean;
+  accent?: boolean;
+}) {
   return (
     <div className="flex items-center justify-between gap-3">
       <span className={accent ? "text-[var(--accent-red-glow)]" : "text-white/60"}>{label}</span>
-      <span className={`${bold ? "text-white text-base" : accent ? "text-[var(--accent-red-glow)]" : "text-white"}`}>{value}</span>
+      <span
+        className={`${bold ? "text-white text-base" : accent ? "text-[var(--accent-red-glow)]" : "text-white"}`}
+      >
+        {value}
+      </span>
     </div>
   );
 }
 function MiniStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3">
-      <div className="text-[9px] font-mono uppercase tracking-wider text-[#B8ACCC] mb-1">{label}</div>
+      <div className="text-[9px] font-mono uppercase tracking-wider text-[#B8ACCC] mb-1">
+        {label}
+      </div>
       <div className="font-mono text-sm text-white truncate">{value}</div>
     </div>
   );

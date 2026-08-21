@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { X, Search } from "lucide-react";
@@ -23,18 +23,29 @@ export type DiscountRow = {
   categories: string[];
 };
 
-
 type ProductLite = { id: string; name: string; maker: string; category: string };
 
-export function DiscountCodeModal({ onClose, onCreated, existing }: { onClose: () => void; onCreated: (r: DiscountRow) => void; existing?: DiscountRow }) {
+export function DiscountCodeModal({
+  onClose,
+  onCreated,
+  existing,
+}: {
+  onClose: () => void;
+  onCreated: (r: DiscountRow) => void;
+  existing?: DiscountRow;
+}) {
   const reduce = useReducedMotion();
   const isEdit = !!existing;
   const [name, setName] = useState(existing?.name ?? "");
   const [code, setCode] = useState(existing?.code ?? "");
   const [type, setType] = useState<"percent" | "flat">(existing?.type ?? "percent");
   const [value, setValue] = useState(existing ? String(existing.value) : "");
-  const [usageLimit, setUsageLimit] = useState(existing?.usage_limit != null ? String(existing.usage_limit) : "");
-  const [expiresAt, setExpiresAt] = useState(existing?.expires_at ? existing.expires_at.slice(0, 10) : "");
+  const [usageLimit, setUsageLimit] = useState(
+    existing?.usage_limit != null ? String(existing.usage_limit) : "",
+  );
+  const [expiresAt, setExpiresAt] = useState(
+    existing?.expires_at ? existing.expires_at.slice(0, 10) : "",
+  );
   const [active, setActive] = useState(existing ? existing.status === "active" : true);
   const [scope, setScope] = useState<Scope>(existing?.scope ?? "all");
   const [categoriesSel, setCategoriesSel] = useState<string[]>(existing?.categories ?? []);
@@ -42,10 +53,12 @@ export function DiscountCodeModal({ onClose, onCreated, existing }: { onClose: (
   const [products, setProducts] = useState<ProductLite[]>([]);
   const [query, setQuery] = useState("");
   const [saving, setSaving] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from("products")
+      const { data } = await supabase
+        .from("products")
         .select("id, name, maker, category")
         .eq("status", "published")
         .order("name");
@@ -56,28 +69,62 @@ export function DiscountCodeModal({ onClose, onCreated, existing }: { onClose: (
   useEffect(() => {
     if (!existing || existing.scope !== "selected") return;
     (async () => {
-      const { data } = await (supabase as any).from("discount_code_products")
+      const { data } = await (supabase as any)
+        .from("discount_code_products")
         .select("product_id")
         .eq("discount_code_id", existing.id);
-      setProductIds(((data ?? []) as { product_id: string }[]).map(r => r.product_id));
+      setProductIds(((data ?? []) as { product_id: string }[]).map((r) => r.product_id));
     })();
   }, [existing]);
 
   useEffect(() => {
     const prev = document.body.style.overflow;
+    const previousFocus = document.activeElement as HTMLElement | null;
     document.body.style.overflow = "hidden";
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    requestAnimationFrame(() => {
+      dialogRef.current
+        ?.querySelector<HTMLElement>(
+          "button, input, select, textarea, [tabindex]:not([tabindex='-1'])",
+        )
+        ?.focus();
+    });
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+      if (e.key !== "Tab" || !dialogRef.current) return;
+      const focusable = Array.from(
+        dialogRef.current.querySelectorAll<HTMLElement>(
+          "button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])",
+        ),
+      );
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
     document.addEventListener("keydown", onKey);
-    return () => { document.body.style.overflow = prev; document.removeEventListener("keydown", onKey); };
+    return () => {
+      document.body.style.overflow = prev;
+      document.removeEventListener("keydown", onKey);
+      previousFocus?.focus();
+    };
   }, [onClose]);
 
-  const productById = useMemo(() => new Map(products.map(p => [p.id, p])), [products]);
+  const productById = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
   const searchResults = useMemo(() => {
     if (!query.trim()) return [];
     const q = query.toLowerCase();
     return products
-      .filter(p => !productIds.includes(p.id))
-      .filter(p => p.name.toLowerCase().includes(q) || p.maker.toLowerCase().includes(q))
+      .filter((p) => !productIds.includes(p.id))
+      .filter((p) => p.name.toLowerCase().includes(q) || p.maker.toLowerCase().includes(q))
       .slice(0, 8);
   }, [products, query, productIds]);
 
@@ -90,14 +137,17 @@ export function DiscountCodeModal({ onClose, onCreated, existing }: { onClose: (
     const val = parseFloat(value);
     if (!trimmed) return toast.error("Enter a code");
     if (!val || val <= 0) return toast.error("Enter a value");
-    if (scope === "categories" && categoriesSel.length === 0) return toast.error("Pick at least one category");
-    if (scope === "selected" && productIds.length === 0) return toast.error("Add at least one plugin");
+    if (scope === "categories" && categoriesSel.length === 0)
+      return toast.error("Pick at least one category");
+    if (scope === "selected" && productIds.length === 0)
+      return toast.error("Add at least one plugin");
     setSaving(true);
-    const appliesTo = scope === "all"
-      ? "All products"
-      : scope === "categories"
-        ? `${categoriesSel.length} categor${categoriesSel.length === 1 ? "y" : "ies"}`
-        : `${productIds.length} plugin${productIds.length === 1 ? "" : "s"}`;
+    const appliesTo =
+      scope === "all"
+        ? "All products"
+        : scope === "categories"
+          ? `${categoriesSel.length} categor${categoriesSel.length === 1 ? "y" : "ies"}`
+          : `${productIds.length} plugin${productIds.length === 1 ? "" : "s"}`;
     const payload: Record<string, unknown> = {
       name: name.trim() || null,
       code: trimmed,
@@ -110,22 +160,40 @@ export function DiscountCodeModal({ onClose, onCreated, existing }: { onClose: (
       scope,
       categories: scope === "categories" ? categoriesSel : [],
     };
-    const sel = "id, name, code, type, value, usage_limit, uses, expires_at, status, applies_to, scope, categories";
+    const sel =
+      "id, name, code, type, value, usage_limit, uses, expires_at, status, applies_to, scope, categories";
     const { data, error } = isEdit
-      ? await supabase.from("discount_codes").update(payload as any).eq("id", existing!.id).select(sel).single()
-      : await supabase.from("discount_codes").insert(payload as any).select(sel).single();
+      ? await supabase
+          .from("discount_codes")
+          .update(payload as any)
+          .eq("id", existing!.id)
+          .select(sel)
+          .single()
+      : await supabase
+          .from("discount_codes")
+          .insert(payload as any)
+          .select(sel)
+          .single();
     if (error || !data) {
       setSaving(false);
-      return toast.error(error?.message || (isEdit ? "Couldn't save code" : "Couldn't create code"));
+      return toast.error(
+        error?.message || (isEdit ? "Couldn't save code" : "Couldn't create code"),
+      );
     }
     const codeId = (data as any).id as string;
     // Sync join table for scope=selected.
     if (isEdit) {
-      const { error: dErr } = await (supabase as any).from("discount_code_products").delete().eq("discount_code_id", codeId);
-      if (dErr) { setSaving(false); return toast.error(dErr.message); }
+      const { error: dErr } = await (supabase as any)
+        .from("discount_code_products")
+        .delete()
+        .eq("discount_code_id", codeId);
+      if (dErr) {
+        setSaving(false);
+        return toast.error(dErr.message);
+      }
     }
     if (scope === "selected" && productIds.length > 0) {
-      const rows = productIds.map(pid => ({ discount_code_id: codeId, product_id: pid }));
+      const rows = productIds.map((pid) => ({ discount_code_id: codeId, product_id: pid }));
       const { error: jErr } = await (supabase as any).from("discount_code_products").insert(rows);
       if (jErr) {
         setSaving(false);
@@ -143,8 +211,6 @@ export function DiscountCodeModal({ onClose, onCreated, existing }: { onClose: (
     <AnimatePresence>
       <motion.div
         className="dashboard-scope fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6"
-        role="dialog"
-        aria-modal="true"
         initial={reduce ? false : { opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -156,6 +222,10 @@ export function DiscountCodeModal({ onClose, onCreated, existing }: { onClose: (
           onClick={onClose}
         />
         <motion.div
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="discount-code-modal-title"
           className="relative w-full max-w-lg max-h-[90vh] flex flex-col rounded-2xl border border-white/12 shadow-[0_30px_80px_rgba(0,0,0,0.6)] overflow-hidden"
           style={{ background: "rgba(20,5,44,0.96)", backdropFilter: "blur(24px) saturate(160%)" }}
           initial={reduce ? false : { opacity: 0, scale: 0.96, y: 12 }}
@@ -165,59 +235,126 @@ export function DiscountCodeModal({ onClose, onCreated, existing }: { onClose: (
         >
           <div className="chromatic-edge pointer-events-none" />
           <div className="relative z-10 flex items-center justify-between px-6 py-4 border-b border-white/10 shrink-0">
-            <h3 className="font-display text-lg">{isEdit ? "Edit discount code" : "Generate discount code"}</h3>
-            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition" aria-label="Close">
+            <h3 id="discount-code-modal-title" className="font-display text-lg">
+              {isEdit ? "Edit discount code" : "Generate discount code"}
+            </h3>
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition"
+              aria-label="Close"
+            >
               <X size={16} />
             </button>
           </div>
 
           <div className="relative z-10 flex-1 min-h-0 overflow-y-auto px-6 py-5 space-y-4">
             <label className="block">
-              <span className="label-mini text-[10px] opacity-70 mb-1.5 block">Name <span className="opacity-50">(optional, admin only)</span></span>
-              <input value={name} onChange={e => setName(e.target.value)} className="ipt-modal w-full" placeholder="Soothe 2 launch — 25% off" />
+              <span className="label-mini text-[10px] opacity-70 mb-1.5 block">
+                Name <span className="opacity-50">(optional, admin only)</span>
+              </span>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="ipt-modal w-full"
+                placeholder="Soothe 2 launch — 25% off"
+              />
             </label>
 
             <label className="block">
               <span className="label-mini text-[10px] opacity-70 mb-1.5 block">Code</span>
               <div className="flex gap-2">
-                <input value={code} onChange={e => setCode(e.target.value.toUpperCase())} className="ipt-modal flex-1 font-mono" placeholder="WELCOME10" />
-                <button type="button" onClick={autoGen} className="btn-ghost !text-xs !py-2 !px-3 shrink-0">Auto</button>
+                <input
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.toUpperCase())}
+                  className="ipt-modal flex-1 font-mono"
+                  placeholder="WELCOME10"
+                />
+                <button
+                  type="button"
+                  onClick={autoGen}
+                  className="btn-ghost !text-xs !py-2 !px-3 shrink-0"
+                >
+                  Auto
+                </button>
               </div>
             </label>
 
             <div className="grid grid-cols-2 gap-3">
               <label className="block">
                 <span className="label-mini text-[10px] opacity-70 mb-1.5 block">Type</span>
-                <select value={type} onChange={e => setType(e.target.value as any)} className="ipt-modal">
-                  <option className="bg-[#1F0540]" value="percent">Percentage (%)</option>
-                  <option className="bg-[#1F0540]" value="flat">Flat amount ($)</option>
+                <select
+                  value={type}
+                  onChange={(e) => setType(e.target.value as any)}
+                  className="ipt-modal"
+                >
+                  <option className="bg-[#1F0540]" value="percent">
+                    Percentage (%)
+                  </option>
+                  <option className="bg-[#1F0540]" value="flat">
+                    Flat amount ($)
+                  </option>
                 </select>
               </label>
               <label className="block">
-                <span className="label-mini text-[10px] opacity-70 mb-1.5 block">Value {type === "percent" ? "(%)" : "($ off)"}</span>
-                <input type="number" min="0" step="any" value={value} onChange={e => setValue(e.target.value)} className="ipt-modal" />
+                <span className="label-mini text-[10px] opacity-70 mb-1.5 block">
+                  Value {type === "percent" ? "(%)" : "($ off)"}
+                </span>
+                <input
+                  type="number"
+                  min="0"
+                  step="any"
+                  value={value}
+                  onChange={(e) => setValue(e.target.value)}
+                  className="ipt-modal"
+                />
               </label>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <label className="block">
                 <span className="label-mini text-[10px] opacity-70 mb-1.5 block">Usage limit</span>
-                <input type="number" min="1" value={usageLimit} onChange={e => setUsageLimit(e.target.value)} className="ipt-modal" placeholder="Unlimited" />
+                <input
+                  type="number"
+                  min="1"
+                  value={usageLimit}
+                  onChange={(e) => setUsageLimit(e.target.value)}
+                  className="ipt-modal"
+                  placeholder="Unlimited"
+                />
               </label>
               <label className="block">
                 <span className="label-mini text-[10px] opacity-70 mb-1.5 block">Expires</span>
-                <input type="date" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} className="ipt-modal" />
+                <input
+                  type="date"
+                  value={expiresAt}
+                  onChange={(e) => setExpiresAt(e.target.value)}
+                  className="ipt-modal"
+                />
               </label>
             </div>
 
             <div>
               <span className="label-mini text-[10px] opacity-70 mb-2 block">Applies to</span>
               <div className="space-y-2">
-                {(["all", "categories", "selected"] as const).map(s => (
-                  <label key={s} className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition ${scope === s ? "border-[var(--accent-red)] bg-[var(--accent-red)]/10" : "border-white/10 hover:border-white/25 bg-white/[0.02]"}`}>
-                    <input type="radio" checked={scope === s} onChange={() => setScope(s)} className="accent-[var(--accent-red)] mt-0.5" />
+                {(["all", "categories", "selected"] as const).map((s) => (
+                  <label
+                    key={s}
+                    className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition ${scope === s ? "border-[var(--accent-red)] bg-[var(--accent-red)]/10" : "border-white/10 hover:border-white/25 bg-white/[0.02]"}`}
+                  >
+                    <input
+                      type="radio"
+                      checked={scope === s}
+                      onChange={() => setScope(s)}
+                      className="accent-[var(--accent-red)] mt-0.5"
+                    />
                     <div>
-                      <div className="text-sm font-semibold">{s === "all" ? "All products" : s === "categories" ? "Specific categories" : "Specific plugins"}</div>
+                      <div className="text-sm font-semibold">
+                        {s === "all"
+                          ? "All products"
+                          : s === "categories"
+                            ? "Specific categories"
+                            : "Specific plugins"}
+                      </div>
                       <div className="text-[11px] text-white/55">
                         {s === "all" && "Applies to any plugin in the cart."}
                         {s === "categories" && "Only products in the checked categories."}
@@ -230,11 +367,25 @@ export function DiscountCodeModal({ onClose, onCreated, existing }: { onClose: (
 
               {scope === "categories" && (
                 <div className="grid grid-cols-2 gap-2 mt-3">
-                  {ALL_CATEGORIES.map(c => {
+                  {ALL_CATEGORIES.map((c) => {
                     const checked = categoriesSel.includes(c.slug);
                     return (
-                      <label key={c.slug} className={`flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer text-sm transition ${checked ? "border-[var(--accent-red)] bg-[var(--accent-red)]/10" : "border-white/10 hover:border-white/25"}`}>
-                        <input type="checkbox" checked={checked} onChange={() => setCategoriesSel(checked ? categoriesSel.filter(x => x !== c.slug) : [...categoriesSel, c.slug])} className="accent-[var(--accent-red)]" />
+                      <label
+                        key={c.slug}
+                        className={`flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer text-sm transition ${checked ? "border-[var(--accent-red)] bg-[var(--accent-red)]/10" : "border-white/10 hover:border-white/25"}`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() =>
+                            setCategoriesSel(
+                              checked
+                                ? categoriesSel.filter((x) => x !== c.slug)
+                                : [...categoriesSel, c.slug],
+                            )
+                          }
+                          className="accent-[var(--accent-red)]"
+                        />
                         <span className="capitalize">{c.name}</span>
                       </label>
                     );
@@ -246,15 +397,30 @@ export function DiscountCodeModal({ onClose, onCreated, existing }: { onClose: (
                 <div className="mt-3">
                   <div className="relative mb-2">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
-                    <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search plugins…" className="ipt-modal !pl-9" />
+                    <input
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      placeholder="Search plugins…"
+                      className="ipt-modal !pl-9"
+                    />
                   </div>
                   {searchResults.length > 0 && (
                     <div className="rounded-lg border border-white/10 bg-white/[0.03] max-h-52 overflow-y-auto mb-3">
-                      {searchResults.map(p => (
-                        <button key={p.id} type="button" onClick={() => { setProductIds([...productIds, p.id]); setQuery(""); }} className="w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-white/5 text-left">
+                      {searchResults.map((p) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => {
+                            setProductIds([...productIds, p.id]);
+                            setQuery("");
+                          }}
+                          className="w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-white/5 text-left"
+                        >
                           <div>
                             <div className="font-medium">{p.name}</div>
-                            <div className="text-[10px] text-white/45 font-mono uppercase tracking-wider">{p.maker} · {p.category}</div>
+                            <div className="text-[10px] text-white/45 font-mono uppercase tracking-wider">
+                              {p.maker} · {p.category}
+                            </div>
                           </div>
                           <span className="text-[10px] text-[var(--accent-red-glow)]">+ ADD</span>
                         </button>
@@ -265,12 +431,20 @@ export function DiscountCodeModal({ onClose, onCreated, existing }: { onClose: (
                     <div className="text-xs text-white/45 italic">No plugins added yet.</div>
                   ) : (
                     <div className="flex flex-wrap gap-2">
-                      {productIds.map(pid => {
+                      {productIds.map((pid) => {
                         const p = productById.get(pid);
                         return (
-                          <span key={pid} className="inline-flex items-center gap-2 pl-3 pr-1.5 py-1 rounded-full border border-white/15 bg-white/5 text-xs">
+                          <span
+                            key={pid}
+                            className="inline-flex items-center gap-2 pl-3 pr-1.5 py-1 rounded-full border border-white/15 bg-white/5 text-xs"
+                          >
                             {p ? p.name : pid.slice(0, 8)}
-                            <button type="button" onClick={() => setProductIds(productIds.filter(x => x !== pid))} className="w-5 h-5 rounded-full flex items-center justify-center hover:bg-white/10" aria-label="Remove">
+                            <button
+                              type="button"
+                              onClick={() => setProductIds(productIds.filter((x) => x !== pid))}
+                              className="w-5 h-5 rounded-full flex items-center justify-center hover:bg-white/10"
+                              aria-label="Remove"
+                            >
                               <X size={11} />
                             </button>
                           </span>
@@ -283,14 +457,32 @@ export function DiscountCodeModal({ onClose, onCreated, existing }: { onClose: (
             </div>
 
             <label className="flex items-center gap-2 text-xs cursor-pointer">
-              <input type="checkbox" checked={active} onChange={e => setActive(e.target.checked)} className="accent-[var(--accent-red)]" />
+              <input
+                type="checkbox"
+                checked={active}
+                onChange={(e) => setActive(e.target.checked)}
+                className="accent-[var(--accent-red)]"
+              />
               <span>Active (customers can use this code right away)</span>
             </label>
           </div>
 
-          <div className="relative z-10 flex gap-2 justify-end px-6 py-4 border-t border-white/10 shrink-0" style={{ background: "rgba(20,5,44,0.6)" }}>
-            <button onClick={onClose} className="btn-ghost !text-xs !py-2 !px-4">Cancel</button>
-            <button onClick={save} disabled={saving} className="btn-primary !text-xs !py-2 !px-4">{saving ? (isEdit ? "Saving…" : "Creating…") : (isEdit ? "Save changes" : "Create code")}</button>
+          <div
+            className="relative z-10 flex gap-2 justify-end px-6 py-4 border-t border-white/10 shrink-0"
+            style={{ background: "rgba(20,5,44,0.6)" }}
+          >
+            <button onClick={onClose} className="btn-ghost !text-xs !py-2 !px-4">
+              Cancel
+            </button>
+            <button onClick={save} disabled={saving} className="btn-primary !text-xs !py-2 !px-4">
+              {saving
+                ? isEdit
+                  ? "Saving…"
+                  : "Creating…"
+                : isEdit
+                  ? "Save changes"
+                  : "Create code"}
+            </button>
           </div>
         </motion.div>
 

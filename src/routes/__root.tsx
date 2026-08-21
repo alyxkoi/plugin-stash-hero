@@ -75,14 +75,26 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Plugin Warehouse | Pro Music Plugins at up to 90% Off Retail" },
-      { name: "description", content: "Pro plugins, sample libraries, and creative tools at a fraction of retail. Build your studio for less. Serum, Omnisphere, FabFilter and more, up to 90% off." },
+      {
+        name: "description",
+        content:
+          "Pro plugins, sample libraries, and creative tools at a fraction of retail. Build your studio for less. Serum, Omnisphere, FabFilter and more, up to 90% off.",
+      },
       { name: "author", content: "Plugin Warehouse" },
       { property: "og:site_name", content: "Plugin Warehouse" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@pluginwarehouse" },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/E3zniLYNF9bYMEA8iYs6337JUNZ2/social-images/social-1784165136214-PWH_Logo_Main.webp" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/E3zniLYNF9bYMEA8iYs6337JUNZ2/social-images/social-1784165136214-PWH_Logo_Main.webp" },
+      {
+        property: "og:image",
+        content:
+          "https://storage.googleapis.com/gpt-engineer-file-uploads/E3zniLYNF9bYMEA8iYs6337JUNZ2/social-images/social-1784165136214-PWH_Logo_Main.webp",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://storage.googleapis.com/gpt-engineer-file-uploads/E3zniLYNF9bYMEA8iYs6337JUNZ2/social-images/social-1784165136214-PWH_Logo_Main.webp",
+      },
       { name: "google-site-verification", content: "PU1Q5L07BtWGs0aqThZAlNRR0UP7C_3zpkwh1Sg8ttw" },
     ],
     links: [
@@ -92,6 +104,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;900&family=Dosis:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap",
+      },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Google+Sans+Code:wght@300..800&family=Google+Sans+Flex:GRAD,ROND,opsz,wdth,wght@0..100,0..100,6..144,25..151,1..1000&display=swap",
       },
     ],
   }),
