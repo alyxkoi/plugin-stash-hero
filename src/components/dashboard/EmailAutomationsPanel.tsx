@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { MailCheck, Send, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import { DashCard } from "@/components/DashboardShell";
 import {
@@ -20,7 +21,6 @@ import {
   type TestTemplateKey,
 } from "@/lib/email-automation-admin.functions";
 
-
 const TEST_TEMPLATE_LABELS: { key: TestTemplateKey; label: string }[] = [
   { key: "cart_1h", label: "Cart · 1 hour" },
   { key: "cart_24h", label: "Cart · 24 hours" },
@@ -31,38 +31,43 @@ const TEST_TEMPLATE_LABELS: { key: TestTemplateKey; label: string }[] = [
 
 type SeqKey = "abandoned_cart" | "saved_items";
 
-
-const LABELS: Record<SeqKey, { title: string; steps: { step: number; label: string }[] }> = {
+const LABELS: Record<
+  SeqKey,
+  { title: string; description: string; steps: { step: number; label: string; purpose: string }[] }
+> = {
   abandoned_cart: {
     title: "Abandoned cart",
+    description: "Recover checkout sessions with a timed three-message sequence.",
     steps: [
-      { step: 1, label: "1 hour" },
-      { step: 2, label: "24 hours" },
-      { step: 3, label: "72 hours" },
+      { step: 1, label: "After 1 hour", purpose: "Quick reminder" },
+      { step: 2, label: "After 24 hours", purpose: "Second chance" },
+      { step: 3, label: "After 72 hours", purpose: "Final follow-up" },
     ],
   },
   saved_items: {
     title: "Saved items",
+    description: "Bring customers back when saved products are still relevant.",
     steps: [
-      { step: 1, label: "3-day nudge" },
-      { step: 2, label: "Price drop" },
+      { step: 1, label: "After 3 days", purpose: "Saved-item nudge" },
+      { step: 2, label: "On price drop", purpose: "Price alert" },
     ],
   },
 };
 
 const RANGE_LABELS: Record<RangeKey, string> = {
-  "7d": "Last 7 days",
-  "14d": "Last 14 days",
-  "30d": "Last 30 days",
-  wtd: "Week to date",
-  mtd: "Month to date",
+  "7d": "7 days",
+  "14d": "14 days",
+  "30d": "30 days",
+  wtd: "This week",
+  mtd: "This month",
 };
 
 const money = (cents: number) =>
   `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 
 const rate = (sales: number, sent: number) => (sent > 0 ? (sales / sent) * 100 : 0);
-const rateText = (sales: number, sent: number) => (sent > 0 ? `${rate(sales, sent).toFixed(1)}%` : "—");
+const rateText = (sales: number, sent: number) =>
+  sent > 0 ? `${rate(sales, sent).toFixed(1)}%` : "—";
 
 export function EmailAutomationsPanel() {
   const fetchStats = useServerFn(getEmailAutomationStats);
@@ -76,40 +81,35 @@ export function EmailAutomationsPanel() {
   const [testTo, setTestTo] = useState("alexrunsit@gmail.com");
   const [testMulti, setTestMulti] = useState(false);
 
-
   const { data, isLoading, isFetching, isError, refetch } = useQuery({
     queryKey: ["email-automation-stats", range],
     queryFn: () => fetchStats({ data: { range } }),
     staleTime: 30_000,
-    placeholderData: (prev) => prev,
+    placeholderData: (previous) => previous,
   });
 
   const toggle = useMutation({
-    mutationFn: (v: { sequence: SeqKey; enabled: boolean }) => toggleFn({ data: v }),
+    mutationFn: (value: { sequence: SeqKey; enabled: boolean }) => toggleFn({ data: value }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["email-automation-stats"] });
       toast.success("Sequence updated");
     },
-    onError: (e: Error) => toast.error(e.message || "Couldn't update sequence"),
+    onError: (error: Error) => toast.error(error.message || "Couldn't update sequence"),
   });
-
-
-
 
   const testSend = useMutation({
     mutationFn: () =>
       testSendFn({ data: { template: testTemplate, to: testTo.trim(), multipleItems: testMulti } }),
-    onSuccess: (r) => toast.success(`Test email sent to ${r.to}`),
-    onError: (e: Error) => toast.error(e.message || "Couldn't send the test email"),
+    onSuccess: (result) => toast.success(`Test email sent to ${result.to}`),
+    onError: (error: Error) => toast.error(error.message || "Couldn't send the test email"),
   });
-
 
   if (isError) {
     return (
       <DashCard title="Behavioral emails">
-        <div className="py-10 text-center text-sm text-white/50">
-          Couldn't load automation stats.{" "}
-          <button onClick={() => refetch()} className="underline hover:text-white">
+        <div className="dash-empty">
+          <p>Couldn't load automation stats.</p>
+          <button type="button" onClick={() => refetch()} className="btn-ghost px-4">
             Retry
           </button>
         </div>
@@ -117,275 +117,270 @@ export function EmailAutomationsPanel() {
     );
   }
 
-  const stepStat = (seq: SeqKey, step: number): StepStat =>
-    (data?.steps ?? []).find((s) => s.sequence === seq && s.step === step) ?? {
-      sequence: seq,
+  const stepStat = (sequence: SeqKey, step: number): StepStat =>
+    (data?.steps ?? []).find((item) => item.sequence === sequence && item.step === step) ?? {
+      sequence,
       step,
       sent: 0,
       sales: 0,
       netCents: 0,
     };
 
-  const dim = isFetching ? "opacity-50 transition-opacity" : "transition-opacity";
+  const allSteps = (Object.keys(LABELS) as SeqKey[]).flatMap((sequence) =>
+    LABELS[sequence].steps.map(({ step }) => stepStat(sequence, step)),
+  );
+  const totals = allSteps.reduce(
+    (sum, item) => ({
+      sent: sum.sent + item.sent,
+      sales: sum.sales + item.sales,
+      netCents: sum.netCents + item.netCents,
+    }),
+    { sent: 0, sales: 0, netCents: 0 },
+  );
+  const activeSequences = (Object.keys(LABELS) as SeqKey[]).filter(
+    (sequence) => data?.settings?.[sequence] ?? true,
+  ).length;
+  const dim = isFetching ? "is-refreshing" : "";
 
   return (
-    <div className="space-y-4">
-      {/* shared range filter */}
-      <div className="flex flex-wrap gap-2">
-        {RANGE_KEYS.map((k) => (
-          <button
-            key={k}
-            onClick={() => setRange(k)}
-            className={`rounded-full px-3.5 py-1.5 text-[10px] font-mono uppercase tracking-widest transition-colors ${
-              range === k
-                ? "bg-[var(--accent-red)] text-white shadow-[0_0_16px_rgba(255,0,60,0.3)]"
-                : "border border-white/12 text-white/50 hover:border-white/30 hover:text-white"
-            }`}
-          >
-            {RANGE_LABELS[k]}
-          </button>
-        ))}
+    <div className="dash-email-ops">
+      <section className={`dash-email-overview ${dim}`} aria-label="Email automation summary">
+        <div className="dash-email-overview-head">
+          <div>
+            <span className="dash-email-eyebrow">Automation health</span>
+            <h2>Recovery engine</h2>
+            <p>Live performance across cart and saved-item journeys.</p>
+          </div>
+          <div className="dash-email-ranges" aria-label="Automation reporting range">
+            {RANGE_KEYS.map((key) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setRange(key)}
+                aria-pressed={range === key}
+              >
+                {RANGE_LABELS[key]}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="dash-email-summary-grid">
+          <EmailSummary label="Sequences live" value={`${activeSequences} / 2`} />
+          <EmailSummary label="Messages sent" value={totals.sent.toLocaleString()} />
+          <EmailSummary label="Recovered sales" value={totals.sales.toLocaleString()} />
+          <EmailSummary label="Recovery rate" value={rateText(totals.sales, totals.sent)} />
+          <EmailSummary label="Recovered revenue" value={money(totals.netCents)} highlight />
+        </div>
+      </section>
+
+      <div className={`dash-email-flows ${dim}`}>
+        {(Object.keys(LABELS) as SeqKey[]).map((key) => {
+          const meta = LABELS[key];
+          const enabled = data?.settings?.[key] ?? true;
+          const outcome = (data?.outcomes ?? []).find((item) => item.sequence === key);
+          const rows = meta.steps.map((step) => ({ ...step, ...stepStat(key, step.step) }));
+          const sequenceTotals = rows.reduce(
+            (sum, item) => ({
+              sent: sum.sent + item.sent,
+              sales: sum.sales + item.sales,
+              netCents: sum.netCents + item.netCents,
+            }),
+            { sent: 0, sales: 0, netCents: 0 },
+          );
+          const bestRate = Math.max(...rows.map((item) => rate(item.sales, item.sent)));
+
+          return (
+            <DashCard
+              key={key}
+              title={meta.title}
+              className="dash-email-flow-card"
+              action={
+                <button
+                  type="button"
+                  disabled={toggle.isPending || isLoading}
+                  onClick={() => toggle.mutate({ sequence: key, enabled: !enabled })}
+                  className="dash-automation-toggle"
+                  data-enabled={enabled}
+                  aria-label={`${enabled ? "Pause" : "Enable"} ${meta.title}`}
+                >
+                  <i aria-hidden="true" />
+                  {enabled ? "Running" : "Paused"}
+                </button>
+              }
+            >
+              <div className="dash-email-flow-intro">
+                <p>{meta.description}</p>
+                <span>{enabled ? "Checks every 15 minutes" : "Automation is paused"}</span>
+              </div>
+
+              <ol className="dash-email-step-list">
+                {rows.map((row, index) => {
+                  const isBest = row.sent > 0 && bestRate > 0 && rate(row.sales, row.sent) === bestRate;
+                  return (
+                    <li key={row.step} data-best={isBest}>
+                      <span className="dash-email-step-number">{String(index + 1).padStart(2, "0")}</span>
+                      <span className="dash-email-step-copy">
+                        <strong>{row.purpose}</strong>
+                        <small>{row.label}</small>
+                      </span>
+                      <EmailStepMetric label="Sent" value={row.sent.toLocaleString()} />
+                      <EmailStepMetric label="Sales" value={row.sales.toLocaleString()} />
+                      <EmailStepMetric label="Rate" value={rateText(row.sales, row.sent)} />
+                      <EmailStepMetric label="Revenue" value={money(row.netCents)} />
+                      {isBest && <TrendingUp size={16} aria-label="Best recovery rate" />}
+                    </li>
+                  );
+                })}
+              </ol>
+
+              <div className="dash-email-flow-footer">
+                <span>
+                  <MailCheck size={15} /> {sequenceTotals.sent.toLocaleString()} sent
+                </span>
+                <strong>{money(sequenceTotals.netCents)} recovered</strong>
+                <small>
+                  {outcome?.skipped ?? 0} skipped · {outcome?.failed ?? 0} failed
+                </small>
+              </div>
+            </DashCard>
+          );
+        })}
       </div>
 
-      {(Object.keys(LABELS) as SeqKey[]).map((key) => {
-        const meta = LABELS[key];
-        const enabled = data?.settings?.[key] ?? true;
-        const outcome = (data?.outcomes ?? []).find((o) => o.sequence === key);
-        const rows = meta.steps.map((s) => ({ ...s, ...stepStat(key, s.step) }));
-        const totals = rows.reduce(
-          (a, r) => ({ sent: a.sent + r.sent, sales: a.sales + r.sales, netCents: a.netCents + r.netCents }),
-          { sent: 0, sales: 0, netCents: 0 },
-        );
-        const bestRate = Math.max(...rows.map((r) => (r.sent > 0 ? rate(r.sales, r.sent) : -1)));
-        const bestStep = rows.find((r) => r.sent > 0 && rate(r.sales, r.sent) === bestRate && bestRate > 0)?.step;
-
-        return (
-          <DashCard key={key} title={meta.title}>
-            {/* one header line: toggle + cadence + outcomes */}
-            <div className="-mt-1 flex flex-wrap items-center gap-3 pb-4">
-              <button
-                disabled={toggle.isPending || isLoading}
-                onClick={() => toggle.mutate({ sequence: key, enabled: !enabled })}
-                className={`rounded-md px-4 py-1.5 text-[11px] font-mono uppercase tracking-wider transition-colors ${
-                  enabled
-                    ? "bg-[var(--accent-red)] text-white shadow-[0_0_18px_rgba(255,0,60,0.35)]"
-                    : "border border-white/15 text-white/60 hover:text-white"
-                }`}
-              >
-                {enabled ? "On" : "Off"}
-              </button>
-              <span className="text-[10px] font-mono uppercase tracking-widest text-white/30">
-                {enabled ? "Running every 15 minutes" : "Paused"}
-              </span>
-              <span className="ml-auto text-[10px] font-mono uppercase tracking-widest text-white/30">
-                {outcome?.skipped ?? 0} skipped · {outcome?.failed ?? 0} failed
-              </span>
-            </div>
-
-            {/* desktop comparison table */}
-            <div className={`hidden sm:block ${dim}`}>
-              <table className="w-full">
-                <thead>
-                  <tr className="text-[10px] font-mono uppercase tracking-widest text-[#B8ACCC]/60">
-                    <th className="py-2 text-left font-normal">Step</th>
-                    <th className="py-2 text-right font-normal">Sent</th>
-                    <th className="py-2 text-right font-normal">Sales</th>
-                    <th className="py-2 text-right font-normal">Rate</th>
-                    <th className="py-2 text-right font-normal">Revenue</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((r) => {
-                    const best = r.step === bestStep;
-                    return (
-                      <tr
-                        key={r.step}
-                        className={`border-t border-white/5 ${best ? "bg-[var(--accent-red)]/[0.07]" : ""}`}
-                      >
-                        <td
-                          className={`py-3 text-[11px] font-mono uppercase tracking-widest ${
-                            best ? "text-[var(--accent-red-glow)]" : "text-white/55"
-                          }`}
-                        >
-                          {r.label}
-                        </td>
-                        <td className="py-3 text-right text-xl font-black tabular-nums">{r.sent}</td>
-                        <td className="py-3 text-right text-xl font-black tabular-nums">{r.sales}</td>
-                        <td
-                          className={`py-3 text-right text-xl font-black tabular-nums ${
-                            best ? "text-[var(--accent-red-glow)]" : ""
-                          }`}
-                        >
-                          {rateText(r.sales, r.sent)}
-                        </td>
-                        <td className="py-3 text-right text-xl font-black tabular-nums">{money(r.netCents)}</td>
-                      </tr>
-                    );
-                  })}
-                  <tr className="border-t border-white/15">
-                    <td className="py-3 text-[11px] font-mono uppercase tracking-widest text-white/35">Total</td>
-                    <td className="py-3 text-right text-xl font-black tabular-nums text-white/70">{totals.sent}</td>
-                    <td className="py-3 text-right text-xl font-black tabular-nums text-white/70">{totals.sales}</td>
-                    <td className="py-3 text-right text-xl font-black tabular-nums text-white/70">
-                      {rateText(totals.sales, totals.sent)}
-                    </td>
-                    <td className="py-3 text-right text-xl font-black tabular-nums text-white/70">
-                      {money(totals.netCents)}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            {/* mobile: stacked blocks, metrics inline */}
-            <div className={`space-y-2 sm:hidden ${dim}`}>
-              {rows.map((r) => {
-                const best = r.step === bestStep;
-                return (
-                  <div
-                    key={r.step}
-                    className={`rounded-xl border p-3 ${
-                      best
-                        ? "border-[var(--accent-red)]/40 bg-[var(--accent-red)]/[0.07]"
-                        : "border-white/10 bg-white/[0.03]"
-                    }`}
-                  >
-                    <div
-                      className={`text-[10px] font-mono uppercase tracking-widest ${
-                        best ? "text-[var(--accent-red-glow)]" : "text-white/45"
-                      }`}
-                    >
-                      {r.label}
-                    </div>
-                    <div className="mt-2 grid grid-cols-4 gap-2">
-                      {[
-                        ["Sent", String(r.sent)],
-                        ["Sales", String(r.sales)],
-                        ["Rate", rateText(r.sales, r.sent)],
-                        ["Rev", money(r.netCents)],
-                      ].map(([k, v]) => (
-                        <div key={k}>
-                          <div className="text-[9px] font-mono uppercase tracking-widest text-[#B8ACCC]/55">{k}</div>
-                          <div className="text-base font-black tabular-nums">{v}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-              <div className="flex items-center justify-between border-t border-white/15 pt-3">
-                <span className="text-[10px] font-mono uppercase tracking-widest text-white/35">Total</span>
-                <span className="text-base font-black tabular-nums text-white/70">
-                  {totals.sent} · {totals.sales} · {rateText(totals.sales, totals.sent)} · {money(totals.netCents)}
-                </span>
+      <div className="dash-email-lower-grid">
+        <DashCard title="Delivery exceptions" className="dash-email-exceptions">
+          {(data?.recentSkips?.length ?? 0) === 0 ? (
+            <div className="dash-email-clear-state">
+              <MailCheck size={22} />
+              <div>
+                <strong>{isLoading ? "Checking delivery…" : "No delivery exceptions"}</strong>
+                <span>Nothing was skipped in this reporting period.</span>
               </div>
             </div>
-          </DashCard>
-        );
-      })}
-
-      {/* skips: collapsed to one line when empty */}
-      {(data?.recentSkips?.length ?? 0) === 0 ? (
-        <p className="px-1 text-[10px] font-mono uppercase tracking-widest text-white/30">
-          {isLoading ? "Loading…" : "No skips in this period"}
-        </p>
-      ) : (
-        <div className="rounded-xl border border-white/10 bg-white/[0.02]">
-          <button
-            onClick={() => setSkipsOpen((v) => !v)}
-            className="flex w-full items-center justify-between px-4 py-3 text-[10px] font-mono uppercase tracking-widest text-white/45 hover:text-white"
-          >
-            <span>{data!.recentSkips.length} skips</span>
-            <span>{skipsOpen ? "Hide" : "Show"}</span>
-          </button>
-          {skipsOpen && (
-            <div className="overflow-x-auto border-t border-white/8 px-2 pb-2">
-              <table className="w-full text-sm">
-                <thead className="text-[10px] font-mono uppercase tracking-widest text-[#B8ACCC]/55">
-                  <tr>
-                    <th className="px-2 py-2 text-left font-normal">When</th>
-                    <th className="px-2 py-2 text-left font-normal">Email</th>
-                    <th className="px-2 py-2 text-left font-normal">Sequence</th>
-                    <th className="px-2 py-2 text-left font-normal">Step</th>
-                    <th className="px-2 py-2 text-left font-normal">Reason</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data!.recentSkips.map((r, i) => (
-                    <tr key={`${r.email}-${i}`} className="border-t border-white/5">
-                      <td className="whitespace-nowrap px-2 py-2 font-mono text-[10px] text-white/40">
-                        {new Date(r.at).toLocaleDateString()}
-                      </td>
-                      <td className="max-w-[180px] truncate px-2 py-2 text-[12px] text-white/80">{r.email}</td>
-                      <td className="px-2 py-2 text-[11px] text-white/55">{LABELS[r.sequence]?.title ?? r.sequence}</td>
-                      <td className="px-2 py-2 font-mono text-xs">{r.step}</td>
-                      <td className="px-2 py-2 font-mono text-[11px] text-[var(--accent-red-glow)]">
-                        {r.reason}
-                        {r.dryRun ? " (dry)" : ""}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-
-      <DashCard title="Send test email">
-        <div className="space-y-3">
-          <p className="text-[12px] leading-relaxed text-white/50">
-            Sends the chosen template to one address using sample product data. It never reads a customer's
-            cart or saved items, isn't logged, and doesn't count toward any stats.
-          </p>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <Select value={testTemplate} onValueChange={(v) => setTestTemplate(v as TestTemplateKey)}>
-              <SelectTrigger className="h-[38px] w-full rounded-md border-white/12 bg-[#190737] px-3 py-2 text-[12px] text-[#C9BEDD] focus:border-white/30 focus:ring-0 sm:w-52">
-                <SelectValue placeholder="Choose a template" />
-              </SelectTrigger>
-              <SelectContent
-                position="popper"
-                sideOffset={6}
-                className="z-[80] rounded-md border-white/12 bg-[#190737] text-[#C9BEDD]"
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => setSkipsOpen((open) => !open)}
+                className="dash-email-exception-trigger"
               >
-                {TEST_TEMPLATE_LABELS.map((t) => (
-                  <SelectItem
-                    key={t.key}
-                    value={t.key}
-                    className="text-[12px] text-[#C9BEDD] focus:bg-white/10 focus:text-white data-[state=checked]:text-white"
-                  >
-                    {t.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <input
-              value={testTo}
-              onChange={(e) => setTestTo(e.target.value)}
-              placeholder="you@address.com"
-              className="h-[38px] w-full rounded-md border border-white/12 bg-[#190737] px-3 py-2 text-[12px] text-[#C9BEDD] outline-none placeholder:text-white/25 focus:border-white/30 sm:w-64"
-            />
+                <span>{data!.recentSkips.length} skipped deliveries</span>
+                <strong>{skipsOpen ? "Hide details" : "Review details"}</strong>
+              </button>
+              {skipsOpen && (
+                <div className="dash-email-exception-table">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th className="text-left">When</th>
+                        <th className="text-left">Email</th>
+                        <th className="text-left">Sequence</th>
+                        <th className="text-left">Reason</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data!.recentSkips.map((row, index) => (
+                        <tr key={`${row.email}-${index}`}>
+                          <td>{new Date(row.at).toLocaleDateString()}</td>
+                          <td>{row.email}</td>
+                          <td>{LABELS[row.sequence]?.title ?? row.sequence}</td>
+                          <td>
+                            {row.reason}
+                            {row.dryRun ? " (dry run)" : ""}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
+        </DashCard>
+
+        <DashCard title="Test email studio" className="dash-email-test-card">
+          <div className="dash-email-test-intro">
+            <span className="dash-email-test-icon" aria-hidden="true">
+              <Send size={20} />
+            </span>
+            <div>
+              <strong>Preview a real template</strong>
+              <p>Uses sample products only. Tests are private, unlogged, and excluded from metrics.</p>
+            </div>
+          </div>
+          <div className="dash-email-test-form">
+            <label>
+              <span>Template</span>
+              <Select
+                value={testTemplate}
+                onValueChange={(value) => setTestTemplate(value as TestTemplateKey)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a template" />
+                </SelectTrigger>
+                <SelectContent position="popper" sideOffset={6} className="dashboard-select-content">
+                  {TEST_TEMPLATE_LABELS.map((template) => (
+                    <SelectItem key={template.key} value={template.key}>
+                      {template.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </label>
+            <label>
+              <span>Recipient</span>
+              <input
+                type="email"
+                value={testTo}
+                onChange={(event) => setTestTo(event.target.value)}
+                placeholder="you@address.com"
+              />
+            </label>
             <button
-              onClick={() => setTestMulti((v) => !v)}
-              className={`h-[38px] whitespace-nowrap rounded-md px-3.5 text-[10px] font-mono uppercase tracking-widest transition-colors ${
-                testMulti
-                  ? "border border-[var(--accent-red)]/50 bg-[var(--accent-red)]/[0.12] text-[var(--accent-red-glow)]"
-                  : "border border-white/12 text-white/50 hover:border-white/30 hover:text-white"
-              }`}
+              type="button"
+              onClick={() => setTestMulti((value) => !value)}
+              className="dash-email-multi-button"
+              aria-pressed={testMulti}
             >
               Multiple items {testMulti ? "on" : "off"}
             </button>
             <button
+              type="button"
               disabled={testSend.isPending || !testTo.trim()}
               onClick={() => testSend.mutate()}
-              className="h-[38px] whitespace-nowrap rounded-md border border-white/20 px-4 text-[11px] font-mono uppercase tracking-wider text-white/70 transition-colors hover:border-white/40 hover:text-white disabled:opacity-50 sm:ml-auto"
+              className="btn-primary dash-email-send-button"
             >
-              {testSend.isPending ? "Sending…" : "Send test email"}
+              <Send size={14} /> {testSend.isPending ? "Sending…" : "Send test"}
             </button>
           </div>
-        </div>
-      </DashCard>
-
+        </DashCard>
+      </div>
     </div>
+  );
+}
+
+function EmailSummary({
+  label,
+  value,
+  highlight = false,
+}: {
+  label: string;
+  value: string;
+  highlight?: boolean;
+}) {
+  return (
+    <div data-highlight={highlight}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
+function EmailStepMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <span className="dash-email-step-metric">
+      <small>{label}</small>
+      <strong>{value}</strong>
+    </span>
   );
 }

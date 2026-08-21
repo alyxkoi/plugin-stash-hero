@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Edit3, ExternalLink, Plus, Trash2 } from "lucide-react";
+import { Archive, ArchiveRestore, Edit3, ExternalLink, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { ChargedPanel, DashCard, DashboardShell, StatusBadge } from "@/components/DashboardShell";
 import { supabase } from "@/integrations/supabase/client";
@@ -56,7 +56,10 @@ function SalesPage() {
   const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(() => Date.now());
   const [pendingDelete, setPendingDelete] = useState<DisplaySaleRow | null>(null);
+  const [pendingArchive, setPendingArchive] = useState<DisplaySaleRow | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [archiving, setArchiving] = useState(false);
+  const [restoringId, setRestoringId] = useState<string | null>(null);
   const [ending, setEnding] = useState(false);
 
   useEffect(() => {
@@ -104,7 +107,10 @@ function SalesPage() {
   );
 
   const active = displayRows.find((sale) => sale.liveStatus === "active") ?? null;
-  const pastAndScheduled = displayRows.filter((sale) => sale.id !== active?.id);
+  const archivedRows = displayRows.filter((sale) => sale.liveStatus === "archived");
+  const pastAndScheduled = displayRows.filter(
+    (sale) => sale.id !== active?.id && sale.liveStatus !== "archived",
+  );
   const previousEnded = displayRows.find((sale) => sale.liveStatus === "ended");
   const comparison =
     active && previousEnded ? percentDelta(active.revenue, previousEnded.revenue) : null;
@@ -145,6 +151,41 @@ function SalesPage() {
     } finally {
       setDeleting(false);
     }
+  }
+
+  async function confirmArchive() {
+    if (!pendingArchive || archiving) return;
+    setArchiving(true);
+    try {
+      const { error } = await supabase
+        .from("sale_events")
+        .update({ status: "archived" })
+        .eq("id", pendingArchive.id);
+      if (error) throw error;
+      setRows((current) =>
+        current.map((sale) =>
+          sale.id === pendingArchive.id ? { ...sale, status: "archived" } : sale,
+        ),
+      );
+      toast.success("Campaign archived. Its performance history is still available.");
+      setPendingArchive(null);
+    } catch (error: any) {
+      toast.error(error?.message ?? "Couldn't archive the campaign.");
+    } finally {
+      setArchiving(false);
+    }
+  }
+
+  async function restoreSale(sale: DisplaySaleRow) {
+    if (restoringId) return;
+    setRestoringId(sale.id);
+    const { error } = await supabase.from("sale_events").update({ status: "draft" }).eq("id", sale.id);
+    setRestoringId(null);
+    if (error) return toast.error(error.message);
+    setRows((current) =>
+      current.map((row) => (row.id === sale.id ? { ...row, status: "draft" } : row)),
+    );
+    toast.success("Campaign restored as a draft.");
   }
 
   return (
@@ -202,6 +243,13 @@ function SalesPage() {
                     className="dash-charged-button"
                   >
                     {ending ? "Ending…" : "End sale"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPendingArchive(active)}
+                    className="dash-charged-button"
+                  >
+                    <Archive size={14} /> Archive
                   </button>
                 </div>
               </div>
@@ -294,6 +342,15 @@ function SalesPage() {
                         </Link>
                         <button
                           type="button"
+                          onClick={() => setPendingArchive(sale)}
+                          className="dash-icon-button"
+                          aria-label={`Archive ${sale.name}`}
+                          title="Archive campaign"
+                        >
+                          <Archive size={14} />
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => setPendingDelete(sale)}
                           className="dash-icon-button is-danger"
                           aria-label={`Delete ${sale.name}`}
@@ -311,12 +368,12 @@ function SalesPage() {
           <ul className="dash-mobile-list -mx-4 -my-4">
             {pastAndScheduled.map((sale) => (
               <li key={sale.id} className="border-b border-[var(--border)] last:border-b-0">
-                <Link
-                  to="/dashboard/sales/$id"
-                  params={{ id: sale.id }}
-                  className="block min-h-[82px] px-4 py-3"
-                >
-                  <span className="flex items-start justify-between gap-3">
+                <div className="min-h-[92px] px-4 py-3">
+                  <Link
+                    to="/dashboard/sales/$id"
+                    params={{ id: sale.id }}
+                    className="flex items-start justify-between gap-3"
+                  >
                     <span className="min-w-0">
                       <span className="block truncate font-semibold text-white">{sale.name}</span>
                       <span className="block font-mono text-[10px] text-[var(--text-tertiary)]">
@@ -329,8 +386,34 @@ function SalesPage() {
                       </span>
                       <StatusBadge status={sale.liveStatus} />
                     </span>
-                  </span>
-                </Link>
+                  </Link>
+                  <div className="mt-2 flex justify-end gap-1">
+                    <Link
+                      to="/dashboard/sales/$id"
+                      params={{ id: sale.id }}
+                      className="dash-icon-button"
+                      aria-label={`Edit ${sale.name}`}
+                    >
+                      <Edit3 size={14} />
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => setPendingArchive(sale)}
+                      className="dash-icon-button"
+                      aria-label={`Archive ${sale.name}`}
+                    >
+                      <Archive size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPendingDelete(sale)}
+                      className="dash-icon-button is-danger"
+                      aria-label={`Delete ${sale.name}`}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
               </li>
             ))}
           </ul>
@@ -346,7 +429,72 @@ function SalesPage() {
             </div>
           )}
         </DashCard>
+
+        {archivedRows.length > 0 && (
+          <DashCard title="Archived campaigns">
+            <div className="dash-archived-sales">
+              {archivedRows.map((sale) => (
+                <article key={sale.id}>
+                  <div className="dash-archived-sale-main">
+                    <span className="dash-archived-sale-icon" aria-hidden="true">
+                      <Archive size={16} />
+                    </span>
+                    <div>
+                      <strong>{sale.name}</strong>
+                      <small>
+                        {formatInSaleTimeZone(sale.start_at)} · {sale.purchases} purchases · {money(sale.revenue)}
+                      </small>
+                    </div>
+                  </div>
+                  <StatusBadge status="archived" />
+                  <div className="dash-archived-sale-actions">
+                    <button
+                      type="button"
+                      onClick={() => restoreSale(sale)}
+                      disabled={restoringId === sale.id}
+                      className="dash-restore-button"
+                    >
+                      <ArchiveRestore size={14} />
+                      {restoringId === sale.id ? "Restoring…" : "Restore as draft"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPendingDelete(sale)}
+                      className="dash-icon-button is-danger"
+                      aria-label={`Delete ${sale.name}`}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </DashCard>
+        )}
       </div>
+
+      <AlertDialog
+        open={!!pendingArchive}
+        onOpenChange={(open) => {
+          if (!open && !archiving) setPendingArchive(null);
+        }}
+      >
+        <AlertDialogContent className="dashboard-dialog max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archive campaign</AlertDialogTitle>
+            <AlertDialogDescription>
+              Archive {pendingArchive?.name}? It will leave the active sales list, but its orders and
+              performance history will stay intact. If it is live, its discount will stop immediately.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={archiving}>Keep campaign</AlertDialogCancel>
+            <AlertDialogAction disabled={archiving} onClick={confirmArchive}>
+              {archiving ? "Archiving…" : "Archive campaign"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog
         open={!!pendingDelete}

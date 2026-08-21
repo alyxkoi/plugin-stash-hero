@@ -146,7 +146,7 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
       const { data: activeSales } = await supabaseAdmin
         .from("sale_events")
         .select("id, discount_pct, scope, categories")
-        .neq("status", "draft")
+        .in("status", ["active", "scheduled", "ended"])
         .lte("start_at", nowIso)
         .gte("end_at", nowIso);
       const saleList = (activeSales ?? []) as Array<{ id: string; discount_pct: number; scope: string; categories: string[] | null }>;

@@ -40,7 +40,7 @@ export function SalePricingProvider({ children }: { children: ReactNode }) {
       const { data: rows } = await supabase
         .from("sale_events")
         .select("id, name, slug, discount_pct, scope, categories, start_at, end_at, status")
-        .neq("status", "draft")
+        .in("status", ["active", "scheduled", "ended"])
         .lte("start_at", nowIso)
         .gte("end_at", nowIso);
       const list = (rows ?? []) as Omit<ActiveSaleRow, "productIds">[];

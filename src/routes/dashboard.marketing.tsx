@@ -8,7 +8,7 @@ import {
   DomainChip,
   StatusBadge,
 } from "@/components/DashboardShell";
-import { Copy, Plus, Trash2, Pencil } from "lucide-react";
+import { ArrowUpRight, BadgePercent, Copy, Link2, Mail, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { DiscountCodeModal, type DiscountRow } from "@/components/dashboard/DiscountCodeModal";
@@ -33,37 +33,61 @@ function Marketing() {
   const tab = search.tab ?? "codes";
   const setTab = (t: "codes" | "campaign" | "emails") =>
     navigate({ to: "/dashboard/marketing", search: { tab: t }, replace: true });
+  const workspaces = [
+    {
+      key: "codes",
+      label: "Discount codes",
+      description: "Create offers and measure attributed revenue.",
+      icon: BadgePercent,
+    },
+    {
+      key: "campaign",
+      label: "Campaign links",
+      description: "Build trackable links and compare channel results.",
+      icon: Link2,
+    },
+    {
+      key: "emails",
+      label: "Behavioral emails",
+      description: "Run cart and saved-item recovery workflows.",
+      icon: Mail,
+    },
+  ] as const;
 
   return (
     <DashboardShell title="Marketing" action={tab === "codes" ? <MarketingCodesAction /> : null}>
       <MarketingHero />
 
-      <div className="dash-segmented my-6 w-full sm:w-auto">
-        {(
-          [
-            ["codes", "Discount Codes"],
-            ["campaign", "Campaign Links"],
-            ["emails", "Behavioral Emails"],
-          ] as const
-        ).map(([key, label]) => (
+      <nav className="dash-marketing-workspaces" aria-label="Marketing workspaces">
+        {workspaces.map(({ key, label, description, icon: Icon }) => (
           <button
             key={key}
+            type="button"
             onClick={() => setTab(key)}
             aria-pressed={tab === key}
-            className="flex-1 sm:flex-none !min-h-10 !px-4"
+            className={tab === key ? "is-active" : ""}
           >
-            {label}
+            <span className="dash-marketing-workspace-icon" aria-hidden="true">
+              <Icon size={20} strokeWidth={1.7} />
+            </span>
+            <span className="dash-marketing-workspace-copy">
+              <strong>{label}</strong>
+              <small>{description}</small>
+            </span>
+            <ArrowUpRight size={17} strokeWidth={1.7} aria-hidden="true" />
           </button>
         ))}
-      </div>
+      </nav>
 
-      {tab === "codes" ? (
-        <DiscountCodesPanel />
-      ) : tab === "campaign" ? (
-        <CampaignLinksPage embedded />
-      ) : (
-        <EmailAutomationsPanel />
-      )}
+      <section className="dash-marketing-content" aria-live="polite">
+        {tab === "codes" ? (
+          <DiscountCodesPanel />
+        ) : tab === "campaign" ? (
+          <CampaignLinksPage embedded />
+        ) : (
+          <EmailAutomationsPanel />
+        )}
+      </section>
     </DashboardShell>
   );
 }

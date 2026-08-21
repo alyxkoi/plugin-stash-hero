@@ -77,7 +77,7 @@ async function loadActiveSales(): Promise<ActiveSale[]> {
   const { data: sales } = await supabaseAdmin
     .from("sale_events")
     .select("id, discount_pct, scope, categories, start_at, end_at, status")
-    .neq("status", "draft")
+    .in("status", ["active", "scheduled", "ended"])
     .lte("start_at", nowIso)
     .gte("end_at", nowIso);
   const list = sales ?? [];

@@ -71,7 +71,7 @@ export async function finalizeOrder(input: FulfillInput): Promise<{ orderId: str
     const { data: activeSale } = await supabaseAdmin
       .from("sale_events")
       .select("id")
-      .neq("status", "draft")
+      .in("status", ["active", "scheduled", "ended"])
       .lte("start_at", nowIso)
       .gte("end_at", nowIso)
       .order("start_at", { ascending: false })

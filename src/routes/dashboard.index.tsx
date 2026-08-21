@@ -11,7 +11,6 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Clock3, Download, MonitorX, RotateCcw, TicketPercent } from "lucide-react";
 import {
   ChargedPanel,
   DashCard,
@@ -23,6 +22,7 @@ import {
 import { OrderDrawer } from "@/components/AdminDrawers";
 import { supabase } from "@/integrations/supabase/client";
 import { keptRatio, netRevenue, saleOrders, sumNetRevenue } from "@/lib/revenue";
+import { deriveSaleStatus } from "@/lib/sale-time";
 
 export const Route = createFileRoute("/dashboard/")({
   head: () => ({ meta: [{ title: "Overview — Plugin Warehouse" }] }),
@@ -50,6 +50,7 @@ type OrderRow = {
   customer_id: string | null;
   guest_email: string | null;
   customer_name: string | null;
+  sale_id: string | null;
   order_items: {
     name: string;
     price: number;
@@ -66,24 +67,12 @@ type CustomerLite = {
   created_at: string;
 };
 
-type AttentionProduct = {
+type CurrentSale = {
   id: string;
-  category: string;
-  supports_windows: boolean;
-  supports_mac: boolean;
-};
-
-type AttentionSale = {
-  id: string;
+  name: string;
+  discount_pct: number;
   start_at: string;
   end_at: string;
-  status: string;
-};
-
-type AttentionCode = {
-  id: string;
-  uses: number;
-  usage_limit: number | null;
   status: string;
 };
 
@@ -91,9 +80,7 @@ function Overview() {
   const [range, setRange] = useState<OverviewRange>("30d");
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [customers, setCustomers] = useState<CustomerLite[]>([]);
-  const [products, setProducts] = useState<AttentionProduct[]>([]);
-  const [sales, setSales] = useState<AttentionSale[]>([]);
-  const [codes, setCodes] = useState<AttentionCode[]>([]);
+  const [sales, setSales] = useState<CurrentSale[]>([]);
   const [loading, setLoading] = useState(true);
   const [openOrderId, setOpenOrderId] = useState<string | null>(null);
   const reduceMotion = useReducedMotion();
@@ -101,26 +88,25 @@ function Overview() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [ordersRes, customersRes, productsRes, salesRes, codesRes] = await Promise.all([
+      const [ordersRes, customersRes, salesRes] = await Promise.all([
         supabase
           .from("orders")
           .select(
-            "id, number, total, status, refunded_amount_cents, refunded_at, download_count, created_at, customer_id, guest_email, customer_name, order_items(name, price, product_id, cover_gradient, cover_url)",
+            "id, number, total, status, refunded_amount_cents, refunded_at, download_count, created_at, customer_id, guest_email, customer_name, sale_id, order_items(name, price, product_id, cover_gradient, cover_url)",
           )
           .order("created_at", { ascending: false })
           .limit(1000),
         supabase.from("customers").select("id, name, email, created_at"),
-        supabase.from("products").select("id, category, supports_windows, supports_mac"),
-        supabase.from("sale_events").select("id, start_at, end_at, status"),
-        supabase.from("discount_codes").select("id, uses, usage_limit, status"),
+        supabase
+          .from("sale_events")
+          .select("id, name, discount_pct, start_at, end_at, status")
+          .order("start_at", { ascending: false }),
       ]);
 
       if (cancelled) return;
       setOrders((ordersRes.data ?? []) as OrderRow[]);
       setCustomers((customersRes.data ?? []) as CustomerLite[]);
-      setProducts((productsRes.data ?? []) as AttentionProduct[]);
-      setSales((salesRes.data ?? []) as AttentionSale[]);
-      setCodes((codesRes.data ?? []) as AttentionCode[]);
+      setSales((salesRes.data ?? []) as CurrentSale[]);
       setLoading(false);
     })();
     return () => {
@@ -205,59 +191,21 @@ function Overview() {
   const bestMax = Math.max(1, ...best.map((item) => item.units));
 
   const now = Date.now();
-  const sevenDaysAgo = now - 7 * 86400_000;
-  const fortyEightHours = now + 48 * 3600_000;
-  const attention = [
-    {
-      label: "Refunds in the last 7 days",
-      count: orders.filter(
-        (order) => order.refunded_at && new Date(order.refunded_at).getTime() >= sevenDaysAgo,
-      ).length,
-      tone: "danger",
-      icon: RotateCcw,
-      to: "/dashboard/orders",
-    },
-    {
-      label: "Orders with an unclaimed download",
-      count: orders.filter(
-        (order) => order.status === "completed" && Number(order.download_count || 0) === 0,
-      ).length,
-      tone: "warning",
-      icon: Download,
-      to: "/dashboard/orders",
-    },
-    {
-      label: "Products missing platform tags",
-      count: products.filter(
-        (product) =>
-          product.category !== "libraries" && !product.supports_windows && !product.supports_mac,
-      ).length,
-      tone: "warning",
-      icon: MonitorX,
-      to: "/dashboard/products",
-    },
-    {
-      label: "Sales ending in under 48 hours",
-      count: sales.filter((sale) => {
-        const starts = new Date(sale.start_at).getTime();
-        const ends = new Date(sale.end_at).getTime();
-        return sale.status !== "draft" && starts <= now && ends > now && ends <= fortyEightHours;
-      }).length,
-      tone: "warning",
-      icon: Clock3,
-      to: "/dashboard/sales",
-    },
-    {
-      label: "Codes near their usage limit",
-      count: codes.filter(
-        (code) =>
-          code.status === "active" && code.usage_limit && code.uses / code.usage_limit >= 0.8,
-      ).length,
-      tone: "neutral",
-      icon: TicketPercent,
-      to: "/dashboard/marketing",
-    },
-  ] as const;
+  const currentSale =
+    sales.find(
+      (sale) => deriveSaleStatus(sale.start_at, sale.end_at, sale.status, now) === "active",
+    ) ?? null;
+  const campaignOrders = currentSale
+    ? completed.filter((order) => order.sale_id === currentSale.id)
+    : [];
+  const campaignRevenue = sumNetRevenue(campaignOrders);
+  const campaignCustomers = new Set(
+    campaignOrders.map(
+      (order) =>
+        order.customer_id || order.guest_email?.trim().toLowerCase() || order.customer_name || order.id,
+    ),
+  ).size;
+  const campaignAov = campaignOrders.length ? campaignRevenue / campaignOrders.length : 0;
 
   return (
     <DashboardShell
@@ -357,24 +305,40 @@ function Overview() {
           </div>
         </ChargedPanel>
 
-        <DashCard title="Needs attention">
-          <div className="dash-attention-grid dash-attention-edge">
-            {attention.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.label}
-                  to={item.to as any}
-                  className="dash-attention-item"
-                  data-tone={item.count === 0 ? "neutral" : item.tone}
-                >
-                  <Icon size={20} strokeWidth={1.6} aria-hidden="true" />
-                  <span className="dash-attention-count">{item.count}</span>
-                  <span className="dash-attention-label">{item.label}</span>
-                </Link>
-              );
-            })}
-          </div>
+        <DashCard
+          title="Current sales campaign"
+          action={
+            <Link to="/dashboard/sales" className="text-xs text-[var(--text-tertiary)] hover:text-white">
+              Manage sales →
+            </Link>
+          }
+        >
+          {currentSale ? (
+            <div className="dash-campaign-pulse">
+              <div className="dash-campaign-pulse-title">
+                <span>
+                  <i aria-hidden="true" /> Live campaign
+                </span>
+                <h3>{currentSale.name}</h3>
+                <p>
+                  {currentSale.discount_pct}% off · {campaignCountdown(currentSale.end_at, now)} remaining
+                </p>
+              </div>
+              <div className="dash-campaign-pulse-metrics">
+                <CampaignMetric label="Customers connected" value={campaignCustomers.toLocaleString()} />
+                <CampaignMetric label="Campaign sales" value={campaignOrders.length.toLocaleString()} />
+                <CampaignMetric label="Campaign revenue" value={moneyExact(campaignRevenue)} highlight />
+                <CampaignMetric label="Average order" value={moneyExact(campaignAov)} />
+              </div>
+            </div>
+          ) : (
+            <div className="dash-empty">
+              <p>No sales campaign is running right now.</p>
+              <Link to="/dashboard/sales/new" className="btn-primary px-4">
+                Create a sales campaign
+              </Link>
+            </div>
+          )}
         </DashCard>
 
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
@@ -572,6 +536,32 @@ function ChargedStat({
       </div>
     </div>
   );
+}
+
+function CampaignMetric({
+  label,
+  value,
+  highlight = false,
+}: {
+  label: string;
+  value: string;
+  highlight?: boolean;
+}) {
+  return (
+    <div data-highlight={highlight}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
+function campaignCountdown(endAt: string, now: number) {
+  const remaining = Math.max(0, new Date(endAt).getTime() - now);
+  const days = Math.floor(remaining / 86400_000);
+  const hours = Math.floor((remaining % 86400_000) / 3600_000);
+  if (days > 0) return `${days}d ${hours}h`;
+  const minutes = Math.floor((remaining % 3600_000) / 60_000);
+  return `${hours}h ${minutes}m`;
 }
 
 function comparisonBounds(range: OverviewRange) {

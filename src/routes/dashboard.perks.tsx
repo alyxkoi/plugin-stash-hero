@@ -7,6 +7,8 @@ import {
   Wallet,
   Package,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Undo2,
   AlertTriangle,
   Check,
@@ -43,6 +45,7 @@ const QUIET_RED =
   "inline-flex items-center gap-1.5 min-h-[36px] px-3 rounded-lg border border-[#FF003C]/50 text-[#FF6A88] font-mono text-[10px] uppercase tracking-wider transition hover:border-[#FF003C] hover:text-white";
 const INPUT =
   "w-full min-h-[44px] bg-white/5 border border-white/15 rounded-lg px-3 text-sm text-white placeholder:text-white/35 outline-none focus:border-[#FF003C]";
+const GRANT_HISTORY_PAGE_SIZE = 8;
 
 function money(cents: number) {
   return `$${(Math.abs(cents) / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -70,6 +73,7 @@ function PerksPage() {
   );
 
   const [batches, setBatches] = useState<GrantBatchRow[]>([]);
+  const [historyPage, setHistoryPage] = useState(1);
 
   const loadBatches = useCallback(async () => {
     const res = await listGrantBatches();
@@ -101,6 +105,19 @@ function PerksPage() {
 
   const productMap = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
   const accountMap = useMemo(() => new Map(accounts.map((a) => [a.id, a])), [accounts]);
+  const historyPageCount = Math.max(1, Math.ceil(batches.length / GRANT_HISTORY_PAGE_SIZE));
+  const visibleBatches = useMemo(
+    () =>
+      batches.slice(
+        (historyPage - 1) * GRANT_HISTORY_PAGE_SIZE,
+        historyPage * GRANT_HISTORY_PAGE_SIZE,
+      ),
+    [batches, historyPage],
+  );
+
+  useEffect(() => {
+    if (historyPage > historyPageCount) setHistoryPage(historyPageCount);
+  }, [historyPage, historyPageCount]);
 
   const recipientCount = allAccounts ? accounts.length : pickedCustomers.length;
   const amountCents = Math.round(Number(amount || 0) * 100);
@@ -410,11 +427,44 @@ function PerksPage() {
               <p>No grants yet. Completed batches and their audit reasons will appear here.</p>
             </div>
           ) : (
-            <ul className="space-y-2">
-              {batches.map((batch) => (
-                <BatchRow key={batch.id} batch={batch} onChanged={loadBatches} />
-              ))}
-            </ul>
+            <>
+              <ul className="space-y-2">
+                {visibleBatches.map((batch) => (
+                  <BatchRow key={batch.id} batch={batch} onChanged={loadBatches} />
+                ))}
+              </ul>
+              {historyPageCount > 1 && (
+                <nav className="dash-history-pagination" aria-label="Grant history pages">
+                  <span>
+                    Showing {(historyPage - 1) * GRANT_HISTORY_PAGE_SIZE + 1}–
+                    {Math.min(historyPage * GRANT_HISTORY_PAGE_SIZE, batches.length)} of {batches.length}
+                  </span>
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => setHistoryPage((page) => Math.max(1, page - 1))}
+                      disabled={historyPage === 1}
+                      aria-label="Previous grant history page"
+                    >
+                      <ChevronLeft size={15} />
+                    </button>
+                    <strong>
+                      {historyPage} / {historyPageCount}
+                    </strong>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setHistoryPage((page) => Math.min(historyPageCount, page + 1))
+                      }
+                      disabled={historyPage === historyPageCount}
+                      aria-label="Next grant history page"
+                    >
+                      <ChevronRight size={15} />
+                    </button>
+                  </div>
+                </nav>
+              )}
+            </>
           )}
         </DashCard>
 

@@ -45,7 +45,7 @@ export const Route = createFileRoute("/sale/$slug")({
       const { data: fallback } = await supabase
         .from("sale_events")
         .select("id, name, slug, headline, subheadline, discount_pct, theme_color, start_at, end_at, status")
-        .neq("status", "draft")
+        .in("status", ["active", "scheduled", "ended"])
         .order("start_at", { ascending: false })
         .limit(1)
         .maybeSingle();

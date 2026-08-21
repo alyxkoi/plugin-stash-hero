@@ -22,7 +22,6 @@ import {
   Megaphone,
   MoreHorizontal,
   Package,
-  Search,
   Settings,
   ShoppingBag,
   Tag,
@@ -31,17 +30,6 @@ import {
 import logo from "@/assets/logo-dashboard.webp";
 import { useAuth, signOut } from "@/hooks/useAuth";
 import { SectionErrorBoundary } from "@/components/SectionErrorBoundary";
-import { supabase } from "@/integrations/supabase/client";
-import {
-  CommandDialog,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-  CommandShortcut,
-} from "@/components/ui/command";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 
 export type DashboardDomain = "money" | "volume" | "people" | "catalog" | "promo" | "neutral";
@@ -149,7 +137,6 @@ function DashboardChromeRoot({
     .join(" ");
   const [accountOpen, setAccountOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
-  const [paletteOpen, setPaletteOpen] = useState(false);
   const [page, setPageState] = useState<{ title: string; action?: ReactNode }>({
     title: initialTitle,
     action: initialAction,
@@ -185,17 +172,6 @@ function DashboardChromeRoot({
     window.requestAnimationFrame(() => mainRef.current?.focus({ preventScroll: true }));
   }, [pathname]);
 
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
-        event.preventDefault();
-        setPaletteOpen((open) => !open);
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
-
   const logout = async () => {
     await signOut();
     navigate({ to: "/dashboard/login" as any });
@@ -207,11 +183,7 @@ function DashboardChromeRoot({
       data-domain={domain}
       style={{ "--section-color": DOMAIN_COLOR[domain] } as React.CSSProperties}
     >
-      <DesktopRail
-        effectivePath={effectivePath}
-        onSearch={() => setPaletteOpen(true)}
-        onLogout={logout}
-      />
+      <DesktopRail effectivePath={effectivePath} onLogout={logout} />
 
       <div className="dashboard-column">
         <header className="dash-page-header">
@@ -222,21 +194,6 @@ function DashboardChromeRoot({
 
           <div className="dash-page-header-actions">
             {page.action}
-            <button
-              type="button"
-              className="dash-command-trigger"
-              onClick={() => setPaletteOpen(true)}
-              aria-label="Open command palette"
-            >
-              <Search size={16} strokeWidth={1.8} />
-              <span>Search</span>
-              <kbd>
-                {typeof navigator !== "undefined" && /Mac/.test(navigator.platform)
-                  ? "⌘K"
-                  : "Ctrl K"}
-              </kbd>
-            </button>
-
             <div className="dash-account-wrap">
               <button
                 type="button"
@@ -302,18 +259,15 @@ function DashboardChromeRoot({
         effectivePath={effectivePath}
         onLogout={logout}
       />
-      <DashboardCommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
     </div>
   );
 }
 
 function DesktopRail({
   effectivePath,
-  onSearch,
   onLogout,
 }: {
   effectivePath: string;
-  onSearch: () => void;
   onLogout: () => void;
 }) {
   return (
@@ -322,12 +276,6 @@ function DesktopRail({
         <img src={logo} alt="Plugin Warehouse" width={420} height={120} />
         <span>Dashboard</span>
       </Link>
-
-      <button type="button" className="dash-rail-search" onClick={onSearch}>
-        <Search size={16} strokeWidth={1.8} />
-        <span>Search anything</span>
-        <kbd>Ctrl K</kbd>
-      </button>
 
       <nav className="dash-rail-nav" aria-label="Dashboard navigation">
         {NAV_GROUPS.map((group) => (
@@ -486,176 +434,6 @@ function MoreSheet({
         </div>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function DashboardCommandPalette({
-  open,
-  onOpenChange,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
-  const navigate = useNavigate();
-  const [query, setQuery] = useState("");
-  const [results, setResults] = useState<
-    {
-      type: "Order" | "Product" | "Customer";
-      id: string;
-      label: string;
-      meta: string;
-      to: string;
-    }[]
-  >([]);
-  const [searching, setSearching] = useState(false);
-
-  useEffect(() => {
-    if (!open) {
-      setQuery("");
-      setResults([]);
-      return;
-    }
-    const cleaned = query.trim().replace(/[^a-zA-Z0-9@._\-\s]/g, "");
-    if (cleaned.length < 2) {
-      setResults([]);
-      setSearching(false);
-      return;
-    }
-    let cancelled = false;
-    const timer = window.setTimeout(async () => {
-      setSearching(true);
-      const pattern = `%${cleaned}%`;
-      const [ordersRes, productsRes, customersRes] = await Promise.all([
-        supabase
-          .from("orders")
-          .select("id, number, customer_name, guest_email")
-          .or(`number.ilike.${pattern},customer_name.ilike.${pattern},guest_email.ilike.${pattern}`)
-          .limit(5),
-        supabase
-          .from("products")
-          .select("id, name, slug")
-          .or(`name.ilike.${pattern},slug.ilike.${pattern}`)
-          .limit(5),
-        supabase
-          .from("customers")
-          .select("id, name, email")
-          .or(`name.ilike.${pattern},email.ilike.${pattern}`)
-          .limit(5),
-      ]);
-      if (cancelled) return;
-      setResults([
-        ...(ordersRes.data ?? []).map((order) => ({
-          type: "Order" as const,
-          id: order.id,
-          label: order.number,
-          meta: order.customer_name || order.guest_email || "Guest",
-          to: `/dashboard/orders/${order.id}`,
-        })),
-        ...(productsRes.data ?? []).map((product) => ({
-          type: "Product" as const,
-          id: product.id,
-          label: product.name,
-          meta: product.slug,
-          to: `/dashboard/products/${product.id}`,
-        })),
-        ...(customersRes.data ?? []).map((customer) => ({
-          type: "Customer" as const,
-          id: customer.id,
-          label: customer.name || customer.email,
-          meta: customer.email,
-          to: `/dashboard/customers/${customer.id}`,
-        })),
-      ]);
-      setSearching(false);
-    }, 220);
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-    };
-  }, [open, query]);
-
-  const run = (to: string) => {
-    onOpenChange(false);
-    navigate({ to: to as any });
-  };
-
-  return (
-    <CommandDialog open={open} onOpenChange={onOpenChange}>
-      <CommandInput
-        value={query}
-        onValueChange={setQuery}
-        placeholder="Search orders, products, customers, or pages…"
-      />
-      <CommandList>
-        <CommandEmpty>
-          {searching ? "Searching…" : "No matching page, record, or action."}
-        </CommandEmpty>
-        {results.length > 0 && (
-          <CommandGroup heading="Search results">
-            {results.map((result) => (
-              <CommandItem
-                key={`${result.type}-${result.id}`}
-                value={`${result.type} ${result.label} ${result.meta}`}
-                onSelect={() => run(result.to)}
-              >
-                {result.type === "Order" ? (
-                  <ShoppingBag />
-                ) : result.type === "Product" ? (
-                  <Package />
-                ) : (
-                  <Users />
-                )}
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate">{result.label}</span>
-                  <span className="block truncate text-xs text-muted-foreground">
-                    {result.meta}
-                  </span>
-                </span>
-                <CommandShortcut>{result.type}</CommandShortcut>
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        )}
-        {results.length > 0 && <CommandSeparator />}
-        <CommandGroup heading="Pages">
-          {NAV.map((item) => {
-            const Icon = item.icon;
-            return (
-              <CommandItem key={item.to} value={`${item.label} page`} onSelect={() => run(item.to)}>
-                <Icon />
-                <span>{item.label}</span>
-              </CommandItem>
-            );
-          })}
-        </CommandGroup>
-        <CommandSeparator />
-        <CommandGroup heading="Quick actions">
-          <CommandItem value="add new product" onSelect={() => run("/dashboard/products/new")}>
-            <Package />
-            <span>Add product</span>
-            <CommandShortcut>Catalog</CommandShortcut>
-          </CommandItem>
-          <CommandItem value="create new sale" onSelect={() => run("/dashboard/sales/new")}>
-            <Tag />
-            <span>New sale</span>
-            <CommandShortcut>Growth</CommandShortcut>
-          </CommandItem>
-          <CommandItem
-            value="generate discount code"
-            onSelect={() => run("/dashboard/marketing?tab=codes")}
-          >
-            <Megaphone />
-            <span>Generate code</span>
-            <CommandShortcut>Growth</CommandShortcut>
-          </CommandItem>
-          <CommandItem value="grant plugin perk" onSelect={() => run("/dashboard/perks")}>
-            <Gift />
-            <span>Grant plugin</span>
-            <CommandShortcut>Audience</CommandShortcut>
-          </CommandItem>
-        </CommandGroup>
-      </CommandList>
-    </CommandDialog>
   );
 }
 

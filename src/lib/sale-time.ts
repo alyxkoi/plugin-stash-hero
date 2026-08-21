@@ -1,6 +1,6 @@
 export const SALE_TIME_ZONE = "America/Chicago";
 
-export type LiveSaleStatus = "draft" | "scheduled" | "active" | "ended";
+export type LiveSaleStatus = "draft" | "scheduled" | "active" | "ended" | "archived";
 
 type DateTimeParts = {
   year: number;
@@ -96,6 +96,7 @@ export function deriveSaleStatus(
   storedStatus?: string | null,
   nowMs = Date.now(),
 ): LiveSaleStatus {
+  if (storedStatus === "archived") return "archived";
   if (storedStatus === "draft") return "draft";
   const startMs = startAt ? new Date(startAt).getTime() : Number.NaN;
   const endMs = endAt ? new Date(endAt).getTime() : Number.NaN;
