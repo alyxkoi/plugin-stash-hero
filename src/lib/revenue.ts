@@ -71,6 +71,23 @@ export function keptRatio(o: RevenueOrder): number {
   return netCents(o) / t;
 }
 
+/**
+ * Allocate an order's net dollar revenue across its line items by their stored
+ * price weights. The weights may be dollars or cents; only their proportion is
+ * used, which prevents a cents field from being displayed as dollar revenue.
+ */
+export function allocateLineRevenue(
+  o: RevenueOrder,
+  items: { price: number | string | null }[],
+): number[] {
+  if (items.length === 0) return [];
+  const revenue = netRevenue(o);
+  const weights = items.map((item) => Math.max(0, Number(item.price || 0)));
+  const weightTotal = weights.reduce((sum, value) => sum + value, 0);
+  if (weightTotal <= 0) return items.map(() => revenue / items.length);
+  return weights.map((weight) => revenue * (weight / weightTotal));
+}
+
 export function formatMoney(n: number, opts?: { decimals?: boolean }) {
   const d = opts?.decimals ? 2 : 0;
   return `$${Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d })}`;

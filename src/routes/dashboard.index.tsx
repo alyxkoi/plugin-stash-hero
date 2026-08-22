@@ -21,7 +21,7 @@ import {
 } from "@/components/DashboardShell";
 import { OrderDrawer } from "@/components/AdminDrawers";
 import { supabase } from "@/integrations/supabase/client";
-import { keptRatio, netRevenue, saleOrders, sumNetRevenue } from "@/lib/revenue";
+import { allocateLineRevenue, netRevenue, saleOrders, sumNetRevenue } from "@/lib/revenue";
 import { deriveSaleStatus } from "@/lib/sale-time";
 
 export const Route = createFileRoute("/dashboard/")({
@@ -170,8 +170,9 @@ function Overview() {
     >();
 
     for (const order of monthOrders) {
-      const ratio = keptRatio(order);
-      for (const item of order.order_items ?? []) {
+      const items = order.order_items ?? [];
+      const allocatedRevenue = allocateLineRevenue(order, items);
+      for (const [itemIndex, item] of items.entries()) {
         const key = item.product_id || item.name;
         const current = map.get(key) ?? {
           name: item.name,
@@ -181,7 +182,7 @@ function Overview() {
           revenue: 0,
         };
         current.units += 1;
-        current.revenue += Number(item.price || 0) * ratio;
+        current.revenue += allocatedRevenue[itemIndex] ?? 0;
         if (!current.coverUrl && item.cover_url) current.coverUrl = item.cover_url;
         map.set(key, current);
       }
@@ -213,7 +214,7 @@ function Overview() {
       action={<RangeControl value={range} onChange={setRange} options={RANGE_OPTIONS} />}
     >
       <div className="space-y-6">
-        <ChargedPanel domain="money" title="Revenue">
+        <ChargedPanel domain="money" material="grain" form="halo" silhouette="full" title="Revenue">
           <div className="dash-hero-layout">
             <div className="dash-hero-topline">
               <div className="dash-hero-value">{formatMoney(currentRevenue)}</div>

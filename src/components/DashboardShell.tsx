@@ -88,12 +88,12 @@ const DOMAIN_COLOR: Record<DashboardDomain, string> = {
 };
 
 const DOMAIN_NAV_FILL: Record<DashboardDomain, string> = {
-  money: "#741039",
-  volume: "#32227F",
-  people: "#592171",
-  catalog: "#07526A",
-  promo: "#7B2F0D",
-  neutral: "#342342",
+  money: "#B00F45",
+  volume: "#1E1896",
+  people: "#5B18B0",
+  catalog: "#0E6E82",
+  promo: "#B03C10",
+  neutral: "#24203C",
 };
 
 interface Props {
@@ -183,7 +183,7 @@ function DashboardChromeRoot({
       data-domain={domain}
       style={{ "--section-color": DOMAIN_COLOR[domain] } as React.CSSProperties}
     >
-      <DesktopRail effectivePath={effectivePath} onLogout={logout} />
+      <DesktopRail effectivePath={effectivePath} onLogout={logout} reduceMotion={reduceMotion} />
 
       <div className="dashboard-column">
         <header className="dash-page-header">
@@ -254,9 +254,11 @@ function DashboardChromeRoot({
 function DesktopRail({
   effectivePath,
   onLogout,
+  reduceMotion,
 }: {
   effectivePath: string;
   onLogout: () => void;
+  reduceMotion: boolean | null;
 }) {
   return (
     <aside className="dash-rail" aria-label="Dashboard sidebar">
@@ -271,7 +273,12 @@ function DesktopRail({
             <div className="dash-nav-group-label">{group.label}</div>
             <div className="dash-nav-group-items">
               {group.items.map((item) => (
-                <NavLink key={item.to} item={item} active={isNavActive(item, effectivePath)} />
+                <NavLink
+                  key={item.to}
+                  item={item}
+                  active={isNavActive(item, effectivePath)}
+                  reduceMotion={reduceMotion}
+                />
               ))}
             </div>
           </div>
@@ -279,7 +286,11 @@ function DesktopRail({
       </nav>
 
       <div className="dash-rail-footer">
-        <NavLink item={SETTINGS_ITEM} active={isNavActive(SETTINGS_ITEM, effectivePath)} />
+        <NavLink
+          item={SETTINGS_ITEM}
+          active={isNavActive(SETTINGS_ITEM, effectivePath)}
+          reduceMotion={reduceMotion}
+        />
         <a href="/" target="_blank" rel="noreferrer" className="dash-nav-link">
           <ExternalLink size={20} strokeWidth={1.5} />
           <span>View storefront</span>
@@ -293,7 +304,15 @@ function DesktopRail({
   );
 }
 
-function NavLink({ item, active }: { item: NavItem; active: boolean }) {
+function NavLink({
+  item,
+  active,
+  reduceMotion,
+}: {
+  item: NavItem;
+  active: boolean;
+  reduceMotion: boolean | null;
+}) {
   const Icon = item.icon;
   return (
     <Link
@@ -301,14 +320,32 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
       activeOptions={{ exact: item.exact }}
       className={`dash-nav-link ${active ? "is-active" : ""}`}
       aria-current={active ? "page" : undefined}
-      style={{ "--item-color": DOMAIN_COLOR[item.domain] } as React.CSSProperties}
+      style={
+        {
+          "--item-color": DOMAIN_COLOR[item.domain],
+          "--item-fill": DOMAIN_NAV_FILL[item.domain],
+        } as React.CSSProperties
+      }
     >
       {active && (
         <motion.span
           layoutId="dashboard-nav-blob"
           className="dash-nav-blob"
           aria-hidden="true"
-          transition={{ type: "spring", stiffness: 400, damping: 28 }}
+          initial={false}
+          animate={{
+            backgroundColor: DOMAIN_NAV_FILL[item.domain],
+            scaleX: reduceMotion ? 1 : [1, 1.055, 1],
+          }}
+          transition={{
+            layout: { type: "spring", stiffness: 420, damping: 24, mass: 0.82 },
+            backgroundColor: {
+              duration: reduceMotion ? 0 : 0.18,
+              delay: reduceMotion ? 0 : 0.06,
+              ease: "easeOut",
+            },
+            scaleX: { duration: reduceMotion ? 0 : 0.32, ease: [0.22, 1, 0.36, 1] },
+          }}
         />
       )}
       <Icon size={20} strokeWidth={1.5} />
@@ -336,39 +373,57 @@ function MobileBottomNav({
   }, [effectivePath, reduceMotion]);
 
   return (
-    <nav ref={navRef} className="dash-bottom-nav" aria-label="Dashboard navigation">
-      {NAV.map((item) => {
-        const active = isNavActive(item, effectivePath);
-        const Icon = item.icon;
-        return (
-          <Link
-            key={item.to}
-            to={item.to as any}
-            activeOptions={{ exact: item.exact }}
-            className={`dash-bottom-link ${active ? "is-active" : ""}`}
-            aria-label={item.label}
-            aria-current={active ? "page" : undefined}
-            style={{ "--item-color": DOMAIN_COLOR[item.domain] } as React.CSSProperties}
-          >
-            {active && (
-              <motion.span
-                layoutId="dashboard-mobile-nav-blob"
-                className="dash-bottom-blob"
-                aria-hidden="true"
-                initial={false}
-                animate={{ backgroundColor: DOMAIN_NAV_FILL[item.domain] }}
-                transition={{
-                  layout: { type: "spring", stiffness: 400, damping: 28 },
-                  backgroundColor: { duration: reduceMotion ? 0 : 0.2, ease: "easeOut" },
-                }}
-              />
-            )}
-            <Icon size={21} strokeWidth={1.6} />
-            <span>{item.label}</span>
-          </Link>
-        );
-      })}
-    </nav>
+    <div className="dash-bottom-nav-shell">
+      <nav ref={navRef} className="dash-bottom-nav" aria-label="Dashboard navigation">
+        {NAV.map((item) => {
+          const active = isNavActive(item, effectivePath);
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.to}
+              to={item.to as any}
+              activeOptions={{ exact: item.exact }}
+              className={`dash-bottom-link ${active ? "is-active" : ""}`}
+              aria-label={item.label}
+              aria-current={active ? "page" : undefined}
+              style={
+                {
+                  "--item-color": DOMAIN_COLOR[item.domain],
+                  "--item-fill": DOMAIN_NAV_FILL[item.domain],
+                } as React.CSSProperties
+              }
+            >
+              {active && (
+                <motion.span
+                  layoutId="dashboard-mobile-nav-blob"
+                  className="dash-bottom-blob"
+                  aria-hidden="true"
+                  initial={false}
+                  animate={{
+                    backgroundColor: DOMAIN_NAV_FILL[item.domain],
+                    scaleX: reduceMotion ? 1 : [1, 1.055, 1],
+                  }}
+                  transition={{
+                    layout: { type: "spring", stiffness: 420, damping: 24, mass: 0.82 },
+                    backgroundColor: {
+                      duration: reduceMotion ? 0 : 0.18,
+                      delay: reduceMotion ? 0 : 0.06,
+                      ease: "easeOut",
+                    },
+                    scaleX: {
+                      duration: reduceMotion ? 0 : 0.32,
+                      ease: [0.22, 1, 0.36, 1],
+                    },
+                  }}
+                />
+              )}
+              <Icon size={21} strokeWidth={1.6} />
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
+    </div>
   );
 }
 
@@ -435,6 +490,9 @@ export function ChargedPanel({
   className = "",
   domain,
   anchor = "top-right",
+  material = "grain",
+  form = "halo",
+  silhouette = "inset",
   title,
   action,
 }: {
@@ -442,11 +500,16 @@ export function ChargedPanel({
   className?: string;
   domain: Exclude<DashboardDomain, "neutral">;
   anchor?: "top-right" | "top-left";
+  material?: "grain" | "solid";
+  form?: "halo" | "arc" | "wash" | "corner";
+  silhouette?: "inset" | "full" | "side" | "offset";
   title?: ReactNode;
   action?: ReactNode;
 }) {
   return (
-    <section className={`dash-charged dash-charged-${domain} dash-charged-${anchor} ${className}`}>
+    <section
+      className={`dash-charged dash-charged-${domain} dash-charged-${anchor} dash-material-${material} dash-grain-${form} dash-hero-${silhouette} ${className}`}
+    >
       {(title || action) && (
         <header className="dash-charged-header">
           {title && <h2 className="dash-charged-title">{title}</h2>}

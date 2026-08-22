@@ -135,7 +135,7 @@ export function OrderDrawer({
                     }}
                   />
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm text-white truncate">{it.name}</div>
+                    <div className="dash-fade-tail text-sm text-white">{it.name}</div>
                   </div>
                   <div className="font-mono text-xs text-white/80 shrink-0">{money(it.price)}</div>
                 </li>
@@ -168,7 +168,7 @@ export function OrderDrawer({
                       rel="noreferrer"
                       className="flex min-h-[40px] items-center justify-between gap-2 rounded-lg border border-white/10 px-3 text-xs text-[#C9BEDD] hover:border-white/25 hover:text-white"
                     >
-                      <span className="truncate">{item.name}</span>
+                      <span className="dash-fade-tail">{item.name}</span>
                       <ExternalLink size={13} className="shrink-0" />
                     </a>
                   ))}
@@ -607,7 +607,7 @@ function InfoRow({
   const empty = !value;
   const inner = (
     <span
-      className={`text-sm truncate ${empty ? "text-white/40 italic" : "text-white hover:text-[var(--accent-red-glow)]"}`}
+      className={`text-sm truncate ${empty ? "text-white/40" : "text-white hover:text-[var(--accent-red-glow)]"}`}
     >
       {value ?? placeholder}
     </span>

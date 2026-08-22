@@ -26,7 +26,13 @@ import { type AnalyticsRange, RANGE_LABEL } from "@/lib/dashboard-mock";
 import { supabase } from "@/integrations/supabase/client";
 import { deriveSaleStatus, formatInSaleTimeZone } from "@/lib/sale-time";
 import { normalizeUtmSource } from "@/lib/utm";
-import { countsAsSale, keptRatio, netRevenue, saleOrders, sumNetRevenue } from "@/lib/revenue";
+import {
+  allocateLineRevenue,
+  countsAsSale,
+  netRevenue,
+  saleOrders,
+  sumNetRevenue,
+} from "@/lib/revenue";
 import { fetchOrderIdentity, splitNewReturning, type IdentityMap } from "@/lib/customer-identity";
 
 export const Route = createFileRoute("/dashboard/analytics")({
@@ -150,8 +156,9 @@ function Analytics() {
       }
     >();
     for (const order of inRange) {
-      const ratio = keptRatio(order);
-      for (const item of order.order_items ?? []) {
+      const items = order.order_items ?? [];
+      const allocatedRevenue = allocateLineRevenue(order, items);
+      for (const [itemIndex, item] of items.entries()) {
         const key = item.product_id || item.name;
         const current = map.get(key) ?? {
           id: key,
@@ -162,7 +169,7 @@ function Analytics() {
           revenue: 0,
         };
         current.units += 1;
-        current.revenue += Number(item.price || 0) * ratio;
+        current.revenue += allocatedRevenue[itemIndex] ?? 0;
         if (!current.coverUrl && item.cover_url) current.coverUrl = item.cover_url;
         map.set(key, current);
       }
@@ -238,7 +245,13 @@ function Analytics() {
       action={<RangeControl value={range} onChange={setRange} options={RANGE_OPTIONS} />}
     >
       <div className="space-y-6">
-        <ChargedPanel domain="money" title={`Revenue · ${RANGE_LABEL[range]}`}>
+        <ChargedPanel
+          domain="money"
+          material="grain"
+          form="arc"
+          silhouette="inset"
+          title={`Revenue · ${RANGE_LABEL[range]}`}
+        >
           <div className="dash-analytics-metrics">
             <AnalyticsMetric label="Revenue" value={money(revenue)} delta={revenueDelta} />
             <AnalyticsMetric label="Average order" value={money(aov)} delta={aovDelta} />
@@ -394,7 +407,10 @@ function Analytics() {
             )}
           </DashCard>
 
-          <DashCard title="New vs returning" className="xl:col-span-5">
+          <DashCard
+            title="New vs returning"
+            className="dash-block-zone dash-block-zone-people xl:col-span-5"
+          >
             {splitTotal === 0 ? (
               <div className="dash-empty">
                 <p>No customer activity in this range.</p>

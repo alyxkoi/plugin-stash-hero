@@ -144,7 +144,13 @@ function MarketingHero() {
   );
 
   return (
-    <ChargedPanel domain="promo" title="Top-performing code" className="dash-marketing-hero">
+    <ChargedPanel
+      domain="promo"
+      material="solid"
+      silhouette="side"
+      title="Top-performing code"
+      className="dash-marketing-hero"
+    >
       {best ? (
         <div className="dash-marketing-hero-body">
           <div>

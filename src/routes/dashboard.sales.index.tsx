@@ -204,7 +204,9 @@ function SalesPage() {
         {active ? (
           <ChargedPanel
             domain="promo"
-            anchor="top-left"
+            material="grain"
+            form="wash"
+            silhouette="full"
             title={
               <span className="inline-flex items-center gap-2">
                 <i className="dash-live-dot" /> Live
@@ -278,8 +280,14 @@ function SalesPage() {
             </div>
           </ChargedPanel>
         ) : (
-          <DashCard>
-            <div className="dash-empty">
+          <ChargedPanel
+            domain="promo"
+            material="grain"
+            form="wash"
+            silhouette="full"
+            title="Sales campaign"
+          >
+            <div className="dash-empty text-white/75">
               <p>No sale running. Create one to discount your whole catalog.</p>
               <Link
                 to="/dashboard/sales/new"
@@ -288,7 +296,7 @@ function SalesPage() {
                 <Plus size={14} /> New sale
               </Link>
             </div>
-          </DashCard>
+          </ChargedPanel>
         )}
 
         <DashCard title="Past and scheduled sales">

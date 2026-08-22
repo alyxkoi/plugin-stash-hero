@@ -52,7 +52,7 @@ function CustomerDetail() {
         </DashCard>
         <DashCard title="Plugins owned">
           <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
-            {owned.map(p => <div key={p!.id} className="text-center"><div className="w-full aspect-square rounded-lg mb-1" style={{ background: p!.coverGradient }} /><div className="text-[10px] truncate">{p!.name}</div></div>)}
+            {owned.map(p => <div key={p!.id} className="min-w-0 text-center"><div className="w-full aspect-square rounded-lg mb-1" style={{ background: p!.coverGradient }} /><div className="dash-fade-tail text-[10px]">{p!.name}</div></div>)}
           </div>
         </DashCard>
         <DashCard title="Internal notes">

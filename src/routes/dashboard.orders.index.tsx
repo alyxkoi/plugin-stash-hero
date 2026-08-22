@@ -162,7 +162,13 @@ function OrdersPage() {
   return (
     <DashboardShell title="Orders">
       <div className="space-y-6">
-        <ChargedPanel domain="volume" title="Today at a glance" className="dash-short-charge">
+        <ChargedPanel
+          domain="volume"
+          material="solid"
+          silhouette="side"
+          title="Today at a glance"
+          className="dash-short-charge"
+        >
           <div className="dash-charged-stat-grid">
             <SummaryStat label="Orders today" value={todayRows.length.toLocaleString()} />
             <SummaryStat label="Gross" value={money(todayGross)} />
@@ -264,7 +270,7 @@ function OrdersPage() {
                       )}
                     </td>
                     <td className="px-4 text-xs">
-                      <span className="inline-block max-w-[190px] truncate align-middle">
+                      <span className="dash-fade-tail inline-block max-w-[190px] align-middle">
                         {order.order_items[0]?.name ?? "—"}
                       </span>
                       {order.order_items.length > 1 && (
@@ -325,7 +331,7 @@ function OrdersPage() {
                       <span className="block truncate text-sm font-semibold text-white">
                         {order.customer_name || order.guest_email || "Guest"}
                       </span>
-                      <span className="block truncate text-xs text-[var(--text-tertiary)]">
+                      <span className="dash-fade-tail block text-xs text-[var(--text-tertiary)]">
                         {order.order_items[0]?.name ?? "No line items"}
                         {order.order_items.length > 1
                           ? ` +${order.order_items.length - 1} more`

@@ -219,6 +219,33 @@ function PerksPage() {
           </div>
         )}
 
+        <ChargedPanel
+          domain="people"
+          material="solid"
+          silhouette="side"
+          title="Grant at a glance"
+          className="dash-short-charge"
+        >
+          <div className="dash-charged-stat-grid dash-perks-hero-stats">
+            <div className="dash-charged-stat">
+              <div className="dash-charged-stat-label">
+                {kind === "plugin" ? "Plugins" : "Store credit"}
+              </div>
+              <div className="dash-charged-stat-value">
+                {kind === "plugin" ? pickedProducts.length.toLocaleString() : money(amountCents)}
+              </div>
+            </div>
+            <div className="dash-charged-stat">
+              <div className="dash-charged-stat-label">Recipients</div>
+              <div className="dash-charged-stat-value">{recipientCount.toLocaleString()}</div>
+            </div>
+            <div className="dash-charged-stat">
+              <div className="dash-charged-stat-label">Retail value</div>
+              <div className="dash-charged-stat-value">{money(grantValueCents)}</div>
+            </div>
+          </div>
+        </ChargedPanel>
+
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
           <div className="xl:col-span-8 space-y-6">
             {!review ? (
@@ -344,35 +371,21 @@ function PerksPage() {
           </div>
 
           <div className="xl:col-span-4 xl:sticky xl:top-[96px]">
-            <ChargedPanel domain="people" title="Grant summary" className="dash-grant-summary">
-              <div className="dash-grant-summary-body">
-                <div>
-                  <span>{kind === "plugin" ? "Plugins" : "Store credit"}</span>
+            <DashCard title="Grant review" className="dash-grant-review">
+              <div className="dash-grant-review-body">
+                <div className="dash-grant-selection-note">
+                  <span>Selection</span>
                   <strong>
                     {kind === "plugin"
-                      ? pickedProducts.length.toLocaleString()
-                      : money(amountCents)}
-                  </strong>
-                  {kind === "plugin" && (
-                    <small>
-                      {pickedProducts
+                      ? pickedProducts
                         .map((id) => productMap.get(id)?.name)
                         .filter(Boolean)
                         .slice(0, 3)
-                        .join(", ") || "Nothing selected"}
-                    </small>
-                  )}
-                </div>
-                <div>
-                  <span>Recipients</span>
-                  <strong>{recipientCount.toLocaleString()}</strong>
+                          .join(", ") || "Nothing selected"
+                      : `${money(amountCents)} store credit`}
+                  </strong>
                   <small>{allAccounts ? "All registered accounts" : "Selected customers"}</small>
                 </div>
-                <div>
-                  <span>Retail value</span>
-                  <strong>{money(grantValueCents)}</strong>
-                </div>
-
                 {!review && (
                   <label>
                     <span>Reason (required)</span>
@@ -417,7 +430,7 @@ function PerksPage() {
                   <div className="dash-grant-disabled-reason">{disabledReason}</div>
                 )}
               </div>
-            </ChargedPanel>
+            </DashCard>
           </div>
         </div>
 
@@ -574,7 +587,7 @@ function ProductPicker({
                 }}
               />
               <span className="min-w-0">
-                <span className="block text-[12px] text-white truncate">{p.name}</span>
+                <span className="dash-fade-tail block text-[12px] text-white">{p.name}</span>
                 <span className="block text-[10px] font-mono text-[#B8ACCC]">
                   {p.is_free || p.price === 0 ? "FREE" : `$${p.price.toFixed(2)}`}
                 </span>
@@ -698,7 +711,7 @@ function RecipientPicker({
                   }`}
                 >
                   <span className="min-w-0">
-                    <span className="block text-[12px] text-white truncate">
+                    <span className="dash-fade-tail block text-[12px] text-white">
                       {a.name ?? a.email}
                     </span>
                     {a.name && (

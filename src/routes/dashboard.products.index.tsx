@@ -293,7 +293,13 @@ function ProductsPage() {
         </Link>
       }
     >
-      <ChargedPanel domain="catalog" title="Catalog at a glance" className="dash-short-charge mb-6">
+      <ChargedPanel
+        domain="catalog"
+        material="solid"
+        silhouette="offset"
+        title="Catalog at a glance"
+        className="dash-short-charge mb-6"
+      >
         <div className="dash-charged-stat-grid">
           <CatalogStat label="Total products" value={products.length.toLocaleString()} />
           <CatalogStat label="Published" value={publishedCount.toLocaleString()} />
@@ -632,7 +638,7 @@ function ProductsPage() {
                   >
                     <ProductThumb product={product} />
                     <span className="min-w-0">
-                      <span className="block truncate text-sm font-semibold text-white">
+                      <span className="dash-fade-tail block text-sm font-semibold text-white">
                         {product.name}
                       </span>
                       <span className="mt-1 flex flex-wrap items-center gap-1.5">
@@ -689,7 +695,7 @@ function ProductsPage() {
                       params={{ id: product.id } as any}
                       search={editSearch as any}
                       onClick={rememberScroll}
-                      className="min-w-0 truncate font-semibold text-white hover:text-[var(--c-catalog)]"
+                      className="dash-fade-tail min-w-0 font-semibold text-white hover:text-[var(--c-catalog)]"
                     >
                       {product.name}
                     </Link>

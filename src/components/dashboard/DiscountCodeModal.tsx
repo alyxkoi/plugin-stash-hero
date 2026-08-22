@@ -428,7 +428,7 @@ export function DiscountCodeModal({
                     </div>
                   )}
                   {productIds.length === 0 ? (
-                    <div className="text-xs text-white/45 italic">No plugins added yet.</div>
+                    <div className="text-xs text-white/45">No plugins added yet.</div>
                   ) : (
                     <div className="flex flex-wrap gap-2">
                       {productIds.map((pid) => {

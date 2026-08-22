@@ -54,6 +54,7 @@ function CustomersPage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [topCustomers, setTopCustomers] = useState<Row[]>([]);
   const [metricOrders, setMetricOrders] = useState<MetricOrder[]>([]);
+  const [signupDates, setSignupDates] = useState<string[]>([]);
   const [identity, setIdentity] = useState<IdentityMap>(() => new Map());
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -105,7 +106,7 @@ function CustomersPage() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [topRes, ordersRes, identityMap] = await Promise.all([
+      const [topRes, ordersRes, identityMap, signupsRes] = await Promise.all([
         supabase.rpc("admin_customer_list", {
           _q: "",
           _filter: "all",
@@ -119,11 +120,13 @@ function CustomersPage() {
           .order("created_at", { ascending: false })
           .limit(5000),
         fetchOrderIdentity(),
+        supabase.from("customers").select("created_at").limit(5000),
       ]);
       if (cancelled) return;
       if (!topRes.error) setTopCustomers((topRes.data ?? []) as Row[]);
       setMetricOrders((ordersRes.data ?? []) as MetricOrder[]);
       setIdentity(identityMap);
+      setSignupDates((signupsRes.data ?? []).map((customer) => customer.created_at));
     })();
     return () => {
       cancelled = true;
@@ -165,10 +168,10 @@ function CustomersPage() {
     const previousMonthEnd = new Date(monthStart.getTime() - 1);
     const current = customerMetrics(metricOrders, identity);
     const prior = customerMetrics(metricOrders, identity, previousMonthEnd);
-    const newCurrent = firstCustomersBetween(identity, monthStart, now);
-    const newPrevious = firstCustomersBetween(identity, previousMonthStart, previousMonthEnd);
+    const newCurrent = signupsBetween(signupDates, monthStart, now);
+    const newPrevious = signupsBetween(signupDates, previousMonthStart, previousMonthEnd);
     return { current, prior, newCurrent, newPrevious };
-  }, [metricOrders, identity]);
+  }, [metricOrders, identity, signupDates]);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const totalDelta = percentDelta(metrics.current.total, metrics.prior.total);
@@ -179,42 +182,50 @@ function CustomersPage() {
   return (
     <DashboardShell title="Customers">
       <div className="space-y-6">
-        <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-          <StatCard
-            label="Total customers"
-            value={(metrics.current.total || total).toLocaleString()}
-            delta={totalDelta.label}
-            deltaPositive={totalDelta.positive ?? undefined}
-            comparison="vs start of month"
-            domain="people"
-          />
-          <StatCard
-            label="New this month"
-            value={metrics.newCurrent.toLocaleString()}
-            delta={newDelta.label}
-            deltaPositive={newDelta.positive ?? undefined}
-            comparison="vs previous month"
-            domain="people"
-          />
-          <StatCard
-            label="Repeat rate"
-            value={`${Math.round(metrics.current.repeatRate)}%`}
-            delta={repeatDelta.label}
-            deltaPositive={repeatDelta.positive ?? undefined}
-            comparison="vs start of month"
-            domain="people"
-          />
-          <StatCard
-            label="Average LTV"
-            value={money(metrics.current.averageLtv)}
-            delta={ltvDelta.label}
-            deltaPositive={ltvDelta.positive ?? undefined}
-            comparison="vs start of month"
-            domain="money"
-          />
-        </div>
+        <ChargedPanel
+          domain="people"
+          material="grain"
+          form="corner"
+          silhouette="full"
+          title="Customer intelligence"
+        >
+          <div className="dash-customer-hero-stats">
+            <StatCard
+              label="Total customers"
+              value={(metrics.current.total || total).toLocaleString()}
+              delta={totalDelta.label}
+              deltaPositive={totalDelta.positive ?? undefined}
+              comparison="vs start of month"
+              domain="people"
+            />
+            <StatCard
+              label="New this month"
+              value={metrics.newCurrent.toLocaleString()}
+              delta={newDelta.label}
+              deltaPositive={newDelta.positive ?? undefined}
+              comparison="vs previous month"
+              domain="people"
+            />
+            <StatCard
+              label="Repeat rate"
+              value={`${Math.round(metrics.current.repeatRate)}%`}
+              delta={repeatDelta.label}
+              deltaPositive={repeatDelta.positive ?? undefined}
+              comparison="vs start of month"
+              domain="people"
+            />
+            <StatCard
+              label="Average LTV"
+              value={money(metrics.current.averageLtv)}
+              delta={ltvDelta.label}
+              deltaPositive={ltvDelta.positive ?? undefined}
+              comparison="vs start of month"
+              domain="money"
+            />
+          </div>
+        </ChargedPanel>
 
-        <ChargedPanel domain="people" title="Top customers by spend">
+        <DashCard title="Top customers by spend" className="dash-block-zone dash-block-zone-money">
           {topCustomers.length === 0 ? (
             <div className="dash-empty text-white/75">
               <p>Top spenders will appear after customer totals load.</p>
@@ -234,7 +245,7 @@ function CustomersPage() {
               ))}
             </ol>
           )}
-        </ChargedPanel>
+        </DashCard>
 
         <div className="dash-filter-bar" aria-label="Customer filters">
           <label className="dash-search-field">
@@ -438,14 +449,11 @@ function customerMetrics(orders: MetricOrder[], identity: IdentityMap, cutoff?: 
   };
 }
 
-function firstCustomersBetween(identity: IdentityMap, start: Date, end: Date) {
-  const emails = new Set<string>();
-  for (const row of identity.values()) {
-    if (!row.is_first_order) continue;
-    const time = new Date(row.created_at).getTime();
-    if (time >= start.getTime() && time <= end.getTime()) emails.add(row.normalized_email);
-  }
-  return emails.size;
+function signupsBetween(createdAt: string[], start: Date, end: Date) {
+  return createdAt.filter((value) => {
+    const time = new Date(value).getTime();
+    return time >= start.getTime() && time <= end.getTime();
+  }).length;
 }
 
 function percentDelta(current: number, previous: number) {
