@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { CreditCard, HardDrive, LogOut, PlugZap, Store, UserRound } from "lucide-react";
 import { toast } from "sonner";
-import { ChargedPanel, DashCard, DashboardShell } from "@/components/DashboardShell";
+import { DashCard, DashboardShell } from "@/components/DashboardShell";
 import { supabase } from "@/integrations/supabase/client";
 import { signOut, useAuth } from "@/hooks/useAuth";
 
@@ -10,8 +10,6 @@ export const Route = createFileRoute("/dashboard/settings")({
   head: () => ({ meta: [{ title: "Settings — Plugin Warehouse" }] }),
   component: Settings,
 });
-
-type Section = "store" | "payments" | "files" | "integrations" | "account";
 
 type IntegrationStatus = {
   r2: {
@@ -26,14 +24,6 @@ type IntegrationStatus = {
   openai: { connected: boolean };
   mailchimp: { connected: boolean };
 };
-
-const SECTIONS = [
-  { value: "store", label: "Store", icon: Store },
-  { value: "payments", label: "Payments", icon: CreditCard },
-  { value: "files", label: "Files & storage", icon: HardDrive },
-  { value: "integrations", label: "Integrations", icon: PlugZap },
-  { value: "account", label: "Account", icon: UserRound },
-] as const;
 
 async function callFunction(path: string, init?: RequestInit) {
   const {
@@ -51,7 +41,6 @@ async function callFunction(path: string, init?: RequestInit) {
 }
 
 function Settings() {
-  const [section, setSection] = useState<Section>("files");
   const [corsBusy, setCorsBusy] = useState(false);
   const [corsResult, setCorsResult] = useState<string | null>(null);
   const [status, setStatus] = useState<IntegrationStatus | null>(null);
@@ -116,74 +105,20 @@ function Settings() {
     navigate({ to: "/dashboard/login" as any, replace: true });
   }
 
-  const connectionStates = [
-    { label: "Storage", connected: !!status?.r2.connected },
-    { label: "Payments", connected: !!status?.stripe.connected },
-    { label: "OpenAI", connected: !!status?.openai.connected },
-    { label: "Mailchimp", connected: !!status?.mailchimp.connected },
-  ];
-  const connectedCount = connectionStates.filter((item) => item.connected).length;
-
   return (
     <DashboardShell title="Settings">
-      <ChargedPanel
-        domain="volume"
-        material="grain"
-        form="arc"
-        silhouette="full"
-        title="System"
-        className="dash-settings-horizon"
-      >
-        <div className="dash-system-map">
-          <div className="dash-hero-value">{connectedCount}<small>/4</small></div>
-          <div className="dash-system-nodes" role="img" aria-label={`${connectedCount} of four services connected`}>
-            {connectionStates.map((item) => (
-              <span key={item.label} data-connected={item.connected}>
-                <i />
-                <b>{item.label}</b>
-              </span>
-            ))}
+      <div className="dash-settings-page">
+        {statusError && (
+          <div className="dash-inline-error" role="alert">
+            <span>Status check failed: {statusError}</span>
+            <button type="button" onClick={loadStatus}>
+              Retry
+            </button>
           </div>
-        </div>
-      </ChargedPanel>
-      <div className="dash-settings-layout">
-        <aside className="dash-settings-nav" aria-label="Settings sections">
-          {SECTIONS.map((item) => {
-            const Icon = item.icon;
-            return (
-              <button
-                type="button"
-                key={item.value}
-                onClick={() => setSection(item.value)}
-                aria-current={section === item.value ? "page" : undefined}
-                className={section === item.value ? "is-active" : ""}
-              >
-                <Icon size={18} strokeWidth={1.6} />
-                <span>{item.label}</span>
-                {item.value === "files" && (
-                  <ConnectionDot
-                    connected={!!status?.r2.connected}
-                    label={status?.r2.connected ? "Connected" : "Not connected"}
-                    compact
-                  />
-                )}
-              </button>
-            );
-          })}
-        </aside>
+        )}
 
-        <div className="dash-settings-content">
-          {statusError && (
-            <div className="dash-inline-error" role="alert">
-              <span>Status check failed: {statusError}</span>
-              <button type="button" onClick={loadStatus}>
-                Retry
-              </button>
-            </div>
-          )}
-
-          {section === "store" && (
-            <DashCard title="Store identity">
+        <SettingsSection id="store" icon={Store} title="Store">
+          <DashCard title="Store identity">
               <Field
                 label="Store name"
                 helper="Shown in customer-facing receipts and admin exports."
@@ -196,24 +131,24 @@ function Settings() {
               >
                 <input type="email" defaultValue="pluginwh@gmail.com" autoComplete="email" />
               </Field>
-            </DashCard>
-          )}
+          </DashCard>
+        </SettingsSection>
 
-          {section === "payments" && (
-            <DashCard title="Stripe payments">
-              <ConnectionDot
-                connected={!!status?.stripe.connected}
-                label={
-                  status?.stripe.connected
-                    ? `Connected · ${status.stripe.mode ?? "unknown"} mode`
-                    : "Not connected"
-                }
-              />
-            </DashCard>
-          )}
+        <SettingsSection id="payments" icon={CreditCard} title="Payments">
+          <DashCard title="Stripe payments">
+            <ConnectionDot
+              connected={!!status?.stripe.connected}
+              label={
+                status?.stripe.connected
+                  ? `Connected · ${status.stripe.mode ?? "unknown"} mode`
+                  : "Not connected"
+              }
+            />
+          </DashCard>
+        </SettingsSection>
 
-          {section === "files" && (
-            <DashCard title="Files & storage">
+        <SettingsSection id="files" icon={HardDrive} title="Files & storage">
+          <DashCard title="Storage connection">
               <ConnectionDot
                 connected={!!status?.r2.connected}
                 label={
@@ -267,36 +202,36 @@ function Settings() {
                   </pre>
                 )}
               </div>
+          </DashCard>
+        </SettingsSection>
+
+        <SettingsSection id="integrations" icon={PlugZap} title="Integrations">
+          <div className="dash-settings-card-grid">
+            <DashCard title="OpenAI">
+              <ConnectionDot
+                connected={!!status?.openai.connected}
+                label={status?.openai.connected ? "Connected" : "Not connected"}
+              />
+              <button
+                type="button"
+                onClick={() => toast.success("Description generation is available")}
+                className="btn-ghost mt-4 !px-4 !text-xs"
+              >
+                Test description generation
+              </button>
             </DashCard>
-          )}
+            <DashCard title="Mailchimp">
+              <ConnectionDot
+                connected={!!status?.mailchimp.connected}
+                label={status?.mailchimp.connected ? "Connected" : "Not connected"}
+              />
+            </DashCard>
+          </div>
+        </SettingsSection>
 
-          {section === "integrations" && (
-            <div className="space-y-4">
-              <DashCard title="OpenAI">
-                <ConnectionDot
-                  connected={!!status?.openai.connected}
-                  label={status?.openai.connected ? "Connected" : "Not connected"}
-                />
-                <button
-                  type="button"
-                  onClick={() => toast.success("Description generation is available")}
-                  className="btn-ghost mt-4 !px-4 !text-xs"
-                >
-                  Test description generation
-                </button>
-              </DashCard>
-              <DashCard title="Mailchimp">
-                <ConnectionDot
-                  connected={!!status?.mailchimp.connected}
-                  label={status?.mailchimp.connected ? "Connected" : "Not connected"}
-                />
-              </DashCard>
-            </div>
-          )}
-
-          {section === "account" && (
-            <div className="space-y-6">
-              <DashCard title="Admin account">
+        <SettingsSection id="account" icon={UserRound} title="Account">
+          <div className="dash-settings-account-grid">
+            <DashCard title="Admin account">
                 <Field label="Email">
                   <input value={user?.email ?? ""} readOnly aria-readonly="true" />
                 </Field>
@@ -319,18 +254,39 @@ function Settings() {
                 >
                   {passwordBusy ? "Updating password…" : "Update password"}
                 </button>
-              </DashCard>
+            </DashCard>
 
-              <DashCard title="Session controls" className="dash-danger-zone">
-                <button type="button" onClick={logout} className="dash-danger-button">
-                  <LogOut size={14} /> Log out
-                </button>
-              </DashCard>
-            </div>
-          )}
-        </div>
+            <DashCard title="Session controls" className="dash-danger-zone">
+              <button type="button" onClick={logout} className="dash-danger-button">
+                <LogOut size={14} /> Log out
+              </button>
+            </DashCard>
+          </div>
+        </SettingsSection>
       </div>
     </DashboardShell>
+  );
+}
+
+function SettingsSection({
+  id,
+  icon: Icon,
+  title,
+  children,
+}: {
+  id: string;
+  icon: typeof Store;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="dash-settings-section" aria-labelledby={`settings-${id}`}>
+      <header>
+        <Icon size={18} strokeWidth={1.7} aria-hidden="true" />
+        <h2 id={`settings-${id}`}>{title}</h2>
+      </header>
+      {children}
+    </section>
   );
 }
 

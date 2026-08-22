@@ -58,13 +58,19 @@ function Marketing() {
     <DashboardShell title="Marketing" action={tab === "codes" ? <MarketingCodesAction /> : null}>
       <MarketingHero tab={tab} />
 
-      <nav className="dash-marketing-workspaces" aria-label="Marketing workspaces">
+      <nav
+        className="dash-marketing-workspaces"
+        aria-label="Marketing workspaces"
+        data-active-index={workspaces.findIndex((workspace) => workspace.key === tab)}
+      >
         {workspaces.map(({ key, label, icon: Icon }) => (
           <button
             key={key}
             type="button"
             onClick={() => setTab(key)}
             aria-pressed={tab === key}
+            aria-label={label}
+            title={label}
             className={tab === key ? "is-active" : ""}
           >
             <span className="dash-marketing-workspace-icon" aria-hidden="true">

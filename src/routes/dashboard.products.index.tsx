@@ -134,6 +134,10 @@ function ProductsPage() {
   const [bulkConfirm, setBulkConfirm] = useState<null | "delete" | "archive">(null);
   const [bulkBusy, setBulkBusy] = useState(false);
   const [view, setView] = useState<"table" | "grid">("table");
+  const [mobileSelectionMode, setMobileSelectionMode] = useState(false);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressProduct = useRef<string | null>(null);
+  const longPressOrigin = useRef({ x: 0, y: 0 });
 
   // Params passed through to the edit page so Save/Back can return here intact.
   const editSearch = { q, cat, status, page } as const;
@@ -147,6 +151,17 @@ function ProductsPage() {
       sessionStorage.removeItem(SCROLL_KEY);
     }
   }, []);
+
+  useEffect(
+    () => () => {
+      if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (selected.size === 0) setMobileSelectionMode(false);
+  }, [selected.size]);
 
   const rememberScroll = () => sessionStorage.setItem(SCROLL_KEY, String(window.scrollY));
 
@@ -280,6 +295,42 @@ function ProductsPage() {
       else n.add(id);
       return n;
     });
+
+  const cancelLongPress = () => {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    longPressTimer.current = null;
+  };
+
+  const startLongPress = (id: string, event: React.PointerEvent<HTMLElement>) => {
+    if (!window.matchMedia("(max-width: 767px)").matches || mobileSelectionMode) return;
+    cancelLongPress();
+    longPressProduct.current = null;
+    longPressOrigin.current = { x: event.clientX, y: event.clientY };
+    longPressTimer.current = setTimeout(() => {
+      longPressProduct.current = id;
+      setMobileSelectionMode(true);
+      setSelected((current) => new Set(current).add(id));
+      longPressTimer.current = null;
+    }, 1500);
+  };
+
+  const moveLongPress = (event: React.PointerEvent<HTMLElement>) => {
+    if (
+      Math.hypot(
+        event.clientX - longPressOrigin.current.x,
+        event.clientY - longPressOrigin.current.y,
+      ) > 10
+    ) {
+      cancelLongPress();
+    }
+  };
+
+  const consumeLongPressClick = (id: string, event: React.MouseEvent<HTMLElement>) => {
+    if (longPressProduct.current !== id) return;
+    event.preventDefault();
+    event.stopPropagation();
+    longPressProduct.current = null;
+  };
   const publishedCount = products.filter((product) => product.status === "published").length;
   const discounted = products.filter(
     (product) => Number(product.compare_at_price || 0) > Number(product.price),
@@ -472,8 +523,12 @@ function ProductsPage() {
               Delete selected
             </button>
             <button
-              onClick={() => setSelected(new Set())}
+              onClick={() => {
+                setSelected(new Set());
+                setMobileSelectionMode(false);
+              }}
               className="ml-auto text-white/40 hover:text-white"
+              aria-label="Exit selection mode"
             >
               <X size={14} />
             </button>
@@ -631,9 +686,20 @@ function ProductsPage() {
         )}
 
         {products.length > 0 && view === "table" && (
-          <ul className="dash-mobile-list -mx-4 -my-4">
+          <ul
+            className={`dash-mobile-list dash-mobile-products -mx-4 -my-4 ${mobileSelectionMode ? "is-selection-mode" : ""}`}
+          >
             {paged.map((product) => (
-              <li key={product.id} className="border-b border-[var(--border)] last:border-b-0">
+              <li
+                key={product.id}
+                className="border-b border-[var(--border)] last:border-b-0"
+                onPointerDown={(event) => startLongPress(product.id, event)}
+                onPointerMove={moveLongPress}
+                onPointerUp={cancelLongPress}
+                onPointerCancel={cancelLongPress}
+                onPointerLeave={cancelLongPress}
+                onClickCapture={(event) => consumeLongPressClick(product.id, event)}
+              >
                 <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3">
                   <label className="dash-mobile-check-target">
                     <input
@@ -682,9 +748,18 @@ function ProductsPage() {
         )}
 
         {products.length > 0 && view === "grid" && (
-          <div className="dash-product-grid">
+          <div className={`dash-product-grid ${mobileSelectionMode ? "is-selection-mode" : ""}`}>
             {paged.map((product) => (
-              <article key={product.id} className="dash-product-card">
+              <article
+                key={product.id}
+                className="dash-product-card"
+                onPointerDown={(event) => startLongPress(product.id, event)}
+                onPointerMove={moveLongPress}
+                onPointerUp={cancelLongPress}
+                onPointerCancel={cancelLongPress}
+                onPointerLeave={cancelLongPress}
+                onClickCapture={(event) => consumeLongPressClick(product.id, event)}
+              >
                 <div className="dash-product-card-media">
                   {product.cover_url ? (
                     <img src={product.cover_url} alt="" />

@@ -244,7 +244,9 @@ function CustomersPage() {
                     <span className="dash-top-customer-name">
                       {customer.name || customer.email}
                     </span>
-                    <strong>{money(Number(customer.total_spent))}</strong>
+                    <strong className="dash-customer-spend">
+                      {money(Number(customer.total_spent))}
+                    </strong>
                     <small>{Number(customer.orders_count).toLocaleString()} orders</small>
                   </li>
                 ))}
@@ -338,7 +340,7 @@ function CustomersPage() {
                         <td className="px-4">
                           <AccountBadge hasAccount={customer.has_account} />
                         </td>
-                        <td className="px-4 text-right font-mono text-xs text-[var(--c-money)]">
+                        <td className="dash-customer-spend px-4 text-right font-mono text-xs">
                           {money(Number(customer.total_spent))}
                         </td>
                         <td className="px-4 text-right font-mono text-xs">
@@ -380,7 +382,7 @@ function CustomersPage() {
                             )}
                           </span>
                         </span>
-                        <span className="font-mono text-sm text-[var(--c-money)]">
+                        <span className="dash-customer-spend font-mono text-sm">
                           {money(Number(customer.total_spent))}
                         </span>
                       </span>
