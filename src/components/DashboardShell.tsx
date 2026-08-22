@@ -20,7 +20,6 @@ import {
   LayoutDashboard,
   LogOut,
   Megaphone,
-  MoreHorizontal,
   Package,
   Settings,
   ShoppingBag,
@@ -30,7 +29,6 @@ import {
 import logo from "@/assets/logo-dashboard.webp";
 import { useAuth, signOut } from "@/hooks/useAuth";
 import { SectionErrorBoundary } from "@/components/SectionErrorBoundary";
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 
 export type DashboardDomain = "money" | "volume" | "people" | "catalog" | "promo" | "neutral";
 
@@ -79,10 +77,6 @@ const SETTINGS_ITEM: NavItem = {
 };
 
 const NAV = [...NAV_GROUPS.flatMap((group) => group.items), SETTINGS_ITEM];
-const MOBILE_NAV = NAV.filter((item) =>
-  ["Overview", "Orders", "Products", "Customers"].includes(item.label),
-);
-const MORE_NAV = NAV.filter((item) => !MOBILE_NAV.includes(item));
 
 const DOMAIN_COLOR: Record<DashboardDomain, string> = {
   money: "var(--c-money)",
@@ -91,6 +85,15 @@ const DOMAIN_COLOR: Record<DashboardDomain, string> = {
   catalog: "var(--c-catalog)",
   promo: "var(--c-promo)",
   neutral: "var(--text-tertiary)",
+};
+
+const DOMAIN_NAV_FILL: Record<DashboardDomain, string> = {
+  money: "#741039",
+  volume: "#32227F",
+  people: "#592171",
+  catalog: "#07526A",
+  promo: "#7B2F0D",
+  neutral: "#342342",
 };
 
 interface Props {
@@ -136,7 +139,6 @@ function DashboardChromeRoot({
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
   const [accountOpen, setAccountOpen] = useState(false);
-  const [moreOpen, setMoreOpen] = useState(false);
   const [page, setPageState] = useState<{ title: string; action?: ReactNode }>({
     title: initialTitle,
     action: initialAction,
@@ -153,7 +155,6 @@ function DashboardChromeRoot({
   const domain = activeItem.domain;
   const routeTitle = activeItem.label;
   const displayTitle = page.title === initialTitle ? routeTitle : page.title;
-  const isMoreActive = MORE_NAV.some((item) => isNavActive(item, effectivePath));
 
   const setPage = useCallback((nextTitle: string, nextAction?: ReactNode) => {
     setPageState({ title: nextTitle, action: nextAction });
@@ -168,7 +169,6 @@ function DashboardChromeRoot({
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
     setAccountOpen(false);
-    setMoreOpen(false);
     window.requestAnimationFrame(() => mainRef.current?.focus({ preventScroll: true }));
   }, [pathname]);
 
@@ -246,19 +246,7 @@ function DashboardChromeRoot({
         </main>
       </div>
 
-      <MobileBottomNav
-        effectivePath={effectivePath}
-        domain={domain}
-        isMoreActive={isMoreActive}
-        onMore={() => setMoreOpen(true)}
-      />
-
-      <MoreSheet
-        open={moreOpen}
-        onOpenChange={setMoreOpen}
-        effectivePath={effectivePath}
-        onLogout={logout}
-      />
+      <MobileBottomNav effectivePath={effectivePath} reduceMotion={reduceMotion} />
     </div>
   );
 }
@@ -310,6 +298,7 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
   return (
     <Link
       to={item.to as any}
+      activeOptions={{ exact: item.exact }}
       className={`dash-nav-link ${active ? "is-active" : ""}`}
       aria-current={active ? "page" : undefined}
       style={{ "--item-color": DOMAIN_COLOR[item.domain] } as React.CSSProperties}
@@ -330,24 +319,32 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
 
 function MobileBottomNav({
   effectivePath,
-  domain,
-  isMoreActive,
-  onMore,
+  reduceMotion,
 }: {
   effectivePath: string;
-  domain: DashboardDomain;
-  isMoreActive: boolean;
-  onMore: () => void;
+  reduceMotion: boolean | null;
 }) {
+  const navRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const activeLink = navRef.current?.querySelector<HTMLElement>("[aria-current='page']");
+    activeLink?.scrollIntoView({
+      behavior: reduceMotion ? "auto" : "smooth",
+      block: "nearest",
+      inline: "center",
+    });
+  }, [effectivePath, reduceMotion]);
+
   return (
-    <nav className="dash-bottom-nav" aria-label="Dashboard navigation">
-      {MOBILE_NAV.map((item) => {
+    <nav ref={navRef} className="dash-bottom-nav" aria-label="Dashboard navigation">
+      {NAV.map((item) => {
         const active = isNavActive(item, effectivePath);
         const Icon = item.icon;
         return (
           <Link
             key={item.to}
             to={item.to as any}
+            activeOptions={{ exact: item.exact }}
             className={`dash-bottom-link ${active ? "is-active" : ""}`}
             aria-label={item.label}
             aria-current={active ? "page" : undefined}
@@ -358,82 +355,20 @@ function MobileBottomNav({
                 layoutId="dashboard-mobile-nav-blob"
                 className="dash-bottom-blob"
                 aria-hidden="true"
-                transition={{ type: "spring", stiffness: 400, damping: 28 }}
+                initial={false}
+                animate={{ backgroundColor: DOMAIN_NAV_FILL[item.domain] }}
+                transition={{
+                  layout: { type: "spring", stiffness: 400, damping: 28 },
+                  backgroundColor: { duration: reduceMotion ? 0 : 0.2, ease: "easeOut" },
+                }}
               />
             )}
             <Icon size={21} strokeWidth={1.6} />
+            <span>{item.label}</span>
           </Link>
         );
       })}
-      <button
-        type="button"
-        onClick={onMore}
-        className={`dash-bottom-link ${isMoreActive ? "is-active" : ""}`}
-        aria-label="More dashboard pages"
-        aria-current={isMoreActive ? "page" : undefined}
-        style={
-          { "--item-color": DOMAIN_COLOR[isMoreActive ? domain : "neutral"] } as React.CSSProperties
-        }
-      >
-        {isMoreActive && (
-          <motion.span
-            layoutId="dashboard-mobile-nav-blob"
-            className="dash-bottom-blob"
-            aria-hidden="true"
-            transition={{ type: "spring", stiffness: 400, damping: 28 }}
-          />
-        )}
-        <MoreHorizontal size={22} strokeWidth={1.6} />
-      </button>
     </nav>
-  );
-}
-
-function MoreSheet({
-  open,
-  onOpenChange,
-  effectivePath,
-  onLogout,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  effectivePath: string;
-  onLogout: () => void;
-}) {
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="dashboard-more-sheet">
-        <DialogTitle className="dash-panel-title">More</DialogTitle>
-        <DialogDescription className="sr-only">Additional dashboard destinations</DialogDescription>
-        <div className="dash-more-grid">
-          {MORE_NAV.map((item) => {
-            const active = isNavActive(item, effectivePath);
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.to}
-                to={item.to as any}
-                onClick={() => onOpenChange(false)}
-                className={`dash-more-link ${active ? "is-active" : ""}`}
-                aria-current={active ? "page" : undefined}
-                style={{ "--item-color": DOMAIN_COLOR[item.domain] } as React.CSSProperties}
-              >
-                <Icon size={20} strokeWidth={1.6} />
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
-          <a href="/" target="_blank" rel="noreferrer" className="dash-more-link">
-            <ExternalLink size={20} strokeWidth={1.6} />
-            <span>View storefront</span>
-          </a>
-          <button type="button" onClick={onLogout} className="dash-more-link dash-more-logout">
-            <LogOut size={20} strokeWidth={1.6} />
-            <span>Log out</span>
-          </button>
-        </div>
-      </DialogContent>
-    </Dialog>
   );
 }
 

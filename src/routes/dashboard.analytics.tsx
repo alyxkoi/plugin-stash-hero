@@ -5,7 +5,10 @@ import {
   Area,
   AreaChart,
   CartesianGrid,
+  Cell,
   Line,
+  Pie,
+  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -374,9 +377,7 @@ function Analytics() {
                 {sources.map((source) => (
                   <li key={source.source}>
                     <div className="dash-source-line">
-                      <DomainChip domain={source.source === "direct" ? "neutral" : "promo"}>
-                        {source.source}
-                      </DomainChip>
+                      <DomainChip domain="promo">{source.source}</DomainChip>
                       <span>{source.count.toLocaleString()} orders</span>
                       <strong>{money(source.revenue)}</strong>
                     </div>
@@ -400,24 +401,51 @@ function Analytics() {
               </div>
             ) : (
               <div className="dash-split-wrap">
-                <div className="dash-split-stat">
-                  <span>Repeat-purchase rate</span>
-                  <strong>{Math.round(returningPct)}%</strong>
-                </div>
                 <div
-                  className="dash-split-bar"
+                  className="dash-split-donut"
+                  role="img"
                   aria-label={`${Math.round(newPct)} percent new and ${Math.round(returningPct)} percent returning`}
                 >
-                  <span className="is-new" style={{ width: `${newPct}%` }} />
-                  <span className="is-returning" style={{ width: `${returningPct}%` }} />
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={[
+                          { name: "New", value: split.neu },
+                          { name: "Returning", value: split.returning },
+                        ]}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        innerRadius="70%"
+                        outerRadius="94%"
+                        paddingAngle={2}
+                        stroke="none"
+                        isAnimationActive={!reduceMotion}
+                        animationDuration={450}
+                      >
+                        <Cell fill="var(--c-money)" />
+                        <Cell fill="var(--c-people)" />
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="dash-split-center" aria-hidden="true">
+                    <strong>{Math.round(returningPct)}%</strong>
+                    <span>Repeat purchase</span>
+                  </div>
                 </div>
                 <div className="dash-split-legend">
                   <span>
-                    <i className="is-new" /> New <strong>{split.neu.toLocaleString()}</strong>
+                    <i className="is-new" />
+                    <span>
+                      New <strong>{split.neu.toLocaleString()}</strong>
+                    </span>
                   </span>
                   <span>
-                    <i className="is-returning" /> Returning{" "}
-                    <strong>{split.returning.toLocaleString()}</strong>
+                    <i className="is-returning" />
+                    <span>
+                      Returning <strong>{split.returning.toLocaleString()}</strong>
+                    </span>
                   </span>
                 </div>
               </div>
