@@ -13,7 +13,7 @@ function CustomerDetail() {
   const { id } = useParams({ from: "/dashboard/customers/$id" });
   const c = customers.find(x => x.id === id);
   const [notes, setNotes] = useState(c?.notes ?? "");
-  if (!c) return <DashboardShell title="Not found"><DashCard><Link to="/dashboard/customers" className="text-[var(--accent-red-glow)] text-sm">Back</Link></DashCard></DashboardShell>;
+  if (!c) return <DashboardShell title="Not found"><DashCard><Link to="/dashboard/customers" search={{ filter: "all" }} className="text-[var(--accent-red-glow)] text-sm">Back</Link></DashCard></DashboardShell>;
   const myOrders = orders.filter(o => o.customerId === c.id);
   const owned = Array.from(new Set(myOrders.flatMap(o => o.items.map(i => i.productId)))).map(pid => products.find(p => p.id === pid)).filter(Boolean);
 

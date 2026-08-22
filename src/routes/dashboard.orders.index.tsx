@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Download, Search } from "lucide-react";
 import {
-  ChargedPanel,
   DashCard,
   DashboardShell,
   DomainChip,
@@ -114,18 +113,6 @@ function OrdersPage() {
   const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
 
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
-  const todayRows = rows.filter((order) => new Date(order.created_at) >= todayStart);
-  const todayGross = todayRows.reduce((sum, order) => sum + Number(order.total || 0), 0);
-  const todayRefunded = todayRows.reduce(
-    (sum, order) => sum + Number(order.refunded_amount_cents || 0) / 100,
-    0,
-  );
-  const todayAverage = todayRows.length ? sumNetRevenue(todayRows) / todayRows.length : 0;
-  const orderFaders = todayRows.slice(0, 18).reverse();
-  const faderMax = Math.max(1, ...orderFaders.map((order) => netRevenue(order)));
-
   function exportCsv() {
     const header = [
       "Order",
@@ -164,30 +151,6 @@ function OrdersPage() {
   return (
     <DashboardShell title="Orders">
       <div className="space-y-6">
-        <ChargedPanel
-          domain="volume"
-          material="solid"
-          silhouette="side"
-          title="Orders"
-          className="dash-short-charge"
-        >
-          <div className="dash-orders-horizon">
-            <div className="dash-hero-value">{todayRows.length.toLocaleString()}</div>
-            <div className="dash-order-faders" role="img" aria-label="Today's order value distribution">
-              {orderFaders.map((order) => (
-                <span key={order.id} title={`${order.number}: ${money(netRevenue(order))}`}>
-                  <i style={{ height: `${Math.max(12, (netRevenue(order) / faderMax) * 100)}%` }} />
-                </span>
-              ))}
-            </div>
-          </div>
-          <div className="dash-charged-stat-grid">
-            <SummaryStat label="Gross" value={money(todayGross)} />
-            <SummaryStat label="Refunded" value={money(todayRefunded)} />
-            <SummaryStat label="Average order" value={money(todayAverage)} />
-          </div>
-        </ChargedPanel>
-
         <div className="dash-filter-bar" aria-label="Order filters">
           <label className="dash-search-field">
             <span className="sr-only">Search orders</span>
@@ -281,14 +244,16 @@ function OrdersPage() {
                       )}
                     </td>
                     <td className="px-4 text-xs">
-                      <span className="dash-fade-tail inline-block max-w-[190px] align-middle">
+                      <span className="dash-order-items-cell">
+                      <span className="dash-fade-tail">
                         {order.order_items[0]?.name ?? "—"}
                       </span>
                       {order.order_items.length > 1 && (
-                        <DomainChip domain="volume" className="ml-2">
+                        <DomainChip domain="volume">
                           +{order.order_items.length - 1} more
                         </DomainChip>
                       )}
+                      </span>
                     </td>
                     <td
                       className={`px-4 text-right font-mono text-xs ${Number(order.total) === 0 ? "text-[var(--text-disabled)]" : "text-white"}`}
@@ -342,11 +307,13 @@ function OrdersPage() {
                       <span className="block truncate text-sm font-semibold text-white">
                         {order.customer_name || order.guest_email || "Guest"}
                       </span>
-                      <span className="dash-fade-tail block text-xs text-[var(--text-tertiary)]">
-                        {order.order_items[0]?.name ?? "No line items"}
-                        {order.order_items.length > 1
-                          ? ` +${order.order_items.length - 1} more`
-                          : ""}
+                      <span className="dash-order-items-cell mt-1 text-xs text-[var(--text-tertiary)]">
+                        <span className="dash-fade-tail">
+                          {order.order_items[0]?.name ?? "No line items"}
+                        </span>
+                        {order.order_items.length > 1 && (
+                          <span className="dash-order-more">+{order.order_items.length - 1} more</span>
+                        )}
                       </span>
                     </span>
                     <span className="shrink-0 text-right">
@@ -412,15 +379,6 @@ function OrdersPage() {
         onClose={() => setOpenOrderId(null)}
       />
     </DashboardShell>
-  );
-}
-
-function SummaryStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="dash-charged-stat">
-      <div className="dash-charged-stat-label">{label}</div>
-      <div className="dash-charged-stat-value">{value}</div>
-    </div>
   );
 }
 

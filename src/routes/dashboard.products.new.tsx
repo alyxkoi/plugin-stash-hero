@@ -815,7 +815,7 @@ function NewProduct() {
                     const checked = formats.has(d);
                     return (
                       <label key={d} className={`flex items-center gap-2 rounded-lg px-3 py-2.5 text-xs cursor-pointer transition border ${checked ? "bg-[var(--accent-red)]/15 border-[var(--accent-red)]/60 text-white" : "bg-white/5 border-white/10 text-white/70 hover:border-white/25"}`}>
-                        <input type="checkbox" checked={checked} onChange={() => { const n = new Set(formats); n.has(d) ? n.delete(d) : n.add(d); setFormats(n); }} className="accent-[var(--accent-red)]" />
+                        <input type="checkbox" checked={checked} onChange={() => { const n = new Set(formats); if (n.has(d)) n.delete(d); else n.add(d); setFormats(n); }} className="accent-[var(--accent-red)]" />
                         <span className="font-mono tracking-wider">{d}</span>
                       </label>
                     );
@@ -908,7 +908,7 @@ function NewProduct() {
       </div>
 
       {/* Sticky footer */}
-      <div className="fixed bottom-0 left-0 md:left-[220px] right-0 z-30 border-t border-white/10 bg-[#13002C]/95 backdrop-blur-md px-6 py-3 flex items-center gap-3">
+      <div className="dash-form-action-dock">
         <button onClick={onCancel} disabled={submitting} className="btn-ghost !text-xs !py-2 !px-4">Cancel</button>
         <button onClick={() => save("draft")} disabled={submitting} className="btn-ghost !text-xs !py-2 !px-4 ml-auto">{submitting ? "Saving…" : "Save draft"}</button>
         <button

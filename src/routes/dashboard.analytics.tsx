@@ -297,19 +297,7 @@ function Analytics() {
                     tickFormatter={(value) => `$${value}`}
                     tick={{ fill: "rgba(255,255,255,.72)", fontSize: 10 }}
                   />
-                  <Tooltip
-                    contentStyle={{
-                      background: "#2D1450",
-                      border: "1px solid rgba(255,255,255,.18)",
-                      borderRadius: 10,
-                      boxShadow: "none",
-                      fontFamily: "var(--f-data)",
-                    }}
-                    formatter={(value: number, key: string) => [
-                      money(value),
-                      key === "current" ? "Current" : "Previous",
-                    ]}
-                  />
+                  <Tooltip content={<RevenueTooltip />} cursor={{ stroke: "rgba(255,255,255,.22)" }} />
                   <Line
                     type="monotone"
                     dataKey="previous"
@@ -336,7 +324,7 @@ function Analytics() {
         </ChargedPanel>
 
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-          <DashCard title="Top products" className="xl:col-span-7">
+          <DashCard title="Top products" className="xl:col-span-12">
             {top.length === 0 ? (
               <div className="dash-empty">
                 <p>No products sold in this range.</p>
@@ -380,17 +368,17 @@ function Analytics() {
             )}
           </DashCard>
 
-          <DashCard title="Traffic sources" className="xl:col-span-5 dash-solid-panel">
+          <DashCard title="Traffic sources" className="xl:col-span-7 dash-solid-panel dash-traffic-panel">
             {sources.length === 0 ? (
               <div className="dash-empty">
                 <p>No attributed traffic in this range.</p>
               </div>
             ) : (
               <ul className="dash-source-list">
-                {sources.map((source) => (
-                  <li key={source.source}>
+                {sources.map((source, index) => (
+                  <li key={source.source} className={index === 0 ? "is-leader" : ""}>
                     <div className="dash-source-line">
-                      <DomainChip domain="promo">{source.source}</DomainChip>
+                      <span className="dash-source-name">{source.source}</span>
                       <span>{source.count.toLocaleString()} orders</span>
                       <strong>{money(source.revenue)}</strong>
                     </div>
@@ -401,6 +389,9 @@ function Analytics() {
                         }}
                       />
                     </div>
+                    <small>
+                      {Math.round((source.revenue / Math.max(1, revenue)) * 100)}% of revenue in this range
+                    </small>
                   </li>
                 ))}
               </ul>
@@ -409,7 +400,7 @@ function Analytics() {
 
           <DashCard
             title="New vs returning"
-            className="dash-block-zone dash-block-zone-people dash-solid-panel xl:col-span-5 xl:order-4"
+            className="dash-block-zone dash-block-zone-people dash-solid-panel xl:col-span-5"
           >
             {splitTotal === 0 ? (
               <div className="dash-empty">
@@ -450,11 +441,23 @@ function Analytics() {
                     <span>Repeat purchase</span>
                   </div>
                 </div>
+                <div className="dash-split-insights">
+                  <div>
+                    <span>Returning</span>
+                    <strong>{Math.round(returningPct)}%</strong>
+                    <small>{split.returning.toLocaleString()} customers</small>
+                  </div>
+                  <div>
+                    <span>New</span>
+                    <strong>{Math.round(newPct)}%</strong>
+                    <small>{split.neu.toLocaleString()} customers</small>
+                  </div>
+                </div>
               </div>
             )}
           </DashCard>
 
-          <DashCard title="Sale performance" className="xl:col-span-7 xl:order-3">
+          <DashCard title="Sale performance" className="xl:col-span-12 dash-sale-performance-panel">
             {salePerformance.length === 0 ? (
               <div className="dash-empty">
                 <p>No sale events yet. Run a sale to compare revenue pace here.</p>
@@ -519,6 +522,27 @@ function AnalyticsMetric({
       <span>{label}</span>
       <strong>{value}</strong>
       {delta && <small>{delta.arrow}{delta.label}</small>}
+    </div>
+  );
+}
+
+function RevenueTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: Array<{ dataKey?: string; value?: number }>;
+  label?: string;
+}) {
+  if (!active || !payload?.length) return null;
+  const current = payload.find((entry) => entry.dataKey === "current")?.value ?? 0;
+  const previous = payload.find((entry) => entry.dataKey === "previous")?.value ?? 0;
+  return (
+    <div className="dash-revenue-tooltip">
+      <span>{label}</span>
+      <strong>{money(current)}</strong>
+      <small>Previous {money(previous)}</small>
     </div>
   );
 }

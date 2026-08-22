@@ -244,23 +244,26 @@ function PerksPage() {
               <div className="dash-charged-stat-value">{money(grantValueCents)}</div>
             </div>
           </div>
-          <div className="dash-perk-covers" role="img" aria-label="Plugin grant selection">
-            {products.slice(0, 18).map((product) => {
-              const selected = pickedProducts.includes(product.id);
-              return (
-                <span
-                  key={product.id}
-                  className={selected ? "is-selected" : ""}
-                  style={{
-                    background: product.cover_url
-                      ? `url(${product.cover_url}) center/cover`
-                      : product.cover_gradient ?? "linear-gradient(145deg,#4B3FE8,#181434)",
-                  }}
-                  title={product.name}
-                />
-              );
-            })}
-          </div>
+          {kind === "plugin" && pickedProducts.length > 0 && (
+            <div className="dash-perk-covers is-selected-only" role="img" aria-label="Selected plugin grants">
+              {pickedProducts.map((id) => {
+                const product = productMap.get(id);
+                if (!product) return null;
+                return (
+                  <span
+                    key={product.id}
+                    className="is-selected"
+                    style={{
+                      background: product.cover_url
+                        ? `url(${product.cover_url}) center/cover`
+                        : product.cover_gradient ?? "linear-gradient(145deg,#4B3FE8,#181434)",
+                    }}
+                    title={product.name}
+                  />
+                );
+              })}
+            </div>
+          )}
         </ChargedPanel>
 
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
@@ -581,7 +584,7 @@ function ProductPicker({
           className={`${INPUT} !pl-9`}
         />
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2 max-h-[280px] overflow-y-auto pr-1">
+      <div className="dash-picker-scroll grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2 max-h-[280px] overflow-y-auto pr-1">
         {list.map((p) => {
           const on = picked.includes(p.id);
           return (
@@ -711,7 +714,7 @@ function RecipientPicker({
               className={`${INPUT} !pl-9`}
             />
           </div>
-          <div className="space-y-1.5 max-h-[220px] overflow-y-auto pr-1">
+          <div className="dash-picker-scroll space-y-1.5 max-h-[220px] overflow-y-auto pr-1">
             {list.map((a) => {
               const on = picked.includes(a.id);
               return (

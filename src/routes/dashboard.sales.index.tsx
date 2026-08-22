@@ -115,7 +115,7 @@ function SalesPage() {
   const comparison =
     active && previousEnded ? percentDelta(active.revenue, previousEnded.revenue) : null;
   const spark = active ? saleSparkline(active, orders) : [];
-  const sparkMax = Math.max(1, ...spark);
+  const sparkMax = Math.max(1, ...spark.map((day) => day.purchases));
   const allTimePurchases = displayRows.reduce((sum, sale) => sum + sale.purchases, 0);
   const allTimeRevenue = displayRows.reduce((sum, sale) => sum + sale.revenue, 0);
   const allTimeAov = allTimePurchases ? allTimeRevenue / allTimePurchases : 0;
@@ -160,10 +160,9 @@ function SalesPage() {
     if (!pendingArchive || archiving) return;
     setArchiving(true);
     try {
-      const { error } = await supabase
-        .from("sale_events")
-        .update({ status: "archived" })
-        .eq("id", pendingArchive.id);
+      const { error } = await (supabase as any).rpc("admin_archive_sale_event", {
+        _sale_id: pendingArchive.id,
+      });
       if (error) throw error;
       setRows((current) =>
         current.map((sale) =>
@@ -271,12 +270,21 @@ function SalesPage() {
                     value={comparison ? `${comparison.arrow}${comparison.label}` : "—"}
                   />
                 </div>
-                <div className="dash-sale-spark" aria-label="One purchase bar for each campaign day">
-                  {spark.map((value, index) => (
-                    <span
-                      key={index}
-                      style={{ height: `${Math.max(8, (value / sparkMax) * 100)}%` }}
-                    />
+                <div className="dash-sale-spark" aria-label="Daily campaign purchases and revenue">
+                  {spark.map((day) => (
+                    <button
+                      type="button"
+                      key={day.date}
+                      className={day.isToday ? "is-today" : day.isFuture ? "is-future" : ""}
+                      style={{ height: `${Math.max(8, (day.purchases / sparkMax) * 100)}%` }}
+                      aria-label={`${day.label}: ${day.purchases} purchases, ${money(day.revenue)}`}
+                    >
+                      <span className="dash-sale-spark-tooltip" aria-hidden="true">
+                        <small>{day.label}</small>
+                        <strong>{day.purchases} purchases</strong>
+                        <em>{money(day.revenue)}</em>
+                      </span>
+                    </button>
                   ))}
                 </div>
               </div>
@@ -569,13 +577,25 @@ function saleSparkline(sale: DisplaySaleRow, orders: SaleOrder[]) {
   return Array.from({ length: days }, (_, index) => {
     const dayStart = new Date(start.getTime() + index * 86400_000);
     const dayEnd = new Date(dayStart.getTime() + 86400_000);
-    return orders.filter(
+    const dailyOrders = orders.filter(
       (order) =>
         order.sale_id === sale.id &&
         countsAsSale(order) &&
         new Date(order.created_at) >= dayStart &&
         new Date(order.created_at) < dayEnd,
-    ).length;
+    );
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const normalizedDay = new Date(dayStart);
+    normalizedDay.setHours(0, 0, 0, 0);
+    return {
+      date: dayStart.toISOString(),
+      label: dayStart.toLocaleDateString("en", { month: "short", day: "numeric" }),
+      purchases: dailyOrders.length,
+      revenue: dailyOrders.reduce((sum, order) => sum + netRevenue(order), 0),
+      isToday: normalizedDay.getTime() === today.getTime(),
+      isFuture: normalizedDay.getTime() > today.getTime(),
+    };
   });
 }
 

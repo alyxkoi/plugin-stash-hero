@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { Search, UserRound } from "lucide-react";
 import {
   ChargedPanel,
   DashCard,
@@ -13,7 +13,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { fetchOrderIdentity, type IdentityMap } from "@/lib/customer-identity";
 import { netRevenue } from "@/lib/revenue";
 
+type CustomerFilter = "all" | "new" | "returning";
+
 export const Route = createFileRoute("/dashboard/customers/")({
+  validateSearch: (search: Record<string, unknown>): { filter: CustomerFilter } => ({
+    filter:
+      search.filter === "new" || search.filter === "returning" ? search.filter : ("all" as const),
+  }),
   head: () => ({ meta: [{ title: "Customers — Plugin Warehouse" }] }),
   component: CustomersPage,
 });
@@ -51,21 +57,27 @@ type MetricOrder = {
 };
 
 function CustomersPage() {
+  const search = Route.useSearch();
+  const navigate = useNavigate({ from: Route.fullPath });
   const [rows, setRows] = useState<Row[]>([]);
   const [topCustomers, setTopCustomers] = useState<Row[]>([]);
   const [metricOrders, setMetricOrders] = useState<MetricOrder[]>([]);
-  const [signupDates, setSignupDates] = useState<string[]>([]);
   const [identity, setIdentity] = useState<IdentityMap>(() => new Map());
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [debouncedQ, setDebouncedQ] = useState("");
-  const [filter, setFilter] = useState<"all" | "new" | "returning">("all");
+  const [filter, setFilterState] = useState<CustomerFilter>(search.filter);
   const [sort, setSort] = useState<"recent" | "top" | "most">("recent");
   const [page, setPage] = useState(1);
   const [openKey, setOpenKey] = useState<string | null>(null);
   const [drawerOrders, setDrawerOrders] = useState<DrawerOrder[]>([]);
+
+  const setFilter = (value: CustomerFilter) => {
+    setFilterState(value);
+    navigate({ search: { filter: value }, replace: true });
+  };
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedQ(q.trim()), 300);
@@ -106,7 +118,7 @@ function CustomersPage() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [topRes, ordersRes, identityMap, signupsRes] = await Promise.all([
+      const [topRes, ordersRes, identityMap] = await Promise.all([
         supabase.rpc("admin_customer_list", {
           _q: "",
           _filter: "all",
@@ -120,13 +132,11 @@ function CustomersPage() {
           .order("created_at", { ascending: false })
           .limit(5000),
         fetchOrderIdentity(),
-        supabase.from("customers").select("created_at").limit(5000),
       ]);
       if (cancelled) return;
       if (!topRes.error) setTopCustomers((topRes.data ?? []) as Row[]);
       setMetricOrders((ordersRes.data ?? []) as MetricOrder[]);
       setIdentity(identityMap);
-      setSignupDates((signupsRes.data ?? []).map((customer) => customer.created_at));
     })();
     return () => {
       cancelled = true;
@@ -168,10 +178,15 @@ function CustomersPage() {
     const previousMonthEnd = new Date(monthStart.getTime() - 1);
     const current = customerMetrics(metricOrders, identity);
     const prior = customerMetrics(metricOrders, identity, previousMonthEnd);
-    const newCurrent = signupsBetween(signupDates, monthStart, now);
-    const newPrevious = signupsBetween(signupDates, previousMonthStart, previousMonthEnd);
+    const newCurrent = firstPurchasesBetween(metricOrders, identity, monthStart, now);
+    const newPrevious = firstPurchasesBetween(
+      metricOrders,
+      identity,
+      previousMonthStart,
+      previousMonthEnd,
+    );
     return { current, prior, newCurrent, newPrevious };
-  }, [metricOrders, identity, signupDates]);
+  }, [metricOrders, identity]);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const totalDelta = percentDelta(metrics.current.total, metrics.prior.total);
@@ -179,14 +194,11 @@ function CustomersPage() {
   const repeatDelta = percentDelta(metrics.current.repeatRate, metrics.prior.repeatRate);
   const ltvDelta = percentDelta(metrics.current.averageLtv, metrics.prior.averageLtv);
   const customerTotal = metrics.current.total || total;
-  const newDotCount = Math.min(customerTotal, metrics.newCurrent);
-  const repeatDotCount = Math.min(
-    customerTotal - newDotCount,
-    Math.round((customerTotal * metrics.current.repeatRate) / 100),
+  const customerTrend = useMemo(
+    () => buildCustomerActivityTrend(metricOrders, identity, filter),
+    [metricOrders, identity, filter],
   );
-  const customerDots = Array.from({ length: customerTotal }, (_, index) =>
-    index < newDotCount ? "new" : index < newDotCount + repeatDotCount ? "repeat" : "one-time",
-  );
+  const customerTrendMax = Math.max(1, ...customerTrend.map((point) => point.value));
 
   return (
     <DashboardShell title="Customers">
@@ -201,12 +213,32 @@ function CustomersPage() {
           <div className="dash-customers-horizon">
             <div className="dash-customer-total-line">
               <div className="dash-hero-value">{customerTotal.toLocaleString()}</div>
-              <span className="dash-delta" data-direction={totalDelta.positive ? "positive" : "neutral"}>
+              <span
+                className="dash-delta"
+                data-direction={
+                  totalDelta.positive == null ? "neutral" : totalDelta.positive ? "positive" : "negative"
+                }
+              >
                 {totalDelta.label}
               </span>
             </div>
-            <div className="dash-customer-dots" role="img" aria-label={`${customerTotal} customers grouped as new, repeat, and one-time`}>
-              {customerDots.map((kind, index) => <i key={index} data-kind={kind} />)}
+            <div
+              className="dash-customer-trend"
+              role="img"
+              aria-label={`Six-month ${filter === "all" ? "customer purchase" : filter} activity`}
+            >
+              {customerTrend.map((point) => (
+                <button
+                  type="button"
+                  key={point.label}
+                  title={`${point.label}: ${point.value.toLocaleString()}`}
+                  aria-label={`${point.label}: ${point.value.toLocaleString()} ${filter === "returning" ? "repeat purchases" : filter === "new" ? "first purchases" : "customer purchases"}`}
+                >
+                  <i style={{ height: `${Math.max(8, (point.value / customerTrendMax) * 100)}%` }} />
+                  <span>{point.label}</span>
+                  <strong>{point.value}</strong>
+                </button>
+              ))}
             </div>
           </div>
           <div className="dash-customer-hero-stats">
@@ -231,11 +263,6 @@ function CustomersPage() {
               deltaPositive={ltvDelta.positive ?? undefined}
               domain="money"
             />
-          </div>
-          <div className="dash-customer-legend" aria-label="Customer dot legend">
-            <span><i data-kind="one-time" /> One-time</span>
-            <span><i data-kind="repeat" /> Repeat</span>
-            <span><i data-kind="new" /> New</span>
           </div>
         </ChargedPanel>
 
@@ -439,10 +466,11 @@ function CustomersPage() {
 
         <DashCard title="Retention" className="dash-bottom-strip dash-retention-strip">
           <div className="dash-retention-track">
-            <span style={{ width: `${Math.round(metrics.current.repeatRate)}%` }} />
+            <span data-kind="returning" style={{ width: `${Math.round(metrics.current.repeatRate)}%` }} />
+            <span data-kind="new" style={{ width: `${Math.max(0, 100 - Math.round(metrics.current.repeatRate))}%` }} />
           </div>
-          <div><strong>{Math.round(metrics.current.repeatRate)}%</strong><span>Returning</span></div>
-          <div><strong>{Math.max(0, 100 - Math.round(metrics.current.repeatRate))}%</strong><span>New</span></div>
+          <div className="dash-retention-copy"><strong>{Math.round(metrics.current.repeatRate)}%</strong><span>Returning</span></div>
+          <div className="dash-retention-copy"><strong>{Math.max(0, 100 - Math.round(metrics.current.repeatRate))}%</strong><span>New</span></div>
         </DashCard>
       </div>
 
@@ -476,11 +504,57 @@ function customerMetrics(orders: MetricOrder[], identity: IdentityMap, cutoff?: 
   };
 }
 
-function signupsBetween(createdAt: string[], start: Date, end: Date) {
-  return createdAt.filter((value) => {
-    const time = new Date(value).getTime();
-    return time >= start.getTime() && time <= end.getTime();
-  }).length;
+function firstPurchasesBetween(
+  orders: MetricOrder[],
+  identity: IdentityMap,
+  start: Date,
+  end: Date,
+) {
+  const firstByCustomer = new Map<string, number>();
+  for (const order of orders) {
+    const email = identity.get(order.id)?.normalized_email;
+    if (!email) continue;
+    const time = new Date(order.created_at).getTime();
+    firstByCustomer.set(email, Math.min(firstByCustomer.get(email) ?? time, time));
+  }
+  return [...firstByCustomer.values()].filter(
+    (time) => time >= start.getTime() && time <= end.getTime(),
+  ).length;
+}
+
+function buildCustomerActivityTrend(
+  orders: MetricOrder[],
+  identity: IdentityMap,
+  filter: "all" | "new" | "returning",
+) {
+  const now = new Date();
+  const buckets = Array.from({ length: 6 }, (_, index) => {
+    const date = new Date(now.getFullYear(), now.getMonth() - (5 - index), 1);
+    return {
+      key: `${date.getFullYear()}-${date.getMonth()}`,
+      label: date.toLocaleDateString("en", { month: "short" }),
+      value: 0,
+    };
+  });
+  const firstByCustomer = new Map<string, number>();
+  for (const order of orders) {
+    const email = identity.get(order.id)?.normalized_email;
+    if (!email) continue;
+    const time = new Date(order.created_at).getTime();
+    firstByCustomer.set(email, Math.min(firstByCustomer.get(email) ?? time, time));
+  }
+  for (const order of orders) {
+    const email = identity.get(order.id)?.normalized_email;
+    if (!email) continue;
+    const date = new Date(order.created_at);
+    const bucket = buckets.find((item) => item.key === `${date.getFullYear()}-${date.getMonth()}`);
+    if (!bucket) continue;
+    const isFirst = firstByCustomer.get(email) === date.getTime();
+    if (filter === "new" && !isFirst) continue;
+    if (filter === "returning" && isFirst) continue;
+    bucket.value += 1;
+  }
+  return buckets;
 }
 
 function percentDelta(current: number, previous: number) {
@@ -506,24 +580,18 @@ function toDrawerData(customer: Row, orders: DrawerOrder[]): CustomerDrawerData 
 }
 
 function Avatar({
-  name,
-  email,
   large = false,
 }: {
   name: string | null;
   email: string;
   large?: boolean;
 }) {
-  const hue = hashHue(email);
   return (
     <span
       className={`dash-customer-avatar ${large ? "is-large" : ""}`}
-      style={{
-        background: `linear-gradient(135deg, hsl(${hue} 82% 58%), hsl(${(hue + 58) % 360} 78% 46%))`,
-      }}
       aria-hidden="true"
     >
-      {initialsFrom(name, email)}
+      <UserRound size={large ? 22 : 17} strokeWidth={2} />
     </span>
   );
 }
@@ -536,23 +604,6 @@ function PurchaseBadge({ count }: { count: number }) {
   if (count <= 0) return <span className="font-mono text-xs text-[var(--text-disabled)]">—</span>;
   if (count === 1) return <DomainChip domain="neutral">New</DomainChip>;
   return <DomainChip domain="people">Repeat ×{count}</DomainChip>;
-}
-
-function initialsFrom(name: string | null, email: string) {
-  return (name || email || "?")
-    .split(/[\s@._-]+/)
-    .filter(Boolean)
-    .map((part) => part[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-}
-
-function hashHue(value: string) {
-  let hash = 0;
-  for (let index = 0; index < value.length; index += 1)
-    hash = (hash * 31 + value.charCodeAt(index)) % 360;
-  return hash;
 }
 
 function money(value: number) {

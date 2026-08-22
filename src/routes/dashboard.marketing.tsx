@@ -1,4 +1,5 @@
 import { createFileRoute, useSearch, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import {
@@ -15,6 +16,7 @@ import { DiscountCodeModal, type DiscountRow } from "@/components/dashboard/Disc
 import { CampaignLinksPage } from "./dashboard.campaign-links";
 import { EmailAutomationsPanel } from "@/components/dashboard/EmailAutomationsPanel";
 import { netRevenue } from "@/lib/revenue";
+import { getEmailAutomationStats } from "@/lib/email-automation-admin.functions";
 
 type MarketingSearch = { tab?: "codes" | "campaign" | "emails" };
 
@@ -53,7 +55,7 @@ function Marketing() {
 
   return (
     <DashboardShell title="Marketing" action={tab === "codes" ? <MarketingCodesAction /> : null}>
-      <MarketingHero />
+      <MarketingHero tab={tab} />
 
       <nav className="dash-marketing-workspaces" aria-label="Marketing workspaces">
         {workspaces.map(({ key, label, icon: Icon }) => (
@@ -87,96 +89,176 @@ function Marketing() {
   );
 }
 
-function MarketingHero() {
-  const [codes, setCodes] = useState<{ code: string; name: string | null; uses: number }[]>([]);
-  const [orders, setOrders] = useState<
-    {
-      discount_code: string | null;
-      total: number;
-      status: string;
-      refunded_amount_cents: number | null;
-    }[]
-  >([]);
+type MarketingHeroModel = {
+  title: string;
+  metrics: { label: string; value: string }[];
+  items: { label: string; value: number; valueText: string; detail: string }[];
+  empty: string;
+};
+
+function MarketingHero({ tab }: { tab: "codes" | "campaign" | "emails" }) {
+  const emailStats = useServerFn(getEmailAutomationStats);
+  const [model, setModel] = useState<MarketingHeroModel | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
     (async () => {
-      const [codesRes, ordersRes] = await Promise.all([
-        supabase.from("discount_codes").select("code, name, uses"),
-        supabase
-          .from("orders")
-          .select("discount_code, total, status, refunded_amount_cents")
-          .not("discount_code", "is", null)
-          .limit(5000),
-      ]);
-      if (cancelled) return;
-      setCodes((codesRes.data ?? []) as { code: string; name: string | null; uses: number }[]);
-      setOrders(
-        (ordersRes.data ?? []) as {
-          discount_code: string | null;
-          total: number;
-          status: string;
-          refunded_amount_cents: number | null;
-        }[],
-      );
+      try {
+        let next: MarketingHeroModel;
+        if (tab === "codes") {
+          const [codesRes, ordersRes] = await Promise.all([
+            supabase.from("discount_codes").select("code, name, uses, status"),
+            supabase
+              .from("orders")
+              .select("discount_code, total, status, refunded_amount_cents")
+              .not("discount_code", "is", null)
+              .limit(5000),
+          ]);
+          const codes = (codesRes.data ?? []) as {
+            code: string;
+            name: string | null;
+            uses: number;
+            status: string;
+          }[];
+          const orders = (ordersRes.data ?? []) as {
+            discount_code: string | null;
+            total: number;
+            status: string;
+            refunded_amount_cents: number | null;
+          }[];
+          const allPerformance = codes
+            .map((code) => {
+              const matched = orders.filter(
+                (order) => order.discount_code?.toLowerCase() === code.code.toLowerCase(),
+              );
+              const revenue = matched.reduce((sum, order) => sum + netRevenue(order), 0);
+              return {
+                label: code.code,
+                value: revenue,
+                valueText: money(revenue),
+                detail: `${code.uses.toLocaleString()} redemptions`,
+              };
+            })
+            .sort((a, b) => b.value - a.value);
+          const performance = allPerformance.slice(0, 4);
+          const revenue = allPerformance.reduce((sum, item) => sum + item.value, 0);
+          next = {
+            title: "Discount performance",
+            metrics: [
+              { label: "Active codes", value: codes.filter((code) => code.status === "active").length.toLocaleString() },
+              { label: "Redemptions", value: codes.reduce((sum, code) => sum + Number(code.uses || 0), 0).toLocaleString() },
+              { label: "Attributed revenue", value: money(revenue) },
+            ],
+            items: performance,
+            empty: "No discount-code performance yet.",
+          };
+        } else if (tab === "campaign") {
+          const anySupabase = supabase as any;
+          const [linksRes, statsRes] = await Promise.all([
+            anySupabase.from("campaign_links").select("id,label,archived_at"),
+            anySupabase.rpc("admin_campaign_link_stats"),
+          ]);
+          const links = (linksRes.data ?? []) as { id: string; label: string; archived_at: string | null }[];
+          const stats = (statsRes.data ?? []) as { link_id: string; clicks: number; purchases: number }[];
+          const statsById = new Map(stats.map((row) => [row.link_id, row]));
+          const performance = links
+            .filter((link) => !link.archived_at)
+            .map((link) => {
+              const row = statsById.get(link.id);
+              const clicks = Number(row?.clicks || 0);
+              const purchases = Number(row?.purchases || 0);
+              const conversion = clicks ? (purchases / clicks) * 100 : 0;
+              return {
+                label: link.label,
+                value: clicks,
+                valueText: `${clicks.toLocaleString()} clicks`,
+                detail: `${purchases.toLocaleString()} purchases · ${conversion.toFixed(1)}% conversion`,
+              };
+            })
+            .sort((a, b) => b.value - a.value)
+            .slice(0, 4);
+          const clicks = stats.reduce((sum, row) => sum + Number(row.clicks || 0), 0);
+          const purchases = stats.reduce((sum, row) => sum + Number(row.purchases || 0), 0);
+          next = {
+            title: "Campaign performance",
+            metrics: [
+              { label: "Active links", value: links.filter((link) => !link.archived_at).length.toLocaleString() },
+              { label: "Tracked clicks", value: clicks.toLocaleString() },
+              { label: "Purchases", value: purchases.toLocaleString() },
+            ],
+            items: performance,
+            empty: "No campaign-link performance yet.",
+          };
+        } else {
+          const data = await emailStats({ data: { range: "30d" } });
+          const sent = data.steps.reduce((sum, step) => sum + step.sent, 0);
+          const sales = data.steps.reduce((sum, step) => sum + step.sales, 0);
+          const netCents = data.steps.reduce((sum, step) => sum + step.netCents, 0);
+          const performance = data.steps
+            .map((step) => ({
+              label: `${step.sequence === "abandoned_cart" ? "Cart" : "Saved"} · Step ${step.step}`,
+              value: step.sent,
+              valueText: `${step.sent.toLocaleString()} sent`,
+              detail: `${step.sales.toLocaleString()} sales · ${money(step.netCents / 100)} recovered`,
+            }))
+            .sort((a, b) => b.value - a.value)
+            .slice(0, 4);
+          next = {
+            title: "Behavioral email performance",
+            metrics: [
+              { label: "Messages sent", value: sent.toLocaleString() },
+              { label: "Recovered sales", value: sales.toLocaleString() },
+              { label: "Recovered revenue", value: money(netCents / 100) },
+            ],
+            items: performance,
+            empty: "No behavioral-email performance in the last 30 days.",
+          };
+        }
+        if (!cancelled) setModel(next);
+      } catch (error) {
+        console.error("[marketing] hero stats failed", error);
+        if (!cancelled) setModel(null);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     })();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [emailStats, tab]);
 
-  const performance = useMemo(
-    () =>
-      codes
-        .map((code) => {
-          const matched = orders.filter(
-            (order) => order.discount_code?.toLowerCase() === code.code.toLowerCase(),
-          );
-          return { ...code, revenue: matched.reduce((sum, order) => sum + netRevenue(order), 0) };
-        })
-        .sort((a, b) => b.revenue - a.revenue || b.uses - a.uses)
-        .slice(0, 4),
-    [codes, orders],
-  );
-  const best = performance[0];
-  const performanceMax = Math.max(1, ...performance.map((code) => code.revenue));
-
+  const max = Math.max(1, ...(model?.items.map((item) => item.value) ?? []));
   return (
     <ChargedPanel
       domain="promo"
       material="solid"
       silhouette="side"
-      title="Codes"
+      title={model?.title ?? "Marketing performance"}
       className="dash-marketing-hero"
     >
-      {best ? (
-        <div className="dash-marketing-hero-body">
-          <div>
-            <span>{best.name || "Discount code"}</span>
-            <strong>{best.code}</strong>
+      {loading ? (
+        <div className="dash-marketing-performance"><div className="skeleton-block h-48" /></div>
+      ) : model && model.items.length > 0 ? (
+        <div className="dash-marketing-performance">
+          <div className="dash-marketing-metrics">
+            {model.metrics.map((metric) => (
+              <div key={metric.label}><span>{metric.label}</span><strong>{metric.value}</strong></div>
+            ))}
           </div>
-          <div>
-            <span>Uses</span>
-            <strong>{best.uses.toLocaleString()}</strong>
-          </div>
-          <div>
-            <span>Revenue attributed</span>
-            <strong>{money(best.revenue)}</strong>
-          </div>
-          <div className="dash-code-horizon" aria-label="Top four discount codes by attributed revenue">
-            {performance.map((code, index) => (
-              <div key={code.code} className={index === 0 ? "is-leader" : ""}>
-                <span>{code.code}</span>
-                <i><b style={{ width: `${Math.max(5, (code.revenue / performanceMax) * 100)}%` }} /></i>
-                <strong>{money(code.revenue)}</strong>
+          <div className="dash-marketing-chart">
+            {model.items.map((item, index) => (
+              <div key={item.label} className={index === 0 ? "is-leader" : ""}>
+                <span><strong>{item.label}</strong><small>{item.detail}</small></span>
+                <i><b style={{ width: `${Math.max(5, (item.value / max) * 100)}%` }} /></i>
+                <em>{item.valueText}</em>
               </div>
             ))}
           </div>
         </div>
       ) : (
-        <div className="dash-empty text-white/75">
-          <p>No code performance yet. Generate a code to start measuring attributed revenue.</p>
-        </div>
+        <div className="dash-empty text-white/75"><p>{model?.empty ?? "Performance data is unavailable."}</p></div>
       )}
     </ChargedPanel>
   );

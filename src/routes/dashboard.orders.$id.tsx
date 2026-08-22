@@ -21,7 +21,7 @@ function OrderDetail() {
               <div className="flex items-center gap-3 mb-1"><h2 className="font-display text-2xl">{o.number}</h2><StatusBadge status={o.status} /></div>
               <div className="text-xs text-white/50 font-mono">{new Date(o.createdAt).toLocaleString()}</div>
             </div>
-            <Link to="/dashboard/customers" className="text-right"><div className="text-xs text-white/40">Customer</div><div className="text-sm hover:text-[var(--accent-red-glow)]">{cust.name}</div><div className="text-[11px] font-mono text-white/50">{cust.email}</div></Link>
+            <Link to="/dashboard/customers" search={{ filter: "all" }} className="text-right"><div className="text-xs text-white/40">Customer</div><div className="text-sm hover:text-[var(--accent-red-glow)]">{cust.name}</div><div className="text-[11px] font-mono text-white/50">{cust.email}</div></Link>
           </div>
         </DashCard>
         <DashCard title="Items">

@@ -7497,3 +7497,657 @@ body.dashboard-active {
     margin-top: 10px;
   }
 }
+
+/* Interaction and layout refinement pass. Keep this final in the admin cascade. */
+@keyframes dash-overlay-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes dash-drawer-enter {
+  from { transform: translate3d(100%, 0, 0); }
+  to { transform: translate3d(0, 0, 0); }
+}
+
+@keyframes dash-modal-enter {
+  from { opacity: 0; transform: translateY(10px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes dash-cover-enter {
+  from { opacity: 0; transform: translateX(10px) scale(0.94); }
+  to { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+/* Every record detail opens as a focused right-side overlay. */
+.dashboard-scope.dash-detail-layer {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 180 !important;
+  width: 100vw !important;
+  min-height: 100dvh !important;
+  overflow: hidden !important;
+  background: transparent !important;
+  isolation: isolate;
+}
+
+.dashboard-scope .dash-detail-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 3, 12, 0.58);
+  backdrop-filter: blur(6px) saturate(0.82);
+  animation: dash-overlay-enter 180ms ease-out both;
+}
+
+.dashboard-scope .dash-detail-sheet {
+  position: absolute !important;
+  inset: 0 0 0 auto !important;
+  display: flex;
+  width: min(520px, 100vw) !important;
+  max-width: 100vw !important;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  flex-direction: column;
+  overflow: hidden;
+  border: 0 !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.18) !important;
+  border-radius: 0 !important;
+  background: #161231 !important;
+  box-shadow: -34px 0 90px rgba(0, 0, 0, 0.52);
+  animation: dash-drawer-enter 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Dashboard-native checkboxes replace browser/OS chrome. */
+.dashboard-scope input[type="checkbox"] {
+  appearance: none;
+  display: inline-grid;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  place-content: center;
+  border: 1px solid rgba(203, 193, 232, 0.54);
+  border-radius: 5px;
+  background: #1c1740;
+  color: white;
+  cursor: pointer;
+  transition: border-color 180ms ease, background-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.dashboard-scope input[type="checkbox"]::before {
+  width: 10px;
+  height: 10px;
+  content: "";
+  background: currentColor;
+  clip-path: polygon(14% 46%, 0 62%, 40% 100%, 100% 22%, 82% 6%, 38% 67%);
+  transform: scale(0);
+  transition: transform 150ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.dashboard-scope input[type="checkbox"]:checked {
+  border-color: var(--crimson);
+  background: var(--crimson);
+  box-shadow: 0 0 0 3px rgba(250, 18, 101, 0.13);
+}
+
+.dashboard-scope input[type="checkbox"]:checked::before { transform: scale(1); }
+.dashboard-scope input[type="checkbox"]:active { transform: scale(0.92); }
+.dashboard-scope input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--mint);
+  outline-offset: 3px;
+}
+
+/* Overview hero: lighter stat footprint, responsive bars, direct data readout. */
+.dashboard-scope .dash-waveform::after { content: none !important; }
+
+.dashboard-scope .dash-hero-chart.dash-waveform {
+  overflow: visible;
+}
+
+.dashboard-scope .dash-waveform > button {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 0;
+  width: auto;
+  min-width: 5px;
+  min-height: 22px;
+  max-height: 86%;
+  height: var(--wave-size);
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(248, 246, 251, 0.9);
+  color: inherit;
+  cursor: crosshair;
+  transform-origin: center;
+  transition: transform 190ms cubic-bezier(0.22, 1, 0.36, 1), filter 190ms ease, opacity 190ms ease;
+}
+
+.dashboard-scope .dash-waveform > button.is-current { background: var(--crimson); }
+.dashboard-scope .dash-waveform > button:hover,
+.dashboard-scope .dash-waveform > button:focus-visible {
+  z-index: 5;
+  filter: brightness(1.14);
+  outline: none;
+  transform: scaleY(1.06);
+}
+
+.dashboard-scope .dash-wave-tooltip,
+.dashboard-scope .dash-sale-spark-tooltip {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  z-index: 20;
+  display: grid;
+  min-width: max-content;
+  gap: 4px;
+  padding: 9px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  background: rgba(15, 10, 29, 0.76);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.34);
+  opacity: 0;
+  pointer-events: none;
+  backdrop-filter: blur(15px) saturate(1.2);
+  transform: translate(-50%, 6px);
+  transition: opacity 160ms ease, transform 180ms ease;
+}
+
+.dashboard-scope .dash-wave-tooltip small,
+.dashboard-scope .dash-sale-spark-tooltip small {
+  color: white;
+  font: 600 10px/1.2 var(--f-data);
+  letter-spacing: 0.04em;
+}
+
+.dashboard-scope .dash-wave-tooltip strong,
+.dashboard-scope .dash-sale-spark-tooltip strong {
+  color: var(--crimson);
+  font: 700 13px/1.1 var(--f-data);
+}
+
+.dashboard-scope .dash-waveform > button:hover .dash-wave-tooltip,
+.dashboard-scope .dash-waveform > button:focus .dash-wave-tooltip,
+.dashboard-scope .dash-waveform > button:focus-visible .dash-wave-tooltip,
+.dashboard-scope .dash-sale-spark > button:hover .dash-sale-spark-tooltip,
+.dashboard-scope .dash-sale-spark > button:focus .dash-sale-spark-tooltip,
+.dashboard-scope .dash-sale-spark > button:focus-visible .dash-sale-spark-tooltip {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.dashboard-scope .dash-charged-stat-grid {
+  gap: 7px;
+  width: min(820px, 76%);
+}
+
+.dashboard-scope .dash-charged-stat {
+  min-height: 68px;
+  padding: 11px 14px;
+  border-radius: 10px;
+  transition: transform 210ms cubic-bezier(0.22, 1, 0.36, 1), border-color 180ms ease, background-color 180ms ease;
+}
+
+.dashboard-scope .dash-charged-stat:hover,
+.dashboard-scope .dash-charged-stat:focus-visible {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(17, 13, 35, 0.74);
+  outline: none;
+  transform: translateY(-2px);
+}
+
+.dashboard-scope .dash-charged-stat.is-interactive { display: block; cursor: pointer; }
+.dashboard-scope .dash-charged-stat-value small[data-direction="positive"] { color: var(--mint) !important; }
+.dashboard-scope .dash-charged-stat-value small[data-direction="negative"] { color: #ff6b6b !important; }
+.dashboard-scope .dash-charged-stat-value small[data-direction="neutral"] { color: var(--text-tertiary) !important; }
+
+.dashboard-scope .dash-rank-row {
+  grid-template-columns: 42px 58px minmax(0, 1fr) minmax(64px, auto) minmax(86px, auto);
+  min-height: 78px;
+  gap: 12px;
+}
+
+.dashboard-scope .dash-rank-number {
+  color: rgba(255, 255, 255, 0.17) !important;
+  font-size: clamp(2.25rem, 3.2vw, 3.25rem) !important;
+  line-height: 1;
+}
+
+.dashboard-scope .dash-rank-thumb {
+  width: 54px;
+  height: 54px;
+}
+
+/* Order item names yield to the fixed count chip instead of pushing the column. */
+.dashboard-scope .dash-order-items-cell {
+  display: flex;
+  min-width: 0;
+  max-width: 240px;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.dashboard-scope .dash-order-items-cell .dash-fade-tail {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.dashboard-scope .dash-order-more {
+  flex: 0 0 auto;
+  color: var(--text-tertiary);
+  font: 600 10px/1 var(--f-data);
+  white-space: nowrap;
+}
+
+/* Analytics detail density and deliberately frosted chart readout. */
+.dashboard-scope .dash-revenue-tooltip {
+  min-width: 152px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 11px;
+  background: rgba(17, 11, 34, 0.72);
+  box-shadow: 0 20px 46px rgba(0, 0, 0, 0.38);
+  backdrop-filter: blur(17px) saturate(1.22);
+}
+
+.dashboard-scope .dash-revenue-tooltip > span {
+  display: block;
+  margin-bottom: 7px;
+  color: white;
+  font: 650 11px/1.2 var(--f-data);
+}
+
+.dashboard-scope .dash-revenue-tooltip > strong {
+  display: block;
+  color: var(--crimson);
+  font: 700 1.2rem/1.1 var(--f-data);
+}
+
+.dashboard-scope .dash-revenue-tooltip > small {
+  display: block;
+  margin-top: 5px;
+  color: var(--text-tertiary);
+  font: 500 10px/1.25 var(--f-data);
+}
+
+.dashboard-scope .dash-traffic-panel .dash-panel-body { min-height: 350px; }
+.dashboard-scope .dash-source-list { display: grid; gap: 15px; }
+.dashboard-scope .dash-source-list li { display: grid; gap: 7px; }
+.dashboard-scope .dash-source-line {
+  display: grid;
+  grid-template-columns: minmax(110px, 1fr) auto auto;
+  align-items: baseline;
+  gap: 14px;
+}
+.dashboard-scope .dash-source-name { color: white; font-weight: 650; }
+.dashboard-scope .dash-source-line > span:nth-child(2),
+.dashboard-scope .dash-source-list li > small { color: var(--text-tertiary); font: 500 10px/1.25 var(--f-data); }
+.dashboard-scope .dash-source-line strong { color: var(--text-primary); font: 700 13px/1 var(--f-data); }
+.dashboard-scope .dash-source-bar { height: 9px; border-radius: 4px; background: rgba(255, 255, 255, 0.055); }
+.dashboard-scope .dash-source-bar > span { display: block; height: 100%; border-radius: inherit; }
+
+.dashboard-scope .dash-split-wrap {
+  display: grid;
+  grid-template-columns: minmax(190px, 0.9fr) minmax(160px, 0.7fr);
+  align-items: center;
+  gap: 22px;
+  min-height: 350px;
+}
+
+.dashboard-scope .dash-split-donut { width: min(250px, 100%); height: 250px; }
+.dashboard-scope .dash-split-insights { display: grid; gap: 10px; }
+.dashboard-scope .dash-split-insights > div {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 14px;
+  padding: 13px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+.dashboard-scope .dash-split-insights span { color: var(--text-secondary); font-size: 11px; }
+.dashboard-scope .dash-split-insights strong { color: white; font: 650 1.45rem/1 var(--f-data); }
+.dashboard-scope .dash-split-insights small { grid-column: 1 / -1; color: var(--text-tertiary); font: 500 10px/1 var(--f-data); }
+
+.dashboard-scope .dash-sale-performance-list li {
+  grid-template-columns: minmax(190px, 1fr) minmax(250px, 2fr) repeat(3, minmax(86px, 0.65fr));
+  gap: 18px;
+  min-height: 70px;
+}
+.dashboard-scope .dash-sale-performance-list .dash-sale-mini-bar { height: 9px; }
+
+/* Customers: filter-responsive activity, full directory, quieter avatar system. */
+.dashboard-scope .dash-customer-trend {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(42px, 1fr));
+  align-items: end;
+  gap: clamp(7px, 1.3vw, 18px);
+  min-height: 154px;
+  padding: 10px 0 0;
+}
+
+.dashboard-scope .dash-customer-trend > button {
+  display: grid;
+  grid-template-rows: minmax(82px, 1fr) auto auto;
+  min-width: 0;
+  min-height: 138px;
+  align-items: end;
+  gap: 5px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+}
+
+.dashboard-scope .dash-customer-trend i {
+  display: block;
+  width: min(26px, 68%);
+  min-height: 8px;
+  justify-self: center;
+  border-radius: 7px 7px 3px 3px;
+  background: linear-gradient(180deg, var(--crimson), rgba(250, 18, 101, 0.3));
+  box-shadow: 0 0 22px rgba(250, 18, 101, 0.12);
+  transform-origin: bottom;
+  transition: transform 190ms cubic-bezier(0.22, 1, 0.36, 1), filter 180ms ease;
+}
+.dashboard-scope .dash-customer-trend button:hover i,
+.dashboard-scope .dash-customer-trend button:focus-visible i { filter: brightness(1.15); transform: scaleY(1.04); }
+.dashboard-scope .dash-customer-trend button:focus-visible { outline: 1px solid rgba(125, 245, 173, 0.6); outline-offset: 4px; }
+.dashboard-scope .dash-customer-trend span { color: var(--text-tertiary); font: 500 10px/1 var(--f-data); }
+.dashboard-scope .dash-customer-trend strong { color: white; font: 650 12px/1 var(--f-data); }
+
+.dashboard-scope .dash-customer-zone {
+  display: flex !important;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.dashboard-scope .dash-customer-directory { order: 1; width: 100%; }
+.dashboard-scope .dash-customer-zone > .dash-panel { order: 2; width: 100%; }
+.dashboard-scope .dash-top-customer-strip {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0;
+}
+.dashboard-scope .dash-top-customer-strip li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  min-height: 132px;
+  align-content: center;
+  gap: 5px 11px;
+  padding: 18px;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+}
+.dashboard-scope .dash-top-customer-strip li:first-child { border-left: 0; }
+.dashboard-scope .dash-top-customer-rank { position: absolute; right: 12px; top: 8px; font-size: 3rem !important; }
+.dashboard-scope .dash-top-customer-name,
+.dashboard-scope .dash-top-customer-strip strong,
+.dashboard-scope .dash-top-customer-strip small { grid-column: 2; min-width: 0; }
+
+.dashboard-scope .dash-customer-avatar {
+  display: inline-grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  place-items: center;
+  border: 1px solid rgba(248, 246, 251, 0.46);
+  border-radius: 999px;
+  background: #cbc1e8 !important;
+  color: var(--crimson) !important;
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.45);
+}
+.dashboard-scope .dash-customer-avatar.is-large { width: 44px; height: 44px; flex-basis: 44px; }
+
+.dashboard-scope .dash-retention-track {
+  display: flex;
+  gap: 3px;
+  height: 13px;
+  background: rgba(255, 255, 255, 0.055);
+}
+.dashboard-scope .dash-retention-track span { height: 100%; min-width: 0; }
+.dashboard-scope .dash-retention-track span[data-kind="returning"] { background: linear-gradient(90deg, #b00f45, var(--crimson)); }
+.dashboard-scope .dash-retention-track span[data-kind="new"] { background: linear-gradient(90deg, var(--indigo), #4b3fe8); }
+.dashboard-scope .dash-retention-copy { min-width: 92px; }
+
+/* Perk picks build up as chosen, with scroll boundaries visible but soft. */
+.dashboard-scope .dash-perk-covers.is-selected-only { width: 100%; }
+.dashboard-scope .dash-perk-covers.is-selected-only > span {
+  filter: none;
+  opacity: 1;
+  animation: dash-cover-enter 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.dashboard-scope .dash-picker-scroll {
+  padding-block: 10px;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 15px, #000 calc(100% - 15px), transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 15px, #000 calc(100% - 15px), transparent 100%);
+}
+
+/* Product summary reads as three premium values, not another card grid. */
+.dashboard-scope .dash-catalog-summary-panel {
+  min-height: 220px !important;
+  padding-top: 42px !important;
+  padding-bottom: 18px !important;
+}
+.dashboard-scope .dash-catalog-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: center;
+  min-height: 160px;
+}
+.dashboard-scope .dash-catalog-stat {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 14px;
+  min-width: 0;
+  padding: 22px clamp(18px, 3vw, 38px);
+  border: 0 !important;
+  background: transparent !important;
+}
+.dashboard-scope .dash-catalog-stat + .dash-catalog-stat::before {
+  position: absolute;
+  top: 14%;
+  bottom: 14%;
+  left: 0;
+  width: 1px;
+  content: "";
+  background: linear-gradient(transparent, rgba(255, 255, 255, 0.24), transparent);
+}
+.dashboard-scope .dash-catalog-stat > svg { grid-row: 1 / 3; align-self: center; color: var(--mint); }
+.dashboard-scope .dash-catalog-stat span { color: var(--text-secondary); font: 600 10px/1.2 var(--f-data); letter-spacing: 0.08em; text-transform: uppercase; }
+.dashboard-scope .dash-catalog-stat strong { overflow: hidden; color: white; font: 500 clamp(2rem, 4vw, 4.2rem)/0.95 var(--f-sans); letter-spacing: -0.055em; white-space: nowrap; }
+.dashboard-scope .dash-product-thumb {
+  width: 48px !important;
+  min-width: 48px !important;
+  height: 48px !important;
+  aspect-ratio: 1;
+  border-radius: 6px !important;
+  object-fit: cover;
+}
+
+.dashboard-scope .dash-form-action-dock {
+  position: fixed;
+  right: max(22px, calc((100vw - 1540px) / 2 + 28px));
+  bottom: max(18px, env(safe-area-inset-bottom));
+  z-index: 80;
+  display: flex;
+  width: max-content;
+  max-width: calc(100vw - 260px);
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  background: rgba(22, 18, 49, 0.9);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(16px) saturate(1.15);
+}
+.dashboard-scope .dash-form-action-dock > * { min-height: 42px; }
+
+/* Sales bars carry their own date, purchase and revenue inspection. */
+.dashboard-scope .dash-sale-spark { overflow: visible; }
+.dashboard-scope .dash-sale-spark > button {
+  position: relative;
+  flex: 1 1 0;
+  max-width: 30px;
+  min-width: 5px;
+  min-height: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px 5px 0 0;
+  background: var(--crimson);
+  cursor: crosshair;
+  transform-origin: bottom;
+  transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1), filter 180ms ease, opacity 180ms ease;
+}
+.dashboard-scope .dash-sale-spark > button.is-today { background: white; box-shadow: 0 0 18px rgba(255, 255, 255, 0.38); }
+.dashboard-scope .dash-sale-spark > button.is-future { background: var(--indigo); opacity: 0.22; }
+.dashboard-scope .dash-sale-spark > button:hover,
+.dashboard-scope .dash-sale-spark > button:focus-visible { z-index: 8; filter: brightness(1.16); outline: none; transform: scaleY(1.05); }
+.dashboard-scope .dash-sale-spark-tooltip em { color: var(--text-secondary); font: 500 10px/1.1 var(--f-data); font-style: normal; }
+
+/* Marketing workspace performance and true centered edit dialogs. */
+.dashboard-scope.dash-marketing-modal-layer {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 220 !important;
+  display: flex;
+  width: 100vw !important;
+  min-height: 100dvh !important;
+  align-items: center;
+  justify-content: center;
+  padding: 22px;
+  overflow: hidden;
+  background: rgba(5, 3, 12, 0.62) !important;
+  backdrop-filter: blur(7px) saturate(0.86);
+  animation: dash-overlay-enter 180ms ease-out both;
+}
+.dashboard-scope .dash-marketing-modal {
+  width: min(620px, 100%);
+  max-height: min(88dvh, 760px);
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  background: #161231;
+  box-shadow: 0 32px 100px rgba(0, 0, 0, 0.58);
+  animation: dash-modal-enter 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.dashboard-scope .dash-marketing-performance {
+  display: grid;
+  grid-template-columns: minmax(210px, 0.72fr) minmax(0, 1.45fr);
+  align-items: stretch;
+  gap: clamp(20px, 4vw, 52px);
+  min-height: 220px;
+}
+.dashboard-scope .dash-marketing-metrics { display: grid; align-content: center; gap: 0; }
+.dashboard-scope .dash-marketing-metrics > div { display: grid; gap: 5px; padding: 15px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.12); }
+.dashboard-scope .dash-marketing-metrics > div:last-child { border-bottom: 0; }
+.dashboard-scope .dash-marketing-metrics span { color: var(--text-secondary); font: 600 10px/1.2 var(--f-data); letter-spacing: 0.08em; text-transform: uppercase; }
+.dashboard-scope .dash-marketing-metrics strong { color: white; font: 500 clamp(1.6rem, 3vw, 2.7rem)/1 var(--f-sans); letter-spacing: -0.045em; }
+.dashboard-scope .dash-marketing-chart { display: grid; align-content: center; gap: 14px; }
+.dashboard-scope .dash-marketing-chart > div {
+  display: grid;
+  grid-template-columns: minmax(130px, 0.75fr) minmax(120px, 1.5fr) minmax(90px, auto);
+  align-items: center;
+  gap: 14px;
+}
+.dashboard-scope .dash-marketing-chart > div > span { display: grid; min-width: 0; gap: 3px; }
+.dashboard-scope .dash-marketing-chart strong { overflow: hidden; color: white; font: 650 12px/1.2 var(--f-data); text-overflow: ellipsis; white-space: nowrap; }
+.dashboard-scope .dash-marketing-chart small { overflow: hidden; color: var(--text-tertiary); font: 500 9px/1.2 var(--f-data); text-overflow: ellipsis; white-space: nowrap; }
+.dashboard-scope .dash-marketing-chart i { display: block; height: 9px; overflow: hidden; border-radius: 4px; background: rgba(255, 255, 255, 0.06); }
+.dashboard-scope .dash-marketing-chart b { display: block; height: 100%; border-radius: inherit; background: var(--indigo); }
+.dashboard-scope .dash-marketing-chart .is-leader b { background: var(--crimson); }
+.dashboard-scope .dash-marketing-chart em { color: var(--text-primary); font: 700 11px/1 var(--f-data); font-style: normal; text-align: right; white-space: nowrap; }
+
+@media (max-width: 1023px) {
+  .dashboard-scope .dash-waveform > button:nth-child(even) { display: none; }
+  .dashboard-scope .dash-charged-stat-grid { width: 100%; }
+  .dashboard-scope .dash-rank-row { grid-template-columns: 38px minmax(0, 1fr) auto; }
+  .dashboard-scope .dash-split-wrap { grid-template-columns: 1fr; min-height: 0; }
+  .dashboard-scope .dash-split-donut { width: min(230px, 72vw); height: 230px; justify-self: center; }
+  .dashboard-scope .dash-split-insights { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dashboard-scope .dash-sale-performance-list li { grid-template-columns: minmax(160px, 1fr) minmax(150px, 1.5fr) repeat(3, minmax(72px, 0.65fr)); }
+  .dashboard-scope .dash-top-customer-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dashboard-scope .dash-top-customer-strip li { border-top: 1px solid rgba(255, 255, 255, 0.1); }
+  .dashboard-scope .dash-top-customer-strip li:nth-child(-n + 2) { border-top: 0; }
+  .dashboard-scope .dash-top-customer-strip li:nth-child(odd) { border-left: 0; }
+  .dashboard-scope .dash-catalog-summary-panel { min-height: 0 !important; }
+  .dashboard-scope .dash-catalog-stat { padding: 18px 14px; }
+  .dashboard-scope .dash-marketing-performance { grid-template-columns: 1fr; min-height: 0; gap: 18px; }
+  .dashboard-scope .dash-marketing-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .dashboard-scope .dash-marketing-metrics > div { padding: 12px; border-right: 1px solid rgba(255, 255, 255, 0.12); border-bottom: 0; }
+  .dashboard-scope .dash-marketing-metrics > div:last-child { border-right: 0; }
+}
+
+@media (max-width: 767px) {
+  .dashboard-scope .dash-detail-sheet { width: 100vw !important; }
+  .dashboard-scope .dash-detail-sheet > :last-child { padding-bottom: max(24px, env(safe-area-inset-bottom)); }
+  .dashboard-scope .dash-waveform > button { min-width: 6px; }
+  .dashboard-scope .dash-wave-tooltip { bottom: calc(100% + 7px); }
+  .dashboard-scope .dash-charged-stat { min-height: 66px; padding: 10px 11px; }
+  .dashboard-scope .dash-rank-row { min-height: 70px; }
+  .dashboard-scope .dash-rank-number { font-size: 2.15rem !important; }
+  .dashboard-scope .dash-order-items-cell { max-width: 100%; }
+  .dashboard-scope .dash-source-line { grid-template-columns: minmax(88px, 1fr) auto; gap: 8px; }
+  .dashboard-scope .dash-source-line > span:nth-child(2) { display: none; }
+  .dashboard-scope .dash-traffic-panel .dash-panel-body { min-height: 0; }
+  .dashboard-scope .dash-split-insights { grid-template-columns: 1fr 1fr; }
+  .dashboard-scope .dash-sale-performance-list li { grid-template-columns: minmax(0, 1fr) auto; gap: 8px 12px; }
+  .dashboard-scope .dash-sale-performance-list .dash-sale-mini-bar { grid-column: 1 / -1; grid-row: 2; }
+  .dashboard-scope .dash-sale-performance-list .dash-sale-number:first-of-type { display: block; }
+  .dashboard-scope .dash-customer-trend { gap: 5px; min-height: 120px; }
+  .dashboard-scope .dash-customer-trend > button { grid-template-rows: minmax(58px, 1fr) auto auto; min-height: 108px; }
+  .dashboard-scope .dash-customer-trend i { width: min(18px, 74%); }
+  .dashboard-scope .dash-customer-trend strong { font-size: 10px; }
+  .dashboard-scope .dash-top-customer-strip { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; }
+  .dashboard-scope .dash-top-customer-strip li { flex: 0 0 min(76vw, 270px); border-top: 0; border-left: 1px solid rgba(255, 255, 255, 0.1); scroll-snap-align: start; }
+  .dashboard-scope .dash-retention-copy { min-width: 0; }
+  .dashboard-scope .dash-catalog-summary { grid-template-columns: 1fr; }
+  .dashboard-scope .dash-catalog-stat { min-height: 86px; padding: 15px 10px; }
+  .dashboard-scope .dash-catalog-stat + .dash-catalog-stat::before { inset: 0 8% auto; width: auto; height: 1px; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent); }
+  .dashboard-scope .dash-catalog-stat strong { font-size: clamp(2.1rem, 12vw, 3.3rem); }
+  .dashboard-scope .dash-form-action-dock {
+    right: 12px;
+    bottom: calc(98px + env(safe-area-inset-bottom));
+    left: 12px;
+    width: auto;
+    max-width: none;
+    justify-content: flex-end;
+    overflow-x: auto;
+  }
+  .dashboard-scope.dash-marketing-modal-layer { align-items: center; padding: 12px; }
+  .dashboard-scope .dash-marketing-modal { max-height: 91dvh; border-radius: 14px; }
+  .dashboard-scope .dash-marketing-metrics { grid-template-columns: 1fr; }
+  .dashboard-scope .dash-marketing-metrics > div { grid-template-columns: 1fr auto; align-items: baseline; padding: 10px 0; border-right: 0; border-bottom: 1px solid rgba(255, 255, 255, 0.11); }
+  .dashboard-scope .dash-marketing-chart > div { grid-template-columns: minmax(0, 1fr) auto; gap: 7px 10px; }
+  .dashboard-scope .dash-marketing-chart i { grid-column: 1 / -1; grid-row: 2; }
+  .dashboard-scope .dash-marketing-chart em { grid-column: 2; grid-row: 1; }
+
+  .dashboard-scope .dash-customer-hero-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-scope .dash-customer-hero-stats .dash-stat:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .dashboard-scope .dash-analytics-metric > span {
+    display: flex;
+    min-height: 22px;
+    align-items: flex-end;
+    overflow: visible;
+    font-size: 9px;
+    line-height: 1.15;
+    text-overflow: clip;
+    white-space: normal;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-scope :is(.dash-detail-scrim, .dash-detail-sheet, .dash-marketing-modal, .dash-perk-covers > span) {
+    animation: none !important;
+  }
+  .dashboard-scope :is(.dash-waveform > button, .dash-sale-spark > button, .dash-customer-trend i, input[type="checkbox"]) {
+    transition: none !important;
+  }
+}

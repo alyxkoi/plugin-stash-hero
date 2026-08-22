@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
@@ -18,7 +18,20 @@ import {
   type ProductStatus,
 } from "@/lib/dashboard-mock";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Search, Edit3, Archive, Trash2, X, Check, Grid2X2, List } from "lucide-react";
+import {
+  Plus,
+  Search,
+  Edit3,
+  Archive,
+  Trash2,
+  X,
+  Check,
+  Grid2X2,
+  List,
+  PackageCheck,
+  Percent,
+  HardDrive,
+} from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -297,34 +310,12 @@ function ProductsPage() {
         domain="catalog"
         material="solid"
         silhouette="offset"
-        title="Catalog"
-        className="dash-short-charge mb-6"
+        className="dash-short-charge dash-catalog-summary-panel mb-6"
       >
-        <div className="dash-catalog-horizon">
-          <div className="dash-hero-value">{products.length.toLocaleString()}</div>
-          <div className="dash-catalog-spines" role="img" aria-label={`${publishedCount} published products in the catalog`}>
-            {products.slice(0, 14).map((product, index) => (
-              <span
-                key={product.id}
-                className={product.status === "published" ? "is-live" : ""}
-                style={{
-                  background: product.cover_url
-                    ? `url(${product.cover_url}) center/cover`
-                    : product.cover_gradient || "linear-gradient(145deg,#4B3FE8,#181434)",
-                  "--spine-rise": `${18 + ((index * 23) % 54)}px`,
-                } as CSSProperties}
-                title={product.name}
-              />
-            ))}
-          </div>
-        </div>
-        <div className="dash-charged-stat-grid">
-          <CatalogStat label="Published" value={publishedCount.toLocaleString()} />
-          <CatalogStat label="Average discount" value={`${Math.round(averageDiscount)}%`} />
-          <div className="dash-charged-stat">
-            <div className="dash-charged-stat-label">Storage used</div>
-            <div className="dash-charged-stat-value">{formatBytes(storageBytes)}</div>
-          </div>
+        <div className="dash-catalog-summary">
+          <CatalogStat icon={PackageCheck} label="Published" value={publishedCount.toLocaleString()} />
+          <CatalogStat icon={Percent} label="Average discount" value={`${Math.round(averageDiscount)}%`} />
+          <CatalogStat icon={HardDrive} label="Storage used" value={formatBytes(storageBytes)} />
         </div>
       </ChargedPanel>
 
@@ -537,11 +528,11 @@ function ProductsPage() {
                         <img
                           src={p.cover_url}
                           alt=""
-                          className="w-11 h-11 rounded-[var(--r-element)] object-cover"
+                          className="dash-product-thumb w-12 h-12 rounded-md object-cover"
                         />
                       ) : (
                         <div
-                          className="w-11 h-11 rounded-[var(--r-element)]"
+                          className="dash-product-thumb w-12 h-12 rounded-md"
                           style={{
                             background:
                               p.cover_gradient || "linear-gradient(135deg,#3a0a4a,#7b0a5a)",
@@ -810,11 +801,22 @@ function ProductsPage() {
   );
 }
 
-function CatalogStat({ label, value }: { label: string; value: string }) {
+function CatalogStat({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof PackageCheck;
+  label: string;
+  value: string;
+}) {
   return (
-    <div className="dash-charged-stat">
-      <div className="dash-charged-stat-label">{label}</div>
-      <div className="dash-charged-stat-value">{value}</div>
+    <div className="dash-catalog-stat">
+      <Icon size={24} strokeWidth={1.6} aria-hidden="true" />
+      <div>
+        <span>{label}</span>
+        <strong>{value}</strong>
+      </div>
     </div>
   );
 }
@@ -824,11 +826,11 @@ function ProductThumb({ product }: { product: Row }) {
     <img
       src={product.cover_url}
       alt=""
-      className="h-11 w-11 shrink-0 rounded-[var(--r-element)] object-cover"
+      className="dash-product-thumb h-12 w-12 shrink-0 rounded-md object-cover"
     />
   ) : (
     <span
-      className="h-11 w-11 shrink-0 rounded-[var(--r-element)]"
+      className="dash-product-thumb h-12 w-12 shrink-0 rounded-md"
       style={{ background: product.cover_gradient || "linear-gradient(135deg,#2D1450,#0C6E92)" }}
     />
   );

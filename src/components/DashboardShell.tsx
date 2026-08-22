@@ -40,33 +40,15 @@ type NavItem = {
   exact?: boolean;
 };
 
-const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
-  {
-    label: "Operations",
-    items: [
-      { to: "/dashboard", label: "Overview", icon: LayoutDashboard, domain: "money", exact: true },
-      { to: "/dashboard/orders", label: "Orders", icon: ShoppingBag, domain: "volume" },
-      { to: "/dashboard/analytics", label: "Analytics", icon: BarChart3, domain: "money" },
-    ],
-  },
-  {
-    label: "Audience",
-    items: [
-      { to: "/dashboard/customers", label: "Customers", icon: Users, domain: "people" },
-      { to: "/dashboard/perks", label: "Perks", icon: Gift, domain: "people" },
-    ],
-  },
-  {
-    label: "Catalog",
-    items: [{ to: "/dashboard/products", label: "Products", icon: Package, domain: "catalog" }],
-  },
-  {
-    label: "Growth",
-    items: [
-      { to: "/dashboard/sales", label: "Sales", icon: Tag, domain: "promo" },
-      { to: "/dashboard/marketing", label: "Marketing", icon: Megaphone, domain: "promo" },
-    ],
-  },
+const NAV_ITEMS: NavItem[] = [
+  { to: "/dashboard", label: "Overview", icon: LayoutDashboard, domain: "money", exact: true },
+  { to: "/dashboard/orders", label: "Orders", icon: ShoppingBag, domain: "volume" },
+  { to: "/dashboard/analytics", label: "Analytics", icon: BarChart3, domain: "money" },
+  { to: "/dashboard/customers", label: "Customers", icon: Users, domain: "people" },
+  { to: "/dashboard/products", label: "Products", icon: Package, domain: "catalog" },
+  { to: "/dashboard/perks", label: "Perks", icon: Gift, domain: "people" },
+  { to: "/dashboard/sales", label: "Sales", icon: Tag, domain: "promo" },
+  { to: "/dashboard/marketing", label: "Marketing", icon: Megaphone, domain: "promo" },
 ];
 
 const SETTINGS_ITEM: NavItem = {
@@ -76,7 +58,7 @@ const SETTINGS_ITEM: NavItem = {
   domain: "neutral",
 };
 
-const NAV = [...NAV_GROUPS.flatMap((group) => group.items), SETTINGS_ITEM];
+const NAV = [...NAV_ITEMS, SETTINGS_ITEM];
 
 const DOMAIN_COLOR: Record<DashboardDomain, string> = {
   money: "var(--c-money)",
@@ -269,21 +251,16 @@ function DesktopRail({
       </Link>
 
       <nav className="dash-rail-nav" aria-label="Dashboard navigation">
-        {NAV_GROUPS.map((group) => (
-          <div className="dash-nav-group" key={group.label}>
-            <div className="dash-nav-group-label">{group.label}</div>
-            <div className="dash-nav-group-items">
-              {group.items.map((item) => (
-                <NavLink
-                  key={item.to}
-                  item={item}
-                  active={isNavActive(item, effectivePath)}
-                  reduceMotion={reduceMotion}
-                />
-              ))}
-            </div>
-          </div>
-        ))}
+        <div className="dash-nav-group-items">
+          {NAV_ITEMS.map((item) => (
+            <NavLink
+              key={item.to}
+              item={item}
+              active={isNavActive(item, effectivePath)}
+              reduceMotion={reduceMotion}
+            />
+          ))}
+        </div>
       </nav>
 
       <div className="dash-rail-footer">

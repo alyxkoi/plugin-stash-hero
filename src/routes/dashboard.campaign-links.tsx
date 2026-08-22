@@ -729,9 +729,10 @@ function EditGroupDialog({ group, onClose, onSaved }: { group: Group; onClose: (
     void onSaved();
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={onClose}>
-      <div className="w-full max-w-md rounded-xl border border-white/10 bg-[#160432] p-5 space-y-3" onClick={(e) => e.stopPropagation()}>
+  if (typeof document === "undefined") return null;
+  return createPortal(
+    <div className="dashboard-scope dash-marketing-modal-layer" onClick={onClose}>
+      <div className="dash-marketing-modal max-w-md" onClick={(e) => e.stopPropagation()}>
         <div className="font-display text-base tracking-wide text-white">Edit group</div>
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Group name" className={inputCls} />
         <input value={source} onChange={(e) => setSource(e.target.value)} placeholder="Source / platform" className={inputCls} />
@@ -746,7 +747,8 @@ function EditGroupDialog({ group, onClose, onSaved }: { group: Group; onClose: (
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -905,9 +907,10 @@ function EditLinkDialog({
     void onSaved();
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={onClose}>
-      <div className="w-full max-w-lg rounded-xl border border-white/10 bg-[#160432] p-5 space-y-3" onClick={(e) => e.stopPropagation()}>
+  if (typeof document === "undefined") return null;
+  return createPortal(
+    <div className="dashboard-scope dash-marketing-modal-layer" onClick={onClose}>
+      <div className="dash-marketing-modal max-w-lg" onClick={(e) => e.stopPropagation()}>
         <div className="font-display text-base tracking-wide text-white">Edit link</div>
         <Field label="Link Name"><input value={label} onChange={(e) => setLabel(e.target.value)} className={inputCls} /></Field>
         <Field label="Group">
@@ -929,7 +932,8 @@ function EditLinkDialog({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

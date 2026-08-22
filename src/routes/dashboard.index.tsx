@@ -120,11 +120,12 @@ function Overview() {
   const previousRevenue = sumNetRevenue(previousOrders);
   const currentAov = currentOrders.length ? currentRevenue / currentOrders.length : 0;
   const previousAov = previousOrders.length ? previousRevenue / previousOrders.length : 0;
-  const currentCustomers = customers.filter((customer) =>
-    within(customer.created_at, bounds.currentStart, bounds.currentEnd),
+  const firstPurchaseDates = useMemo(() => customerFirstPurchaseDates(completed), [completed]);
+  const currentCustomers = firstPurchaseDates.filter((date) =>
+    within(date, bounds.currentStart, bounds.currentEnd),
   ).length;
-  const previousCustomers = customers.filter((customer) =>
-    within(customer.created_at, bounds.previousStart, bounds.previousEnd),
+  const previousCustomers = firstPurchaseDates.filter((date) =>
+    within(date, bounds.previousStart, bounds.previousEnd),
   ).length;
   const revenueDelta = percentDelta(currentRevenue, previousRevenue);
   const ordersDelta = percentDelta(currentOrders.length, previousOrders.length);
@@ -218,12 +219,19 @@ function Overview() {
                 <div className="skeleton-block h-full" />
               ) : (
                 series.map((point, index) => (
-                  <span
+                  <button
+                    type="button"
                     key={`${point.label}-${index}`}
                     className={index >= series.length - 5 ? "is-current" : ""}
                     style={{ "--wave-size": `${Math.max(14, (point.current / waveformMax) * 100)}%` } as CSSProperties}
                     title={`${point.label}: ${moneyExact(point.current)}`}
-                  />
+                    aria-label={`${point.label}, ${moneyExact(point.current)} revenue`}
+                  >
+                    <span className="dash-wave-tooltip" aria-hidden="true">
+                      <small>{point.label}</small>
+                      <strong>{moneyExact(point.current)}</strong>
+                    </span>
+                  </button>
                 ))
               )}
             </div>
@@ -239,6 +247,7 @@ function Overview() {
               label="New customers"
               value={currentCustomers.toLocaleString()}
               delta={customersDelta}
+              to="/dashboard/customers"
             />
             <ChargedStat label="Average order" value={moneyExact(currentAov)} delta={aovDelta} />
           </div>
@@ -459,22 +468,36 @@ function ChargedStat({
   label,
   value,
   delta,
+  to,
 }: {
   label: string;
   value: string;
   delta: { label: string; positive: boolean | null; arrow: string };
+  to?: string;
 }) {
-  return (
-    <div className="dash-charged-stat">
+  const content = (
+    <>
       <div className="dash-charged-stat-label">{label}</div>
       <div className="dash-charged-stat-value">
         {value}{" "}
-        <small className="text-[11px] opacity-75">
+        <small data-direction={delta.positive == null ? "neutral" : delta.positive ? "positive" : "negative"}>
           {delta.arrow}
           {delta.label}
         </small>
       </div>
-    </div>
+    </>
+  );
+  return to ? (
+    <Link
+      to={to as any}
+      search={{ filter: "new" } as any}
+      className="dash-charged-stat is-interactive"
+      aria-label={`${label}: ${value}. View first-time purchasers.`}
+    >
+      {content}
+    </Link>
+  ) : (
+    <div className="dash-charged-stat">{content}</div>
   );
 }
 
@@ -557,6 +580,22 @@ function buildComparisonSeries(
 function within(iso: string, start: Date, end: Date) {
   const time = new Date(iso).getTime();
   return time >= start.getTime() && time <= end.getTime();
+}
+
+function customerFirstPurchaseDates(orders: OrderRow[]) {
+  const firstByCustomer = new Map<string, string>();
+  for (const order of orders) {
+    const key =
+      order.customer_id ||
+      order.guest_email?.trim().toLowerCase() ||
+      order.customer_name?.trim().toLowerCase();
+    if (!key) continue;
+    const current = firstByCustomer.get(key);
+    if (!current || new Date(order.created_at) < new Date(current)) {
+      firstByCustomer.set(key, order.created_at);
+    }
+  }
+  return [...firstByCustomer.values()];
 }
 
 function percentDelta(current: number, previous: number) {

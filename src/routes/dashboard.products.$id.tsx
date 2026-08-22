@@ -403,7 +403,7 @@ function EditProduct() {
                     {FORMATS.map(f => {
                       const on = formats.has(f);
                       return (
-                        <button key={f} onClick={() => { const n = new Set(formats); on ? n.delete(f) : n.add(f); setFormats(n); }}
+                        <button key={f} onClick={() => { const n = new Set(formats); if (on) n.delete(f); else n.add(f); setFormats(n); }}
                           className={`text-xs px-3 py-1.5 rounded-md border font-mono ${on ? "bg-[var(--accent-red)]/15 border-[var(--accent-red)]/60" : "bg-white/5 border-white/15 text-white/70"}`}>{f}</button>
                       );
                     })}
@@ -630,7 +630,7 @@ function EditProduct() {
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 md:left-[220px] right-0 z-30 border-t border-white/10 bg-[#13002C]/95 backdrop-blur-md px-6 py-3 flex items-center gap-3">
+      <div className="dash-form-action-dock">
         <Link to="/dashboard/products" search={returnSearch as any} className="btn-ghost !text-xs !py-2 !px-4">Back</Link>
         <button onClick={save} disabled={saving} className="btn-primary !text-xs !py-2 !px-6 ml-auto">{saving ? "Saving…" : "Save changes"}</button>
       </div>
