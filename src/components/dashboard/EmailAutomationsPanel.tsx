@@ -149,7 +149,6 @@ export function EmailAutomationsPanel() {
           <div>
             <span className="dash-email-eyebrow">Automation health</span>
             <h2>Recovery engine</h2>
-            <p>Live performance across cart and saved-item journeys.</p>
           </div>
           <div className="dash-email-ranges" aria-label="Automation reporting range">
             {RANGE_KEYS.map((key) => (
@@ -209,7 +208,6 @@ export function EmailAutomationsPanel() {
               }
             >
               <div className="dash-email-flow-intro">
-                <p>{meta.description}</p>
                 <span>{enabled ? "Checks every 15 minutes" : "Automation is paused"}</span>
               </div>
 
@@ -305,7 +303,6 @@ export function EmailAutomationsPanel() {
             </span>
             <div>
               <strong>Preview a real template</strong>
-              <p>Uses sample products only. Tests are private, unlogged, and excluded from metrics.</p>
             </div>
           </div>
           <div className="dash-email-test-form">

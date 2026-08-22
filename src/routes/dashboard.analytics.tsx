@@ -250,7 +250,7 @@ function Analytics() {
           material="grain"
           form="arc"
           silhouette="inset"
-          title={`Revenue · ${RANGE_LABEL[range]}`}
+          title="Revenue"
         >
           <div className="dash-analytics-metrics">
             <AnalyticsMetric label="Revenue" value={money(revenue)} delta={revenueDelta} />
@@ -278,8 +278,8 @@ function Analytics() {
                 <AreaChart data={chartSeries} margin={{ top: 8, right: 4, left: -18, bottom: 0 }}>
                   <defs>
                     <linearGradient id="analytics-revenue-fill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#FFFFFF" stopOpacity={0.28} />
-                      <stop offset="100%" stopColor="#FFFFFF" stopOpacity={0} />
+                      <stop offset="0%" stopColor="#FA1265" stopOpacity={0.32} />
+                      <stop offset="100%" stopColor="#FA1265" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid stroke="rgba(255,255,255,0.18)" vertical={false} />
@@ -322,7 +322,7 @@ function Analytics() {
                   <Area
                     type="monotone"
                     dataKey="current"
-                    stroke="#FFFFFF"
+                    stroke="#FA1265"
                     strokeWidth={2}
                     fill="url(#analytics-revenue-fill)"
                     dot={false}
@@ -380,7 +380,7 @@ function Analytics() {
             )}
           </DashCard>
 
-          <DashCard title="Traffic sources" className="xl:col-span-5">
+          <DashCard title="Traffic sources" className="xl:col-span-5 dash-solid-panel">
             {sources.length === 0 ? (
               <div className="dash-empty">
                 <p>No attributed traffic in this range.</p>
@@ -409,7 +409,7 @@ function Analytics() {
 
           <DashCard
             title="New vs returning"
-            className="dash-block-zone dash-block-zone-people xl:col-span-5"
+            className="dash-block-zone dash-block-zone-people dash-solid-panel xl:col-span-5 xl:order-4"
           >
             {splitTotal === 0 ? (
               <div className="dash-empty">
@@ -450,25 +450,11 @@ function Analytics() {
                     <span>Repeat purchase</span>
                   </div>
                 </div>
-                <div className="dash-split-legend">
-                  <span>
-                    <i className="is-new" />
-                    <span>
-                      New <strong>{split.neu.toLocaleString()}</strong>
-                    </span>
-                  </span>
-                  <span>
-                    <i className="is-returning" />
-                    <span>
-                      Returning <strong>{split.returning.toLocaleString()}</strong>
-                    </span>
-                  </span>
-                </div>
               </div>
             )}
           </DashCard>
 
-          <DashCard title="Sale performance" className="xl:col-span-7">
+          <DashCard title="Sale performance" className="xl:col-span-7 xl:order-3">
             {salePerformance.length === 0 ? (
               <div className="dash-empty">
                 <p>No sale events yet. Run a sale to compare revenue pace here.</p>
@@ -532,7 +518,7 @@ function AnalyticsMetric({
     <div className="dash-analytics-metric" title={helper}>
       <span>{label}</span>
       <strong>{value}</strong>
-      <small>{delta ? `${delta.arrow}${delta.label} vs prior` : helper}</small>
+      {delta && <small>{delta.arrow}{delta.label}</small>}
     </div>
   );
 }

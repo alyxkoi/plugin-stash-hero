@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { CreditCard, HardDrive, LogOut, PlugZap, Store, UserRound } from "lucide-react";
 import { toast } from "sonner";
-import { DashCard, DashboardShell } from "@/components/DashboardShell";
+import { ChargedPanel, DashCard, DashboardShell } from "@/components/DashboardShell";
 import { supabase } from "@/integrations/supabase/client";
 import { signOut, useAuth } from "@/hooks/useAuth";
 
@@ -116,8 +116,36 @@ function Settings() {
     navigate({ to: "/dashboard/login" as any, replace: true });
   }
 
+  const connectionStates = [
+    { label: "Storage", connected: !!status?.r2.connected },
+    { label: "Payments", connected: !!status?.stripe.connected },
+    { label: "OpenAI", connected: !!status?.openai.connected },
+    { label: "Mailchimp", connected: !!status?.mailchimp.connected },
+  ];
+  const connectedCount = connectionStates.filter((item) => item.connected).length;
+
   return (
     <DashboardShell title="Settings">
+      <ChargedPanel
+        domain="volume"
+        material="grain"
+        form="arc"
+        silhouette="full"
+        title="System"
+        className="dash-settings-horizon"
+      >
+        <div className="dash-system-map">
+          <div className="dash-hero-value">{connectedCount}<small>/4</small></div>
+          <div className="dash-system-nodes" role="img" aria-label={`${connectedCount} of four services connected`}>
+            {connectionStates.map((item) => (
+              <span key={item.label} data-connected={item.connected}>
+                <i />
+                <b>{item.label}</b>
+              </span>
+            ))}
+          </div>
+        </div>
+      </ChargedPanel>
       <div className="dash-settings-layout">
         <aside className="dash-settings-nav" aria-label="Settings sections">
           {SECTIONS.map((item) => {
@@ -168,9 +196,6 @@ function Settings() {
               >
                 <input type="email" defaultValue="pluginwh@gmail.com" autoComplete="email" />
               </Field>
-              <p className="text-xs text-[var(--text-tertiary)]">
-                Storefront content and SEO settings remain managed in their individual pages.
-              </p>
             </DashCard>
           )}
 
@@ -184,11 +209,6 @@ function Settings() {
                     : "Not connected"
                 }
               />
-              <p className="mt-4 text-sm text-[var(--text-secondary)]">
-                Payment mode reflects the Stripe gateway key configured in project secrets.
-                {status?.stripe.mode === "test" &&
-                  " Add a live key before accepting production payments."}
-              </p>
             </DashCard>
           )}
 
@@ -225,10 +245,6 @@ function Settings() {
                 <div className="dash-storage-measure">
                   <span style={{ width: status?.r2.totalBytes ? "100%" : "0%" }} />
                 </div>
-                <p>
-                  Measured object usage. The provider capacity quota is not reported by this
-                  connection.
-                </p>
               </div>
               {status?.r2.error && (
                 <div className="mt-3 break-all font-mono text-[10px] text-[var(--st-danger)]">
@@ -237,10 +253,6 @@ function Settings() {
               )}
               <div className="mt-5 border-t border-[var(--border)] pt-5">
                 <h3 className="dash-table-label mb-2">Bucket CORS</h3>
-                <p className="mb-3 text-sm text-[var(--text-secondary)]">
-                  Apply the download origin rules to this bucket. This is normally a one-time admin
-                  action.
-                </p>
                 <button
                   type="button"
                   onClick={applyCors}
@@ -278,9 +290,6 @@ function Settings() {
                   connected={!!status?.mailchimp.connected}
                   label={status?.mailchimp.connected ? "Connected" : "Not connected"}
                 />
-                <p className="mt-4 text-sm text-[var(--text-secondary)]">
-                  Behavioral email delivery uses this connection when enabled.
-                </p>
               </DashCard>
             </div>
           )}
@@ -313,9 +322,6 @@ function Settings() {
               </DashCard>
 
               <DashCard title="Session controls" className="dash-danger-zone">
-                <p className="mb-4 text-sm text-[var(--text-secondary)]">
-                  Signing out clears this browser's admin session. No store data is removed.
-                </p>
                 <button type="button" onClick={logout} className="dash-danger-button">
                   <LogOut size={14} /> Log out
                 </button>
@@ -368,7 +374,7 @@ function Field({
     <label className="mb-4 block">
       <span className="dash-table-label mb-1 block">{label}</span>
       {children}
-      {helper && <span className="mt-1 block text-xs text-[var(--text-tertiary)]">{helper}</span>}
+      {helper && <span className="sr-only">{helper}</span>}
     </label>
   );
 }

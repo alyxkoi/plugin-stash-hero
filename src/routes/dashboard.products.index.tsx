@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
@@ -297,17 +297,33 @@ function ProductsPage() {
         domain="catalog"
         material="solid"
         silhouette="offset"
-        title="Catalog at a glance"
+        title="Catalog"
         className="dash-short-charge mb-6"
       >
+        <div className="dash-catalog-horizon">
+          <div className="dash-hero-value">{products.length.toLocaleString()}</div>
+          <div className="dash-catalog-spines" role="img" aria-label={`${publishedCount} published products in the catalog`}>
+            {products.slice(0, 14).map((product, index) => (
+              <span
+                key={product.id}
+                className={product.status === "published" ? "is-live" : ""}
+                style={{
+                  background: product.cover_url
+                    ? `url(${product.cover_url}) center/cover`
+                    : product.cover_gradient || "linear-gradient(145deg,#4B3FE8,#181434)",
+                  "--spine-rise": `${18 + ((index * 23) % 54)}px`,
+                } as CSSProperties}
+                title={product.name}
+              />
+            ))}
+          </div>
+        </div>
         <div className="dash-charged-stat-grid">
-          <CatalogStat label="Total products" value={products.length.toLocaleString()} />
           <CatalogStat label="Published" value={publishedCount.toLocaleString()} />
           <CatalogStat label="Average discount" value={`${Math.round(averageDiscount)}%`} />
           <div className="dash-charged-stat">
             <div className="dash-charged-stat-label">Storage used</div>
             <div className="dash-charged-stat-value">{formatBytes(storageBytes)}</div>
-            <div className="mt-1 text-[10px] text-white/55">Measured from product metadata</div>
           </div>
         </div>
       </ChargedPanel>

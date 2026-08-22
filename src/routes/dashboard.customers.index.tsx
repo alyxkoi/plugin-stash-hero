@@ -178,6 +178,15 @@ function CustomersPage() {
   const newDelta = percentDelta(metrics.newCurrent, metrics.newPrevious);
   const repeatDelta = percentDelta(metrics.current.repeatRate, metrics.prior.repeatRate);
   const ltvDelta = percentDelta(metrics.current.averageLtv, metrics.prior.averageLtv);
+  const customerTotal = metrics.current.total || total;
+  const newDotCount = Math.min(customerTotal, metrics.newCurrent);
+  const repeatDotCount = Math.min(
+    customerTotal - newDotCount,
+    Math.round((customerTotal * metrics.current.repeatRate) / 100),
+  );
+  const customerDots = Array.from({ length: customerTotal }, (_, index) =>
+    index < newDotCount ? "new" : index < newDotCount + repeatDotCount ? "repeat" : "one-time",
+  );
 
   return (
     <DashboardShell title="Customers">
@@ -187,23 +196,25 @@ function CustomersPage() {
           material="grain"
           form="corner"
           silhouette="full"
-          title="Customer intelligence"
+          title="Customers"
         >
+          <div className="dash-customers-horizon">
+            <div className="dash-customer-total-line">
+              <div className="dash-hero-value">{customerTotal.toLocaleString()}</div>
+              <span className="dash-delta" data-direction={totalDelta.positive ? "positive" : "neutral"}>
+                {totalDelta.label}
+              </span>
+            </div>
+            <div className="dash-customer-dots" role="img" aria-label={`${customerTotal} customers grouped as new, repeat, and one-time`}>
+              {customerDots.map((kind, index) => <i key={index} data-kind={kind} />)}
+            </div>
+          </div>
           <div className="dash-customer-hero-stats">
-            <StatCard
-              label="Total customers"
-              value={(metrics.current.total || total).toLocaleString()}
-              delta={totalDelta.label}
-              deltaPositive={totalDelta.positive ?? undefined}
-              comparison="vs start of month"
-              domain="people"
-            />
             <StatCard
               label="New this month"
               value={metrics.newCurrent.toLocaleString()}
               delta={newDelta.label}
               deltaPositive={newDelta.positive ?? undefined}
-              comparison="vs previous month"
               domain="people"
             />
             <StatCard
@@ -211,7 +222,6 @@ function CustomersPage() {
               value={`${Math.round(metrics.current.repeatRate)}%`}
               delta={repeatDelta.label}
               deltaPositive={repeatDelta.positive ?? undefined}
-              comparison="vs start of month"
               domain="people"
             />
             <StatCard
@@ -219,13 +229,18 @@ function CustomersPage() {
               value={money(metrics.current.averageLtv)}
               delta={ltvDelta.label}
               deltaPositive={ltvDelta.positive ?? undefined}
-              comparison="vs start of month"
               domain="money"
             />
           </div>
+          <div className="dash-customer-legend" aria-label="Customer dot legend">
+            <span><i data-kind="one-time" /> One-time</span>
+            <span><i data-kind="repeat" /> Repeat</span>
+            <span><i data-kind="new" /> New</span>
+          </div>
         </ChargedPanel>
 
-        <DashCard title="Top customers by spend" className="dash-block-zone dash-block-zone-money">
+        <div className="dash-customer-zone">
+        <DashCard title="Top spenders" className="dash-block-zone dash-block-zone-money dash-solid-panel">
           {topCustomers.length === 0 ? (
             <div className="dash-empty text-white/75">
               <p>Top spenders will appear after customer totals load.</p>
@@ -246,6 +261,8 @@ function CustomersPage() {
             </ol>
           )}
         </DashCard>
+
+        <div className="dash-customer-directory">
 
         <div className="dash-filter-bar" aria-label="Customer filters">
           <label className="dash-search-field">
@@ -416,6 +433,16 @@ function CustomersPage() {
               </button>
             </div>
           </footer>
+        </DashCard>
+        </div>
+        </div>
+
+        <DashCard title="Retention" className="dash-bottom-strip dash-retention-strip">
+          <div className="dash-retention-track">
+            <span style={{ width: `${Math.round(metrics.current.repeatRate)}%` }} />
+          </div>
+          <div><strong>{Math.round(metrics.current.repeatRate)}%</strong><span>Returning</span></div>
+          <div><strong>{Math.max(0, 100 - Math.round(metrics.current.repeatRate))}%</strong><span>New</span></div>
         </DashCard>
       </div>
 

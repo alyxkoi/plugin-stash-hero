@@ -116,6 +116,9 @@ function SalesPage() {
     active && previousEnded ? percentDelta(active.revenue, previousEnded.revenue) : null;
   const spark = active ? saleSparkline(active, orders) : [];
   const sparkMax = Math.max(1, ...spark);
+  const allTimePurchases = displayRows.reduce((sum, sale) => sum + sale.purchases, 0);
+  const allTimeRevenue = displayRows.reduce((sum, sale) => sum + sale.revenue, 0);
+  const allTimeAov = allTimePurchases ? allTimeRevenue / allTimePurchases : 0;
 
   async function endSale() {
     if (!active || ending) return;
@@ -268,7 +271,7 @@ function SalesPage() {
                     value={comparison ? `${comparison.arrow}${comparison.label}` : "—"}
                   />
                 </div>
-                <div className="dash-sale-spark" aria-label="Daily purchase pace">
+                <div className="dash-sale-spark" aria-label="One purchase bar for each campaign day">
                   {spark.map((value, index) => (
                     <span
                       key={index}
@@ -438,8 +441,16 @@ function SalesPage() {
           )}
         </DashCard>
 
+        <DashCard title="All-time" className="dash-bottom-strip dash-sales-all-time">
+          <div className="dash-all-time-metrics">
+            <Summary label="Total purchases" value={allTimePurchases.toLocaleString()} />
+            <Summary label="Total revenue" value={money(allTimeRevenue)} />
+            <Summary label="Average order" value={money(allTimeAov)} />
+          </div>
+        </DashCard>
+
         {archivedRows.length > 0 && (
-          <DashCard title="Archived campaigns">
+          <DashCard title="Archived campaigns" className="dash-solid-panel">
             <div className="dash-archived-sales">
               {archivedRows.map((sale) => (
                 <article key={sale.id}>
@@ -553,7 +564,8 @@ function countdown(endAt: string, now: number) {
 
 function saleSparkline(sale: DisplaySaleRow, orders: SaleOrder[]) {
   const start = new Date(sale.start_at);
-  const days = Math.max(1, Math.min(14, Math.ceil((Date.now() - start.getTime()) / 86400_000)));
+  const end = new Date(sale.end_at);
+  const days = Math.max(1, Math.min(60, Math.ceil((end.getTime() - start.getTime()) / 86400_000)));
   return Array.from({ length: days }, (_, index) => {
     const dayStart = new Date(start.getTime() + index * 86400_000);
     const dayEnd = new Date(dayStart.getTime() + 86400_000);

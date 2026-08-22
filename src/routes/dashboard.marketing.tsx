@@ -8,7 +8,7 @@ import {
   DomainChip,
   StatusBadge,
 } from "@/components/DashboardShell";
-import { ArrowUpRight, BadgePercent, Copy, Link2, Mail, Pencil, Plus, Trash2 } from "lucide-react";
+import { BadgePercent, Copy, Link2, Mail, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { DiscountCodeModal, type DiscountRow } from "@/components/dashboard/DiscountCodeModal";
@@ -37,19 +37,16 @@ function Marketing() {
     {
       key: "codes",
       label: "Discount codes",
-      description: "Create offers and measure attributed revenue.",
       icon: BadgePercent,
     },
     {
       key: "campaign",
       label: "Campaign links",
-      description: "Build trackable links and compare channel results.",
       icon: Link2,
     },
     {
       key: "emails",
       label: "Behavioral emails",
-      description: "Run cart and saved-item recovery workflows.",
       icon: Mail,
     },
   ] as const;
@@ -59,7 +56,7 @@ function Marketing() {
       <MarketingHero />
 
       <nav className="dash-marketing-workspaces" aria-label="Marketing workspaces">
-        {workspaces.map(({ key, label, description, icon: Icon }) => (
+        {workspaces.map(({ key, label, icon: Icon }) => (
           <button
             key={key}
             type="button"
@@ -72,9 +69,7 @@ function Marketing() {
             </span>
             <span className="dash-marketing-workspace-copy">
               <strong>{label}</strong>
-              <small>{description}</small>
             </span>
-            <ArrowUpRight size={17} strokeWidth={1.7} aria-hidden="true" />
           </button>
         ))}
       </nav>
@@ -130,7 +125,7 @@ function MarketingHero() {
     };
   }, []);
 
-  const best = useMemo(
+  const performance = useMemo(
     () =>
       codes
         .map((code) => {
@@ -139,16 +134,19 @@ function MarketingHero() {
           );
           return { ...code, revenue: matched.reduce((sum, order) => sum + netRevenue(order), 0) };
         })
-        .sort((a, b) => b.revenue - a.revenue || b.uses - a.uses)[0],
+        .sort((a, b) => b.revenue - a.revenue || b.uses - a.uses)
+        .slice(0, 4),
     [codes, orders],
   );
+  const best = performance[0];
+  const performanceMax = Math.max(1, ...performance.map((code) => code.revenue));
 
   return (
     <ChargedPanel
       domain="promo"
       material="solid"
       silhouette="side"
-      title="Top-performing code"
+      title="Codes"
       className="dash-marketing-hero"
     >
       {best ? (
@@ -164,6 +162,15 @@ function MarketingHero() {
           <div>
             <span>Revenue attributed</span>
             <strong>{money(best.revenue)}</strong>
+          </div>
+          <div className="dash-code-horizon" aria-label="Top four discount codes by attributed revenue">
+            {performance.map((code, index) => (
+              <div key={code.code} className={index === 0 ? "is-leader" : ""}>
+                <span>{code.code}</span>
+                <i><b style={{ width: `${Math.max(5, (code.revenue / performanceMax) * 100)}%` }} /></i>
+                <strong>{money(code.revenue)}</strong>
+              </div>
+            ))}
           </div>
         </div>
       ) : (

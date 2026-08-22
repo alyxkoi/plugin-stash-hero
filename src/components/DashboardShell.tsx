@@ -88,12 +88,12 @@ const DOMAIN_COLOR: Record<DashboardDomain, string> = {
 };
 
 const DOMAIN_NAV_FILL: Record<DashboardDomain, string> = {
-  money: "#B00F45",
-  volume: "#1E1896",
-  people: "#5B18B0",
-  catalog: "#0E6E82",
-  promo: "#B03C10",
-  neutral: "#24203C",
+  money: "#FA1265",
+  volume: "#FA1265",
+  people: "#FA1265",
+  catalog: "#FA1265",
+  promo: "#FA1265",
+  neutral: "#FA1265",
 };
 
 interface Props {
@@ -183,6 +183,7 @@ function DashboardChromeRoot({
       data-domain={domain}
       style={{ "--section-color": DOMAIN_COLOR[domain] } as React.CSSProperties}
     >
+      <div className="dash-background-field" aria-hidden="true" />
       <DesktopRail effectivePath={effectivePath} onLogout={logout} reduceMotion={reduceMotion} />
 
       <div className="dashboard-column">
@@ -508,7 +509,7 @@ export function ChargedPanel({
 }) {
   return (
     <section
-      className={`dash-charged dash-charged-${domain} dash-charged-${anchor} dash-material-${material} dash-grain-${form} dash-hero-${silhouette} ${className}`}
+      className={`dash-charged dash-horizon dash-charged-${domain} dash-charged-${anchor} dash-material-${material} dash-grain-${form} dash-hero-${silhouette} ${className}`}
     >
       {(title || action) && (
         <header className="dash-charged-header">

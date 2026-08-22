@@ -123,6 +123,8 @@ function OrdersPage() {
     0,
   );
   const todayAverage = todayRows.length ? sumNetRevenue(todayRows) / todayRows.length : 0;
+  const orderFaders = todayRows.slice(0, 18).reverse();
+  const faderMax = Math.max(1, ...orderFaders.map((order) => netRevenue(order)));
 
   function exportCsv() {
     const header = [
@@ -166,11 +168,20 @@ function OrdersPage() {
           domain="volume"
           material="solid"
           silhouette="side"
-          title="Today at a glance"
+          title="Orders"
           className="dash-short-charge"
         >
+          <div className="dash-orders-horizon">
+            <div className="dash-hero-value">{todayRows.length.toLocaleString()}</div>
+            <div className="dash-order-faders" role="img" aria-label="Today's order value distribution">
+              {orderFaders.map((order) => (
+                <span key={order.id} title={`${order.number}: ${money(netRevenue(order))}`}>
+                  <i style={{ height: `${Math.max(12, (netRevenue(order) / faderMax) * 100)}%` }} />
+                </span>
+              ))}
+            </div>
+          </div>
           <div className="dash-charged-stat-grid">
-            <SummaryStat label="Orders today" value={todayRows.length.toLocaleString()} />
             <SummaryStat label="Gross" value={money(todayGross)} />
             <SummaryStat label="Refunded" value={money(todayRefunded)} />
             <SummaryStat label="Average order" value={money(todayAverage)} />

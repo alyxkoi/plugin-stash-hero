@@ -223,7 +223,7 @@ function PerksPage() {
           domain="people"
           material="solid"
           silhouette="side"
-          title="Grant at a glance"
+          title="Grant"
           className="dash-short-charge"
         >
           <div className="dash-charged-stat-grid dash-perks-hero-stats">
@@ -243,6 +243,23 @@ function PerksPage() {
               <div className="dash-charged-stat-label">Retail value</div>
               <div className="dash-charged-stat-value">{money(grantValueCents)}</div>
             </div>
+          </div>
+          <div className="dash-perk-covers" role="img" aria-label="Plugin grant selection">
+            {products.slice(0, 18).map((product) => {
+              const selected = pickedProducts.includes(product.id);
+              return (
+                <span
+                  key={product.id}
+                  className={selected ? "is-selected" : ""}
+                  style={{
+                    background: product.cover_url
+                      ? `url(${product.cover_url}) center/cover`
+                      : product.cover_gradient ?? "linear-gradient(145deg,#4B3FE8,#181434)",
+                  }}
+                  title={product.name}
+                />
+              );
+            })}
           </div>
         </ChargedPanel>
 
@@ -398,7 +415,6 @@ function PerksPage() {
                   </label>
                 )}
 
-                <p>Grants are silent — no emails or notifications are sent.</p>
                 <button
                   type="button"
                   disabled={review ? !typedOk || running : !canReview}

@@ -1,16 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { useReducedMotion } from "framer-motion";
-import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  Line,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import {
   ChargedPanel,
   DashCard,
@@ -83,7 +72,6 @@ function Overview() {
   const [sales, setSales] = useState<CurrentSale[]>([]);
   const [loading, setLoading] = useState(true);
   const [openOrderId, setOpenOrderId] = useState<string | null>(null);
-  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     let cancelled = false;
@@ -147,6 +135,7 @@ function Overview() {
     () => buildComparisonSeries(completed, bounds, range),
     [completed, bounds, range],
   );
+  const waveformMax = Math.max(1, ...series.map((point) => point.current));
   const recent = orders.slice(0, 7);
   const customerLookup = useMemo(
     () => new Map(customers.map((customer) => [customer.id, customer])),
@@ -187,9 +176,9 @@ function Overview() {
         map.set(key, current);
       }
     }
-    return [...map.values()].sort((a, b) => b.units - a.units).slice(0, 5);
+    return [...map.values()].sort((a, b) => b.revenue - a.revenue).slice(0, 5);
   }, [completed]);
-  const bestMax = Math.max(1, ...best.map((item) => item.units));
+  const bestMax = Math.max(1, ...best.map((item) => item.revenue));
 
   const now = Date.now();
   const currentSale =
@@ -218,75 +207,24 @@ function Overview() {
           <div className="dash-hero-layout">
             <div className="dash-hero-topline">
               <div className="dash-hero-value">{formatMoney(currentRevenue)}</div>
-              <div className="dash-hero-comparison">
-                {revenueDelta.arrow} {revenueDelta.label} vs previous period
-              </div>
+              <div className="dash-hero-comparison">{revenueDelta.arrow} {revenueDelta.label}</div>
             </div>
             <div
-              className="dash-hero-chart"
+              className="dash-hero-chart dash-waveform"
               role="img"
-              aria-label={`Revenue trend for the selected range: ${formatMoney(currentRevenue)}, ${revenueDelta.label} versus the previous period.`}
+              aria-label={`Revenue waveform for the selected range: ${formatMoney(currentRevenue)}.`}
             >
               {loading ? (
                 <div className="skeleton-block h-full" />
               ) : (
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={series} margin={{ top: 8, right: 6, left: -18, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="overview-revenue-fill" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#FFFFFF" stopOpacity={0.28} />
-                        <stop offset="100%" stopColor="#FFFFFF" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid stroke="rgba(255,255,255,0.18)" vertical={false} />
-                    <XAxis
-                      dataKey="label"
-                      tickLine={false}
-                      axisLine={false}
-                      minTickGap={24}
-                      tick={{ fill: "rgba(255,255,255,0.72)", fontSize: 10 }}
-                    />
-                    <YAxis
-                      tickLine={false}
-                      axisLine={false}
-                      width={54}
-                      tickFormatter={(value) => `$${value}`}
-                      tick={{ fill: "rgba(255,255,255,0.72)", fontSize: 10 }}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        background: "#2D1450",
-                        border: "1px solid rgba(255,255,255,.18)",
-                        borderRadius: 10,
-                        boxShadow: "none",
-                        fontFamily: "var(--f-data)",
-                      }}
-                      formatter={(value: number, key: string) => [
-                        moneyExact(value),
-                        key === "current" ? "Current" : "Previous",
-                      ]}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="previous"
-                      stroke="rgba(255,255,255,0.38)"
-                      strokeWidth={1.5}
-                      strokeDasharray="5 5"
-                      dot={false}
-                      isAnimationActive={false}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="current"
-                      stroke="#FFFFFF"
-                      strokeWidth={2}
-                      fill="url(#overview-revenue-fill)"
-                      dot={false}
-                      isAnimationActive={!reduceMotion}
-                      animationDuration={500}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
+                series.map((point, index) => (
+                  <span
+                    key={`${point.label}-${index}`}
+                    className={index >= series.length - 5 ? "is-current" : ""}
+                    style={{ "--wave-size": `${Math.max(14, (point.current / waveformMax) * 100)}%` } as CSSProperties}
+                    title={`${point.label}: ${moneyExact(point.current)}`}
+                  />
+                ))
               )}
             </div>
           </div>
@@ -305,42 +243,6 @@ function Overview() {
             <ChargedStat label="Average order" value={moneyExact(currentAov)} delta={aovDelta} />
           </div>
         </ChargedPanel>
-
-        <DashCard
-          title="Current sales campaign"
-          action={
-            <Link to="/dashboard/sales" className="text-xs text-[var(--text-tertiary)] hover:text-white">
-              Manage sales →
-            </Link>
-          }
-        >
-          {currentSale ? (
-            <div className="dash-campaign-pulse">
-              <div className="dash-campaign-pulse-title">
-                <span>
-                  <i aria-hidden="true" /> Live campaign
-                </span>
-                <h3>{currentSale.name}</h3>
-                <p>
-                  {currentSale.discount_pct}% off · {campaignCountdown(currentSale.end_at, now)} remaining
-                </p>
-              </div>
-              <div className="dash-campaign-pulse-metrics">
-                <CampaignMetric label="Customers connected" value={campaignCustomers.toLocaleString()} />
-                <CampaignMetric label="Campaign sales" value={campaignOrders.length.toLocaleString()} />
-                <CampaignMetric label="Campaign revenue" value={moneyExact(campaignRevenue)} highlight />
-                <CampaignMetric label="Average order" value={moneyExact(campaignAov)} />
-              </div>
-            </div>
-          ) : (
-            <div className="dash-empty">
-              <p>No sales campaign is running right now.</p>
-              <Link to="/dashboard/sales/new" className="btn-primary px-4">
-                Create a sales campaign
-              </Link>
-            </div>
-          )}
-        </DashCard>
 
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
           <DashCard
@@ -451,7 +353,7 @@ function Overview() {
 
           <DashCard
             title="Best sellers this month"
-            className="xl:col-span-5"
+            className="xl:col-span-5 dash-solid-panel"
             action={
               <Link
                 to="/dashboard/analytics"
@@ -483,7 +385,7 @@ function Overview() {
                     <span className="dash-rank-main">
                       <span className="dash-rank-name">{item.name}</span>
                       <span className="dash-rank-bar">
-                        <span style={{ width: `${Math.max(4, (item.units / bestMax) * 100)}%` }} />
+                      <span style={{ width: `${Math.max(4, (item.revenue / bestMax) * 100)}%` }} />
                       </span>
                       {item.revenue === 0 && (
                         <DomainChip domain="neutral" className="mt-1">
@@ -505,6 +407,43 @@ function Overview() {
             )}
           </DashCard>
         </div>
+
+        <DashCard
+          title="Current sales campaign"
+          className="dash-bottom-strip"
+          action={
+            <Link to="/dashboard/sales" className="text-xs text-[var(--text-tertiary)] hover:text-white">
+              Manage sales →
+            </Link>
+          }
+        >
+          {currentSale ? (
+            <div className="dash-campaign-pulse">
+              <div className="dash-campaign-pulse-title">
+                <span>
+                  <i aria-hidden="true" /> Live campaign
+                </span>
+                <h3>{currentSale.name}</h3>
+                <p>
+                  {currentSale.discount_pct}% off · {campaignCountdown(currentSale.end_at, now)} remaining
+                </p>
+              </div>
+              <div className="dash-campaign-pulse-metrics">
+                <CampaignMetric label="Customers connected" value={campaignCustomers.toLocaleString()} />
+                <CampaignMetric label="Campaign sales" value={campaignOrders.length.toLocaleString()} />
+                <CampaignMetric label="Campaign revenue" value={moneyExact(campaignRevenue)} highlight />
+                <CampaignMetric label="Average order" value={moneyExact(campaignAov)} />
+              </div>
+            </div>
+          ) : (
+            <div className="dash-empty">
+              <p>No sales campaign is running right now.</p>
+              <Link to="/dashboard/sales/new" className="btn-primary px-4">
+                Create a sales campaign
+              </Link>
+            </div>
+          )}
+        </DashCard>
       </div>
 
       <OrderDrawer
