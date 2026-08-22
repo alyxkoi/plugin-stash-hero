@@ -224,7 +224,7 @@ function PerksPage() {
           material="solid"
           silhouette="side"
           title="Grant"
-          className="dash-short-charge"
+          className="dash-short-charge dash-perks-charge"
         >
           <div className="dash-charged-stat-grid dash-perks-hero-stats">
             <div className="dash-charged-stat">
@@ -245,7 +245,11 @@ function PerksPage() {
             </div>
           </div>
           {kind === "plugin" && pickedProducts.length > 0 && (
-            <div className="dash-perk-covers is-selected-only" role="img" aria-label="Selected plugin grants">
+            <div
+              className="dash-perk-covers is-selected-only"
+              role="img"
+              aria-label="Selected plugin grants"
+            >
               {pickedProducts.map((id) => {
                 const product = productMap.get(id);
                 if (!product) return null;
@@ -256,7 +260,7 @@ function PerksPage() {
                     style={{
                       background: product.cover_url
                         ? `url(${product.cover_url}) center/cover`
-                        : product.cover_gradient ?? "linear-gradient(145deg,#4B3FE8,#181434)",
+                        : (product.cover_gradient ?? "linear-gradient(145deg,#4B3FE8,#181434)"),
                     }}
                     title={product.name}
                   />
@@ -398,9 +402,9 @@ function PerksPage() {
                   <strong>
                     {kind === "plugin"
                       ? pickedProducts
-                        .map((id) => productMap.get(id)?.name)
-                        .filter(Boolean)
-                        .slice(0, 3)
+                          .map((id) => productMap.get(id)?.name)
+                          .filter(Boolean)
+                          .slice(0, 3)
                           .join(", ") || "Nothing selected"
                       : `${money(amountCents)} store credit`}
                   </strong>
@@ -469,7 +473,8 @@ function PerksPage() {
                 <nav className="dash-history-pagination" aria-label="Grant history pages">
                   <span>
                     Showing {(historyPage - 1) * GRANT_HISTORY_PAGE_SIZE + 1}–
-                    {Math.min(historyPage * GRANT_HISTORY_PAGE_SIZE, batches.length)} of {batches.length}
+                    {Math.min(historyPage * GRANT_HISTORY_PAGE_SIZE, batches.length)} of{" "}
+                    {batches.length}
                   </span>
                   <div>
                     <button
@@ -485,9 +490,7 @@ function PerksPage() {
                     </strong>
                     <button
                       type="button"
-                      onClick={() =>
-                        setHistoryPage((page) => Math.min(historyPageCount, page + 1))
-                      }
+                      onClick={() => setHistoryPage((page) => Math.min(historyPageCount, page + 1))}
                       disabled={historyPage === historyPageCount}
                       aria-label="Next grant history page"
                     >

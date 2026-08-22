@@ -6,6 +6,7 @@ import {
   DashboardShell,
   DomainChip,
   RangeControl,
+  SegmentedBar,
   StatusBadge,
 } from "@/components/DashboardShell";
 import { OrderDrawer } from "@/components/AdminDrawers";
@@ -66,7 +67,7 @@ type CurrentSale = {
 };
 
 function Overview() {
-  const [range, setRange] = useState<OverviewRange>("30d");
+  const [range, setRange] = useState<OverviewRange>("mtd");
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [customers, setCustomers] = useState<CustomerLite[]>([]);
   const [sales, setSales] = useState<CurrentSale[]>([]);
@@ -193,7 +194,10 @@ function Overview() {
   const campaignCustomers = new Set(
     campaignOrders.map(
       (order) =>
-        order.customer_id || order.guest_email?.trim().toLowerCase() || order.customer_name || order.id,
+        order.customer_id ||
+        order.guest_email?.trim().toLowerCase() ||
+        order.customer_name ||
+        order.id,
     ),
   ).size;
   const campaignAov = campaignOrders.length ? campaignRevenue / campaignOrders.length : 0;
@@ -208,7 +212,18 @@ function Overview() {
           <div className="dash-hero-layout">
             <div className="dash-hero-topline">
               <div className="dash-hero-value">{formatMoney(currentRevenue)}</div>
-              <div className="dash-hero-comparison">{revenueDelta.arrow} {revenueDelta.label}</div>
+              <div
+                className="dash-hero-comparison"
+                data-direction={
+                  revenueDelta.positive == null
+                    ? "neutral"
+                    : revenueDelta.positive
+                      ? "positive"
+                      : "negative"
+                }
+              >
+                {revenueDelta.arrow} {revenueDelta.label}
+              </div>
             </div>
             <div
               className="dash-hero-chart dash-waveform"
@@ -223,7 +238,11 @@ function Overview() {
                     type="button"
                     key={`${point.label}-${index}`}
                     className={index >= series.length - 5 ? "is-current" : ""}
-                    style={{ "--wave-size": `${Math.max(14, (point.current / waveformMax) * 100)}%` } as CSSProperties}
+                    style={
+                      {
+                        "--wave-size": `${Math.max(14, (point.current / waveformMax) * 100)}%`,
+                      } as CSSProperties
+                    }
                     title={`${point.label}: ${moneyExact(point.current)}`}
                     aria-label={`${point.label}, ${moneyExact(point.current)} revenue`}
                   >
@@ -393,9 +412,14 @@ function Overview() {
                     />
                     <span className="dash-rank-main">
                       <span className="dash-rank-name">{item.name}</span>
-                      <span className="dash-rank-bar">
-                      <span style={{ width: `${Math.max(4, (item.revenue / bestMax) * 100)}%` }} />
-                      </span>
+                      <SegmentedBar
+                        value={item.revenue}
+                        max={bestMax}
+                        label={`${item.name}: ${moneyExact(item.revenue)} revenue`}
+                        segments={16}
+                        tone={index === 0 ? "money" : "indigo"}
+                        className="dash-rank-bar"
+                      />
                       {item.revenue === 0 && (
                         <DomainChip domain="neutral" className="mt-1">
                           Zero revenue
@@ -421,7 +445,10 @@ function Overview() {
           title="Current sales campaign"
           className="dash-bottom-strip"
           action={
-            <Link to="/dashboard/sales" className="text-xs text-[var(--text-tertiary)] hover:text-white">
+            <Link
+              to="/dashboard/sales"
+              className="text-xs text-[var(--text-tertiary)] hover:text-white"
+            >
               Manage sales →
             </Link>
           }
@@ -434,13 +461,24 @@ function Overview() {
                 </span>
                 <h3>{currentSale.name}</h3>
                 <p>
-                  {currentSale.discount_pct}% off · {campaignCountdown(currentSale.end_at, now)} remaining
+                  {currentSale.discount_pct}% off · {campaignCountdown(currentSale.end_at, now)}{" "}
+                  remaining
                 </p>
               </div>
               <div className="dash-campaign-pulse-metrics">
-                <CampaignMetric label="Customers connected" value={campaignCustomers.toLocaleString()} />
-                <CampaignMetric label="Campaign sales" value={campaignOrders.length.toLocaleString()} />
-                <CampaignMetric label="Campaign revenue" value={moneyExact(campaignRevenue)} highlight />
+                <CampaignMetric
+                  label="Customers connected"
+                  value={campaignCustomers.toLocaleString()}
+                />
+                <CampaignMetric
+                  label="Campaign sales"
+                  value={campaignOrders.length.toLocaleString()}
+                />
+                <CampaignMetric
+                  label="Campaign revenue"
+                  value={moneyExact(campaignRevenue)}
+                  highlight
+                />
                 <CampaignMetric label="Average order" value={moneyExact(campaignAov)} />
               </div>
             </div>
@@ -480,7 +518,11 @@ function ChargedStat({
       <div className="dash-charged-stat-label">{label}</div>
       <div className="dash-charged-stat-value">
         {value}{" "}
-        <small data-direction={delta.positive == null ? "neutral" : delta.positive ? "positive" : "negative"}>
+        <small
+          data-direction={
+            delta.positive == null ? "neutral" : delta.positive ? "positive" : "negative"
+          }
+        >
           {delta.arrow}
           {delta.label}
         </small>

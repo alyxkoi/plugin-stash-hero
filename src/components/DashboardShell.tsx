@@ -1,5 +1,6 @@
 import {
   ReactNode,
+  type CSSProperties,
   createContext,
   isValidElement,
   useCallback,
@@ -528,6 +529,47 @@ export function StatCard({
       </div>
       {comparison && <div className="dash-stat-comparison">{comparison}</div>}
     </article>
+  );
+}
+
+export function SegmentedBar({
+  value,
+  max,
+  label,
+  segments = 18,
+  tone = "indigo",
+  className = "",
+}: {
+  value: number;
+  max: number;
+  label: string;
+  segments?: number;
+  tone?: "indigo" | "money" | "mint";
+  className?: string;
+}) {
+  const safeMax = Math.max(1, max);
+  const ratio = Math.max(0, Math.min(1, value / safeMax));
+  const filled = value > 0 ? Math.max(1, Math.round(ratio * segments)) : 0;
+
+  return (
+    <div
+      className={`dash-segment-bar ${className}`}
+      data-tone={tone}
+      role="progressbar"
+      aria-label={label}
+      aria-valuemin={0}
+      aria-valuemax={safeMax}
+      aria-valuenow={Math.max(0, value)}
+    >
+      {Array.from({ length: segments }, (_, index) => (
+        <i
+          key={index}
+          className={index < filled ? "is-filled" : ""}
+          style={{ "--segment-index": index } as CSSProperties}
+          aria-hidden="true"
+        />
+      ))}
+    </div>
   );
 }
 

@@ -20,6 +20,7 @@ import {
   DashboardShell,
   DomainChip,
   RangeControl,
+  SegmentedBar,
   StatusBadge,
 } from "@/components/DashboardShell";
 import { type AnalyticsRange, RANGE_LABEL } from "@/lib/dashboard-mock";
@@ -77,7 +78,7 @@ type SaleEventRow = {
 };
 
 function Analytics() {
-  const [range, setRange] = useState<AnalyticsRange>("30d");
+  const [range, setRange] = useState<AnalyticsRange>("mtd");
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [sales, setSales] = useState<SaleEventRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -134,10 +135,24 @@ function Analytics() {
       ),
     [completed, bounds],
   );
+  const currentAttempts = useMemo(
+    () =>
+      orders.filter((order) => within(order.created_at, bounds.currentStart, bounds.currentEnd)),
+    [orders, bounds],
+  );
+  const previousAttempts = useMemo(
+    () =>
+      orders.filter((order) => within(order.created_at, bounds.previousStart, bounds.previousEnd)),
+    [orders, bounds],
+  );
   const revenue = sumNetRevenue(inRange);
   const previousRevenue = sumNetRevenue(previousRange);
   const aov = inRange.length ? revenue / inRange.length : 0;
   const previousAov = previousRange.length ? previousRevenue / previousRange.length : 0;
+  const conversion = currentAttempts.length ? (inRange.length / currentAttempts.length) * 100 : 0;
+  const previousConversion = previousAttempts.length
+    ? (previousRange.length / previousAttempts.length) * 100
+    : 0;
   const chartSeries = useMemo(
     () => buildPairedSeries(completed, bounds, range),
     [completed, bounds, range],
@@ -238,6 +253,7 @@ function Analytics() {
   const revenueDelta = percentDelta(revenue, previousRevenue);
   const ordersDelta = percentDelta(inRange.length, previousRange.length);
   const aovDelta = percentDelta(aov, previousAov);
+  const conversionDelta = percentDelta(conversion, previousConversion);
 
   return (
     <DashboardShell
@@ -245,13 +261,7 @@ function Analytics() {
       action={<RangeControl value={range} onChange={setRange} options={RANGE_OPTIONS} />}
     >
       <div className="space-y-6">
-        <ChargedPanel
-          domain="money"
-          material="grain"
-          form="arc"
-          silhouette="inset"
-          title="Revenue"
-        >
+        <ChargedPanel domain="money" material="grain" form="arc" silhouette="inset" title="Revenue">
           <div className="dash-analytics-metrics">
             <AnalyticsMetric label="Revenue" value={money(revenue)} delta={revenueDelta} />
             <AnalyticsMetric label="Average order" value={money(aov)} delta={aovDelta} />
@@ -260,7 +270,12 @@ function Analytics() {
               value={inRange.length.toLocaleString()}
               delta={ordersDelta}
             />
-            <AnalyticsMetric label="Conversion" value="—" helper="Visitor tracking not connected" />
+            <AnalyticsMetric
+              label="Conversion"
+              value={`${conversion.toFixed(1)}%`}
+              delta={conversionDelta}
+              helper="Share of order attempts that completed in this range"
+            />
           </div>
           <div
             className="dash-hero-chart px-4 pb-4 md:px-6"
@@ -297,7 +312,10 @@ function Analytics() {
                     tickFormatter={(value) => `$${value}`}
                     tick={{ fill: "rgba(255,255,255,.72)", fontSize: 10 }}
                   />
-                  <Tooltip content={<RevenueTooltip />} cursor={{ stroke: "rgba(255,255,255,.22)" }} />
+                  <Tooltip
+                    content={<RevenueTooltip />}
+                    cursor={{ stroke: "rgba(255,255,255,.22)" }}
+                  />
                   <Line
                     type="monotone"
                     dataKey="previous"
@@ -323,15 +341,15 @@ function Analytics() {
           </div>
         </ChargedPanel>
 
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-          <DashCard title="Top products" className="xl:col-span-12">
+        <div className="dash-analytics-detail-grid grid grid-cols-1 xl:grid-cols-12 gap-6">
+          <DashCard title="Top products" className="dash-analytics-top-products xl:col-span-7">
             {top.length === 0 ? (
               <div className="dash-empty">
                 <p>No products sold in this range.</p>
               </div>
             ) : (
               <ol className="dash-rank-list">
-                {top.map((item, index) => (
+                {top.slice(0, 5).map((item, index) => (
                   <li key={item.id} className="dash-rank-row">
                     <span className="dash-rank-number" aria-hidden="true">
                       {index + 1}
@@ -346,13 +364,14 @@ function Analytics() {
                     />
                     <span className="dash-rank-main">
                       <span className="dash-rank-name">{item.name}</span>
-                      <span className="dash-rank-bar">
-                        <span
-                          style={{
-                            width: `${Math.max(4, ((item.revenue || item.units) / topMax) * 100)}%`,
-                          }}
-                        />
-                      </span>
+                      <SegmentedBar
+                        value={item.revenue || item.units}
+                        max={topMax}
+                        label={`${item.name}: ${money(item.revenue)} revenue`}
+                        segments={16}
+                        tone={index === 0 ? "money" : "indigo"}
+                        className="dash-rank-bar"
+                      />
                     </span>
                     <span className="dash-rank-metric">
                       <small>Units</small>
@@ -368,7 +387,10 @@ function Analytics() {
             )}
           </DashCard>
 
-          <DashCard title="Traffic sources" className="xl:col-span-7 dash-solid-panel dash-traffic-panel">
+          <DashCard
+            title="Traffic sources"
+            className="dash-analytics-traffic xl:col-span-7 dash-solid-panel dash-traffic-panel"
+          >
             {sources.length === 0 ? (
               <div className="dash-empty">
                 <p>No attributed traffic in this range.</p>
@@ -382,15 +404,17 @@ function Analytics() {
                       <span>{source.count.toLocaleString()} orders</span>
                       <strong>{money(source.revenue)}</strong>
                     </div>
-                    <div className="dash-source-bar">
-                      <span
-                        style={{
-                          width: `${Math.max(5, ((source.revenue || source.count) / sourceMax) * 100)}%`,
-                        }}
-                      />
-                    </div>
+                    <SegmentedBar
+                      value={source.revenue || source.count}
+                      max={sourceMax}
+                      label={`${source.source}: ${money(source.revenue)} attributed revenue`}
+                      segments={22}
+                      tone={index === 0 ? "money" : "indigo"}
+                      className="dash-source-bar"
+                    />
                     <small>
-                      {Math.round((source.revenue / Math.max(1, revenue)) * 100)}% of revenue in this range
+                      {Math.round((source.revenue / Math.max(1, revenue)) * 100)}% of revenue in
+                      this range
                     </small>
                   </li>
                 ))}
@@ -400,7 +424,7 @@ function Analytics() {
 
           <DashCard
             title="New vs returning"
-            className="dash-block-zone dash-block-zone-people dash-solid-panel xl:col-span-5"
+            className="dash-analytics-split dash-glass-panel xl:col-span-5"
           >
             {splitTotal === 0 ? (
               <div className="dash-empty">
@@ -457,7 +481,10 @@ function Analytics() {
             )}
           </DashCard>
 
-          <DashCard title="Sale performance" className="xl:col-span-12 dash-sale-performance-panel">
+          <DashCard
+            title="Sale performance"
+            className="dash-analytics-sale xl:col-span-5 dash-sale-performance-panel"
+          >
             {salePerformance.length === 0 ? (
               <div className="dash-empty">
                 <p>No sale events yet. Run a sale to compare revenue pace here.</p>
@@ -476,13 +503,14 @@ function Analytics() {
                         {formatInSaleTimeZone(sale.end_at, { year: undefined })}
                       </div>
                     </div>
-                    <div className="dash-sale-mini-bar">
-                      <span
-                        style={{
-                          width: `${Math.max(3, (sale.revenuePerDay / saleDayMax) * 100)}%`,
-                        }}
-                      />
-                    </div>
+                    <SegmentedBar
+                      value={sale.revenuePerDay}
+                      max={saleDayMax}
+                      label={`${sale.name}: ${money(sale.revenuePerDay)} revenue per day`}
+                      segments={14}
+                      tone={sale.liveStatus === "active" ? "mint" : "indigo"}
+                      className="dash-sale-mini-bar"
+                    />
                     <div className="dash-sale-number">
                       <small>Orders</small>
                       {sale.orders}
@@ -521,7 +549,16 @@ function AnalyticsMetric({
     <div className="dash-analytics-metric" title={helper}>
       <span>{label}</span>
       <strong>{value}</strong>
-      {delta && <small>{delta.arrow}{delta.label}</small>}
+      {delta && (
+        <small
+          data-direction={
+            delta.positive == null ? "neutral" : delta.positive ? "positive" : "negative"
+          }
+        >
+          {delta.arrow}
+          {delta.label}
+        </small>
+      )}
     </div>
   );
 }

@@ -1,13 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Search, UserRound } from "lucide-react";
-import {
-  ChargedPanel,
-  DashCard,
-  DashboardShell,
-  DomainChip,
-  StatCard,
-} from "@/components/DashboardShell";
+import { ChargedPanel, DashCard, DashboardShell, DomainChip } from "@/components/DashboardShell";
 import { CustomerDrawer, type CustomerDrawerData } from "@/components/AdminDrawers";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchOrderIdentity, type IdentityMap } from "@/lib/customer-identity";
@@ -194,11 +188,6 @@ function CustomersPage() {
   const repeatDelta = percentDelta(metrics.current.repeatRate, metrics.prior.repeatRate);
   const ltvDelta = percentDelta(metrics.current.averageLtv, metrics.prior.averageLtv);
   const customerTotal = metrics.current.total || total;
-  const customerTrend = useMemo(
-    () => buildCustomerActivityTrend(metricOrders, identity, filter),
-    [metricOrders, identity, filter],
-  );
-  const customerTrendMax = Math.max(1, ...customerTrend.map((point) => point.value));
 
   return (
     <DashboardShell title="Customers">
@@ -209,268 +198,261 @@ function CustomersPage() {
           form="corner"
           silhouette="full"
           title="Customers"
+          className="dash-customers-charge"
         >
-          <div className="dash-customers-horizon">
-            <div className="dash-customer-total-line">
-              <div className="dash-hero-value">{customerTotal.toLocaleString()}</div>
-              <span
-                className="dash-delta"
-                data-direction={
-                  totalDelta.positive == null ? "neutral" : totalDelta.positive ? "positive" : "negative"
-                }
-              >
-                {totalDelta.label}
-              </span>
-            </div>
-            <div
-              className="dash-customer-trend"
-              role="img"
-              aria-label={`Six-month ${filter === "all" ? "customer purchase" : filter} activity`}
-            >
-              {customerTrend.map((point) => (
-                <button
-                  type="button"
-                  key={point.label}
-                  title={`${point.label}: ${point.value.toLocaleString()}`}
-                  aria-label={`${point.label}: ${point.value.toLocaleString()} ${filter === "returning" ? "repeat purchases" : filter === "new" ? "first purchases" : "customer purchases"}`}
-                >
-                  <i style={{ height: `${Math.max(8, (point.value / customerTrendMax) * 100)}%` }} />
-                  <span>{point.label}</span>
-                  <strong>{point.value}</strong>
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="dash-customer-hero-stats">
-            <StatCard
+          <div className="dash-analytics-metrics dash-customer-unified-metrics">
+            <CustomerMetric
+              label="Customers"
+              value={customerTotal.toLocaleString()}
+              delta={totalDelta}
+            />
+            <CustomerMetric
               label="New this month"
               value={metrics.newCurrent.toLocaleString()}
-              delta={newDelta.label}
-              deltaPositive={newDelta.positive ?? undefined}
-              domain="people"
+              delta={newDelta}
             />
-            <StatCard
+            <CustomerMetric
               label="Repeat rate"
               value={`${Math.round(metrics.current.repeatRate)}%`}
-              delta={repeatDelta.label}
-              deltaPositive={repeatDelta.positive ?? undefined}
-              domain="people"
+              delta={repeatDelta}
             />
-            <StatCard
+            <CustomerMetric
               label="Average LTV"
               value={money(metrics.current.averageLtv)}
-              delta={ltvDelta.label}
-              deltaPositive={ltvDelta.positive ?? undefined}
-              domain="money"
+              delta={ltvDelta}
             />
           </div>
         </ChargedPanel>
 
         <div className="dash-customer-zone">
-        <DashCard title="Top spenders" className="dash-block-zone dash-block-zone-money dash-solid-panel">
-          {topCustomers.length === 0 ? (
-            <div className="dash-empty text-white/75">
-              <p>Top spenders will appear after customer totals load.</p>
-            </div>
-          ) : (
-            <ol className="dash-top-customer-strip">
-              {topCustomers.map((customer, index) => (
-                <li key={customer.key}>
-                  <span className="dash-top-customer-rank" aria-hidden="true">
-                    {index + 1}
-                  </span>
-                  <Avatar name={customer.name} email={customer.email} large />
-                  <span className="dash-top-customer-name">{customer.name || customer.email}</span>
-                  <strong>{money(Number(customer.total_spent))}</strong>
-                  <small>{Number(customer.orders_count).toLocaleString()} orders</small>
-                </li>
-              ))}
-            </ol>
-          )}
-        </DashCard>
-
-        <div className="dash-customer-directory">
-
-        <div className="dash-filter-bar" aria-label="Customer filters">
-          <label className="dash-search-field">
-            <span className="sr-only">Search customers</span>
-            <Search size={16} aria-hidden="true" />
-            <input
-              value={q}
-              onChange={(event) => setQ(event.target.value)}
-              placeholder="Search name or email"
-            />
-          </label>
-          <div className="dash-segmented" role="group" aria-label="Customer type">
-            {(["all", "new", "returning"] as const).map((value) => (
-              <button
-                type="button"
-                key={value}
-                onClick={() => setFilter(value)}
-                aria-pressed={filter === value}
-              >
-                {value === "all" ? "All" : value === "new" ? "New" : "Returning"}
-              </button>
-            ))}
-          </div>
-          <label className="dash-compact-select">
-            <span className="sr-only">Sort customers</span>
-            <select value={sort} onChange={(event) => setSort(event.target.value as typeof sort)}>
-              <option value="recent">Recent</option>
-              <option value="top">Top spenders</option>
-              <option value="most">Most orders</option>
-            </select>
-          </label>
-        </div>
-
-        {error && (
-          <div className="dash-inline-error" role="alert">
-            <span>{error}</span>
-            <button type="button" onClick={load}>
-              Retry
-            </button>
-          </div>
-        )}
-
-        <DashCard>
-          <div className="dash-desktop-table -m-5 overflow-x-auto">
-            <table className="min-w-[820px]">
-              <thead>
-                <tr>
-                  <th className="text-left px-4">Customer</th>
-                  <th className="text-left px-4">Purchases</th>
-                  <th className="text-left px-4">Type</th>
-                  <th className="text-right px-4">Spend</th>
-                  <th className="text-right px-4">Orders</th>
-                  <th className="text-right px-4">Last purchase</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((customer) => (
-                  <tr
-                    key={customer.key}
-                    onClick={() => setOpenKey(customer.key)}
-                    className="cursor-pointer"
-                  >
-                    <td className="px-4">
-                      <div className="flex min-w-0 items-center gap-3">
-                        <Avatar name={customer.name} email={customer.email} />
-                        <div className="min-w-0">
-                          <div className="max-w-[240px] truncate text-sm font-semibold text-white">
-                            {customer.name || customer.email}
-                          </div>
-                          {customer.name && (
-                            <div className="max-w-[240px] truncate font-mono text-[10px] text-[var(--text-tertiary)]">
-                              {customer.email}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4">
-                      <PurchaseBadge count={Number(customer.orders_count)} />
-                    </td>
-                    <td className="px-4">
-                      <AccountBadge hasAccount={customer.has_account} />
-                    </td>
-                    <td className="px-4 text-right font-mono text-xs text-[var(--c-money)]">
-                      {money(Number(customer.total_spent))}
-                    </td>
-                    <td className="px-4 text-right font-mono text-xs">{customer.orders_count}</td>
-                    <td className="px-4 text-right font-mono text-[10px] text-[var(--text-tertiary)] whitespace-nowrap">
-                      {Number(customer.orders_count) > 0
-                        ? relativeTime(customer.last_order_at)
-                        : "—"}
-                    </td>
-                  </tr>
+          <DashCard
+            title="Top spenders"
+            className="dash-block-zone dash-block-zone-money dash-solid-panel"
+          >
+            {topCustomers.length === 0 ? (
+              <div className="dash-empty text-white/75">
+                <p>Top spenders will appear after customer totals load.</p>
+              </div>
+            ) : (
+              <ol className="dash-top-customer-strip">
+                {topCustomers.map((customer, index) => (
+                  <li key={customer.key}>
+                    <span className="dash-top-customer-rank" aria-hidden="true">
+                      {index + 1}
+                    </span>
+                    <Avatar name={customer.name} email={customer.email} large />
+                    <span className="dash-top-customer-name">
+                      {customer.name || customer.email}
+                    </span>
+                    <strong>{money(Number(customer.total_spent))}</strong>
+                    <small>{Number(customer.orders_count).toLocaleString()} orders</small>
+                  </li>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </ol>
+            )}
+          </DashCard>
 
-          <ul className="dash-mobile-list -mx-4 -my-4">
-            {rows.map((customer) => (
-              <li key={customer.key} className="border-b border-[var(--border)] last:border-b-0">
-                <button
-                  type="button"
-                  onClick={() => setOpenKey(customer.key)}
-                  className="w-full min-h-[88px] px-4 py-3 text-left"
+          <div className="dash-customer-directory">
+            <div className="dash-filter-bar" aria-label="Customer filters">
+              <label className="dash-search-field">
+                <span className="sr-only">Search customers</span>
+                <Search size={16} aria-hidden="true" />
+                <input
+                  value={q}
+                  onChange={(event) => setQ(event.target.value)}
+                  placeholder="Search name or email"
+                />
+              </label>
+              <div className="dash-segmented" role="group" aria-label="Customer type">
+                {(["all", "new", "returning"] as const).map((value) => (
+                  <button
+                    type="button"
+                    key={value}
+                    onClick={() => setFilter(value)}
+                    aria-pressed={filter === value}
+                  >
+                    {value === "all" ? "All" : value === "new" ? "New" : "Returning"}
+                  </button>
+                ))}
+              </div>
+              <label className="dash-compact-select">
+                <span className="sr-only">Sort customers</span>
+                <select
+                  value={sort}
+                  onChange={(event) => setSort(event.target.value as typeof sort)}
                 >
-                  <span className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
-                    <span className="flex min-w-0 items-center gap-3">
-                      <Avatar name={customer.name} email={customer.email} />
-                      <span className="min-w-0">
-                        <span className="block truncate text-sm font-semibold text-white">
-                          {customer.name || customer.email}
-                        </span>
-                        {customer.name && (
-                          <span className="block truncate font-mono text-[10px] text-[var(--text-tertiary)]">
-                            {customer.email}
-                          </span>
-                        )}
-                      </span>
-                    </span>
-                    <span className="font-mono text-sm text-[var(--c-money)]">
-                      {money(Number(customer.total_spent))}
-                    </span>
-                  </span>
-                  <span className="mt-2 flex flex-wrap items-center gap-2 pl-11">
-                    <PurchaseBadge count={Number(customer.orders_count)} />
-                    <AccountBadge hasAccount={customer.has_account} />
-                    <span className="font-mono text-[10px] text-[var(--text-tertiary)]">
-                      {relativeTime(customer.last_order_at)}
-                    </span>
-                  </span>
+                  <option value="recent">Recent</option>
+                  <option value="top">Top spenders</option>
+                  <option value="most">Most orders</option>
+                </select>
+              </label>
+            </div>
+
+            {error && (
+              <div className="dash-inline-error" role="alert">
+                <span>{error}</span>
+                <button type="button" onClick={load}>
+                  Retry
                 </button>
-              </li>
-            ))}
-          </ul>
+              </div>
+            )}
 
-          {rows.length === 0 && (
-            <div className="dash-empty">
-              <p>
-                {loading
-                  ? "Loading customers…"
-                  : "No customers match these filters. New purchasers will appear automatically."}
-              </p>
-            </div>
-          )}
+            <DashCard>
+              <div className="dash-desktop-table -m-5 overflow-x-auto">
+                <table className="min-w-[820px]">
+                  <thead>
+                    <tr>
+                      <th className="text-left px-4">Customer</th>
+                      <th className="text-left px-4">Purchases</th>
+                      <th className="text-left px-4">Type</th>
+                      <th className="text-right px-4">Spend</th>
+                      <th className="text-right px-4">Orders</th>
+                      <th className="text-right px-4">Last purchase</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((customer) => (
+                      <tr
+                        key={customer.key}
+                        onClick={() => setOpenKey(customer.key)}
+                        className="cursor-pointer"
+                      >
+                        <td className="px-4">
+                          <div className="flex min-w-0 items-center gap-3">
+                            <Avatar name={customer.name} email={customer.email} />
+                            <div className="min-w-0">
+                              <div className="max-w-[240px] truncate text-sm font-semibold text-white">
+                                {customer.name || customer.email}
+                              </div>
+                              {customer.name && (
+                                <div className="max-w-[240px] truncate font-mono text-[10px] text-[var(--text-tertiary)]">
+                                  {customer.email}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4">
+                          <PurchaseBadge count={Number(customer.orders_count)} />
+                        </td>
+                        <td className="px-4">
+                          <AccountBadge hasAccount={customer.has_account} />
+                        </td>
+                        <td className="px-4 text-right font-mono text-xs text-[var(--c-money)]">
+                          {money(Number(customer.total_spent))}
+                        </td>
+                        <td className="px-4 text-right font-mono text-xs">
+                          {customer.orders_count}
+                        </td>
+                        <td className="px-4 text-right font-mono text-[10px] text-[var(--text-tertiary)] whitespace-nowrap">
+                          {Number(customer.orders_count) > 0
+                            ? relativeTime(customer.last_order_at)
+                            : "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
-          <footer className="dash-table-footer">
-            <span>
-              Page {page} of {totalPages} · {total.toLocaleString()} customers
-            </span>
-            <div>
-              <button
-                type="button"
-                onClick={() => setPage((current) => Math.max(1, current - 1))}
-                disabled={page <= 1 || loading}
-              >
-                Previous
-              </button>
-              <span>
-                {page} / {totalPages}
-              </span>
-              <button
-                type="button"
-                onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
-                disabled={page >= totalPages || loading}
-              >
-                Next
-              </button>
-            </div>
-          </footer>
-        </DashCard>
-        </div>
+              <ul className="dash-mobile-list -mx-4 -my-4">
+                {rows.map((customer) => (
+                  <li
+                    key={customer.key}
+                    className="border-b border-[var(--border)] last:border-b-0"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setOpenKey(customer.key)}
+                      className="w-full min-h-[88px] px-4 py-3 text-left"
+                    >
+                      <span className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+                        <span className="flex min-w-0 items-center gap-3">
+                          <Avatar name={customer.name} email={customer.email} />
+                          <span className="min-w-0">
+                            <span className="block truncate text-sm font-semibold text-white">
+                              {customer.name || customer.email}
+                            </span>
+                            {customer.name && (
+                              <span className="block truncate font-mono text-[10px] text-[var(--text-tertiary)]">
+                                {customer.email}
+                              </span>
+                            )}
+                          </span>
+                        </span>
+                        <span className="font-mono text-sm text-[var(--c-money)]">
+                          {money(Number(customer.total_spent))}
+                        </span>
+                      </span>
+                      <span className="mt-2 flex flex-wrap items-center gap-2 pl-11">
+                        <PurchaseBadge count={Number(customer.orders_count)} />
+                        <AccountBadge hasAccount={customer.has_account} />
+                        <span className="font-mono text-[10px] text-[var(--text-tertiary)]">
+                          {relativeTime(customer.last_order_at)}
+                        </span>
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+
+              {rows.length === 0 && (
+                <div className="dash-empty">
+                  <p>
+                    {loading
+                      ? "Loading customers…"
+                      : "No customers match these filters. New purchasers will appear automatically."}
+                  </p>
+                </div>
+              )}
+
+              <footer className="dash-table-footer">
+                <span>
+                  Page {page} of {totalPages} · {total.toLocaleString()} customers
+                </span>
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setPage((current) => Math.max(1, current - 1))}
+                    disabled={page <= 1 || loading}
+                  >
+                    Previous
+                  </button>
+                  <span>
+                    {page} / {totalPages}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+                    disabled={page >= totalPages || loading}
+                  >
+                    Next
+                  </button>
+                </div>
+              </footer>
+            </DashCard>
+          </div>
         </div>
 
         <DashCard title="Retention" className="dash-bottom-strip dash-retention-strip">
           <div className="dash-retention-track">
-            <span data-kind="returning" style={{ width: `${Math.round(metrics.current.repeatRate)}%` }} />
-            <span data-kind="new" style={{ width: `${Math.max(0, 100 - Math.round(metrics.current.repeatRate))}%` }} />
+            <span
+              data-kind="returning"
+              style={{ width: `${Math.round(metrics.current.repeatRate)}%` }}
+            />
+            <span
+              data-kind="new"
+              style={{ width: `${Math.max(0, 100 - Math.round(metrics.current.repeatRate))}%` }}
+            />
           </div>
-          <div className="dash-retention-copy"><strong>{Math.round(metrics.current.repeatRate)}%</strong><span>Returning</span></div>
-          <div className="dash-retention-copy"><strong>{Math.max(0, 100 - Math.round(metrics.current.repeatRate))}%</strong><span>New</span></div>
+          <div className="dash-retention-copy">
+            <strong>{Math.round(metrics.current.repeatRate)}%</strong>
+            <span>Returning</span>
+          </div>
+          <div className="dash-retention-copy">
+            <strong>{Math.max(0, 100 - Math.round(metrics.current.repeatRate))}%</strong>
+            <span>New</span>
+          </div>
         </DashCard>
       </div>
 
@@ -522,46 +504,33 @@ function firstPurchasesBetween(
   ).length;
 }
 
-function buildCustomerActivityTrend(
-  orders: MetricOrder[],
-  identity: IdentityMap,
-  filter: "all" | "new" | "returning",
-) {
-  const now = new Date();
-  const buckets = Array.from({ length: 6 }, (_, index) => {
-    const date = new Date(now.getFullYear(), now.getMonth() - (5 - index), 1);
-    return {
-      key: `${date.getFullYear()}-${date.getMonth()}`,
-      label: date.toLocaleDateString("en", { month: "short" }),
-      value: 0,
-    };
-  });
-  const firstByCustomer = new Map<string, number>();
-  for (const order of orders) {
-    const email = identity.get(order.id)?.normalized_email;
-    if (!email) continue;
-    const time = new Date(order.created_at).getTime();
-    firstByCustomer.set(email, Math.min(firstByCustomer.get(email) ?? time, time));
-  }
-  for (const order of orders) {
-    const email = identity.get(order.id)?.normalized_email;
-    if (!email) continue;
-    const date = new Date(order.created_at);
-    const bucket = buckets.find((item) => item.key === `${date.getFullYear()}-${date.getMonth()}`);
-    if (!bucket) continue;
-    const isFirst = firstByCustomer.get(email) === date.getTime();
-    if (filter === "new" && !isFirst) continue;
-    if (filter === "returning" && isFirst) continue;
-    bucket.value += 1;
-  }
-  return buckets;
-}
-
 function percentDelta(current: number, previous: number) {
   if (current === 0 && previous === 0) return { label: "0%", positive: null as boolean | null };
   if (previous === 0) return { label: "100%", positive: true as boolean | null };
   const raw = ((current - previous) / previous) * 100;
   return { label: `${Math.round(Math.abs(raw))}%`, positive: raw === 0 ? null : raw > 0 };
+}
+
+function CustomerMetric({
+  label,
+  value,
+  delta,
+}: {
+  label: string;
+  value: string;
+  delta: ReturnType<typeof percentDelta>;
+}) {
+  const direction = delta.positive == null ? "neutral" : delta.positive ? "positive" : "negative";
+  return (
+    <div className="dash-analytics-metric">
+      <span>{label}</span>
+      <strong>{value}</strong>
+      <small data-direction={direction}>
+        {direction === "positive" ? "↑ " : direction === "negative" ? "↓ " : "→ "}
+        {delta.label}
+      </small>
+    </div>
+  );
 }
 
 function toDrawerData(customer: Row, orders: DrawerOrder[]): CustomerDrawerData {
@@ -579,18 +548,9 @@ function toDrawerData(customer: Row, orders: DrawerOrder[]): CustomerDrawerData 
   };
 }
 
-function Avatar({
-  large = false,
-}: {
-  name: string | null;
-  email: string;
-  large?: boolean;
-}) {
+function Avatar({ large = false }: { name: string | null; email: string; large?: boolean }) {
   return (
-    <span
-      className={`dash-customer-avatar ${large ? "is-large" : ""}`}
-      aria-hidden="true"
-    >
+    <span className={`dash-customer-avatar ${large ? "is-large" : ""}`} aria-hidden="true">
       <UserRound size={large ? 22 : 17} strokeWidth={2} />
     </span>
   );

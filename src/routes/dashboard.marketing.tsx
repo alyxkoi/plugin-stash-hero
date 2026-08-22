@@ -7,6 +7,7 @@ import {
   DashboardShell,
   DashCard,
   DomainChip,
+  SegmentedBar,
   StatusBadge,
 } from "@/components/DashboardShell";
 import { BadgePercent, Copy, Link2, Mail, Pencil, Plus, Trash2 } from "lucide-react";
@@ -147,8 +148,16 @@ function MarketingHero({ tab }: { tab: "codes" | "campaign" | "emails" }) {
           next = {
             title: "Discount performance",
             metrics: [
-              { label: "Active codes", value: codes.filter((code) => code.status === "active").length.toLocaleString() },
-              { label: "Redemptions", value: codes.reduce((sum, code) => sum + Number(code.uses || 0), 0).toLocaleString() },
+              {
+                label: "Active codes",
+                value: codes.filter((code) => code.status === "active").length.toLocaleString(),
+              },
+              {
+                label: "Redemptions",
+                value: codes
+                  .reduce((sum, code) => sum + Number(code.uses || 0), 0)
+                  .toLocaleString(),
+              },
               { label: "Attributed revenue", value: money(revenue) },
             ],
             items: performance,
@@ -160,8 +169,16 @@ function MarketingHero({ tab }: { tab: "codes" | "campaign" | "emails" }) {
             anySupabase.from("campaign_links").select("id,label,archived_at"),
             anySupabase.rpc("admin_campaign_link_stats"),
           ]);
-          const links = (linksRes.data ?? []) as { id: string; label: string; archived_at: string | null }[];
-          const stats = (statsRes.data ?? []) as { link_id: string; clicks: number; purchases: number }[];
+          const links = (linksRes.data ?? []) as {
+            id: string;
+            label: string;
+            archived_at: string | null;
+          }[];
+          const stats = (statsRes.data ?? []) as {
+            link_id: string;
+            clicks: number;
+            purchases: number;
+          }[];
           const statsById = new Map(stats.map((row) => [row.link_id, row]));
           const performance = links
             .filter((link) => !link.archived_at)
@@ -184,7 +201,10 @@ function MarketingHero({ tab }: { tab: "codes" | "campaign" | "emails" }) {
           next = {
             title: "Campaign performance",
             metrics: [
-              { label: "Active links", value: links.filter((link) => !link.archived_at).length.toLocaleString() },
+              {
+                label: "Active links",
+                value: links.filter((link) => !link.archived_at).length.toLocaleString(),
+              },
               { label: "Tracked clicks", value: clicks.toLocaleString() },
               { label: "Purchases", value: purchases.toLocaleString() },
             ],
@@ -192,7 +212,7 @@ function MarketingHero({ tab }: { tab: "codes" | "campaign" | "emails" }) {
             empty: "No campaign-link performance yet.",
           };
         } else {
-          const data = await emailStats({ data: { range: "30d" } });
+          const data = await emailStats({ data: { range: "mtd" } });
           const sent = data.steps.reduce((sum, step) => sum + step.sent, 0);
           const sales = data.steps.reduce((sum, step) => sum + step.sales, 0);
           const netCents = data.steps.reduce((sum, step) => sum + step.netCents, 0);
@@ -213,7 +233,7 @@ function MarketingHero({ tab }: { tab: "codes" | "campaign" | "emails" }) {
               { label: "Recovered revenue", value: money(netCents / 100) },
             ],
             items: performance,
-            empty: "No behavioral-email performance in the last 30 days.",
+            empty: "No behavioral-email performance this month yet.",
           };
         }
         if (!cancelled) setModel(next);
@@ -239,26 +259,42 @@ function MarketingHero({ tab }: { tab: "codes" | "campaign" | "emails" }) {
       className="dash-marketing-hero"
     >
       {loading ? (
-        <div className="dash-marketing-performance"><div className="skeleton-block h-48" /></div>
+        <div className="dash-marketing-performance">
+          <div className="skeleton-block h-48" />
+        </div>
       ) : model && model.items.length > 0 ? (
         <div className="dash-marketing-performance">
           <div className="dash-marketing-metrics">
             {model.metrics.map((metric) => (
-              <div key={metric.label}><span>{metric.label}</span><strong>{metric.value}</strong></div>
+              <div key={metric.label}>
+                <span>{metric.label}</span>
+                <strong>{metric.value}</strong>
+              </div>
             ))}
           </div>
           <div className="dash-marketing-chart">
             {model.items.map((item, index) => (
               <div key={item.label} className={index === 0 ? "is-leader" : ""}>
-                <span><strong>{item.label}</strong><small>{item.detail}</small></span>
-                <i><b style={{ width: `${Math.max(5, (item.value / max) * 100)}%` }} /></i>
+                <span>
+                  <strong>{item.label}</strong>
+                  <small>{item.detail}</small>
+                </span>
+                <SegmentedBar
+                  value={item.value}
+                  max={max}
+                  label={`${item.label}: ${item.valueText}`}
+                  segments={18}
+                  tone={index === 0 ? "money" : "indigo"}
+                />
                 <em>{item.valueText}</em>
               </div>
             ))}
           </div>
         </div>
       ) : (
-        <div className="dash-empty text-white/75"><p>{model?.empty ?? "Performance data is unavailable."}</p></div>
+        <div className="dash-empty text-white/75">
+          <p>{model?.empty ?? "Performance data is unavailable."}</p>
+        </div>
       )}
     </ChargedPanel>
   );

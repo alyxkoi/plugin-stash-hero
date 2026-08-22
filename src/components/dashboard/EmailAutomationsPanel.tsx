@@ -75,7 +75,7 @@ export function EmailAutomationsPanel() {
   const testSendFn = useServerFn(sendBehavioralTestEmail);
   const qc = useQueryClient();
 
-  const [range, setRange] = useState<RangeKey>("30d");
+  const [range, setRange] = useState<RangeKey>("mtd");
   const [skipsOpen, setSkipsOpen] = useState(false);
   const [testTemplate, setTestTemplate] = useState<TestTemplateKey>("cart_1h");
   const [testTo, setTestTo] = useState("alexrunsit@gmail.com");
@@ -213,10 +213,13 @@ export function EmailAutomationsPanel() {
 
               <ol className="dash-email-step-list">
                 {rows.map((row, index) => {
-                  const isBest = row.sent > 0 && bestRate > 0 && rate(row.sales, row.sent) === bestRate;
+                  const isBest =
+                    row.sent > 0 && bestRate > 0 && rate(row.sales, row.sent) === bestRate;
                   return (
                     <li key={row.step} data-best={isBest}>
-                      <span className="dash-email-step-number">{String(index + 1).padStart(2, "0")}</span>
+                      <span className="dash-email-step-number">
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
                       <span className="dash-email-step-copy">
                         <strong>{row.purpose}</strong>
                         <small>{row.label}</small>
@@ -315,7 +318,11 @@ export function EmailAutomationsPanel() {
                 <SelectTrigger>
                   <SelectValue placeholder="Choose a template" />
                 </SelectTrigger>
-                <SelectContent position="popper" sideOffset={6} className="dashboard-select-content">
+                <SelectContent
+                  position="popper"
+                  sideOffset={6}
+                  className="dashboard-select-content"
+                >
                   {TEST_TEMPLATE_LABELS.map((template) => (
                     <SelectItem key={template.key} value={template.key}>
                       {template.label}

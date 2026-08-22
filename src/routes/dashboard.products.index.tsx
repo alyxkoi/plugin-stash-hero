@@ -312,9 +312,17 @@ function ProductsPage() {
         silhouette="offset"
         className="dash-short-charge dash-catalog-summary-panel mb-6"
       >
-        <div className="dash-catalog-summary">
-          <CatalogStat icon={PackageCheck} label="Published" value={publishedCount.toLocaleString()} />
-          <CatalogStat icon={Percent} label="Average discount" value={`${Math.round(averageDiscount)}%`} />
+        <div className="dash-catalog-summary dash-analytics-metrics">
+          <CatalogStat
+            icon={PackageCheck}
+            label="Published"
+            value={publishedCount.toLocaleString()}
+          />
+          <CatalogStat
+            icon={Percent}
+            label="Average discount"
+            value={`${Math.round(averageDiscount)}%`}
+          />
           <CatalogStat icon={HardDrive} label="Storage used" value={formatBytes(storageBytes)} />
         </div>
       </ChargedPanel>
@@ -811,12 +819,10 @@ function CatalogStat({
   value: string;
 }) {
   return (
-    <div className="dash-catalog-stat">
+    <div className="dash-catalog-stat dash-analytics-metric">
       <Icon size={24} strokeWidth={1.6} aria-hidden="true" />
-      <div>
-        <span>{label}</span>
-        <strong>{value}</strong>
-      </div>
+      <span>{label}</span>
+      <strong>{value}</strong>
     </div>
   );
 }

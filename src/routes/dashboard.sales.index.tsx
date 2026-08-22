@@ -114,8 +114,6 @@ function SalesPage() {
   const previousEnded = displayRows.find((sale) => sale.liveStatus === "ended");
   const comparison =
     active && previousEnded ? percentDelta(active.revenue, previousEnded.revenue) : null;
-  const spark = active ? saleSparkline(active, orders) : [];
-  const sparkMax = Math.max(1, ...spark.map((day) => day.purchases));
   const allTimePurchases = displayRows.reduce((sum, sale) => sum + sale.purchases, 0);
   const allTimeRevenue = displayRows.reduce((sum, sale) => sum + sale.revenue, 0);
   const allTimeAov = allTimePurchases ? allTimeRevenue / allTimePurchases : 0;
@@ -181,7 +179,10 @@ function SalesPage() {
   async function restoreSale(sale: DisplaySaleRow) {
     if (restoringId) return;
     setRestoringId(sale.id);
-    const { error } = await supabase.from("sale_events").update({ status: "draft" }).eq("id", sale.id);
+    const { error } = await supabase
+      .from("sale_events")
+      .update({ status: "draft" })
+      .eq("id", sale.id);
     setRestoringId(null);
     if (error) return toast.error(error.message);
     setRows((current) =>
@@ -209,6 +210,7 @@ function SalesPage() {
             material="grain"
             form="wash"
             silhouette="full"
+            className="dash-sales-charge"
             title={
               <span className="inline-flex items-center gap-2">
                 <i className="dash-live-dot" /> Live
@@ -260,33 +262,21 @@ function SalesPage() {
               <div className="dash-sale-countdown">
                 {countdown(active.end_at, now)} <span>remaining</span>
               </div>
-              <div className="dash-live-sale-bottom">
-                <div className="dash-live-sale-stats">
-                  <Summary label="Purchases" value={active.purchases.toLocaleString()} />
-                  <Summary label="Revenue" value={money(active.revenue)} />
-                  <Summary label="Average order" value={money(active.aov)} />
-                  <Summary
-                    label="Vs last sale"
-                    value={comparison ? `${comparison.arrow}${comparison.label}` : "—"}
-                  />
-                </div>
-                <div className="dash-sale-spark" aria-label="Daily campaign purchases and revenue">
-                  {spark.map((day) => (
-                    <button
-                      type="button"
-                      key={day.date}
-                      className={day.isToday ? "is-today" : day.isFuture ? "is-future" : ""}
-                      style={{ height: `${Math.max(8, (day.purchases / sparkMax) * 100)}%` }}
-                      aria-label={`${day.label}: ${day.purchases} purchases, ${money(day.revenue)}`}
-                    >
-                      <span className="dash-sale-spark-tooltip" aria-hidden="true">
-                        <small>{day.label}</small>
-                        <strong>{day.purchases} purchases</strong>
-                        <em>{money(day.revenue)}</em>
-                      </span>
-                    </button>
-                  ))}
-                </div>
+              <div className="dash-live-sale-stats dash-live-sale-stats-centered">
+                <Summary label="Purchases" value={active.purchases.toLocaleString()} />
+                <Summary label="Revenue" value={money(active.revenue)} />
+                <Summary label="Average order" value={money(active.aov)} />
+                <Summary
+                  label="Vs last sale"
+                  value={comparison ? `${comparison.arrow}${comparison.label}` : "—"}
+                  direction={
+                    !comparison || comparison.arrow.includes("→")
+                      ? "neutral"
+                      : comparison.arrow.includes("↑")
+                        ? "positive"
+                        : "negative"
+                  }
+                />
               </div>
             </div>
           </ChargedPanel>
@@ -469,7 +459,8 @@ function SalesPage() {
                     <div>
                       <strong>{sale.name}</strong>
                       <small>
-                        {formatInSaleTimeZone(sale.start_at)} · {sale.purchases} purchases · {money(sale.revenue)}
+                        {formatInSaleTimeZone(sale.start_at)} · {sale.purchases} purchases ·{" "}
+                        {money(sale.revenue)}
                       </small>
                     </div>
                   </div>
@@ -510,8 +501,9 @@ function SalesPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Archive campaign</AlertDialogTitle>
             <AlertDialogDescription>
-              Archive {pendingArchive?.name}? It will leave the active sales list, but its orders and
-              performance history will stay intact. If it is live, its discount will stop immediately.
+              Archive {pendingArchive?.name}? It will leave the active sales list, but its orders
+              and performance history will stay intact. If it is live, its discount will stop
+              immediately.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -553,11 +545,19 @@ function SalesPage() {
   );
 }
 
-function Summary({ label, value }: { label: string; value: string }) {
+function Summary({
+  label,
+  value,
+  direction,
+}: {
+  label: string;
+  value: string;
+  direction?: "positive" | "negative" | "neutral";
+}) {
   return (
     <div>
       <span>{label}</span>
-      <strong>{value}</strong>
+      <strong data-direction={direction}>{value}</strong>
     </div>
   );
 }
@@ -568,35 +568,6 @@ function countdown(endAt: string, now: number) {
   const hours = Math.floor((remaining % 86400_000) / 3600_000);
   const minutes = Math.floor((remaining % 3600_000) / 60_000);
   return `${String(days).padStart(2, "0")}d ${String(hours).padStart(2, "0")}h ${String(minutes).padStart(2, "0")}m`;
-}
-
-function saleSparkline(sale: DisplaySaleRow, orders: SaleOrder[]) {
-  const start = new Date(sale.start_at);
-  const end = new Date(sale.end_at);
-  const days = Math.max(1, Math.min(60, Math.ceil((end.getTime() - start.getTime()) / 86400_000)));
-  return Array.from({ length: days }, (_, index) => {
-    const dayStart = new Date(start.getTime() + index * 86400_000);
-    const dayEnd = new Date(dayStart.getTime() + 86400_000);
-    const dailyOrders = orders.filter(
-      (order) =>
-        order.sale_id === sale.id &&
-        countsAsSale(order) &&
-        new Date(order.created_at) >= dayStart &&
-        new Date(order.created_at) < dayEnd,
-    );
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const normalizedDay = new Date(dayStart);
-    normalizedDay.setHours(0, 0, 0, 0);
-    return {
-      date: dayStart.toISOString(),
-      label: dayStart.toLocaleDateString("en", { month: "short", day: "numeric" }),
-      purchases: dailyOrders.length,
-      revenue: dailyOrders.reduce((sum, order) => sum + netRevenue(order), 0),
-      isToday: normalizedDay.getTime() === today.getTime(),
-      isFuture: normalizedDay.getTime() > today.getTime(),
-    };
-  });
 }
 
 function percentDelta(current: number, previous: number) {

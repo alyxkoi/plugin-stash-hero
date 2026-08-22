@@ -1,15 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Download, Search } from "lucide-react";
-import {
-  DashCard,
-  DashboardShell,
-  DomainChip,
-  StatusBadge,
-} from "@/components/DashboardShell";
+import { DashCard, DashboardShell, DomainChip, StatusBadge } from "@/components/DashboardShell";
 import { OrderDrawer } from "@/components/AdminDrawers";
 import { supabase } from "@/integrations/supabase/client";
-import { netRevenue, sumNetRevenue } from "@/lib/revenue";
+import { countsAsSale, netRevenue, sumNetRevenue } from "@/lib/revenue";
 
 type Row = {
   id: string;
@@ -49,7 +44,7 @@ function OrdersPage() {
   const [q, setQ] = useState("");
   const [segment, setSegment] = useState<Segment>("all");
   const [status, setStatus] = useState("all");
-  const [dateRange, setDateRange] = useState<DateRange>("30d");
+  const [dateRange, setDateRange] = useState<DateRange>("mtd");
   const [page, setPage] = useState(1);
   const [openOrderId, setOpenOrderId] = useState<string | null>(null);
   const pageSize = 25;
@@ -112,6 +107,25 @@ function OrdersPage() {
 
   const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const orderStats = useMemo(() => {
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const completed = rows.filter(countsAsSale);
+    const today = completed.filter((order) => new Date(order.created_at) >= todayStart);
+    const spenders = new Map<string, { name: string; total: number }>();
+    for (const order of completed) {
+      const key =
+        order.user_id || order.guest_email?.trim().toLowerCase() || order.customer_name || order.id;
+      const current = spenders.get(key) ?? {
+        name: order.customer_name || order.guest_email || "Guest",
+        total: 0,
+      };
+      current.total += netRevenue(order);
+      spenders.set(key, current);
+    }
+    const topSpender = [...spenders.values()].sort((a, b) => b.total - a.total)[0] ?? null;
+    return { salesToday: sumNetRevenue(today), ordersToday: today.length, topSpender };
+  }, [rows]);
 
   function exportCsv() {
     const header = [
@@ -151,7 +165,24 @@ function OrdersPage() {
   return (
     <DashboardShell title="Orders">
       <div className="space-y-6">
-        <div className="dash-filter-bar" aria-label="Order filters">
+        <DashCard className="dash-compact-metrics-panel">
+          <div className="dash-analytics-metrics dash-orders-metrics">
+            <div className="dash-analytics-metric">
+              <span>Sales today</span>
+              <strong>{money(orderStats.salesToday)}</strong>
+              <small>{orderStats.ordersToday.toLocaleString()} completed orders</small>
+            </div>
+            <div className="dash-analytics-metric">
+              <span>Top spender</span>
+              <strong>
+                {orderStats.topSpender ? money(orderStats.topSpender.total) : money(0)}
+              </strong>
+              <small>{orderStats.topSpender?.name ?? "No completed orders yet"}</small>
+            </div>
+          </div>
+        </DashCard>
+
+        <div className="dash-filter-bar dash-orders-filter" aria-label="Order filters">
           <label className="dash-search-field">
             <span className="sr-only">Search orders</span>
             <Search size={16} aria-hidden="true" />
@@ -245,14 +276,12 @@ function OrdersPage() {
                     </td>
                     <td className="px-4 text-xs">
                       <span className="dash-order-items-cell">
-                      <span className="dash-fade-tail">
-                        {order.order_items[0]?.name ?? "—"}
-                      </span>
-                      {order.order_items.length > 1 && (
-                        <DomainChip domain="volume">
-                          +{order.order_items.length - 1} more
-                        </DomainChip>
-                      )}
+                        <span className="dash-fade-tail">{order.order_items[0]?.name ?? "—"}</span>
+                        {order.order_items.length > 1 && (
+                          <DomainChip domain="volume">
+                            +{order.order_items.length - 1} more
+                          </DomainChip>
+                        )}
                       </span>
                     </td>
                     <td
@@ -312,7 +341,9 @@ function OrdersPage() {
                           {order.order_items[0]?.name ?? "No line items"}
                         </span>
                         {order.order_items.length > 1 && (
-                          <span className="dash-order-more">+{order.order_items.length - 1} more</span>
+                          <span className="dash-order-more">
+                            +{order.order_items.length - 1} more
+                          </span>
                         )}
                       </span>
                     </span>
