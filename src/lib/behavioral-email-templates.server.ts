@@ -139,6 +139,9 @@ export function renderAbandonedCart(opts: {
       ITEM_URL: productUrl(it, campaign),
       ITEM_PRICE: money(it.price),
       ITEM_ORIGINAL: original(it),
+      // Extras are rendered before the outer fill(), so the cart link must be
+      // supplied per row or every extra thumbnail ends up with href="".
+      CART_URL: cartUrl,
     })),
   );
 
