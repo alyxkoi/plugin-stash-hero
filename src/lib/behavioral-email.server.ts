@@ -5,14 +5,12 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { sendEmail } from "./resend.server";
 import {
   DEADLINE_CART_FALLBACK,
-  DEADLINE_DROP_FALLBACK,
   DEADLINE_SAVED_FALLBACK,
   renderAbandonedCart,
-  renderPriceDrop,
+  renderSavedItemsFinal,
   renderSavedItemsNudge,
   saleDeadlineText,
   SITE_URL,
-  type DropProduct,
   type EmailProduct,
 } from "./behavioral-email-templates.server";
 
@@ -42,7 +40,7 @@ type Candidate = {
   sequence: SequenceType;
   step: 1 | 2 | 3;
   triggerRef: string;
-  // event-driven emails (saved-items price drop) may fire without the earlier step
+  // reserved: lets a step fire without the earlier step having been delivered
   exemptFromSequencing?: boolean;
   render: () => { subject: string; html: string; text: string };
   // guard evaluated again immediately before send
@@ -285,7 +283,6 @@ export async function runBehavioralEmailJob(
     if (prior && prior.status === "failed" && prior.attempts >= 2) continue; // retried once already
 
     // strict sequencing: a step only fires once the previous step was delivered.
-    // The saved-items price-drop email is event-driven and exempt by design.
     if (c.step > 1 && !c.exemptFromSequencing) {
       const prevKey = `${c.email}|${c.sequence}|${c.step - 1}|${c.triggerRef}`;
       if (!sentKeys.has(prevKey)) {
@@ -528,19 +525,18 @@ async function buildSavedCandidates(
   const { data: profs } = await supabaseAdmin.from("profiles").select("id, email").in("id", userIds);
   const emailByUser = new Map<string, string>((profs ?? []).map((p) => [p.id, normalizeEmail(p.email)]));
 
-  // 30-day cap on price-drop alerts, tracked per saved item id.
-  const { data: recentDrops } = await supabaseAdmin
+  // Saved-items step 2 is sent at most once per saved item, ever.
+  const { data: sentStep2 } = await supabaseAdmin
     .from("email_automation_log")
-    .select("trigger_ref, sent_at")
+    .select("trigger_ref")
     .eq("sequence_type", "saved_items")
     .eq("step", 2)
-    .eq("status", "sent")
-    .gte("sent_at", new Date(now - 30 * DAY).toISOString());
-  const dropRecently = new Set<string>();
-  for (const r of recentDrops ?? []) {
-    const ref = r.trigger_ref ?? "";
-    const ids = ref.startsWith("drop:") ? ref.slice(5).split(":")[0] : ref.split(":")[0];
-    for (const id of (ids ?? "").split(",")) if (id) dropRecently.add(id);
+    .eq("status", "sent");
+  const step2Done = new Set<string>();
+  for (const r of sentStep2 ?? []) {
+    for (const id of (r.trigger_ref ?? "").replace(/^s2:/, "").split(",")) {
+      if (id) step2Done.add(id);
+    }
   }
 
   type SavedRow = { id: string; product_id: string; price_at_save: number | null; saved_at: string };
@@ -575,36 +571,42 @@ async function buildSavedCandidates(
       return null;
     };
 
-    // ---- STEP 2: price drops (event driven, only items that actually dropped)
-    const dropped = rows
-      .filter((r) => !dropRecently.has(r.id))
-      .map((r) => {
-        const product = products.get(r.product_id)!;
-        const current = effectivePrice(product, sales);
-        return { r, product, current, was: r.price_at_save };
+    // ---- STEP 2: 5-day final nudge (timer driven, never a price change)
+    const final5 = rows
+      .filter((r) => {
+        if (step2Done.has(r.id)) return false;
+        const age = now - new Date(r.saved_at).getTime();
+        return age >= 5 * DAY && age <= 30 * DAY;
       })
-      .filter((d) => d.was != null && d.was > 0 && d.current < d.was - 0.005);
+      .sort((a, b) => new Date(a.saved_at).getTime() - new Date(b.saved_at).getTime());
 
-    if (dropped.length > 0) {
-      const byDrop = [...dropped].sort(
-        (a, b) => (b.was! - b.current) / b.was! - (a.was! - a.current) / a.was!,
+    if (final5.length > 0) {
+      const byPrice = [...final5].sort(
+        (a, b) =>
+          effectivePrice(products.get(b.product_id)!, sales) -
+          effectivePrice(products.get(a.product_id)!, sales),
       );
-      const items: DropProduct[] = byDrop.map((d) => ({
-        ...toEmailProduct(d.product, d.current),
-        oldPrice: d.was!,
-        newPrice: d.current,
-      }));
-      const savedIds = byDrop.map((d) => d.r.id);
-      const priceKey = byDrop.map((d) => Math.round(d.current * 100)).join("-");
-      const deadlineText = deadlineFor(byDrop[0]!.product, sales, DEADLINE_DROP_FALLBACK);
+      const items: EmailProduct[] = byPrice.map((r) => {
+        const product = products.get(r.product_id)!;
+        return toEmailProduct(product, effectivePrice(product, sales));
+      });
+      const deadlineText = deadlineFor(
+        products.get(byPrice[0]!.product_id),
+        sales,
+        DEADLINE_SAVED_FALLBACK,
+      );
       out.push({
         email,
         sequence: "saved_items",
         step: 2,
-        triggerRef: `drop:${savedIds.join(",")}:${priceKey}`,
+        // same anchor as step 1 so sequencing holds and it fires once per item
+        triggerRef: `s2:${final5.map((r) => r.id).join(",")}`,
         exemptFromSequencing: true,
-        render: () => renderPriceDrop({ items, deadlineText, unsubUrl: unsubUrl(email) }),
-        guard: guardFor(savedIds, byDrop.map((d) => d.r.product_id)),
+        render: () => renderSavedItemsFinal({ items, deadlineText, unsubUrl: unsubUrl(email) }),
+        guard: guardFor(
+          final5.map((r) => r.id),
+          final5.map((r) => r.product_id),
+        ),
       });
     }
 
