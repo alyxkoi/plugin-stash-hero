@@ -5,20 +5,18 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { sendEmail } from "./resend.server";
 import {
   DEADLINE_CART_FALLBACK,
-  DEADLINE_DROP_FALLBACK,
   DEADLINE_SAVED_FALLBACK,
   renderAbandonedCart,
-  renderPriceDrop,
+  renderSavedItemsFinal,
   renderSavedItemsNudge,
   saleDeadlineText,
-  type DropProduct,
   type EmailProduct,
 } from "./behavioral-email-templates.server";
 
 const FROM = "The Plugin Warehouse <hello@thepluginwarehouse.com>";
 const REPLY_TO = "pluginwh@gmail.com";
 
-export type TestTemplate = "cart_1h" | "cart_24h" | "cart_72h" | "saved_3day" | "price_drop";
+export type TestTemplate = "cart_1h" | "cart_24h" | "cart_72h" | "saved_3day" | "saved_5day";
 
 /** Real published products with a full-size cover, priciest first. */
 async function sampleProducts(limit: number): Promise<EmailProduct[]> {
@@ -77,14 +75,10 @@ export async function sendBehavioralTestEmail(opts: {
 
   let mail: { subject: string; html: string; text: string };
 
-  if (opts.template === "price_drop") {
-    const drops: DropProduct[] = items.map((it, i) => {
-      const oldPrice = Math.round(it.price * (i === 0 ? 1.6 : 1.3) * 100) / 100;
-      return { ...it, oldPrice, newPrice: it.price };
-    });
-    mail = renderPriceDrop({
-      items: drops,
-      deadlineText: await deadline(DEADLINE_DROP_FALLBACK),
+  if (opts.template === "saved_5day") {
+    mail = renderSavedItemsFinal({
+      items,
+      deadlineText: await deadline(DEADLINE_SAVED_FALLBACK),
       unsubUrl: unsubscribeUrl,
     });
   } else if (opts.template === "saved_3day") {

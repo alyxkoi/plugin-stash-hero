@@ -26,7 +26,7 @@ const TEST_TEMPLATE_LABELS: { key: TestTemplateKey; label: string }[] = [
   { key: "cart_24h", label: "Cart · 24 hours" },
   { key: "cart_72h", label: "Cart · 72 hours" },
   { key: "saved_3day", label: "Saved · 3-day nudge" },
-  { key: "price_drop", label: "Saved · price drop" },
+  { key: "saved_5day", label: "Saved · second nudge" },
 ];
 
 type SeqKey = "abandoned_cart" | "saved_items";
@@ -49,7 +49,7 @@ const LABELS: Record<
     description: "Bring customers back when saved products are still relevant.",
     steps: [
       { step: 1, label: "After 3 days", purpose: "Saved-item nudge" },
-      { step: 2, label: "On price drop", purpose: "Price alert" },
+      { step: 2, label: "After 5 days", purpose: "Second nudge" },
     ],
   },
 };
