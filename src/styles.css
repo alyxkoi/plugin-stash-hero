@@ -9211,28 +9211,6 @@ body.dashboard-active {
   }
 }
 
-/* 2026-08 consistency pass: Analytics is the metric-layout source of truth. */
-.dashboard-scope .dash-hero-comparison[data-direction="negative"],
-.dashboard-scope .dash-analytics-metric > small[data-direction="negative"] {
-  border: 1px solid rgba(255, 107, 107, 0.34);
-  background: rgba(255, 107, 107, 0.12) !important;
-  color: #ff6b6b !important;
-}
-
-.dashboard-scope .dash-hero-comparison[data-direction="positive"],
-.dashboard-scope .dash-analytics-metric > small[data-direction="positive"] {
-  border: 1px solid rgba(125, 245, 173, 0.3);
-  background: rgba(125, 245, 173, 0.13) !important;
-  color: var(--mint) !important;
-}
-
-.dashboard-scope .dash-hero-comparison[data-direction="neutral"],
-.dashboard-scope .dash-analytics-metric > small[data-direction="neutral"] {
-  border: 1px solid rgba(203, 193, 232, 0.2);
-  background: rgba(203, 193, 232, 0.08) !important;
-  color: var(--text-tertiary) !important;
-}
-
 .dashboard-scope .dash-charged-stat-value {
   display: flex;
   min-width: 0;
@@ -9550,7 +9528,8 @@ body.dashboard-active {
 }
 .dashboard-scope .dash-live-sale-heading {
   display: grid;
-  justify-items: center;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: stretch;
   gap: 16px;
   text-align: center;
 }
@@ -10001,29 +9980,47 @@ body.dashboard-active {
 
 /* Admin dashboard targeted revision pass. */
 .dashboard-scope .dash-delta {
-  gap: 5px;
-  min-height: 28px;
-  padding: 5px 9px;
-  border: 1px solid color-mix(in srgb, var(--delta-fill) 76%, white 24%);
+  gap: 6px;
+  min-height: 32px;
+  padding: 7px 13px;
+  border: 1px solid var(--delta-fill) !important;
   border-radius: 9px;
-  background: var(--delta-fill);
+  background: var(--delta-fill) !important;
   color: #ffffff !important;
-  font: 750 11px/1 var(--f-data);
+  font: 800 12px/1 var(--f-data);
   box-shadow: none;
   overflow: visible;
+  opacity: 1 !important;
   text-transform: none;
 }
 
 .dashboard-scope .dash-delta[data-direction="positive"] {
-  --delta-fill: #23744f;
+  --delta-fill: #078a55;
 }
 
 .dashboard-scope .dash-delta[data-direction="negative"] {
-  --delta-fill: #a93143;
+  --delta-fill: #c11246;
 }
 
 .dashboard-scope .dash-delta[data-direction="neutral"] {
-  --delta-fill: #57516f;
+  --delta-fill: #5b5573;
+}
+
+.dashboard-scope .dash-delta.dash-hero-comparison {
+  border-color: var(--delta-fill) !important;
+  background: var(--delta-fill) !important;
+  color: #ffffff !important;
+}
+
+.dashboard-scope .dash-delta-arrow,
+.dashboard-scope .dash-delta-value {
+  color: #ffffff;
+  opacity: 1;
+}
+
+.dashboard-scope .dash-delta-arrow {
+  font-size: 13px;
+  font-weight: 900;
 }
 
 .dashboard-scope .dash-status {
@@ -10134,6 +10131,48 @@ body.dashboard-active {
   white-space: nowrap;
 }
 
+/* Customer hero metrics use one equal cadence instead of promoting the first value. */
+.dashboard-scope .dash-customer-unified-metrics {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: stretch;
+}
+
+.dashboard-scope .dash-customer-unified-metrics .dash-analytics-metric,
+.dashboard-scope .dash-customer-unified-metrics .dash-analytics-metric:first-child {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: 18px minmax(48px, auto) 41px;
+  min-height: 126px;
+  padding: 12px clamp(18px, 2vw, 26px);
+}
+
+.dashboard-scope .dash-customer-unified-metrics .dash-analytics-metric > span {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: start;
+}
+
+.dashboard-scope .dash-customer-unified-metrics .dash-analytics-metric > strong,
+.dashboard-scope .dash-customer-unified-metrics .dash-analytics-metric:first-child > strong {
+  grid-column: 1;
+  grid-row: 2;
+  align-self: end;
+  font-size: clamp(2.4rem, 4vw, 4rem);
+  line-height: 1;
+}
+
+.dashboard-scope .dash-customer-unified-metrics .dash-analytics-metric > .dash-delta {
+  grid-column: 1;
+  grid-row: 3;
+  align-self: end;
+  justify-self: start;
+  margin-top: 9px;
+}
+
+/* Keep the product summary clear of the floating page actions. */
+.dashboard-scope .dash-catalog-summary-panel {
+  padding-top: 82px !important;
+}
+
 .dashboard-scope .dash-charged-stat-value {
   display: flex;
   align-items: center;
@@ -10152,17 +10191,53 @@ body.dashboard-active {
 
 /* Ranked product rows prioritize names, then content-sized metrics. */
 .dashboard-scope .dash-rank-row {
-  grid-template-columns: 34px 48px minmax(0, 1fr) max-content max-content;
-  min-height: 60px;
-  gap: 8px;
+  grid-template-columns: 32px 44px minmax(0, 1fr) max-content max-content;
+  min-height: 54px;
+  gap: 10px;
+  padding-left: 0;
   padding-block: 4px;
 }
 
+.dashboard-scope .dash-rank-card {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.dashboard-scope .dash-rank-card > .dash-panel-body {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-scope .dash-rank-card .dash-rank-list {
+  min-height: 0;
+  flex: 1 1 auto;
+  grid-auto-rows: minmax(54px, 1fr);
+  gap: 0;
+}
+
+.dashboard-scope .dash-rank-number {
+  position: static !important;
+  z-index: auto;
+  justify-self: center;
+  color: rgba(255, 255, 255, 0.22) !important;
+  font-size: 32px !important;
+}
+
+.dashboard-scope .dash-rank-thumb {
+  width: 44px;
+  height: 44px;
+}
+
 .dashboard-scope .dash-rank-main {
+  width: 100%;
+  min-width: 0;
   padding-right: 8px;
 }
 
 .dashboard-scope .dash-rank-name {
+  width: 100%;
+  max-width: 100%;
   -webkit-mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 14px), transparent 100%);
   mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 14px), transparent 100%);
 }
@@ -10170,6 +10245,99 @@ body.dashboard-active {
 .dashboard-scope .dash-rank-metric {
   width: max-content;
   min-width: 0;
+}
+
+/* The live campaign title, status, and controls share one centered axis. */
+.dashboard-scope .dash-live-sale-heading {
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.dashboard-scope .dash-live-sale-copy {
+  width: 100%;
+  display: grid;
+  justify-self: stretch;
+  justify-items: center;
+  gap: 7px;
+}
+
+.dashboard-scope .dash-live-sale-title-group {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.dashboard-scope .dash-live-sale-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #ffffff;
+  font: 750 11px/1 var(--f-data);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dashboard-scope .dash-live-sale-heading h2,
+.dashboard-scope .dash-live-sale-heading p {
+  margin: 0;
+  text-align: center;
+}
+
+.dashboard-scope .dash-live-sale-actions {
+  width: 100%;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-self: stretch;
+  justify-content: center;
+  gap: 10px;
+}
+
+.dashboard-scope .dash-live-sale-actions > * {
+  width: 148px;
+  min-width: 148px;
+  min-height: 42px;
+  border-radius: 9px;
+  transition:
+    filter 180ms ease,
+    transform 180ms ease;
+}
+
+.dashboard-scope .dash-live-sale-actions > *:hover {
+  filter: brightness(1.08);
+}
+
+.dashboard-scope .dash-live-sale-actions > *:active {
+  transform: translateY(1px);
+}
+
+.dashboard-scope .dash-sale-action-end {
+  border-color: #c11246;
+  background: #c11246;
+  color: #ffffff;
+}
+
+.dashboard-scope .dash-sale-action-archive {
+  border-color: #3029a5;
+  background: #3029a5;
+  color: #ffffff;
+}
+
+.dashboard-scope .dash-sale-action-edit {
+  border-color: #7df5ad;
+  background: #7df5ad;
+  color: #07150f;
+}
+
+.dashboard-scope .dash-sale-action-preview {
+  border-color: rgba(255, 255, 255, 0.34);
+  background: rgba(255, 255, 255, 0.055);
+  color: #ffffff;
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
 }
 
 /* Overview campaign performance uses the same quiet row language as orders. */
@@ -10468,9 +10636,25 @@ body.dashboard-active {
   }
 
   .dashboard-scope .dash-analytics-metric > .dash-delta {
-    min-height: 26px;
+    min-height: 30px;
     margin-top: 7px;
-    padding: 4px 8px;
+    padding: 6px 11px;
+  }
+
+  .dashboard-scope .dash-customer-unified-metrics .dash-analytics-metric,
+  .dashboard-scope .dash-customer-unified-metrics .dash-analytics-metric:first-child {
+    grid-template-rows: 18px minmax(42px, auto) 39px;
+    min-height: 112px;
+    padding: 12px;
+  }
+
+  .dashboard-scope .dash-customer-unified-metrics .dash-analytics-metric > strong,
+  .dashboard-scope .dash-customer-unified-metrics .dash-analytics-metric:first-child > strong {
+    font-size: clamp(1.85rem, 9vw, 2.7rem);
+  }
+
+  .dashboard-scope .dash-catalog-summary-panel {
+    padding-top: 72px !important;
   }
 
   .dashboard-scope .dash-rank-row {
@@ -10479,6 +10663,34 @@ body.dashboard-active {
     min-height: 0;
     gap: 8px;
     padding-block: 9px;
+  }
+
+  .dashboard-scope .dash-rank-thumb {
+    width: 42px;
+    height: 42px;
+  }
+
+  .dashboard-scope .dash-rank-name {
+    overflow: visible;
+    white-space: normal;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  .dashboard-scope .dash-live-sale-title-group {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .dashboard-scope .dash-live-sale-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .dashboard-scope .dash-live-sale-actions > * {
+    width: 100%;
+    min-width: 0;
   }
 
   .dashboard-scope .dash-rank-main {

@@ -541,8 +541,10 @@ export function DeltaChip({
   const arrow = direction === "positive" ? "↑" : direction === "negative" ? "↓" : "→";
   return (
     <span className={`dash-delta ${className}`} data-direction={direction}>
-      <span aria-hidden="true">{arrow}</span>
-      {value}
+      <span className="dash-delta-arrow" aria-hidden="true">
+        {arrow}
+      </span>
+      <span className="dash-delta-value">{value}</span>
     </span>
   );
 }

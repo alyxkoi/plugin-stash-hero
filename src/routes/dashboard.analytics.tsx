@@ -339,7 +339,10 @@ function Analytics() {
         </ChargedPanel>
 
         <div className="dash-analytics-detail-grid grid grid-cols-1 xl:grid-cols-12 gap-6">
-          <DashCard title="Top products" className="dash-analytics-top-products xl:col-span-7">
+          <DashCard
+            title="Top products"
+            className="dash-analytics-top-products dash-rank-card xl:col-span-7"
+          >
             {top.length === 0 ? (
               <div className="dash-empty">
                 <p>No products sold in this range.</p>

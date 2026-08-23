@@ -389,7 +389,7 @@ function Overview() {
 
           <DashCard
             title="Best sellers this month"
-            className="xl:col-span-5 dash-solid-panel"
+            className="xl:col-span-5 dash-solid-panel dash-rank-card"
             action={
               <Link
                 to="/dashboard/analytics"

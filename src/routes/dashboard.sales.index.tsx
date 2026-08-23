@@ -217,16 +217,16 @@ function SalesPage() {
             form="wash"
             silhouette="full"
             className="dash-sales-charge"
-            title={
-              <span className="inline-flex items-center gap-2">
-                <i className="dash-live-dot" /> Live
-              </span>
-            }
           >
             <div className="dash-live-sale">
               <div className="dash-live-sale-heading">
-                <div>
-                  <h2>{active.name}</h2>
+                <div className="dash-live-sale-copy">
+                  <div className="dash-live-sale-title-group">
+                    <span className="dash-live-sale-status">
+                      <i className="dash-live-dot" /> Live
+                    </span>
+                    <h2>{active.name}</h2>
+                  </div>
                   <p>
                     {active.discount_pct}% off ·{" "}
                     {active.scope === "all" ? "All products" : "Selected products"}
@@ -237,14 +237,14 @@ function SalesPage() {
                     href={`/sale/${active.slug}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="dash-charged-button"
+                    className="dash-charged-button dash-sale-action-preview"
                   >
                     <ExternalLink size={14} /> Preview landing
                   </a>
                   <Link
                     to="/dashboard/sales/$id"
                     params={{ id: active.id }}
-                    className="dash-charged-button"
+                    className="dash-charged-button dash-sale-action-edit"
                   >
                     <Edit3 size={14} /> Edit
                   </Link>
@@ -252,14 +252,14 @@ function SalesPage() {
                     type="button"
                     onClick={endSale}
                     disabled={ending}
-                    className="dash-charged-button"
+                    className="dash-charged-button dash-sale-action-end"
                   >
                     {ending ? "Ending…" : "End sale"}
                   </button>
                   <button
                     type="button"
                     onClick={() => setPendingArchive(active)}
-                    className="dash-charged-button"
+                    className="dash-charged-button dash-sale-action-archive"
                   >
                     <Archive size={14} /> Archive
                   </button>
