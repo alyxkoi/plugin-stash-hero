@@ -1623,7 +1623,7 @@ export type Database = {
       email_sequence_type: "abandoned_cart" | "saved_items"
       order_status: "completed" | "refunded" | "partial" | "pending"
       product_status: "published" | "draft" | "archived"
-      sale_event_status: "active" | "scheduled" | "ended" | "draft" | "archived"
+      sale_event_status: "active" | "scheduled" | "ended" | "draft"
       sale_scope: "all" | "selected" | "categories"
       store_credit_type: "grant" | "spend" | "adjustment" | "reversal"
     }
@@ -1761,7 +1761,7 @@ export const Constants = {
       email_sequence_type: ["abandoned_cart", "saved_items"],
       order_status: ["completed", "refunded", "partial", "pending"],
       product_status: ["published", "draft", "archived"],
-      sale_event_status: ["active", "scheduled", "ended", "draft", "archived"],
+      sale_event_status: ["active", "scheduled", "ended", "draft"],
       sale_scope: ["all", "selected", "categories"],
       store_credit_type: ["grant", "spend", "adjustment", "reversal"],
     },

@@ -17,7 +17,7 @@ import {
 } from "./behavioral-email-templates.server";
 
 
-const FROM = "Plugin Warehouse <hello@thepluginwarehouse.com>";
+const FROM = "The Plugin Warehouse <hello@thepluginwarehouse.com>";
 const HOUR = 3600_000;
 const DAY = 24 * HOUR;
 

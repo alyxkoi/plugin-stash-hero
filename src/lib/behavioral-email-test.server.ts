@@ -15,7 +15,7 @@ import {
   type EmailProduct,
 } from "./behavioral-email-templates.server";
 
-const FROM = "Plugin Warehouse <hello@thepluginwarehouse.com>";
+const FROM = "The Plugin Warehouse <hello@thepluginwarehouse.com>";
 const REPLY_TO = "pluginwh@gmail.com";
 
 export type TestTemplate = "cart_1h" | "cart_24h" | "cart_72h" | "saved_3day" | "price_drop";
