@@ -152,7 +152,7 @@ export const runEmailAutomationDryRun = createServerFn({ method: "POST" })
     return await runBehavioralEmailJob({ dryRun: true, onlyEmail: data.onlyEmail });
   });
 
-export const TEST_TEMPLATES = ["cart_1h", "cart_24h", "cart_72h", "saved_3day", "price_drop"] as const;
+export const TEST_TEMPLATES = ["cart_1h", "cart_24h", "cart_72h", "saved_3day", "saved_5day"] as const;
 export type TestTemplateKey = (typeof TEST_TEMPLATES)[number];
 
 // One-off test send. Uses sample product data only: it never reads a customer's
