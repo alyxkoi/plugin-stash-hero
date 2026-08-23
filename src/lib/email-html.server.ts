@@ -1,5 +1,5 @@
-// Order confirmation + contact notification HTML, verbatim from the supplied
-// Resend templates. Do not hand-edit; regenerate from the source HTML instead.
+// Transactional email HTML, verbatim from the supplied Resend templates.
+// Do not hand-edit; regenerate from the source HTML instead.
 
 export const ORDER_CONFIRMATION_HTML = `<!DOCTYPE html>
 <html lang="en" xmlns:v="urn:schemas-microsoft-com:vml">
@@ -54,14 +54,13 @@ Everything you just bought, ready to download.&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwn
   <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:22px;"><tr>
     <td width="72" height="5" bgcolor="#FA1265" style="width:72px; height:5px; background-color:#FA1265; font-size:0; line-height:0;">&nbsp;</td>
   </tr></table>
-  <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 40; font-size:16px; line-height:25px; color:#C9C2E4; padding-top:20px;">
-    Payment went through. Every file below is yours for good, and you can come back and re download any of them from your account whenever you need to.
-  </div>
+  <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 40; font-size:16px; line-height:25px; color:#C9C2E4; padding-top:20px;">Payment went through. Every file below is yours for good, and you can come back and re download any of them from your account whenever you need to.</div>
 </td>
 </tr>
 
 <tr>
 <td class="gut" style="padding:40px 24px 0 24px;">
+  
   <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
     <td valign="bottom" style="padding:0;">
       <div class="code fig" style="font-family:'Google Sans Code','SF Mono',Consolas,'Courier New',monospace; font-size:94px; line-height:86px; font-weight:700; color:#FFFFFF; letter-spacing:-4px;">{{ORDER_NUMBER}}</div>
@@ -75,7 +74,7 @@ Everything you just bought, ready to download.&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwn
     </td>
   </tr></table>
 
-  <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 25,'wdth' 92; font-size:11px; line-height:16px; color:#8E86B4; letter-spacing:1.6px; padding-top:12px; font-weight:600;">ORDER &#183; {{ORDER_DATE}}</div>
+  <div style="padding-top:12px;"><div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 25,'wdth' 92; font-size:11px; line-height:16px; color:#8E86B4; letter-spacing:1.6px; font-weight:600;">ORDER &#183; {{ORDER_DATE}}</div></div>
 </td>
 </tr>
 <tr><td height="42" style="height:42px; font-size:0; line-height:0;">&nbsp;</td></tr>
@@ -167,7 +166,7 @@ Everything you just bought, ready to download.&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwn
       <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 40; font-size:15px; line-height:23px; color:#E4DEF2; padding-top:10px;">Send us a message and a real person will answer. Large files download best on a wired connection.</div>
       <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:20px;"><tr>
         <td bgcolor="#2E2750" style="background-color:#2E2750; border:2px solid #FFFFFF; border-radius:12px;">
-          <a href="https://www.thepluginwarehouse.com/contact-us" style="display:block; padding:14px 24px; font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 100,'wdth' 95; font-size:14px; font-weight:800; color:#FFFFFF; letter-spacing:0.6px;">GET HELP &#8594;</a>
+          <a href="https://www.thepluginwarehouse.com/contact" style="display:block; padding:14px 24px; font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 100,'wdth' 95; font-size:14px; font-weight:800; color:#FFFFFF; letter-spacing:0.6px;">GET HELP &#8594;</a>
         </td>
       </tr></table>
     </td>
@@ -177,33 +176,33 @@ Everything you just bought, ready to download.&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwn
 </tr>
 <tr><td height="46" style="height:46px; font-size:0; line-height:0;">&nbsp;</td></tr>
 
-</table>
-
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#FFFFFF" style="background-color:#FFFFFF;">
-<tr><td align="center" style="padding:0;">
-  <table role="presentation" class="w600" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:600px;">
-    <tr>
-    <td class="gut" align="center" style="padding:34px 24px 36px 24px;">
-      <img src="https://thepluginwarehousefiles.com/covers/PWH%20Logo%20Dark.png" width="132" alt="Plugin Warehouse" style="width:132px; height:auto; margin:0 auto;">
-      <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 40; font-size:13px; line-height:22px; color:#08061F; padding-top:18px;">
-        <a href="https://www.thepluginwarehouse.com/contact-us" style="color:#08061F; text-decoration:underline;">Contact</a>
+<tr>
+<td class="gut" style="padding:0 24px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+    <td height="1" bgcolor="#26223A" style="height:1px; background-color:#26223A; font-size:0; line-height:0;">&nbsp;</td>
+  </tr></table>
+</td>
+</tr>
+<tr>
+<td class="gut" style="padding:26px 24px 0 24px;">
+  <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 25,'wdth' 92; font-size:12px; line-height:18px; color:#FFFFFF; letter-spacing:2px; font-weight:700;">PLUGIN WAREHOUSE</div>
+  <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 40; font-size:13px; line-height:22px; color:#C9C2E4; padding-top:12px;">
+        <a href="https://www.thepluginwarehouse.com/contact" style="color:#C9C2E4; text-decoration:underline;">Contact</a>
         &nbsp;&nbsp;&#183;&nbsp;&nbsp;
-        <a href="https://www.thepluginwarehouse.com/shop" style="color:#08061F; text-decoration:underline;">Shop all</a>
+        <a href="https://www.thepluginwarehouse.com/shop" style="color:#C9C2E4; text-decoration:underline;">Shop all</a>
         &nbsp;&nbsp;&#183;&nbsp;&nbsp;
-        <a href="https://www.thepluginwarehouse.com/account" style="color:#08061F; text-decoration:underline;">My account</a>
-      </div>
-      <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 40; font-size:12px; line-height:18px; color:#6E6690; padding-top:12px;">This is a receipt for your order, so it is not something you can unsubscribe from.</div>
-    </td>
-    </tr>
-  </table>
-</td></tr>
-</table>
+        <a href="https://www.thepluginwarehouse.com/account" style="color:#C9C2E4; text-decoration:underline;">My account</a>
+  </div>
+      <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 40; font-size:12px; line-height:18px; color:#6E6690; padding-top:14px;">This is a receipt for your order, so it is not something you can unsubscribe from.</div>
+</td>
+</tr>
+<tr><td height="48" style="height:48px; font-size:0; line-height:0;">&nbsp;</td></tr>
 
+</table>
 </td></tr>
 </table>
 </body>
-</html>
-`;
+</html>`;
 
 export const CONTACT_MESSAGE_HTML = `<!DOCTYPE html>
 <html lang="en" xmlns:v="urn:schemas-microsoft-com:vml">
@@ -258,9 +257,7 @@ export const CONTACT_MESSAGE_HTML = `<!DOCTYPE html>
   <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:22px;"><tr>
     <td width="72" height="5" bgcolor="#FA1265" style="width:72px; height:5px; background-color:#FA1265; font-size:0; line-height:0;">&nbsp;</td>
   </tr></table>
-  <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 40; font-size:16px; line-height:25px; color:#C9C2E4; padding-top:20px;">
-    Someone filled out the contact form. Hitting reply on this email goes straight back to them.
-  </div>
+  
 </td>
 </tr>
 
@@ -282,10 +279,6 @@ export const CONTACT_MESSAGE_HTML = `<!DOCTYPE html>
         <tr>
           <td width="110" valign="top" style="padding:0 0 14px 0; font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 25,'wdth' 92; font-size:11px; letter-spacing:1.5px; color:#8E86B4; font-weight:600;">SUBJECT</td>
           <td valign="top" style="padding:0 0 14px 0; font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 60,'wdth' 95; font-size:16px; font-weight:700; color:#FFFFFF;">{{SUBJECT}}</td>
-        </tr>
-        <tr>
-          <td width="110" valign="top" style="padding:0 0 14px 0; font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 25,'wdth' 92; font-size:11px; letter-spacing:1.5px; color:#8E86B4; font-weight:600;">ORDER</td>
-          <td valign="top" class="code" style="padding:0 0 14px 0; font-family:'Google Sans Code','SF Mono',Consolas,'Courier New',monospace; font-size:15px; color:#C9C2E4;">{{ORDER_ID}}</td>
         </tr>
         <tr>
           <td width="110" valign="top" style="padding:0 0 4px 0; font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 25,'wdth' 92; font-size:11px; letter-spacing:1.5px; color:#8E86B4; font-weight:600;">RECEIVED</td>
@@ -319,28 +312,28 @@ export const CONTACT_MESSAGE_HTML = `<!DOCTYPE html>
 <tr><td height="18" style="height:18px; font-size:0; line-height:0;">&nbsp;</td></tr>
 <tr><td height="46" style="height:46px; font-size:0; line-height:0;">&nbsp;</td></tr>
 
-</table>
-
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#FFFFFF" style="background-color:#FFFFFF;">
-<tr><td align="center" style="padding:0;">
-  <table role="presentation" class="w600" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:600px;">
-    <tr>
-    <td class="gut" align="center" style="padding:34px 24px 36px 24px;">
-      <img src="https://thepluginwarehousefiles.com/covers/PWH%20Logo%20Dark.png" width="132" alt="Plugin Warehouse" style="width:132px; height:auto; margin:0 auto;">
-      <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 40; font-size:13px; line-height:22px; color:#08061F; padding-top:18px;">
-        <a href="https://www.thepluginwarehouse.com/dashboard/orders" style="color:#08061F; text-decoration:underline;">Open the dashboard</a>
+<tr>
+<td class="gut" style="padding:0 24px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+    <td height="1" bgcolor="#26223A" style="height:1px; background-color:#26223A; font-size:0; line-height:0;">&nbsp;</td>
+  </tr></table>
+</td>
+</tr>
+<tr>
+<td class="gut" style="padding:26px 24px 0 24px;">
+  <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 25,'wdth' 92; font-size:12px; line-height:18px; color:#FFFFFF; letter-spacing:2px; font-weight:700;">PLUGIN WAREHOUSE</div>
+  <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 40; font-size:13px; line-height:22px; color:#C9C2E4; padding-top:12px;">
+        <a href="https://www.thepluginwarehouse.com/dashboard/messages" style="color:#C9C2E4; text-decoration:underline;">Open the dashboard</a>
         &nbsp;&nbsp;&#183;&nbsp;&nbsp;
-        <a href="https://www.thepluginwarehouse.com" style="color:#08061F; text-decoration:underline;">Storefront</a>
-      </div>
-      <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 40; font-size:12px; line-height:18px; color:#6E6690; padding-top:12px;">Internal notification. This one is only ever sent to you.</div>
-    </td>
-    </tr>
-  </table>
-</td></tr>
-</table>
+        <a href="https://www.thepluginwarehouse.com" style="color:#C9C2E4; text-decoration:underline;">Storefront</a>
+  </div>
+      <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 40; font-size:12px; line-height:18px; color:#6E6690; padding-top:14px;">Internal notification. This one is only ever sent to you.</div>
+</td>
+</tr>
+<tr><td height="48" style="height:48px; font-size:0; line-height:0;">&nbsp;</td></tr>
 
+</table>
 </td></tr>
 </table>
 </body>
-</html>
-`;
+</html>`;
