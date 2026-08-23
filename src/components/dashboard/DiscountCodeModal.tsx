@@ -78,10 +78,14 @@ export function DiscountCodeModal({
   }, [existing]);
 
   useEffect(() => {
-    const prev = document.body.style.overflow;
+    const previousOverflow = document.body.style.overflow;
+    const previousPaddingRight = document.body.style.paddingRight;
     const previousFocus = document.activeElement as HTMLElement | null;
+    const scrollPosition = { x: window.scrollX, y: window.scrollY };
+    const scrollbarGap = window.innerWidth - document.documentElement.clientWidth;
     document.body.style.overflow = "hidden";
-    requestAnimationFrame(() => {
+    if (scrollbarGap > 0) document.body.style.paddingRight = `${scrollbarGap}px`;
+    const frame = requestAnimationFrame(() => {
       dialogRef.current
         ?.querySelector<HTMLElement>(
           "button, input, select, textarea, [tabindex]:not([tabindex='-1'])",
@@ -112,9 +116,12 @@ export function DiscountCodeModal({
     };
     document.addEventListener("keydown", onKey);
     return () => {
-      document.body.style.overflow = prev;
+      cancelAnimationFrame(frame);
+      document.body.style.overflow = previousOverflow;
+      document.body.style.paddingRight = previousPaddingRight;
       document.removeEventListener("keydown", onKey);
-      previousFocus?.focus();
+      window.scrollTo({ left: scrollPosition.x, top: scrollPosition.y, behavior: "auto" });
+      previousFocus?.focus({ preventScroll: true });
     };
   }, [onClose]);
 
@@ -210,7 +217,7 @@ export function DiscountCodeModal({
   const node = (
     <AnimatePresence>
       <motion.div
-        className="dashboard-scope fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6"
+        className="dashboard-scope dash-marketing-modal-layer fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6"
         initial={reduce ? false : { opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -226,7 +233,7 @@ export function DiscountCodeModal({
           role="dialog"
           aria-modal="true"
           aria-labelledby="discount-code-modal-title"
-          className="relative w-full max-w-lg max-h-[90vh] flex flex-col rounded-2xl border border-white/12 shadow-[0_30px_80px_rgba(0,0,0,0.6)] overflow-hidden"
+          className="dash-marketing-modal relative w-full max-w-lg max-h-[90vh] flex flex-col rounded-2xl border border-white/12 shadow-[0_30px_80px_rgba(0,0,0,0.6)] overflow-hidden"
           style={{ background: "rgba(20,5,44,0.96)", backdropFilter: "blur(24px) saturate(160%)" }}
           initial={reduce ? false : { opacity: 0, scale: 0.96, y: 12 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -256,7 +263,7 @@ export function DiscountCodeModal({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="ipt-modal w-full"
-                placeholder="Soothe 2 launch — 25% off"
+                placeholder="Soothe 2 launch - 25% off"
               />
             </label>
 

@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect, useRef, useMemo } from "react";
-import { DashboardShell, DashCard } from "@/components/DashboardShell";
+import { DashboardShell, DashCard, FormActionBar } from "@/components/DashboardShell";
 import { LibraryTypeField } from "@/components/LibraryTypeField";
 import { productCategories } from "@/lib/dashboard-mock";
 import { supabase } from "@/integrations/supabase/client";
@@ -656,7 +656,7 @@ function NewProduct() {
 
   return (
     <DashboardShell title="New product">
-      <div className="max-w-4xl mx-auto pb-32 space-y-6">
+      <div className="dash-form-page max-w-4xl mx-auto space-y-6">
         {resumed && (
           <div className="flex items-center gap-3 rounded-lg border border-white/15 bg-white/5 px-4 py-2.5 text-xs">
             <RotateCcw size={13} className="text-[var(--accent-red-glow)]" />
@@ -907,10 +907,9 @@ function NewProduct() {
         </DashCard>
       </div>
 
-      {/* Sticky footer */}
-      <div className="dash-form-action-dock">
+      <FormActionBar>
         <button onClick={onCancel} disabled={submitting} className="btn-ghost !text-xs !py-2 !px-4">Cancel</button>
-        <button onClick={() => save("draft")} disabled={submitting} className="btn-ghost !text-xs !py-2 !px-4 ml-auto">{submitting ? "Saving…" : "Save draft"}</button>
+        <button onClick={() => save("draft")} disabled={submitting} className="btn-ghost !text-xs !py-2 !px-4">{submitting ? "Saving…" : "Save draft"}</button>
         <button
           onClick={() => save("publish")}
           disabled={!canPublish || submitting}
@@ -920,7 +919,7 @@ function NewProduct() {
         >
           {submitting ? "Publishing…" : "Publish"}
         </button>
-      </div>
+      </FormActionBar>
 
       <AlertDialog open={cancelOpen} onOpenChange={setCancelOpen}>
         <AlertDialogContent className="bg-[#13002C] border-white/15 text-white">

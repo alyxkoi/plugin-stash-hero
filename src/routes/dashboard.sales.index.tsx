@@ -2,7 +2,13 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Archive, ArchiveRestore, Edit3, ExternalLink, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { ChargedPanel, DashCard, DashboardShell, StatusBadge } from "@/components/DashboardShell";
+import {
+  ChargedPanel,
+  DashCard,
+  DashboardShell,
+  DeltaChip,
+  StatusBadge,
+} from "@/components/DashboardShell";
 import { supabase } from "@/integrations/supabase/client";
 import { deriveSaleStatus, formatInSaleTimeZone, type LiveSaleStatus } from "@/lib/sale-time";
 import { countsAsSale, netRevenue } from "@/lib/revenue";
@@ -268,7 +274,7 @@ function SalesPage() {
                 <Summary label="Average order" value={money(active.aov)} />
                 <Summary
                   label="Vs last sale"
-                  value={comparison ? `${comparison.arrow}${comparison.label}` : "—"}
+                  value={comparison?.label ?? "—"}
                   direction={
                     !comparison || comparison.arrow.includes("→")
                       ? "neutral"
@@ -557,7 +563,7 @@ function Summary({
   return (
     <div>
       <span>{label}</span>
-      <strong data-direction={direction}>{value}</strong>
+      {direction ? <DeltaChip value={value} direction={direction} /> : <strong>{value}</strong>}
     </div>
   );
 }

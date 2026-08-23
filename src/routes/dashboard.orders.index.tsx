@@ -164,23 +164,19 @@ function OrdersPage() {
 
   return (
     <DashboardShell title="Orders">
-      <div className="space-y-6">
-        <DashCard className="dash-compact-metrics-panel">
-          <div className="dash-analytics-metrics dash-orders-metrics">
-            <div className="dash-analytics-metric">
-              <span>Sales today</span>
-              <strong>{money(orderStats.salesToday)}</strong>
-              <small>{orderStats.ordersToday.toLocaleString()} completed orders</small>
-            </div>
-            <div className="dash-analytics-metric">
-              <span>Top spender</span>
-              <strong>
-                {orderStats.topSpender ? money(orderStats.topSpender.total) : money(0)}
-              </strong>
-              <small>{orderStats.topSpender?.name ?? "No completed orders yet"}</small>
-            </div>
+      <div className="dash-orders-page space-y-6">
+        <section className="dash-analytics-metrics dash-orders-metrics" aria-label="Order summary">
+          <div className="dash-analytics-metric">
+            <span>Sales today</span>
+            <strong>{money(orderStats.salesToday)}</strong>
+            <small>{orderStats.ordersToday.toLocaleString()} completed orders</small>
           </div>
-        </DashCard>
+          <div className="dash-analytics-metric is-top-spender">
+            <span>Top spender</span>
+            <strong>{orderStats.topSpender ? money(orderStats.topSpender.total) : money(0)}</strong>
+            <small>{orderStats.topSpender?.name ?? "No completed orders yet"}</small>
+          </div>
+        </section>
 
         <div className="dash-filter-bar dash-orders-filter" aria-label="Order filters">
           <label className="dash-search-field">

@@ -32,6 +32,7 @@ import { useAuth, signOut } from "@/hooks/useAuth";
 import { SectionErrorBoundary } from "@/components/SectionErrorBoundary";
 
 export type DashboardDomain = "money" | "volume" | "people" | "catalog" | "promo" | "neutral";
+export type DeltaDirection = "positive" | "negative" | "neutral";
 
 type NavItem = {
   to: string;
@@ -521,14 +522,48 @@ export function StatCard({
       <div className="dash-stat-label">{label}</div>
       <div className="dash-stat-line">
         <div className="dash-stat-value">{value}</div>
-        {delta && (
-          <span className="dash-delta" data-direction={direction}>
-            {direction === "positive" ? "↑" : direction === "negative" ? "↓" : "→"} {delta}
-          </span>
-        )}
+        {delta && <DeltaChip value={delta} direction={direction} />}
       </div>
       {comparison && <div className="dash-stat-comparison">{comparison}</div>}
     </article>
+  );
+}
+
+export function DeltaChip({
+  value,
+  direction,
+  className = "",
+}: {
+  value: string;
+  direction: DeltaDirection;
+  className?: string;
+}) {
+  const arrow = direction === "positive" ? "↑" : direction === "negative" ? "↓" : "→";
+  return (
+    <span className={`dash-delta ${className}`} data-direction={direction}>
+      <span aria-hidden="true">{arrow}</span>
+      {value}
+    </span>
+  );
+}
+
+export function FormActionBar({
+  children,
+  status,
+  leading,
+  className = "",
+}: {
+  children: ReactNode;
+  status?: ReactNode;
+  leading?: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={`dash-form-action-bar ${className}`}>
+      {leading && <div className="dash-form-action-leading">{leading}</div>}
+      {status && <div className="dash-form-action-status">{status}</div>}
+      <div className="dash-form-action-buttons">{children}</div>
+    </div>
   );
 }
 

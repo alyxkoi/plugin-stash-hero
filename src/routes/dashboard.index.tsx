@@ -4,15 +4,15 @@ import {
   ChargedPanel,
   DashCard,
   DashboardShell,
+  DeltaChip,
   DomainChip,
   RangeControl,
-  SegmentedBar,
   StatusBadge,
 } from "@/components/DashboardShell";
 import { OrderDrawer } from "@/components/AdminDrawers";
 import { supabase } from "@/integrations/supabase/client";
 import { allocateLineRevenue, netRevenue, saleOrders, sumNetRevenue } from "@/lib/revenue";
-import { deriveSaleStatus } from "@/lib/sale-time";
+import { deriveSaleStatus, formatInSaleTimeZone } from "@/lib/sale-time";
 
 export const Route = createFileRoute("/dashboard/")({
   head: () => ({ meta: [{ title: "Overview — Plugin Warehouse" }] }),
@@ -180,8 +180,6 @@ function Overview() {
     }
     return [...map.values()].sort((a, b) => b.revenue - a.revenue).slice(0, 5);
   }, [completed]);
-  const bestMax = Math.max(1, ...best.map((item) => item.revenue));
-
   const now = Date.now();
   const currentSale =
     sales.find(
@@ -201,6 +199,17 @@ function Overview() {
     ),
   ).size;
   const campaignAov = campaignOrders.length ? campaignRevenue / campaignOrders.length : 0;
+  const campaignElapsedDays = currentSale
+    ? Math.max(
+        1,
+        Math.ceil(
+          (Math.min(now, new Date(currentSale.end_at).getTime()) -
+            new Date(currentSale.start_at).getTime()) /
+            86400_000,
+        ),
+      )
+    : 1;
+  const campaignRevenuePerDay = campaignRevenue / campaignElapsedDays;
 
   return (
     <DashboardShell
@@ -212,18 +221,17 @@ function Overview() {
           <div className="dash-hero-layout">
             <div className="dash-hero-topline">
               <div className="dash-hero-value">{formatMoney(currentRevenue)}</div>
-              <div
-                className="dash-hero-comparison"
-                data-direction={
+              <DeltaChip
+                value={revenueDelta.label}
+                direction={
                   revenueDelta.positive == null
                     ? "neutral"
                     : revenueDelta.positive
                       ? "positive"
                       : "negative"
                 }
-              >
-                {revenueDelta.arrow} {revenueDelta.label}
-              </div>
+                className="dash-hero-comparison"
+              />
             </div>
             <div
               className="dash-hero-chart dash-waveform"
@@ -412,14 +420,6 @@ function Overview() {
                     />
                     <span className="dash-rank-main">
                       <span className="dash-rank-name">{item.name}</span>
-                      <SegmentedBar
-                        value={item.revenue}
-                        max={bestMax}
-                        label={`${item.name}: ${moneyExact(item.revenue)} revenue`}
-                        segments={16}
-                        tone={index === 0 ? "money" : "indigo"}
-                        className="dash-rank-bar"
-                      />
                       {item.revenue === 0 && (
                         <DomainChip domain="neutral" className="mt-1">
                           Zero revenue
@@ -454,33 +454,30 @@ function Overview() {
           }
         >
           {currentSale ? (
-            <div className="dash-campaign-pulse">
-              <div className="dash-campaign-pulse-title">
-                <span>
-                  <i aria-hidden="true" /> Live campaign
-                </span>
-                <h3>{currentSale.name}</h3>
+            <div className="dash-campaign-performance">
+              <div className="dash-campaign-performance-main">
+                <div className="dash-campaign-performance-heading">
+                  <h3>{currentSale.name}</h3>
+                  <StatusBadge
+                    status={deriveSaleStatus(
+                      currentSale.start_at,
+                      currentSale.end_at,
+                      currentSale.status,
+                      now,
+                    )}
+                  />
+                </div>
                 <p>
-                  {currentSale.discount_pct}% off · {campaignCountdown(currentSale.end_at, now)}{" "}
-                  remaining
+                  {formatInSaleTimeZone(currentSale.start_at)} -{" "}
+                  {formatInSaleTimeZone(currentSale.end_at)} · {currentSale.discount_pct}% off ·{" "}
+                  {campaignCountdown(currentSale.end_at, now)} remaining
                 </p>
               </div>
-              <div className="dash-campaign-pulse-metrics">
-                <CampaignMetric
-                  label="Customers connected"
-                  value={campaignCustomers.toLocaleString()}
-                />
-                <CampaignMetric
-                  label="Campaign sales"
-                  value={campaignOrders.length.toLocaleString()}
-                />
-                <CampaignMetric
-                  label="Campaign revenue"
-                  value={moneyExact(campaignRevenue)}
-                  highlight
-                />
-                <CampaignMetric label="Average order" value={moneyExact(campaignAov)} />
-              </div>
+              <CampaignDatum label="Customers" value={campaignCustomers.toLocaleString()} />
+              <CampaignDatum label="Orders" value={campaignOrders.length.toLocaleString()} />
+              <CampaignDatum label="Revenue" value={moneyExact(campaignRevenue)} />
+              <CampaignDatum label="Per day" value={moneyExact(campaignRevenuePerDay)} />
+              <CampaignDatum label="Average order" value={moneyExact(campaignAov)} />
             </div>
           ) : (
             <div className="dash-empty">
@@ -517,15 +514,13 @@ function ChargedStat({
     <>
       <div className="dash-charged-stat-label">{label}</div>
       <div className="dash-charged-stat-value">
-        {value}{" "}
-        <small
-          data-direction={
+        <span>{value}</span>
+        <DeltaChip
+          value={delta.label}
+          direction={
             delta.positive == null ? "neutral" : delta.positive ? "positive" : "negative"
           }
-        >
-          {delta.arrow}
-          {delta.label}
-        </small>
+        />
       </div>
     </>
   );
@@ -543,18 +538,10 @@ function ChargedStat({
   );
 }
 
-function CampaignMetric({
-  label,
-  value,
-  highlight = false,
-}: {
-  label: string;
-  value: string;
-  highlight?: boolean;
-}) {
+function CampaignDatum({ label, value }: { label: string; value: string }) {
   return (
-    <div data-highlight={highlight}>
-      <span>{label}</span>
+    <div className="dash-campaign-performance-value">
+      <small>{label}</small>
       <strong>{value}</strong>
     </div>
   );

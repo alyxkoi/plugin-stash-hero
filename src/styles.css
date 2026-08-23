@@ -8873,6 +8873,7 @@ body.dashboard-active {
   z-index: 220 !important;
   display: flex;
   width: 100vw !important;
+  height: 100dvh !important;
   min-height: 100dvh !important;
   align-items: center;
   justify-content: center;
@@ -8885,7 +8886,7 @@ body.dashboard-active {
 .dashboard-scope .dash-marketing-modal {
   width: min(620px, 100%);
   max-height: min(88dvh, 760px);
-  overflow-y: auto;
+  overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 16px;
   background: #161231;
@@ -9995,5 +9996,617 @@ body.dashboard-active {
 @media (prefers-reduced-motion: reduce) {
   .dashboard-scope .dash-marketing-workspaces::before {
     transition: none;
+  }
+}
+
+/* Admin dashboard targeted revision pass. */
+.dashboard-scope .dash-delta {
+  gap: 5px;
+  min-height: 28px;
+  padding: 5px 9px;
+  border: 1px solid color-mix(in srgb, var(--delta-fill) 76%, white 24%);
+  border-radius: 9px;
+  background: var(--delta-fill);
+  color: #ffffff !important;
+  font: 750 11px/1 var(--f-data);
+  box-shadow: none;
+  overflow: visible;
+  text-transform: none;
+}
+
+.dashboard-scope .dash-delta[data-direction="positive"] {
+  --delta-fill: #23744f;
+}
+
+.dashboard-scope .dash-delta[data-direction="negative"] {
+  --delta-fill: #a93143;
+}
+
+.dashboard-scope .dash-delta[data-direction="neutral"] {
+  --delta-fill: #57516f;
+}
+
+.dashboard-scope .dash-status {
+  border-color: color-mix(in srgb, var(--status-fill) 76%, white 24%);
+  background: var(--status-fill);
+  color: #ffffff;
+}
+
+.dashboard-scope .dash-status[data-tone="positive"] {
+  --status-fill: #23744f;
+  color: #ffffff;
+  background: var(--status-fill);
+  border-color: color-mix(in srgb, var(--status-fill) 76%, white 24%);
+}
+
+.dashboard-scope .dash-status[data-tone="warning"] {
+  --status-fill: #8a6415;
+}
+
+.dashboard-scope .dash-status[data-tone="danger"] {
+  --status-fill: #a93143;
+}
+
+.dashboard-scope .dash-status[data-tone="neutral"] {
+  --status-fill: #57516f;
+}
+
+.dashboard-scope .dash-chip {
+  gap: 4px;
+  border: 1px solid color-mix(in srgb, var(--chip-solid) 76%, white 24%);
+  background: var(--chip-solid);
+  color: #ffffff;
+}
+
+.dashboard-scope .dash-chip[data-domain="money"] {
+  --chip-solid: #a80f45;
+  background: var(--chip-solid);
+  color: #ffffff;
+}
+
+.dashboard-scope .dash-chip[data-domain="volume"] {
+  --chip-solid: #3029a5;
+  background: var(--chip-solid);
+  color: #ffffff;
+}
+
+.dashboard-scope .dash-chip[data-domain="people"] {
+  --chip-solid: #681f9c;
+  background: var(--chip-solid);
+  color: #ffffff;
+}
+
+.dashboard-scope .dash-chip[data-domain="catalog"] {
+  --chip-solid: #116f80;
+  background: var(--chip-solid);
+  color: #ffffff;
+}
+
+.dashboard-scope .dash-chip[data-domain="promo"] {
+  --chip-solid: #a73a13;
+  background: var(--chip-solid);
+  color: #ffffff;
+}
+
+.dashboard-scope .dash-chip[data-domain="neutral"] {
+  --chip-solid: #4f4968;
+  background: var(--chip-solid);
+  color: #ffffff;
+}
+
+/* Hero metric rows keep their full cadence without clipping values or deltas. */
+.dashboard-scope .dash-analytics-metrics {
+  grid-template-columns: minmax(0, 1.45fr) repeat(3, minmax(0, 0.6fr));
+}
+
+.dashboard-scope .dash-analytics-metric,
+.dashboard-scope .dash-analytics-metric:first-child {
+  min-width: 0;
+  padding: 12px clamp(14px, 2vw, 24px);
+  border: 0;
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.dashboard-scope .dash-analytics-metric:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.dashboard-scope .dash-analytics-metric > strong {
+  max-width: 100%;
+  overflow: visible;
+  font-size: clamp(1.8rem, 3.4vw, 3.55rem);
+  text-overflow: clip;
+}
+
+.dashboard-scope .dash-analytics-metric:first-child > strong {
+  font-size: clamp(3.9rem, 7.2vw, 7.4rem);
+}
+
+.dashboard-scope .dash-analytics-metric > .dash-delta {
+  display: inline-flex;
+  margin-top: 9px;
+  overflow: visible;
+  white-space: nowrap;
+}
+
+.dashboard-scope .dash-charged-stat-value {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  overflow: visible;
+}
+
+.dashboard-scope .dash-charged-stat-value > span:first-child {
+  min-width: 0;
+}
+
+.dashboard-scope .dash-live-sale-stats > div > .dash-delta {
+  margin-top: 8px;
+}
+
+/* Ranked product rows prioritize names, then content-sized metrics. */
+.dashboard-scope .dash-rank-row {
+  grid-template-columns: 34px 48px minmax(0, 1fr) max-content max-content;
+  min-height: 60px;
+  gap: 8px;
+  padding-block: 4px;
+}
+
+.dashboard-scope .dash-rank-main {
+  padding-right: 8px;
+}
+
+.dashboard-scope .dash-rank-name {
+  -webkit-mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 14px), transparent 100%);
+  mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 14px), transparent 100%);
+}
+
+.dashboard-scope .dash-rank-metric {
+  width: max-content;
+  min-width: 0;
+}
+
+/* Overview campaign performance uses the same quiet row language as orders. */
+.dashboard-scope .dash-campaign-performance {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) repeat(5, max-content);
+  align-items: center;
+  gap: clamp(16px, 2.2vw, 34px);
+  min-width: 0;
+  padding: 10px 2px;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.dashboard-scope .dash-campaign-performance-main {
+  min-width: 0;
+}
+
+.dashboard-scope .dash-campaign-performance-heading {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.dashboard-scope .dash-campaign-performance-heading h3 {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 700;
+  text-overflow: clip;
+  white-space: nowrap;
+  -webkit-mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 14px), transparent 100%);
+  mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 14px), transparent 100%);
+}
+
+.dashboard-scope .dash-campaign-performance-main p {
+  margin-top: 6px;
+  color: var(--text-tertiary);
+  font: 500 10px/1.35 var(--f-data);
+}
+
+.dashboard-scope .dash-campaign-performance-value {
+  min-width: max-content;
+  text-align: right;
+}
+
+.dashboard-scope .dash-campaign-performance-value small,
+.dashboard-scope .dash-campaign-performance-value strong {
+  display: block;
+}
+
+.dashboard-scope .dash-campaign-performance-value small {
+  color: var(--text-tertiary);
+  font: 700 9px/1.2 var(--f-sans);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.dashboard-scope .dash-campaign-performance-value strong {
+  margin-top: 5px;
+  color: var(--text-primary);
+  font: 650 13px/1 var(--f-data);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Orders summary sits directly on the page and clears the account control. */
+.dashboard-scope .dash-orders-page,
+.dashboard-scope .dash-form-page {
+  padding-top: 78px;
+}
+
+.dashboard-scope .dash-orders-metrics {
+  width: min(760px, 100%);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 0;
+}
+
+.dashboard-scope .dash-orders-metrics .dash-analytics-metric,
+.dashboard-scope .dash-orders-metrics .dash-analytics-metric:first-child {
+  min-height: 96px;
+  padding: 8px 28px;
+  background: transparent;
+}
+
+.dashboard-scope .dash-orders-metrics .dash-analytics-metric:first-child {
+  padding-left: 0;
+}
+
+.dashboard-scope .dash-orders-metrics .dash-analytics-metric > strong,
+.dashboard-scope .dash-orders-metrics .dash-analytics-metric.is-top-spender > strong {
+  font-size: clamp(2.3rem, 4vw, 3.8rem);
+  text-align: left;
+}
+
+/* Traffic and customer mix share one analytical surface. */
+.dashboard-scope .dash-traffic-split-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.72fr);
+  gap: 22px;
+  min-width: 0;
+}
+
+.dashboard-scope .dash-traffic-returning {
+  min-width: 0;
+  padding-left: 22px;
+  border-left: 1px solid var(--border);
+}
+
+.dashboard-scope .dash-traffic-returning > h3 {
+  margin-bottom: 10px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.dashboard-scope .dash-traffic-returning .dash-split-wrap {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  gap: 8px;
+}
+
+.dashboard-scope .dash-traffic-returning .dash-split-donut {
+  width: 158px;
+  height: 158px;
+}
+
+.dashboard-scope .dash-traffic-returning .dash-split-insights {
+  width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dashboard-scope .dash-sale-performance-list li {
+  grid-template-columns: minmax(220px, 1fr) repeat(3, max-content);
+  min-height: 58px;
+  gap: 18px;
+  padding: 8px 4px;
+  border-radius: 0;
+  background: transparent;
+}
+
+.dashboard-scope .dash-sale-performance-list li.is-active {
+  background: transparent;
+}
+
+.dashboard-scope .dash-sale-performance-list li:hover {
+  background: var(--surface-3);
+}
+
+@media (min-width: 1280px) {
+  .dashboard-scope .dash-analytics-detail-grid {
+    grid-template-areas:
+      "top traffic"
+      "sale sale";
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  }
+
+  .dashboard-scope .dash-analytics-top-products {
+    grid-area: top;
+    grid-column: auto !important;
+  }
+
+  .dashboard-scope .dash-analytics-traffic {
+    grid-area: traffic;
+    grid-column: auto !important;
+  }
+
+  .dashboard-scope .dash-analytics-sale {
+    grid-area: sale;
+    grid-column: 1 / -1 !important;
+  }
+}
+
+/* Perks hero columns follow their content and place dividers in the gaps. */
+.dashboard-scope .dash-perks-hero-stats {
+  display: grid;
+  grid-template-columns: repeat(3, max-content);
+  justify-content: space-between;
+  gap: clamp(24px, 3vw, 48px);
+  width: 100%;
+  margin: 2px 0 4px;
+}
+
+.dashboard-scope .dash-perks-hero-stats .dash-charged-stat {
+  position: relative;
+  width: max-content;
+  min-width: 0;
+  padding: 0 0 10px;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+.dashboard-scope .dash-perks-hero-stats .dash-charged-stat + .dash-charged-stat::before {
+  position: absolute;
+  top: 12%;
+  bottom: 12%;
+  left: clamp(-24px, -1.5vw, -12px);
+  width: 1px;
+  content: "";
+  background: linear-gradient(transparent, rgba(255, 255, 255, 0.24), transparent);
+}
+
+.dashboard-scope .dash-perks-hero-stats .dash-charged-stat-value {
+  width: max-content;
+  max-width: 100%;
+  font-size: clamp(2.6rem, 4.6vw, 5.2rem);
+  white-space: nowrap;
+}
+
+/* Creation actions are ordinary form content rather than viewport chrome. */
+.dashboard-scope .dash-form-action-bar {
+  width: min(56rem, 100%);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin: 24px auto 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.dashboard-scope .dash-form-action-leading {
+  margin-right: auto;
+}
+
+.dashboard-scope .dash-form-action-status {
+  margin-right: auto;
+  color: var(--text-tertiary);
+  font: 500 10px/1.3 var(--f-data);
+}
+
+.dashboard-scope .dash-form-action-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.dashboard-scope .dash-form-action-buttons > * {
+  min-height: 42px;
+}
+
+@media (max-width: 1100px) {
+  .dashboard-scope .dash-analytics-metrics {
+    grid-template-columns: minmax(0, 1.3fr) repeat(3, minmax(0, 0.7fr));
+  }
+
+  .dashboard-scope .dash-analytics-metric:first-child > strong {
+    font-size: clamp(3.7rem, 7vw, 5.2rem);
+  }
+
+  .dashboard-scope .dash-traffic-split-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dashboard-scope .dash-traffic-returning {
+    padding: 18px 0 0;
+    border-top: 1px solid var(--border);
+    border-left: 0;
+  }
+}
+
+@media (max-width: 767px) {
+  .dashboard-scope .dash-analytics-metrics,
+  .dashboard-scope .dash-customer-unified-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+  }
+
+  .dashboard-scope .dash-analytics-metric,
+  .dashboard-scope .dash-analytics-metric:first-child {
+    min-height: 86px;
+    padding: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    border-left: 1px solid rgba(255, 255, 255, 0.15);
+  }
+
+  .dashboard-scope .dash-analytics-metric:nth-child(odd) {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .dashboard-scope .dash-analytics-metric:nth-child(-n + 2) {
+    border-top: 0;
+  }
+
+  .dashboard-scope .dash-analytics-metric:first-child {
+    grid-column: auto;
+  }
+
+  .dashboard-scope .dash-analytics-metric > strong,
+  .dashboard-scope .dash-analytics-metric:first-child > strong,
+  .dashboard-scope .dash-customer-unified-metrics .dash-analytics-metric:first-child > strong {
+    font-size: clamp(1.85rem, 9vw, 2.7rem);
+  }
+
+  .dashboard-scope .dash-analytics-metric > .dash-delta {
+    min-height: 26px;
+    margin-top: 7px;
+    padding: 4px 8px;
+  }
+
+  .dashboard-scope .dash-rank-row {
+    grid-template-columns: 28px 44px minmax(0, 1fr) max-content;
+    grid-template-rows: auto auto;
+    min-height: 0;
+    gap: 8px;
+    padding-block: 9px;
+  }
+
+  .dashboard-scope .dash-rank-main {
+    padding-right: 5px;
+  }
+
+  .dashboard-scope .dash-campaign-performance {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+  }
+
+  .dashboard-scope .dash-campaign-performance-main {
+    grid-column: 1 / -1;
+    padding: 4px 0 14px;
+  }
+
+  .dashboard-scope .dash-campaign-performance-value {
+    min-width: 0;
+    padding: 12px 8px 10px 0;
+    border-top: 1px solid var(--border);
+    text-align: left;
+  }
+
+  .dashboard-scope .dash-campaign-performance-value:nth-child(even) {
+    padding-left: 8px;
+    border-left: 1px solid var(--border);
+  }
+
+  .dashboard-scope .dash-orders-page,
+  .dashboard-scope .dash-form-page {
+    padding-top: max(68px, calc(58px + env(safe-area-inset-top)));
+  }
+
+  .dashboard-scope .dash-orders-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-scope .dash-orders-metrics .dash-analytics-metric,
+  .dashboard-scope .dash-orders-metrics .dash-analytics-metric:first-child {
+    min-height: 88px;
+    padding: 12px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    border-left: 0;
+  }
+
+  .dashboard-scope .dash-orders-metrics .dash-analytics-metric:first-child {
+    border-top: 0;
+  }
+
+  .dashboard-scope .dash-orders-metrics .dash-analytics-metric > strong,
+  .dashboard-scope .dash-orders-metrics .dash-analytics-metric.is-top-spender > strong {
+    font-size: clamp(2.35rem, 12vw, 3.35rem);
+  }
+
+  .dashboard-scope .dash-sale-performance-list li {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    padding: 12px 2px;
+  }
+
+  .dashboard-scope .dash-sale-performance-list li > .min-w-0 {
+    grid-column: 1 / -1;
+  }
+
+  .dashboard-scope .dash-sale-performance-list .dash-sale-number,
+  .dashboard-scope .dash-sale-performance-list .dash-sale-number:nth-last-child(-n + 2) {
+    display: block;
+    min-width: 0;
+    text-align: left;
+  }
+
+  .dashboard-scope .dash-perks-hero-stats {
+    grid-template-columns: repeat(2, max-content);
+    justify-content: space-between;
+    gap: 28px clamp(24px, 12vw, 48px);
+  }
+
+  .dashboard-scope .dash-perks-hero-stats .dash-charged-stat {
+    width: max-content;
+    padding: 0 0 10px;
+  }
+
+  .dashboard-scope .dash-perks-hero-stats .dash-charged-stat:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .dashboard-scope .dash-perks-hero-stats .dash-charged-stat + .dash-charged-stat::before {
+    left: clamp(-24px, -6vw, -12px);
+  }
+
+  .dashboard-scope .dash-perks-hero-stats .dash-charged-stat:last-child::before {
+    top: -14px;
+    right: 0;
+    bottom: auto;
+    left: 0;
+    width: auto;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.24), transparent);
+  }
+
+  .dashboard-scope .dash-perks-hero-stats .dash-charged-stat-value,
+  .dashboard-scope .dash-perks-hero-stats .dash-charged-stat:last-child .dash-charged-stat-value {
+    font-size: clamp(1.8rem, 9vw, 3rem);
+  }
+
+  .dashboard-scope .dash-form-action-bar {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 18px;
+  }
+
+  .dashboard-scope .dash-form-action-leading,
+  .dashboard-scope .dash-form-action-status {
+    margin-right: 0;
+  }
+
+  .dashboard-scope .dash-form-action-buttons {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+  }
+
+  .dashboard-scope .dash-form-action-buttons > * {
+    width: 100%;
+    min-height: 46px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 }

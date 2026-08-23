@@ -18,7 +18,7 @@ import {
   ChargedPanel,
   DashCard,
   DashboardShell,
-  DomainChip,
+  DeltaChip,
   RangeControl,
   SegmentedBar,
   StatusBadge,
@@ -191,7 +191,6 @@ function Analytics() {
     }
     return [...map.values()].sort((a, b) => b.revenue - a.revenue || b.units - a.units).slice(0, 7);
   }, [inRange]);
-  const topMax = Math.max(1, ...top.map((item) => item.revenue || item.units));
 
   const sources = useMemo(() => {
     const map = new Map<string, { count: number; revenue: number }>();
@@ -248,8 +247,6 @@ function Analytics() {
         return new Date(b.start_at).getTime() - new Date(a.start_at).getTime();
       });
   }, [orders, sales, now]);
-  const saleDayMax = Math.max(1, ...salePerformance.map((sale) => sale.revenuePerDay));
-
   const revenueDelta = percentDelta(revenue, previousRevenue);
   const ordersDelta = percentDelta(inRange.length, previousRange.length);
   const aovDelta = percentDelta(aov, previousAov);
@@ -364,14 +361,6 @@ function Analytics() {
                     />
                     <span className="dash-rank-main">
                       <span className="dash-rank-name">{item.name}</span>
-                      <SegmentedBar
-                        value={item.revenue || item.units}
-                        max={topMax}
-                        label={`${item.name}: ${money(item.revenue)} revenue`}
-                        segments={16}
-                        tone={index === 0 ? "money" : "indigo"}
-                        className="dash-rank-bar"
-                      />
                     </span>
                     <span className="dash-rank-metric">
                       <small>Units</small>
@@ -391,94 +380,96 @@ function Analytics() {
             title="Traffic sources"
             className="dash-analytics-traffic xl:col-span-7 dash-solid-panel dash-traffic-panel"
           >
-            {sources.length === 0 ? (
-              <div className="dash-empty">
-                <p>No attributed traffic in this range.</p>
-              </div>
-            ) : (
-              <ul className="dash-source-list">
-                {sources.map((source, index) => (
-                  <li key={source.source} className={index === 0 ? "is-leader" : ""}>
-                    <div className="dash-source-line">
-                      <span className="dash-source-name">{source.source}</span>
-                      <span>{source.count.toLocaleString()} orders</span>
-                      <strong>{money(source.revenue)}</strong>
-                    </div>
-                    <SegmentedBar
-                      value={source.revenue || source.count}
-                      max={sourceMax}
-                      label={`${source.source}: ${money(source.revenue)} attributed revenue`}
-                      segments={22}
-                      tone={index === 0 ? "money" : "indigo"}
-                      className="dash-source-bar"
-                    />
-                    <small>
-                      {Math.round((source.revenue / Math.max(1, revenue)) * 100)}% of revenue in
-                      this range
-                    </small>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </DashCard>
+            <div className="dash-traffic-split-layout">
+              <section className="dash-traffic-sources" aria-label="Attributed traffic sources">
+                {sources.length === 0 ? (
+                  <div className="dash-empty">
+                    <p>No attributed traffic in this range.</p>
+                  </div>
+                ) : (
+                  <ul className="dash-source-list">
+                    {sources.map((source, index) => (
+                      <li key={source.source} className={index === 0 ? "is-leader" : ""}>
+                        <div className="dash-source-line">
+                          <span className="dash-source-name">{source.source}</span>
+                          <span>{source.count.toLocaleString()} orders</span>
+                          <strong>{money(source.revenue)}</strong>
+                        </div>
+                        <SegmentedBar
+                          value={source.revenue || source.count}
+                          max={sourceMax}
+                          label={`${source.source}: ${money(source.revenue)} attributed revenue`}
+                          segments={22}
+                          tone={index === 0 ? "money" : "indigo"}
+                          className="dash-source-bar"
+                        />
+                        <small>
+                          {Math.round((source.revenue / Math.max(1, revenue)) * 100)}% of revenue
+                          in this range
+                        </small>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
 
-          <DashCard
-            title="New vs returning"
-            className="dash-analytics-split dash-glass-panel xl:col-span-5"
-          >
-            {splitTotal === 0 ? (
-              <div className="dash-empty">
-                <p>No customer activity in this range.</p>
-              </div>
-            ) : (
-              <div className="dash-split-wrap">
-                <div
-                  className="dash-split-donut"
-                  role="img"
-                  aria-label={`${Math.round(newPct)} percent new and ${Math.round(returningPct)} percent returning`}
-                >
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={[
-                          { name: "New", value: split.neu },
-                          { name: "Returning", value: split.returning },
-                        ]}
-                        dataKey="value"
-                        nameKey="name"
-                        cx="50%"
-                        cy="50%"
-                        innerRadius="70%"
-                        outerRadius="94%"
-                        paddingAngle={2}
-                        stroke="none"
-                        isAnimationActive={!reduceMotion}
-                        animationDuration={450}
-                      >
-                        <Cell fill="var(--c-money)" />
-                        <Cell fill="var(--c-people)" />
-                      </Pie>
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="dash-split-center" aria-hidden="true">
-                    <strong>{Math.round(returningPct)}%</strong>
-                    <span>Repeat purchase</span>
+              <section className="dash-traffic-returning" aria-labelledby="new-returning-title">
+                <h3 id="new-returning-title">New vs returning</h3>
+                {splitTotal === 0 ? (
+                  <div className="dash-empty">
+                    <p>No customer activity in this range.</p>
                   </div>
-                </div>
-                <div className="dash-split-insights">
-                  <div>
-                    <span>Returning</span>
-                    <strong>{Math.round(returningPct)}%</strong>
-                    <small>{split.returning.toLocaleString()} customers</small>
+                ) : (
+                  <div className="dash-split-wrap">
+                    <div
+                      className="dash-split-donut"
+                      role="img"
+                      aria-label={`${Math.round(newPct)} percent new and ${Math.round(returningPct)} percent returning`}
+                    >
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={[
+                              { name: "New", value: split.neu },
+                              { name: "Returning", value: split.returning },
+                            ]}
+                            dataKey="value"
+                            nameKey="name"
+                            cx="50%"
+                            cy="50%"
+                            innerRadius="70%"
+                            outerRadius="94%"
+                            paddingAngle={2}
+                            stroke="none"
+                            isAnimationActive={!reduceMotion}
+                            animationDuration={450}
+                          >
+                            <Cell fill="var(--c-money)" />
+                            <Cell fill="var(--c-people)" />
+                          </Pie>
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="dash-split-center" aria-hidden="true">
+                        <strong>{Math.round(returningPct)}%</strong>
+                        <span>Repeat purchase</span>
+                      </div>
+                    </div>
+                    <div className="dash-split-insights">
+                      <div>
+                        <span>Returning</span>
+                        <strong>{Math.round(returningPct)}%</strong>
+                        <small>{split.returning.toLocaleString()} customers</small>
+                      </div>
+                      <div>
+                        <span>New</span>
+                        <strong>{Math.round(newPct)}%</strong>
+                        <small>{split.neu.toLocaleString()} customers</small>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <span>New</span>
-                    <strong>{Math.round(newPct)}%</strong>
-                    <small>{split.neu.toLocaleString()} customers</small>
-                  </div>
-                </div>
-              </div>
-            )}
+                )}
+              </section>
+            </div>
           </DashCard>
 
           <DashCard
@@ -503,14 +494,6 @@ function Analytics() {
                         {formatInSaleTimeZone(sale.end_at, { year: undefined })}
                       </div>
                     </div>
-                    <SegmentedBar
-                      value={sale.revenuePerDay}
-                      max={saleDayMax}
-                      label={`${sale.name}: ${money(sale.revenuePerDay)} revenue per day`}
-                      segments={14}
-                      tone={sale.liveStatus === "active" ? "mint" : "indigo"}
-                      className="dash-sale-mini-bar"
-                    />
                     <div className="dash-sale-number">
                       <small>Orders</small>
                       {sale.orders}
@@ -550,14 +533,12 @@ function AnalyticsMetric({
       <span>{label}</span>
       <strong>{value}</strong>
       {delta && (
-        <small
-          data-direction={
+        <DeltaChip
+          value={delta.label}
+          direction={
             delta.positive == null ? "neutral" : delta.positive ? "positive" : "negative"
           }
-        >
-          {delta.arrow}
-          {delta.label}
-        </small>
+        />
       )}
     </div>
   );

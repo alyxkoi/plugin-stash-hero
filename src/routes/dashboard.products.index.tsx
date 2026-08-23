@@ -1003,14 +1003,10 @@ function OsCell({
         className="inline-flex gap-1 rounded hover:bg-white/5 px-1 py-0.5 cursor-pointer"
       >
         {product.supports_windows && (
-          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-sky-500/15 border border-sky-500/40 text-sky-200">
-            Win
-          </span>
+          <DomainChip domain="volume">Win</DomainChip>
         )}
         {product.supports_mac && (
-          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-fuchsia-500/15 border border-fuchsia-500/40 text-fuchsia-200">
-            Mac
-          </span>
+          <DomainChip domain="catalog">Mac</DomainChip>
         )}
         {!product.supports_windows && !product.supports_mac && (
           <span className="dash-status" data-tone="warning">

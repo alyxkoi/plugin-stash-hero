@@ -1,7 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Search, UserRound } from "lucide-react";
-import { ChargedPanel, DashCard, DashboardShell, DomainChip } from "@/components/DashboardShell";
+import { Repeat2, Search, UserRound } from "lucide-react";
+import {
+  ChargedPanel,
+  DashCard,
+  DashboardShell,
+  DeltaChip,
+  DomainChip,
+} from "@/components/DashboardShell";
 import { CustomerDrawer, type CustomerDrawerData } from "@/components/AdminDrawers";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchOrderIdentity, type IdentityMap } from "@/lib/customer-identity";
@@ -522,15 +528,16 @@ function CustomerMetric({
   value: string;
   delta: ReturnType<typeof percentDelta>;
 }) {
-  const direction = delta.positive == null ? "neutral" : delta.positive ? "positive" : "negative";
   return (
     <div className="dash-analytics-metric">
       <span>{label}</span>
       <strong>{value}</strong>
-      <small data-direction={direction}>
-        {direction === "positive" ? "↑ " : direction === "negative" ? "↓ " : "→ "}
-        {delta.label}
-      </small>
+      <DeltaChip
+        value={delta.label}
+        direction={
+          delta.positive == null ? "neutral" : delta.positive ? "positive" : "negative"
+        }
+      />
     </div>
   );
 }
@@ -565,7 +572,11 @@ function AccountBadge({ hasAccount }: { hasAccount: boolean }) {
 function PurchaseBadge({ count }: { count: number }) {
   if (count <= 0) return <span className="font-mono text-xs text-[var(--text-disabled)]">—</span>;
   if (count === 1) return <DomainChip domain="neutral">New</DomainChip>;
-  return <DomainChip domain="people">Repeat ×{count}</DomainChip>;
+  return (
+    <DomainChip domain="people">
+      <Repeat2 size={12} strokeWidth={2.8} aria-hidden="true" /> Repeat ×{count}
+    </DomainChip>
+  );
 }
 
 function money(value: number) {
