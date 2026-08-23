@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION public.get_bestseller_product_ids(integer) TO anon;
