@@ -1,6 +1,5 @@
 // Behavioral email HTML, verbatim from the supplied Resend templates.
 // Do not hand-edit; regenerate from the source HTML instead.
-/* eslint-disable */
 
 export const CART_1_HTML = `<!DOCTYPE html>
 <html lang="en" xmlns:v="urn:schemas-microsoft-com:vml">

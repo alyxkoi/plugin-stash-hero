@@ -287,5 +287,9 @@ export function renderPriceDrop(opts: {
     "",
   ].join("\n");
 
-  return { subject: `${money(hero.oldPrice)} became ${money(hero.newPrice)}.`, html: finish(html), text };
+  return {
+    subject: `${money(hero.oldPrice)} became ${money(hero.newPrice)}.`,
+    html: finish(html),
+    text,
+  };
 }
