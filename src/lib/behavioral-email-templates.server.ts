@@ -7,8 +7,9 @@ import {
   CART_1_HTML,
   CART_2_HTML,
   CART_3_HTML,
-  PRICE_DROP_HTML,
   SAVED_1_HTML,
+  SAVED_2_HTML,
+
 } from "./behavioral-email-html.server";
 import {
   fill,
