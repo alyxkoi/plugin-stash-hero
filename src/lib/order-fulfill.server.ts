@@ -254,9 +254,12 @@ export async function finalizeOrder(input: FulfillInput): Promise<{ orderId: str
       process.env.PUBLIC_SITE_URL ||
       process.env.SITE_URL ||
       "https://plugin-stash-hero.lovable.app";
+    // `/api/public/download` verifies entitlement and 302s to the R2 custom
+    // domain (thepluginwarehousefiles.com). Never build R2 S3 API URLs here.
     const emailItems = input.items.map((it) => ({
       name: it.name,
       price: it.price,
+      coverUrl: it.cover_url,
       downloadUrl: `${origin}/api/public/download?session_id=${encodeURIComponent(input.sessionId)}&product_id=${encodeURIComponent(it.product_id)}`,
     }));
     const rendered = renderOrderConfirmation({
