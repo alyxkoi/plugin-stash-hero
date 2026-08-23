@@ -1,110 +1,191 @@
-// Behavioral email HTML, verbatim from the provided templates.
-// Do not hand-edit: these are the shipped Resend templates for the
-// abandoned-cart and saved-items sequences.
+// Behavioral email HTML, verbatim from the supplied Resend templates.
+// Do not hand-edit; regenerate from the source HTML instead.
 /* eslint-disable */
 
 export const CART_1_HTML = `<!DOCTYPE html>
-<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="x-apple-disable-message-reformatting">
 <meta name="color-scheme" content="dark">
 <meta name="supported-color-schemes" content="dark">
-<title>You left this behind</title>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Dosis:wght@400;600;700&display=swap" rel="stylesheet">
-<!--[if mso]><style>*{font-family:Arial,sans-serif !important;}</style><![endif]-->
+<title>Still in your cart</title>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wdth,wght,ROND@6..144,75..125,300..1000,0..100&amp;family=Google+Sans+Code:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<!--[if mso]>
+<xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml>
+<![endif]-->
 <style>
-  body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;}
-  table,td{mso-table-lspace:0pt;mso-table-rspace:0pt;}
-  img{-ms-interpolation-mode:bicubic;border:0;height:auto;line-height:100%;outline:none;text-decoration:none;display:block;}
-  body{margin:0 !important;padding:0 !important;width:100% !important;}
-  a{text-decoration:none;}
-  @media only screen and (max-width:600px){
-    .container{width:100% !important;}
-    .px{padding-left:20px !important;padding-right:20px !important;}
-    .h1{font-size:44px !important;line-height:42px !important;}
-    .bigprice{font-size:72px !important;line-height:66px !important;}
+  @import url('https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wdth,wght,ROND@6..144,75..125,300..1000,0..100&family=Google+Sans+Code:wght@400;500;700&display=swap');
+  body { margin:0; padding:0; width:100% !important; background-color:#08061F; }
+  table { border-collapse:collapse; }
+  img { border:0; outline:none; text-decoration:none; display:block; }
+  a { text-decoration:none; }
+  .code { font-family:'Google Sans Code','SF Mono',Consolas,'Courier New',monospace; }
+  @media only screen and (max-width:620px) {
+    .w600 { width:100% !important; }
+    .gut { padding-left:16px !important; padding-right:16px !important; }
+    .pad { padding-left:22px !important; padding-right:22px !important; }
+    .fig { font-size:74px !important; line-height:70px !important; }
+    .hl  { font-size:40px !important; line-height:40px !important; }
+    .heroimg { width:100% !important; height:auto !important; }
+    .stack { display:block !important; width:100% !important; }
   }
 </style>
 </head>
-<body style="margin:0;padding:0;background-color:#0B0018;">
-<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#0B0018;opacity:0;">Your cart is still holding it — but not forever.</div>
-
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#0B0018" style="background-color:#0B0018;">
+<body bgcolor="#08061F" style="margin:0; padding:0; background-color:#08061F;">
+<div style="display:none; font-size:1px; color:#08061F; line-height:1px; max-height:0; max-width:0; opacity:0; overflow:hidden;">
+Nothing expired. Nothing sold out. It is exactly where you left it.&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
+</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#08061F" style="background-color:#08061F;">
 <tr><td align="center" style="padding:0;">
-<table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
+<table role="presentation" class="w600" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:600px;">
 
-<!-- LOGO BAR -->
-<tr><td align="left" bgcolor="#0B0018" style="background-color:#0B0018;padding:22px 24px 20px 24px;border-bottom:1px solid #241243;">
-  <img src="https://thepluginwarehousefiles.com/covers/PWH%20Logo%20Main.png" width="150" alt="The Plugin Warehouse" style="width:150px;height:auto;">
-</td></tr>
+<tr>
+<td class="gut" style="padding:36px 24px 0 24px;">
+  <img src="https://thepluginwarehousefiles.com/covers/PWH%20Logo%20Main.png" width="140" alt="Plugin Warehouse" style="width:140px; height:auto;">
+</td>
+</tr>
 
-<!-- HEADLINE BLOCK -->
-<tr><td bgcolor="#190737" class="px" style="background-color:#190737;padding:38px 32px 34px 32px;">
-  <div style="font-family:'Dosis',Arial,sans-serif;font-weight:700;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:#FF003C;padding-bottom:12px;">Still in your cart</div>
-  <div class="h1" style="font-family:'Anton',Impact,Arial,sans-serif;font-weight:900;font-size:58px;line-height:54px;letter-spacing:0.5px;color:#FFFFFF;text-transform:uppercase;">You left this behind</div>
-  <div style="font-family:'Dosis',Arial,sans-serif;font-weight:500;font-size:17px;line-height:25px;color:#C9BEDD;padding-top:14px;">Your cart's still holding it. That won't last forever.</div>
-</td></tr>
+<tr>
+<td class="gut" style="padding:46px 24px 0 24px;">
+  <div class="hl" style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 100,'wdth' 105; font-size:54px; line-height:52px; font-weight:800; color:#FFFFFF; letter-spacing:-1.6px;">
+    STILL IN<br>YOUR CART.
+  </div>
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:22px;"><tr>
+    <td width="72" height="5" bgcolor="#FA1265" style="width:72px; height:5px; background-color:#FA1265; font-size:0; line-height:0;">&nbsp;</td>
+  </tr></table>
+  <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 40; font-size:16px; line-height:25px; color:#C9C2E4; padding-top:20px;">
+    An hour ago you were one click out. Nothing expired. Nothing sold out. It is sitting exactly where you left it.
+  </div>
+</td>
+</tr>
 
-<!-- HERO IMAGE -->
-<tr><td align="center" bgcolor="#0B0018" style="background-color:#0B0018;padding:0;">
-  <a href="{{HERO_URL}}" target="_blank"><img src="{{HERO_IMAGE}}" width="600" alt="{{HERO_NAME}}" style="width:100%;max-width:600px;height:auto;"></a>
-</td></tr>
-
-<!-- NAME -->
-<tr><td align="center" bgcolor="#0B0018" class="px" style="background-color:#0B0018;padding:26px 30px 16px 30px;">
-  <div style="font-family:'Anton',Impact,Arial,sans-serif;font-weight:900;font-size:26px;line-height:30px;letter-spacing:0.5px;color:#FFFFFF;text-transform:uppercase;">{{HERO_NAME}}</div>
-</td></tr>
-
-<!-- PRICE SLAB -->
-<tr><td align="center" bgcolor="#FF003C" style="background-color:#FF003C;padding:24px 24px 26px 24px;">
-  {{#HERO_OLD_PRICE}}<div style="font-family:'Dosis',Arial,sans-serif;font-weight:700;font-size:20px;line-height:22px;color:#FFC2D2;text-decoration:line-through;padding-bottom:4px;">{{HERO_OLD_PRICE}}</div>{{/HERO_OLD_PRICE}}
-  <div class="bigprice" style="font-family:'Anton',Impact,Arial,sans-serif;font-weight:900;font-size:90px;line-height:82px;color:#FFFFFF;letter-spacing:-1px;">{{HERO_PRICE}}</div>
-</td></tr>
-
-<!-- DEADLINE STRIP -->
-<tr><td align="center" bgcolor="#0E0BD1" style="background-color:#0E0BD1;padding:16px 24px;">
-  <div style="font-family:'Dosis',Arial,sans-serif;font-weight:700;font-size:14px;letter-spacing:1.5px;text-transform:uppercase;color:#FFFFFF;">{{DEADLINE_TEXT}}</div>
-</td></tr>
-
-<!-- CTA -->
-<tr><td align="center" bgcolor="#0B0018" style="background-color:#0B0018;padding:34px 24px 30px 24px;">
+<tr>
+<td class="gut" style="padding:40px 24px 0 24px;">
   <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-    <td align="center" bgcolor="#FFFFFF" style="background-color:#FFFFFF;border-radius:6px;">
-      <a href="{{CTA_URL}}" target="_blank" style="display:inline-block;font-family:'Anton',Impact,Arial,sans-serif;font-weight:900;font-size:20px;letter-spacing:1px;text-transform:uppercase;color:#0B0018;padding:19px 52px;border-radius:6px;">Finish checkout →</a>
+    <td valign="bottom" style="padding:0;">
+      <div class="code fig" style="font-family:'Google Sans Code','SF Mono',Consolas,'Courier New',monospace; font-size:94px; line-height:86px; font-weight:700; color:#FFFFFF; letter-spacing:-4px;">{{CART_TOTAL}}</div>
+    </td>
+    <td valign="bottom" style="padding:0 0 16px 14px;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td bgcolor="#7DF5AD" style="background-color:#7DF5AD; border-radius:8px; padding:8px 12px;">
+          <span class="code" style="font-family:'Google Sans Code','SF Mono',Consolas,'Courier New',monospace; font-size:14px; font-weight:700; color:#04021E; letter-spacing:0.4px;">&#8595; {{CART_SAVINGS_PCT}}</span>
+        </td>
+      </tr></table>
     </td>
   </tr></table>
-</td></tr>
 
-<!-- ADDITIONAL ITEMS (render only when more than one item) -->
-{{#EXTRA_ITEMS}}
-<tr><td bgcolor="#190737" class="px" style="background-color:#190737;padding:26px 28px 10px 28px;">
-  <div style="font-family:'Dosis',Arial,sans-serif;font-weight:700;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:#B8ACCC;">Also in your cart</div>
-</td></tr>
-<tr><td bgcolor="#190737" class="px" style="background-color:#190737;padding:0 28px 28px 28px;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-    <!-- REPEAT PER EXTRA ITEM -->
+  <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 25,'wdth' 92; font-size:11px; line-height:16px; color:#8E86B4; letter-spacing:1.6px; padding-top:12px; font-weight:600;">CART TOTAL</div>
+</td>
+</tr>
+<tr><td height="42" style="height:42px; font-size:0; line-height:0;">&nbsp;</td></tr>
+
+<tr>
+<td class="gut" style="padding:0 24px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#0D0C13" style="background-color:#0D0C13; border-radius:20px;">
+
     <tr>
-      <td width="66" style="padding:10px 0;"><a href="{{ITEM_URL}}" target="_blank"><img src="{{ITEM_IMAGE}}" width="56" alt="{{ITEM_NAME}}" style="width:56px;height:56px;border-radius:6px;"></a></td>
-      <td style="padding:10px 0;font-family:'Dosis',Arial,sans-serif;font-weight:600;font-size:16px;line-height:20px;color:#E8E0F0;">{{ITEM_NAME}}</td>
-      <td align="right" style="padding:10px 0;font-family:'Dosis',Arial,sans-serif;font-weight:700;font-size:16px;color:#FFFFFF;white-space:nowrap;">{{ITEM_PRICE}}</td>
+    <td class="pad" style="padding:22px 22px 0 22px;">
+      <a href="{{CART_URL}}"><img src="{{HERO_IMAGE}}" width="508" alt="{{HERO_NAME}}" class="heroimg" style="width:508px; max-width:100%; height:auto; display:block; border-radius:12px 12px 0 0;"></a>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td height="6" bgcolor="#FA1265" style="height:6px; background-color:#FA1265; font-size:0; line-height:0; border-radius:0 0 3px 3px;">&nbsp;</td>
+      </tr></table>
+    </td>
     </tr>
-    <!-- END REPEAT -->
-  </table>
-</td></tr>
-{{/EXTRA_ITEMS}}
+    <tr>
+    <td class="pad" style="padding:24px 30px 0 30px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td valign="middle" style="padding:0;">
+          <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 100,'wdth' 95; font-size:23px; line-height:27px; font-weight:800; color:#FFFFFF;">{{HERO_NAME}}</div>
+        </td>
+        <td valign="middle" align="right" style="padding:0 0 0 16px; white-space:nowrap;">
+          <span class="code" style="font-family:'Google Sans Code','SF Mono',Consolas,'Courier New',monospace; font-size:26px; font-weight:700; color:#FA1265;">{{HERO_PRICE}}</span><br>
+          <span class="code" style="font-family:'Google Sans Code','SF Mono',Consolas,'Courier New',monospace; font-size:14px; font-weight:400; color:#6E6690; text-decoration:line-through;">{{HERO_ORIGINAL}}</span>
+        </td>
+      </tr></table>
+    </td>
+    </tr>
 
-<!-- FOOTER -->
-<tr><td align="center" bgcolor="#0B0018" class="px" style="background-color:#0B0018;padding:30px 30px 40px 30px;border-top:1px solid #241243;">
-  <div style="font-family:'Dosis',Arial,sans-serif;font-weight:700;font-size:13px;letter-spacing:2px;color:#B8ACCC;padding-bottom:10px;">THE PLUGIN WAREHOUSE</div>
-  <div style="font-family:'Dosis',Arial,sans-serif;font-size:12px;line-height:19px;color:#8A7DA3;">
-    You started a cart at thepluginwarehouse.com.<br>
-    <a href="{{UNSUBSCRIBE_URL}}" style="color:#B8ACCC;text-decoration:underline;">Stop these reminders</a>
-  </div>
-</td></tr>
+    <tr>
+    <td class="pad" style="padding:24px 30px 0 30px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr><td colspan="3" height="1" bgcolor="#26223A" style="height:1px; background-color:#26223A; font-size:0; line-height:0;">&nbsp;</td></tr>
+        <!-- {{EXTRA_ITEMS}} repeat this row per additional cart item -->
+        <tr>
+          <td width="76" valign="middle" style="padding:16px 0;">
+            <a href="{{CART_URL}}"><img src="{{ITEM_IMAGE}}" width="64" height="64" alt="{{ITEM_NAME}}" style="width:64px; height:64px; border-radius:10px; display:block;"></a>
+          </td>
+          <td valign="middle" style="padding:16px 12px 16px 0;">
+            <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 60,'wdth' 95; font-size:16px; line-height:21px; font-weight:700; color:#FFFFFF;">{{ITEM_NAME}}</div>
+          </td>
+          <td valign="middle" align="right" style="padding:16px 0; white-space:nowrap;">
+            <span class="code" style="font-family:'Google Sans Code','SF Mono',Consolas,'Courier New',monospace; font-size:18px; font-weight:700; color:#8E86B4;">{{ITEM_PRICE}}</span><br>
+            <span class="code" style="font-family:'Google Sans Code','SF Mono',Consolas,'Courier New',monospace; font-size:12px; font-weight:400; color:#5B5478; text-decoration:line-through;">{{ITEM_ORIGINAL}}</span>
+          </td>
+        </tr>
+        <tr><td colspan="3" height="1" bgcolor="#26223A" style="height:1px; background-color:#26223A; font-size:0; line-height:0;">&nbsp;</td></tr>
+        <!-- end repeat -->
+      </table>
+    </td>
+    </tr>
+
+    <tr>
+    <td class="pad" style="padding:28px 30px 30px 30px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td align="center" bgcolor="#FA1265" style="background-color:#FA1265; border-radius:12px;">
+          <a href="{{CART_URL}}" style="display:block; padding:20px 24px; font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 100,'wdth' 95; font-size:17px; font-weight:800; color:#FFFFFF; letter-spacing:0.6px;">FINISH CHECKOUT &#8594;</a>
+        </td>
+      </tr></table>
+    </td>
+    </tr>
+
+  </table>
+</td>
+</tr>
+<tr><td height="18" style="height:18px; font-size:0; line-height:0;">&nbsp;</td></tr>
+
+<tr>
+<td class="gut" style="padding:0 24px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#2E2750" style="background-color:#2E2750; border-radius:20px;">
+    <tr>
+    <td class="pad" style="padding:32px 30px 34px 30px;">
+      <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 100,'wdth' 95; font-size:24px; line-height:30px; font-weight:800; color:#FFFFFF;">There are hundreds more<br>in the vault.</div>
+      <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 40; font-size:15px; line-height:23px; color:#E4DEF2; padding-top:10px;">Most of them sit under twenty five dollars.</div>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:20px;"><tr>
+        <td bgcolor="#2E2750" style="background-color:#2E2750; border:2px solid #FFFFFF; border-radius:12px;">
+          <a href="https://www.thepluginwarehouse.com/shop" style="display:block; padding:14px 24px; font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 100,'wdth' 95; font-size:14px; font-weight:800; color:#FFFFFF; letter-spacing:0.6px;">BROWSE THE VAULT &#8594;</a>
+        </td>
+      </tr></table>
+    </td>
+    </tr>
+  </table>
+</td>
+</tr>
+<tr><td height="46" style="height:46px; font-size:0; line-height:0;">&nbsp;</td></tr>
 
 </table>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#FFFFFF" style="background-color:#FFFFFF;">
+<tr><td align="center" style="padding:0;">
+  <table role="presentation" class="w600" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:600px;">
+    <tr>
+    <td class="gut" align="center" style="padding:34px 24px 36px 24px;">
+      <img src="https://thepluginwarehousefiles.com/covers/PWH%20Logo%20Dark.png" width="132" alt="Plugin Warehouse" style="width:132px; height:auto; margin:0 auto;">
+      <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 40; font-size:13px; line-height:22px; color:#08061F; padding-top:18px;">
+        <a href="https://www.thepluginwarehouse.com/contact-us" style="color:#08061F; text-decoration:underline;">Contact</a>
+        &nbsp;&nbsp;&#183;&nbsp;&nbsp;
+        <a href="https://www.thepluginwarehouse.com/shop" style="color:#08061F; text-decoration:underline;">Shop all</a>
+        &nbsp;&nbsp;&#183;&nbsp;&nbsp;
+        <a href="{{UNSUBSCRIBE_URL}}" style="color:#08061F; text-decoration:underline;">Stop cart reminders</a>
+      </div>
+      <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 40; font-size:12px; line-height:18px; color:#6E6690; padding-top:12px;">That link only stops cart and saved item emails. Your newsletter stays put.</div>
+    </td>
+    </tr>
+  </table>
+</td></tr>
+</table>
+
 </td></tr>
 </table>
 </body>
@@ -112,107 +193,189 @@ export const CART_1_HTML = `<!DOCTYPE html>
 `;
 
 export const CART_2_HTML = `<!DOCTYPE html>
-<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="x-apple-disable-message-reformatting">
 <meta name="color-scheme" content="dark">
 <meta name="supported-color-schemes" content="dark">
-<title>Your cart's getting cold</title>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Dosis:wght@400;600;700&display=swap" rel="stylesheet">
-<!--[if mso]><style>*{font-family:Arial,sans-serif !important;}</style><![endif]-->
+<title>One day later</title>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wdth,wght,ROND@6..144,75..125,300..1000,0..100&amp;family=Google+Sans+Code:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<!--[if mso]>
+<xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml>
+<![endif]-->
 <style>
-  body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;}
-  table,td{mso-table-lspace:0pt;mso-table-rspace:0pt;}
-  img{-ms-interpolation-mode:bicubic;border:0;height:auto;line-height:100%;outline:none;text-decoration:none;display:block;}
-  body{margin:0 !important;padding:0 !important;width:100% !important;}
-  a{text-decoration:none;}
-  @media only screen and (max-width:600px){
-    .container{width:100% !important;}
-    .px{padding-left:20px !important;padding-right:20px !important;}
-    .h1{font-size:44px !important;line-height:42px !important;}
-    .bigprice{font-size:72px !important;line-height:66px !important;}
+  @import url('https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wdth,wght,ROND@6..144,75..125,300..1000,0..100&family=Google+Sans+Code:wght@400;500;700&display=swap');
+  body { margin:0; padding:0; width:100% !important; background-color:#08061F; }
+  table { border-collapse:collapse; }
+  img { border:0; outline:none; text-decoration:none; display:block; }
+  a { text-decoration:none; }
+  .code { font-family:'Google Sans Code','SF Mono',Consolas,'Courier New',monospace; }
+  @media only screen and (max-width:620px) {
+    .w600 { width:100% !important; }
+    .gut { padding-left:16px !important; padding-right:16px !important; }
+    .pad { padding-left:22px !important; padding-right:22px !important; }
+    .fig { font-size:74px !important; line-height:70px !important; }
+    .hl  { font-size:40px !important; line-height:40px !important; }
+    .heroimg { width:100% !important; height:auto !important; }
+    .stack { display:block !important; width:100% !important; }
   }
 </style>
 </head>
-<body style="margin:0;padding:0;background-color:#0B0018;">
-<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#0B0018;opacity:0;">Still yours for now. Prices move, carts clear.</div>
-
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#0B0018" style="background-color:#0B0018;">
+<body bgcolor="#08061F" style="margin:0; padding:0; background-color:#08061F;">
+<div style="display:none; font-size:1px; color:#08061F; line-height:1px; max-height:0; max-width:0; opacity:0; overflow:hidden;">
+Your cart has not moved. Neither have the prices.&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
+</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#08061F" style="background-color:#08061F;">
 <tr><td align="center" style="padding:0;">
-<table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
+<table role="presentation" class="w600" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:600px;">
 
-<!-- LOGO BAR -->
-<tr><td align="left" bgcolor="#0B0018" style="background-color:#0B0018;padding:22px 24px 20px 24px;border-bottom:1px solid #241243;">
-  <img src="https://thepluginwarehousefiles.com/covers/PWH%20Logo%20Main.png" width="150" alt="The Plugin Warehouse" style="width:150px;height:auto;">
-</td></tr>
+<tr>
+<td class="gut" style="padding:36px 24px 0 24px;">
+  <img src="https://thepluginwarehousefiles.com/covers/PWH%20Logo%20Main.png" width="140" alt="Plugin Warehouse" style="width:140px; height:auto;">
+</td>
+</tr>
 
-<!-- HEADLINE BLOCK -->
-<tr><td bgcolor="#190737" class="px" style="background-color:#190737;padding:38px 32px 34px 32px;">
-  <div style="font-family:'Dosis',Arial,sans-serif;font-weight:700;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:#FF003C;padding-bottom:12px;">Day two</div>
-  <div class="h1" style="font-family:'Anton',Impact,Arial,sans-serif;font-weight:900;font-size:58px;line-height:54px;letter-spacing:0.5px;color:#FFFFFF;text-transform:uppercase;">Your cart's getting cold</div>
-  <div style="font-family:'Dosis',Arial,sans-serif;font-weight:500;font-size:17px;line-height:25px;color:#C9BEDD;padding-top:14px;">Still yours for now. Prices move, carts clear — this one's been sitting a while.</div>
-</td></tr>
+<tr>
+<td class="gut" style="padding:46px 24px 0 24px;">
+  <div class="hl" style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 100,'wdth' 105; font-size:54px; line-height:52px; font-weight:800; color:#FFFFFF; letter-spacing:-1.6px;">
+    ONE DAY<br>LATER.
+  </div>
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:22px;"><tr>
+    <td width="72" height="5" bgcolor="#FA1265" style="width:72px; height:5px; background-color:#FA1265; font-size:0; line-height:0;">&nbsp;</td>
+  </tr></table>
+  <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 40; font-size:16px; line-height:25px; color:#C9C2E4; padding-top:20px;">
+    Your cart has not moved. Neither have the prices. Checkout takes about thirty seconds whenever you are ready for it.
+  </div>
+</td>
+</tr>
 
-<!-- HERO IMAGE -->
-<tr><td align="center" bgcolor="#0B0018" style="background-color:#0B0018;padding:0;">
-  <a href="{{HERO_URL}}" target="_blank"><img src="{{HERO_IMAGE}}" width="600" alt="{{HERO_NAME}}" style="width:100%;max-width:600px;height:auto;"></a>
-</td></tr>
-
-<!-- NAME -->
-<tr><td align="center" bgcolor="#0B0018" class="px" style="background-color:#0B0018;padding:26px 30px 16px 30px;">
-  <div style="font-family:'Anton',Impact,Arial,sans-serif;font-weight:900;font-size:26px;line-height:30px;letter-spacing:0.5px;color:#FFFFFF;text-transform:uppercase;">{{HERO_NAME}}</div>
-</td></tr>
-
-<!-- PRICE SLAB -->
-<tr><td align="center" bgcolor="#FF003C" style="background-color:#FF003C;padding:24px 24px 26px 24px;">
-  {{#HERO_OLD_PRICE}}<div style="font-family:'Dosis',Arial,sans-serif;font-weight:700;font-size:20px;line-height:22px;color:#FFC2D2;text-decoration:line-through;padding-bottom:4px;">{{HERO_OLD_PRICE}}</div>{{/HERO_OLD_PRICE}}
-  <div class="bigprice" style="font-family:'Anton',Impact,Arial,sans-serif;font-weight:900;font-size:90px;line-height:82px;color:#FFFFFF;letter-spacing:-1px;">{{HERO_PRICE}}</div>
-</td></tr>
-
-<!-- DEADLINE STRIP -->
-<tr><td align="center" bgcolor="#0E0BD1" style="background-color:#0E0BD1;padding:16px 24px;">
-  <div style="font-family:'Dosis',Arial,sans-serif;font-weight:700;font-size:14px;letter-spacing:1.5px;text-transform:uppercase;color:#FFFFFF;">{{DEADLINE_TEXT}}</div>
-</td></tr>
-
-<!-- CTA -->
-<tr><td align="center" bgcolor="#0B0018" style="background-color:#0B0018;padding:34px 24px 30px 24px;">
+<tr>
+<td class="gut" style="padding:40px 24px 0 24px;">
   <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-    <td align="center" bgcolor="#FFFFFF" style="background-color:#FFFFFF;border-radius:6px;">
-      <a href="{{CTA_URL}}" target="_blank" style="display:inline-block;font-family:'Anton',Impact,Arial,sans-serif;font-weight:900;font-size:20px;letter-spacing:1px;text-transform:uppercase;color:#0B0018;padding:19px 52px;border-radius:6px;">Grab it before it's gone →</a>
+    <td valign="bottom" style="padding:0;">
+      <div class="code fig" style="font-family:'Google Sans Code','SF Mono',Consolas,'Courier New',monospace; font-size:94px; line-height:86px; font-weight:700; color:#FFFFFF; letter-spacing:-4px;">{{CART_SAVINGS_AMOUNT}}</div>
+    </td>
+    <td valign="bottom" style="padding:0 0 16px 14px;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td bgcolor="#7DF5AD" style="background-color:#7DF5AD; border-radius:8px; padding:8px 12px;">
+          <span class="code" style="font-family:'Google Sans Code','SF Mono',Consolas,'Courier New',monospace; font-size:14px; font-weight:700; color:#04021E; letter-spacing:0.4px;">{{CART_TOTAL}} TO PAY</span>
+        </td>
+      </tr></table>
     </td>
   </tr></table>
-</td></tr>
+  <div class="code" style="font-family:'Google Sans Code','SF Mono',Consolas,'Courier New',monospace; font-size:17px; color:#6E6690; text-decoration:line-through; padding-top:10px;">{{CART_ORIGINAL_TOTAL}}</div>
+  <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 25,'wdth' 92; font-size:11px; line-height:16px; color:#8E86B4; letter-spacing:1.6px; padding-top:12px; font-weight:600;">OFF RETAIL, ACROSS YOUR CART</div>
+</td>
+</tr>
+<tr><td height="42" style="height:42px; font-size:0; line-height:0;">&nbsp;</td></tr>
 
-<!-- ADDITIONAL ITEMS (render only when more than one item) -->
-{{#EXTRA_ITEMS}}
-<tr><td bgcolor="#190737" class="px" style="background-color:#190737;padding:26px 28px 10px 28px;">
-  <div style="font-family:'Dosis',Arial,sans-serif;font-weight:700;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:#B8ACCC;">Also waiting</div>
-</td></tr>
-<tr><td bgcolor="#190737" class="px" style="background-color:#190737;padding:0 28px 28px 28px;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-    <!-- REPEAT PER EXTRA ITEM -->
+<tr>
+<td class="gut" style="padding:0 24px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#0D0C13" style="background-color:#0D0C13; border-radius:20px;">
+
     <tr>
-      <td width="66" style="padding:10px 0;"><a href="{{ITEM_URL}}" target="_blank"><img src="{{ITEM_IMAGE}}" width="56" alt="{{ITEM_NAME}}" style="width:56px;height:56px;border-radius:6px;"></a></td>
-      <td style="padding:10px 0;font-family:'Dosis',Arial,sans-serif;font-weight:600;font-size:16px;line-height:20px;color:#E8E0F0;">{{ITEM_NAME}}</td>
-      <td align="right" style="padding:10px 0;font-family:'Dosis',Arial,sans-serif;font-weight:700;font-size:16px;color:#FFFFFF;white-space:nowrap;">{{ITEM_PRICE}}</td>
+    <td class="pad" style="padding:22px 22px 0 22px;">
+      <a href="{{CART_URL}}"><img src="{{HERO_IMAGE}}" width="508" alt="{{HERO_NAME}}" class="heroimg" style="width:508px; max-width:100%; height:auto; display:block; border-radius:12px 12px 0 0;"></a>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td height="6" bgcolor="#FA1265" style="height:6px; background-color:#FA1265; font-size:0; line-height:0; border-radius:0 0 3px 3px;">&nbsp;</td>
+      </tr></table>
+    </td>
     </tr>
-    <!-- END REPEAT -->
-  </table>
-</td></tr>
-{{/EXTRA_ITEMS}}
+    <tr>
+    <td class="pad" style="padding:24px 30px 0 30px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td valign="middle" style="padding:0;">
+          <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 100,'wdth' 95; font-size:23px; line-height:27px; font-weight:800; color:#FFFFFF;">{{HERO_NAME}}</div>
+        </td>
+        <td valign="middle" align="right" style="padding:0 0 0 16px; white-space:nowrap;">
+          <span class="code" style="font-family:'Google Sans Code','SF Mono',Consolas,'Courier New',monospace; font-size:26px; font-weight:700; color:#FA1265;">{{HERO_PRICE}}</span><br>
+          <span class="code" style="font-family:'Google Sans Code','SF Mono',Consolas,'Courier New',monospace; font-size:14px; font-weight:400; color:#6E6690; text-decoration:line-through;">{{HERO_ORIGINAL}}</span>
+        </td>
+      </tr></table>
+    </td>
+    </tr>
 
-<!-- FOOTER -->
-<tr><td align="center" bgcolor="#0B0018" class="px" style="background-color:#0B0018;padding:30px 30px 40px 30px;border-top:1px solid #241243;">
-  <div style="font-family:'Dosis',Arial,sans-serif;font-weight:700;font-size:13px;letter-spacing:2px;color:#B8ACCC;padding-bottom:10px;">THE PLUGIN WAREHOUSE</div>
-  <div style="font-family:'Dosis',Arial,sans-serif;font-size:12px;line-height:19px;color:#8A7DA3;">
-    You started a cart at thepluginwarehouse.com.<br>
-    <a href="{{UNSUBSCRIBE_URL}}" style="color:#B8ACCC;text-decoration:underline;">Stop these reminders</a>
-  </div>
-</td></tr>
+    <tr>
+    <td class="pad" style="padding:24px 30px 0 30px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr><td colspan="3" height="1" bgcolor="#26223A" style="height:1px; background-color:#26223A; font-size:0; line-height:0;">&nbsp;</td></tr>
+        <!-- {{EXTRA_ITEMS}} repeat this row per additional cart item -->
+        <tr>
+          <td width="76" valign="middle" style="padding:16px 0;">
+            <a href="{{CART_URL}}"><img src="{{ITEM_IMAGE}}" width="64" height="64" alt="{{ITEM_NAME}}" style="width:64px; height:64px; border-radius:10px; display:block;"></a>
+          </td>
+          <td valign="middle" style="padding:16px 12px 16px 0;">
+            <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 60,'wdth' 95; font-size:16px; line-height:21px; font-weight:700; color:#FFFFFF;">{{ITEM_NAME}}</div>
+          </td>
+          <td valign="middle" align="right" style="padding:16px 0; white-space:nowrap;">
+            <span class="code" style="font-family:'Google Sans Code','SF Mono',Consolas,'Courier New',monospace; font-size:18px; font-weight:700; color:#8E86B4;">{{ITEM_PRICE}}</span><br>
+            <span class="code" style="font-family:'Google Sans Code','SF Mono',Consolas,'Courier New',monospace; font-size:12px; font-weight:400; color:#5B5478; text-decoration:line-through;">{{ITEM_ORIGINAL}}</span>
+          </td>
+        </tr>
+        <tr><td colspan="3" height="1" bgcolor="#26223A" style="height:1px; background-color:#26223A; font-size:0; line-height:0;">&nbsp;</td></tr>
+        <!-- end repeat -->
+      </table>
+    </td>
+    </tr>
+
+    <tr>
+    <td class="pad" style="padding:28px 30px 30px 30px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td align="center" bgcolor="#FA1265" style="background-color:#FA1265; border-radius:12px;">
+          <a href="{{CART_URL}}" style="display:block; padding:20px 24px; font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 100,'wdth' 95; font-size:17px; font-weight:800; color:#FFFFFF; letter-spacing:0.6px;">PICK IT BACK UP &#8594;</a>
+        </td>
+      </tr></table>
+    </td>
+    </tr>
+
+  </table>
+</td>
+</tr>
+<tr><td height="18" style="height:18px; font-size:0; line-height:0;">&nbsp;</td></tr>
+
+<tr>
+<td class="gut" style="padding:0 24px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#2E2750" style="background-color:#2E2750; border-radius:20px;">
+    <tr>
+    <td class="pad" style="padding:32px 30px 34px 30px;">
+      <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 100,'wdth' 95; font-size:24px; line-height:30px; font-weight:800; color:#FFFFFF;">There are hundreds more<br>in the vault.</div>
+      <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 40; font-size:15px; line-height:23px; color:#E4DEF2; padding-top:10px;">Most of them sit under twenty five dollars.</div>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:20px;"><tr>
+        <td bgcolor="#2E2750" style="background-color:#2E2750; border:2px solid #FFFFFF; border-radius:12px;">
+          <a href="https://www.thepluginwarehouse.com/shop" style="display:block; padding:14px 24px; font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 100,'wdth' 95; font-size:14px; font-weight:800; color:#FFFFFF; letter-spacing:0.6px;">BROWSE THE VAULT &#8594;</a>
+        </td>
+      </tr></table>
+    </td>
+    </tr>
+  </table>
+</td>
+</tr>
+<tr><td height="46" style="height:46px; font-size:0; line-height:0;">&nbsp;</td></tr>
 
 </table>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#FFFFFF" style="background-color:#FFFFFF;">
+<tr><td align="center" style="padding:0;">
+  <table role="presentation" class="w600" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:600px;">
+    <tr>
+    <td class="gut" align="center" style="padding:34px 24px 36px 24px;">
+      <img src="https://thepluginwarehousefiles.com/covers/PWH%20Logo%20Dark.png" width="132" alt="Plugin Warehouse" style="width:132px; height:auto; margin:0 auto;">
+      <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 40; font-size:13px; line-height:22px; color:#08061F; padding-top:18px;">
+        <a href="https://www.thepluginwarehouse.com/contact-us" style="color:#08061F; text-decoration:underline;">Contact</a>
+        &nbsp;&nbsp;&#183;&nbsp;&nbsp;
+        <a href="https://www.thepluginwarehouse.com/shop" style="color:#08061F; text-decoration:underline;">Shop all</a>
+        &nbsp;&nbsp;&#183;&nbsp;&nbsp;
+        <a href="{{UNSUBSCRIBE_URL}}" style="color:#08061F; text-decoration:underline;">Stop cart reminders</a>
+      </div>
+      <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 40; font-size:12px; line-height:18px; color:#6E6690; padding-top:12px;">That link only stops cart and saved item emails. Your newsletter stays put.</div>
+    </td>
+    </tr>
+  </table>
+</td></tr>
+</table>
+
 </td></tr>
 </table>
 </body>
@@ -220,107 +383,189 @@ export const CART_2_HTML = `<!DOCTYPE html>
 `;
 
 export const CART_3_HTML = `<!DOCTYPE html>
-<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="x-apple-disable-message-reformatting">
 <meta name="color-scheme" content="dark">
 <meta name="supported-color-schemes" content="dark">
-<title>Last call</title>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Dosis:wght@400;600;700&display=swap" rel="stylesheet">
-<!--[if mso]><style>*{font-family:Arial,sans-serif !important;}</style><![endif]-->
+<title>Last one from us</title>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wdth,wght,ROND@6..144,75..125,300..1000,0..100&amp;family=Google+Sans+Code:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<!--[if mso]>
+<xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml>
+<![endif]-->
 <style>
-  body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;}
-  table,td{mso-table-lspace:0pt;mso-table-rspace:0pt;}
-  img{-ms-interpolation-mode:bicubic;border:0;height:auto;line-height:100%;outline:none;text-decoration:none;display:block;}
-  body{margin:0 !important;padding:0 !important;width:100% !important;}
-  a{text-decoration:none;}
-  @media only screen and (max-width:600px){
-    .container{width:100% !important;}
-    .px{padding-left:20px !important;padding-right:20px !important;}
-    .h1{font-size:44px !important;line-height:42px !important;}
-    .bigprice{font-size:72px !important;line-height:66px !important;}
+  @import url('https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wdth,wght,ROND@6..144,75..125,300..1000,0..100&family=Google+Sans+Code:wght@400;500;700&display=swap');
+  body { margin:0; padding:0; width:100% !important; background-color:#08061F; }
+  table { border-collapse:collapse; }
+  img { border:0; outline:none; text-decoration:none; display:block; }
+  a { text-decoration:none; }
+  .code { font-family:'Google Sans Code','SF Mono',Consolas,'Courier New',monospace; }
+  @media only screen and (max-width:620px) {
+    .w600 { width:100% !important; }
+    .gut { padding-left:16px !important; padding-right:16px !important; }
+    .pad { padding-left:22px !important; padding-right:22px !important; }
+    .fig { font-size:74px !important; line-height:70px !important; }
+    .hl  { font-size:40px !important; line-height:40px !important; }
+    .heroimg { width:100% !important; height:auto !important; }
+    .stack { display:block !important; width:100% !important; }
   }
 </style>
 </head>
-<body style="margin:0;padding:0;background-color:#0B0018;">
-<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#0B0018;opacity:0;">Final reminder — after this, your cart clears.</div>
-
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#0B0018" style="background-color:#0B0018;">
+<body bgcolor="#08061F" style="margin:0; padding:0; background-color:#08061F;">
+<div style="display:none; font-size:1px; color:#08061F; line-height:1px; max-height:0; max-width:0; opacity:0; overflow:hidden;">
+Three days of nudging is enough. Your cart stays saved either way.&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
+</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#08061F" style="background-color:#08061F;">
 <tr><td align="center" style="padding:0;">
-<table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
+<table role="presentation" class="w600" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:600px;">
 
-<!-- LOGO BAR -->
-<tr><td align="left" bgcolor="#0B0018" style="background-color:#0B0018;padding:22px 24px 20px 24px;border-bottom:1px solid #241243;">
-  <img src="https://thepluginwarehousefiles.com/covers/PWH%20Logo%20Main.png" width="150" alt="The Plugin Warehouse" style="width:150px;height:auto;">
-</td></tr>
+<tr>
+<td class="gut" style="padding:36px 24px 0 24px;">
+  <img src="https://thepluginwarehousefiles.com/covers/PWH%20Logo%20Main.png" width="140" alt="Plugin Warehouse" style="width:140px; height:auto;">
+</td>
+</tr>
 
-<!-- HEADLINE BLOCK -->
-<tr><td bgcolor="#FF003C" class="px" style="background-color:#FF003C;padding:38px 32px 34px 32px;">
-  <div style="font-family:'Dosis',Arial,sans-serif;font-weight:700;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:#FFFFFF;padding-bottom:12px;">Final reminder</div>
-  <div class="h1" style="font-family:'Anton',Impact,Arial,sans-serif;font-weight:900;font-size:58px;line-height:54px;letter-spacing:0.5px;color:#FFFFFF;text-transform:uppercase;">Last call</div>
-  <div style="font-family:'Dosis',Arial,sans-serif;font-weight:500;font-size:17px;line-height:25px;color:#FFEAF0;padding-top:14px;">This is the last time we'll mention it. After this, your cart clears and the price goes back to normal.</div>
-</td></tr>
+<tr>
+<td class="gut" style="padding:46px 24px 0 24px;">
+  <div class="hl" style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 100,'wdth' 105; font-size:54px; line-height:52px; font-weight:800; color:#FFFFFF; letter-spacing:-1.6px;">
+    LAST ONE<br>FROM US.
+  </div>
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:22px;"><tr>
+    <td width="72" height="5" bgcolor="#FA1265" style="width:72px; height:5px; background-color:#FA1265; font-size:0; line-height:0;">&nbsp;</td>
+  </tr></table>
+  <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 40; font-size:16px; line-height:25px; color:#C9C2E4; padding-top:20px;">
+    Three days of nudging is enough. Your cart stays saved either way, and this is the last email you will get about it.
+  </div>
+</td>
+</tr>
 
-<!-- HERO IMAGE -->
-<tr><td align="center" bgcolor="#0B0018" style="background-color:#0B0018;padding:0;">
-  <a href="{{HERO_URL}}" target="_blank"><img src="{{HERO_IMAGE}}" width="600" alt="{{HERO_NAME}}" style="width:100%;max-width:600px;height:auto;"></a>
-</td></tr>
-
-<!-- NAME -->
-<tr><td align="center" bgcolor="#0B0018" class="px" style="background-color:#0B0018;padding:26px 30px 16px 30px;">
-  <div style="font-family:'Anton',Impact,Arial,sans-serif;font-weight:900;font-size:26px;line-height:30px;letter-spacing:0.5px;color:#FFFFFF;text-transform:uppercase;">{{HERO_NAME}}</div>
-</td></tr>
-
-<!-- PRICE SLAB -->
-<tr><td align="center" bgcolor="#FF003C" style="background-color:#FF003C;padding:24px 24px 26px 24px;">
-  {{#HERO_OLD_PRICE}}<div style="font-family:'Dosis',Arial,sans-serif;font-weight:700;font-size:20px;line-height:22px;color:#FFC2D2;text-decoration:line-through;padding-bottom:4px;">{{HERO_OLD_PRICE}}</div>{{/HERO_OLD_PRICE}}
-  <div class="bigprice" style="font-family:'Anton',Impact,Arial,sans-serif;font-weight:900;font-size:90px;line-height:82px;color:#FFFFFF;letter-spacing:-1px;">{{HERO_PRICE}}</div>
-</td></tr>
-
-<!-- DEADLINE STRIP -->
-<tr><td align="center" bgcolor="#0E0BD1" style="background-color:#0E0BD1;padding:16px 24px;">
-  <div style="font-family:'Dosis',Arial,sans-serif;font-weight:700;font-size:14px;letter-spacing:1.5px;text-transform:uppercase;color:#FFFFFF;">{{DEADLINE_TEXT}}</div>
-</td></tr>
-
-<!-- CTA -->
-<tr><td align="center" bgcolor="#0B0018" style="background-color:#0B0018;padding:34px 24px 30px 24px;">
+<tr>
+<td class="gut" style="padding:40px 24px 0 24px;">
   <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-    <td align="center" bgcolor="#FFFFFF" style="background-color:#FFFFFF;border-radius:6px;">
-      <a href="{{CTA_URL}}" target="_blank" style="display:inline-block;font-family:'Anton',Impact,Arial,sans-serif;font-weight:900;font-size:20px;letter-spacing:1px;text-transform:uppercase;color:#0B0018;padding:19px 52px;border-radius:6px;">Last chance →</a>
+    <td valign="bottom" style="padding:0;">
+      <div class="code fig" style="font-family:'Google Sans Code','SF Mono',Consolas,'Courier New',monospace; font-size:94px; line-height:86px; font-weight:700; color:#FFFFFF; letter-spacing:-4px;">{{CART_SAVINGS_PCT}}</div>
+    </td>
+    <td valign="bottom" style="padding:0 0 16px 14px;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td bgcolor="#7DF5AD" style="background-color:#7DF5AD; border-radius:8px; padding:8px 12px;">
+          <span class="code" style="font-family:'Google Sans Code','SF Mono',Consolas,'Courier New',monospace; font-size:14px; font-weight:700; color:#04021E; letter-spacing:0.4px;">{{CART_TOTAL}} TO PAY</span>
+        </td>
+      </tr></table>
     </td>
   </tr></table>
-</td></tr>
 
-<!-- ADDITIONAL ITEMS (render only when more than one item) -->
-{{#EXTRA_ITEMS}}
-<tr><td bgcolor="#190737" class="px" style="background-color:#190737;padding:26px 28px 10px 28px;">
-  <div style="font-family:'Dosis',Arial,sans-serif;font-weight:700;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:#B8ACCC;">Clearing with it</div>
-</td></tr>
-<tr><td bgcolor="#190737" class="px" style="background-color:#190737;padding:0 28px 28px 28px;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-    <!-- REPEAT PER EXTRA ITEM -->
+  <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 25,'wdth' 92; font-size:11px; line-height:16px; color:#8E86B4; letter-spacing:1.6px; padding-top:12px; font-weight:600;">OFF RETAIL</div>
+</td>
+</tr>
+<tr><td height="42" style="height:42px; font-size:0; line-height:0;">&nbsp;</td></tr>
+
+<tr>
+<td class="gut" style="padding:0 24px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#0D0C13" style="background-color:#0D0C13; border-radius:20px;">
+
     <tr>
-      <td width="66" style="padding:10px 0;"><a href="{{ITEM_URL}}" target="_blank"><img src="{{ITEM_IMAGE}}" width="56" alt="{{ITEM_NAME}}" style="width:56px;height:56px;border-radius:6px;"></a></td>
-      <td style="padding:10px 0;font-family:'Dosis',Arial,sans-serif;font-weight:600;font-size:16px;line-height:20px;color:#E8E0F0;">{{ITEM_NAME}}</td>
-      <td align="right" style="padding:10px 0;font-family:'Dosis',Arial,sans-serif;font-weight:700;font-size:16px;color:#FFFFFF;white-space:nowrap;">{{ITEM_PRICE}}</td>
+    <td class="pad" style="padding:22px 22px 0 22px;">
+      <a href="{{CART_URL}}"><img src="{{HERO_IMAGE}}" width="508" alt="{{HERO_NAME}}" class="heroimg" style="width:508px; max-width:100%; height:auto; display:block; border-radius:12px 12px 0 0;"></a>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td height="6" bgcolor="#FA1265" style="height:6px; background-color:#FA1265; font-size:0; line-height:0; border-radius:0 0 3px 3px;">&nbsp;</td>
+      </tr></table>
+    </td>
     </tr>
-    <!-- END REPEAT -->
-  </table>
-</td></tr>
-{{/EXTRA_ITEMS}}
+    <tr>
+    <td class="pad" style="padding:24px 30px 0 30px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td valign="middle" style="padding:0;">
+          <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 100,'wdth' 95; font-size:23px; line-height:27px; font-weight:800; color:#FFFFFF;">{{HERO_NAME}}</div>
+        </td>
+        <td valign="middle" align="right" style="padding:0 0 0 16px; white-space:nowrap;">
+          <span class="code" style="font-family:'Google Sans Code','SF Mono',Consolas,'Courier New',monospace; font-size:26px; font-weight:700; color:#FA1265;">{{HERO_PRICE}}</span><br>
+          <span class="code" style="font-family:'Google Sans Code','SF Mono',Consolas,'Courier New',monospace; font-size:14px; font-weight:400; color:#6E6690; text-decoration:line-through;">{{HERO_ORIGINAL}}</span>
+        </td>
+      </tr></table>
+    </td>
+    </tr>
 
-<!-- FOOTER -->
-<tr><td align="center" bgcolor="#0B0018" class="px" style="background-color:#0B0018;padding:30px 30px 40px 30px;border-top:1px solid #241243;">
-  <div style="font-family:'Dosis',Arial,sans-serif;font-weight:700;font-size:13px;letter-spacing:2px;color:#B8ACCC;padding-bottom:10px;">THE PLUGIN WAREHOUSE</div>
-  <div style="font-family:'Dosis',Arial,sans-serif;font-size:12px;line-height:19px;color:#8A7DA3;">
-    This is the final reminder for this cart.<br>
-    <a href="{{UNSUBSCRIBE_URL}}" style="color:#B8ACCC;text-decoration:underline;">Stop these reminders</a>
-  </div>
-</td></tr>
+    <tr>
+    <td class="pad" style="padding:24px 30px 0 30px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr><td colspan="3" height="1" bgcolor="#26223A" style="height:1px; background-color:#26223A; font-size:0; line-height:0;">&nbsp;</td></tr>
+        <!-- {{EXTRA_ITEMS}} repeat this row per additional cart item -->
+        <tr>
+          <td width="76" valign="middle" style="padding:16px 0;">
+            <a href="{{CART_URL}}"><img src="{{ITEM_IMAGE}}" width="64" height="64" alt="{{ITEM_NAME}}" style="width:64px; height:64px; border-radius:10px; display:block;"></a>
+          </td>
+          <td valign="middle" style="padding:16px 12px 16px 0;">
+            <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 60,'wdth' 95; font-size:16px; line-height:21px; font-weight:700; color:#FFFFFF;">{{ITEM_NAME}}</div>
+          </td>
+          <td valign="middle" align="right" style="padding:16px 0; white-space:nowrap;">
+            <span class="code" style="font-family:'Google Sans Code','SF Mono',Consolas,'Courier New',monospace; font-size:18px; font-weight:700; color:#8E86B4;">{{ITEM_PRICE}}</span><br>
+            <span class="code" style="font-family:'Google Sans Code','SF Mono',Consolas,'Courier New',monospace; font-size:12px; font-weight:400; color:#5B5478; text-decoration:line-through;">{{ITEM_ORIGINAL}}</span>
+          </td>
+        </tr>
+        <tr><td colspan="3" height="1" bgcolor="#26223A" style="height:1px; background-color:#26223A; font-size:0; line-height:0;">&nbsp;</td></tr>
+        <!-- end repeat -->
+      </table>
+    </td>
+    </tr>
+
+    <tr>
+    <td class="pad" style="padding:28px 30px 30px 30px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td align="center" bgcolor="#FA1265" style="background-color:#FA1265; border-radius:12px;">
+          <a href="{{CART_URL}}" style="display:block; padding:20px 24px; font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 100,'wdth' 95; font-size:17px; font-weight:800; color:#FFFFFF; letter-spacing:0.6px;">CHECK OUT NOW &#8594;</a>
+        </td>
+      </tr></table>
+    </td>
+    </tr>
+
+  </table>
+</td>
+</tr>
+<tr><td height="18" style="height:18px; font-size:0; line-height:0;">&nbsp;</td></tr>
+
+<tr>
+<td class="gut" style="padding:0 24px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#2E2750" style="background-color:#2E2750; border-radius:20px;">
+    <tr>
+    <td class="pad" style="padding:32px 30px 34px 30px;">
+      <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 100,'wdth' 95; font-size:24px; line-height:30px; font-weight:800; color:#FFFFFF;">There are hundreds more<br>in the vault.</div>
+      <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 40; font-size:15px; line-height:23px; color:#E4DEF2; padding-top:10px;">Most of them sit under twenty five dollars.</div>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:20px;"><tr>
+        <td bgcolor="#2E2750" style="background-color:#2E2750; border:2px solid #FFFFFF; border-radius:12px;">
+          <a href="https://www.thepluginwarehouse.com/shop" style="display:block; padding:14px 24px; font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 100,'wdth' 95; font-size:14px; font-weight:800; color:#FFFFFF; letter-spacing:0.6px;">BROWSE THE VAULT &#8594;</a>
+        </td>
+      </tr></table>
+    </td>
+    </tr>
+  </table>
+</td>
+</tr>
+<tr><td height="46" style="height:46px; font-size:0; line-height:0;">&nbsp;</td></tr>
 
 </table>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#FFFFFF" style="background-color:#FFFFFF;">
+<tr><td align="center" style="padding:0;">
+  <table role="presentation" class="w600" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:600px;">
+    <tr>
+    <td class="gut" align="center" style="padding:34px 24px 36px 24px;">
+      <img src="https://thepluginwarehousefiles.com/covers/PWH%20Logo%20Dark.png" width="132" alt="Plugin Warehouse" style="width:132px; height:auto; margin:0 auto;">
+      <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 40; font-size:13px; line-height:22px; color:#08061F; padding-top:18px;">
+        <a href="https://www.thepluginwarehouse.com/contact-us" style="color:#08061F; text-decoration:underline;">Contact</a>
+        &nbsp;&nbsp;&#183;&nbsp;&nbsp;
+        <a href="https://www.thepluginwarehouse.com/shop" style="color:#08061F; text-decoration:underline;">Shop all</a>
+        &nbsp;&nbsp;&#183;&nbsp;&nbsp;
+        <a href="{{UNSUBSCRIBE_URL}}" style="color:#08061F; text-decoration:underline;">Stop cart reminders</a>
+      </div>
+      <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 40; font-size:12px; line-height:18px; color:#6E6690; padding-top:12px;">That link only stops cart and saved item emails. Your newsletter stays put.</div>
+    </td>
+    </tr>
+  </table>
+</td></tr>
+</table>
+
 </td></tr>
 </table>
 </body>
@@ -328,107 +573,189 @@ export const CART_3_HTML = `<!DOCTYPE html>
 `;
 
 export const SAVED_1_HTML = `<!DOCTYPE html>
-<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="x-apple-disable-message-reformatting">
 <meta name="color-scheme" content="dark">
 <meta name="supported-color-schemes" content="dark">
-<title>You saved it for a reason</title>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Dosis:wght@400;600;700&display=swap" rel="stylesheet">
-<!--[if mso]><style>*{font-family:Arial,sans-serif !important;}</style><![endif]-->
+<title>Still on your list</title>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wdth,wght,ROND@6..144,75..125,300..1000,0..100&amp;family=Google+Sans+Code:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<!--[if mso]>
+<xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml>
+<![endif]-->
 <style>
-  body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;}
-  table,td{mso-table-lspace:0pt;mso-table-rspace:0pt;}
-  img{-ms-interpolation-mode:bicubic;border:0;height:auto;line-height:100%;outline:none;text-decoration:none;display:block;}
-  body{margin:0 !important;padding:0 !important;width:100% !important;}
-  a{text-decoration:none;}
-  @media only screen and (max-width:600px){
-    .container{width:100% !important;}
-    .px{padding-left:20px !important;padding-right:20px !important;}
-    .h1{font-size:44px !important;line-height:42px !important;}
-    .bigprice{font-size:72px !important;line-height:66px !important;}
+  @import url('https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wdth,wght,ROND@6..144,75..125,300..1000,0..100&family=Google+Sans+Code:wght@400;500;700&display=swap');
+  body { margin:0; padding:0; width:100% !important; background-color:#08061F; }
+  table { border-collapse:collapse; }
+  img { border:0; outline:none; text-decoration:none; display:block; }
+  a { text-decoration:none; }
+  .code { font-family:'Google Sans Code','SF Mono',Consolas,'Courier New',monospace; }
+  @media only screen and (max-width:620px) {
+    .w600 { width:100% !important; }
+    .gut { padding-left:16px !important; padding-right:16px !important; }
+    .pad { padding-left:22px !important; padding-right:22px !important; }
+    .fig { font-size:74px !important; line-height:70px !important; }
+    .hl  { font-size:40px !important; line-height:40px !important; }
+    .heroimg { width:100% !important; height:auto !important; }
+    .stack { display:block !important; width:100% !important; }
   }
 </style>
 </head>
-<body style="margin:0;padding:0;background-color:#0B0018;">
-<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#0B0018;opacity:0;">It's still there. So is whatever made you want it.</div>
-
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#0B0018" style="background-color:#0B0018;">
+<body bgcolor="#08061F" style="margin:0; padding:0; background-color:#08061F;">
+<div style="display:none; font-size:1px; color:#08061F; line-height:1px; max-height:0; max-width:0; opacity:0; overflow:hidden;">
+Same item, same price, still sitting in your saved list.&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
+</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#08061F" style="background-color:#08061F;">
 <tr><td align="center" style="padding:0;">
-<table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
+<table role="presentation" class="w600" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:600px;">
 
-<!-- LOGO BAR -->
-<tr><td align="left" bgcolor="#0B0018" style="background-color:#0B0018;padding:22px 24px 20px 24px;border-bottom:1px solid #241243;">
-  <img src="https://thepluginwarehousefiles.com/covers/PWH%20Logo%20Main.png" width="150" alt="The Plugin Warehouse" style="width:150px;height:auto;">
-</td></tr>
+<tr>
+<td class="gut" style="padding:36px 24px 0 24px;">
+  <img src="https://thepluginwarehousefiles.com/covers/PWH%20Logo%20Main.png" width="140" alt="Plugin Warehouse" style="width:140px; height:auto;">
+</td>
+</tr>
 
-<!-- HEADLINE BLOCK -->
-<tr><td bgcolor="#190737" class="px" style="background-color:#190737;padding:38px 32px 34px 32px;">
-  <div style="font-family:'Dosis',Arial,sans-serif;font-weight:700;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:#0E0BD1;padding-bottom:12px;">From your saved list</div>
-  <div class="h1" style="font-family:'Anton',Impact,Arial,sans-serif;font-weight:900;font-size:58px;line-height:54px;letter-spacing:0.5px;color:#FFFFFF;text-transform:uppercase;">You saved it for a reason</div>
-  <div style="font-family:'Dosis',Arial,sans-serif;font-weight:500;font-size:17px;line-height:25px;color:#C9BEDD;padding-top:14px;">It's still sitting in your list. So is whatever made you want it in the first place.</div>
-</td></tr>
+<tr>
+<td class="gut" style="padding:46px 24px 0 24px;">
+  <div class="hl" style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 100,'wdth' 105; font-size:54px; line-height:52px; font-weight:800; color:#FFFFFF; letter-spacing:-1.6px;">
+    STILL ON<br>YOUR LIST.
+  </div>
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:22px;"><tr>
+    <td width="72" height="5" bgcolor="#FA1265" style="width:72px; height:5px; background-color:#FA1265; font-size:0; line-height:0;">&nbsp;</td>
+  </tr></table>
+  <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 40; font-size:16px; line-height:25px; color:#C9C2E4; padding-top:20px;">
+    You saved this a few days back. It is still there, and it is still at the same price.
+  </div>
+</td>
+</tr>
 
-<!-- HERO IMAGE -->
-<tr><td align="center" bgcolor="#0B0018" style="background-color:#0B0018;padding:0;">
-  <a href="{{HERO_URL}}" target="_blank"><img src="{{HERO_IMAGE}}" width="600" alt="{{HERO_NAME}}" style="width:100%;max-width:600px;height:auto;"></a>
-</td></tr>
-
-<!-- NAME -->
-<tr><td align="center" bgcolor="#0B0018" class="px" style="background-color:#0B0018;padding:26px 30px 16px 30px;">
-  <div style="font-family:'Anton',Impact,Arial,sans-serif;font-weight:900;font-size:26px;line-height:30px;letter-spacing:0.5px;color:#FFFFFF;text-transform:uppercase;">{{HERO_NAME}}</div>
-</td></tr>
-
-<!-- PRICE SLAB -->
-<tr><td align="center" bgcolor="#FF003C" style="background-color:#FF003C;padding:24px 24px 26px 24px;">
-  {{#HERO_OLD_PRICE}}<div style="font-family:'Dosis',Arial,sans-serif;font-weight:700;font-size:20px;line-height:22px;color:#FFC2D2;text-decoration:line-through;padding-bottom:4px;">{{HERO_OLD_PRICE}}</div>{{/HERO_OLD_PRICE}}
-  <div class="bigprice" style="font-family:'Anton',Impact,Arial,sans-serif;font-weight:900;font-size:90px;line-height:82px;color:#FFFFFF;letter-spacing:-1px;">{{HERO_PRICE}}</div>
-</td></tr>
-
-<!-- DEADLINE STRIP -->
-<tr><td align="center" bgcolor="#0E0BD1" style="background-color:#0E0BD1;padding:16px 24px;">
-  <div style="font-family:'Dosis',Arial,sans-serif;font-weight:700;font-size:14px;letter-spacing:1.5px;text-transform:uppercase;color:#FFFFFF;">{{DEADLINE_TEXT}}</div>
-</td></tr>
-
-<!-- CTA -->
-<tr><td align="center" bgcolor="#0B0018" style="background-color:#0B0018;padding:34px 24px 30px 24px;">
+<tr>
+<td class="gut" style="padding:40px 24px 0 24px;">
   <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-    <td align="center" bgcolor="#FFFFFF" style="background-color:#FFFFFF;border-radius:6px;">
-      <a href="{{CTA_URL}}" target="_blank" style="display:inline-block;font-family:'Anton',Impact,Arial,sans-serif;font-weight:900;font-size:20px;letter-spacing:1px;text-transform:uppercase;color:#0B0018;padding:19px 52px;border-radius:6px;">Take another look →</a>
+    <td valign="bottom" style="padding:0;">
+      <div class="code fig" style="font-family:'Google Sans Code','SF Mono',Consolas,'Courier New',monospace; font-size:94px; line-height:86px; font-weight:700; color:#FFFFFF; letter-spacing:-4px;">{{SAVED_PRICE}}</div>
+    </td>
+    <td valign="bottom" style="padding:0 0 16px 14px;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td bgcolor="#7DF5AD" style="background-color:#7DF5AD; border-radius:8px; padding:8px 12px;">
+          <span class="code" style="font-family:'Google Sans Code','SF Mono',Consolas,'Courier New',monospace; font-size:14px; font-weight:700; color:#04021E; letter-spacing:0.4px;">&#8595; {{SAVED_SAVINGS_PCT}}</span>
+        </td>
+      </tr></table>
     </td>
   </tr></table>
-</td></tr>
+  <div class="code" style="font-family:'Google Sans Code','SF Mono',Consolas,'Courier New',monospace; font-size:17px; color:#6E6690; text-decoration:line-through; padding-top:10px;">{{SAVED_ORIGINAL}}</div>
+  <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 25,'wdth' 92; font-size:11px; line-height:16px; color:#8E86B4; letter-spacing:1.6px; padding-top:12px; font-weight:600;">CURRENT PRICE</div>
+</td>
+</tr>
+<tr><td height="42" style="height:42px; font-size:0; line-height:0;">&nbsp;</td></tr>
 
-<!-- ADDITIONAL ITEMS (render only when more than one item) -->
-{{#EXTRA_ITEMS}}
-<tr><td bgcolor="#190737" class="px" style="background-color:#190737;padding:26px 28px 10px 28px;">
-  <div style="font-family:'Dosis',Arial,sans-serif;font-weight:700;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:#B8ACCC;">Also saved</div>
-</td></tr>
-<tr><td bgcolor="#190737" class="px" style="background-color:#190737;padding:0 28px 28px 28px;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-    <!-- REPEAT PER EXTRA ITEM -->
+<tr>
+<td class="gut" style="padding:0 24px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#0D0C13" style="background-color:#0D0C13; border-radius:20px;">
+
     <tr>
-      <td width="66" style="padding:10px 0;"><a href="{{ITEM_URL}}" target="_blank"><img src="{{ITEM_IMAGE}}" width="56" alt="{{ITEM_NAME}}" style="width:56px;height:56px;border-radius:6px;"></a></td>
-      <td style="padding:10px 0;font-family:'Dosis',Arial,sans-serif;font-weight:600;font-size:16px;line-height:20px;color:#E8E0F0;">{{ITEM_NAME}}</td>
-      <td align="right" style="padding:10px 0;font-family:'Dosis',Arial,sans-serif;font-weight:700;font-size:16px;color:#FFFFFF;white-space:nowrap;">{{ITEM_PRICE}}</td>
+    <td class="pad" style="padding:22px 22px 0 22px;">
+      <a href="{{HERO_URL}}"><img src="{{HERO_IMAGE}}" width="508" alt="{{HERO_NAME}}" class="heroimg" style="width:508px; max-width:100%; height:auto; display:block; border-radius:12px 12px 0 0;"></a>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td height="6" bgcolor="#FA1265" style="height:6px; background-color:#FA1265; font-size:0; line-height:0; border-radius:0 0 3px 3px;">&nbsp;</td>
+      </tr></table>
+    </td>
     </tr>
-    <!-- END REPEAT -->
-  </table>
-</td></tr>
-{{/EXTRA_ITEMS}}
+    <tr>
+    <td class="pad" style="padding:24px 30px 0 30px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td valign="middle" style="padding:0;">
+          <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 100,'wdth' 95; font-size:23px; line-height:27px; font-weight:800; color:#FFFFFF;">{{HERO_NAME}}</div>
+        </td>
+        <td valign="middle" align="right" style="padding:0 0 0 16px; white-space:nowrap;">
+          <span class="code" style="font-family:'Google Sans Code','SF Mono',Consolas,'Courier New',monospace; font-size:26px; font-weight:700; color:#FA1265;">{{HERO_PRICE}}</span><br>
+          <span class="code" style="font-family:'Google Sans Code','SF Mono',Consolas,'Courier New',monospace; font-size:14px; font-weight:400; color:#6E6690; text-decoration:line-through;">{{HERO_ORIGINAL}}</span>
+        </td>
+      </tr></table>
+    </td>
+    </tr>
 
-<!-- FOOTER -->
-<tr><td align="center" bgcolor="#0B0018" class="px" style="background-color:#0B0018;padding:30px 30px 40px 30px;border-top:1px solid #241243;">
-  <div style="font-family:'Dosis',Arial,sans-serif;font-weight:700;font-size:13px;letter-spacing:2px;color:#B8ACCC;padding-bottom:10px;">THE PLUGIN WAREHOUSE</div>
-  <div style="font-family:'Dosis',Arial,sans-serif;font-size:12px;line-height:19px;color:#8A7DA3;">
-    You saved this plugin at thepluginwarehouse.com.<br>
-    <a href="{{UNSUBSCRIBE_URL}}" style="color:#B8ACCC;text-decoration:underline;">Stop these reminders</a>
-  </div>
-</td></tr>
+    <tr>
+    <td class="pad" style="padding:24px 30px 0 30px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr><td colspan="3" height="1" bgcolor="#26223A" style="height:1px; background-color:#26223A; font-size:0; line-height:0;">&nbsp;</td></tr>
+        <!-- {{EXTRA_ITEMS}} repeat this row per additional saved item -->
+        <tr>
+          <td width="76" valign="middle" style="padding:16px 0;">
+            <a href="{{ITEM_URL}}"><img src="{{ITEM_IMAGE}}" width="64" height="64" alt="{{ITEM_NAME}}" style="width:64px; height:64px; border-radius:10px; display:block;"></a>
+          </td>
+          <td valign="middle" style="padding:16px 12px 16px 0;">
+            <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 60,'wdth' 95; font-size:16px; line-height:21px; font-weight:700; color:#FFFFFF;">{{ITEM_NAME}}</div>
+          </td>
+          <td valign="middle" align="right" style="padding:16px 0; white-space:nowrap;">
+            <span class="code" style="font-family:'Google Sans Code','SF Mono',Consolas,'Courier New',monospace; font-size:18px; font-weight:700; color:#8E86B4;">{{ITEM_PRICE}}</span><br>
+            <span class="code" style="font-family:'Google Sans Code','SF Mono',Consolas,'Courier New',monospace; font-size:12px; font-weight:400; color:#5B5478; text-decoration:line-through;">{{ITEM_ORIGINAL}}</span>
+          </td>
+        </tr>
+        <tr><td colspan="3" height="1" bgcolor="#26223A" style="height:1px; background-color:#26223A; font-size:0; line-height:0;">&nbsp;</td></tr>
+        <!-- end repeat -->
+      </table>
+    </td>
+    </tr>
+
+    <tr>
+    <td class="pad" style="padding:28px 30px 30px 30px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td align="center" bgcolor="#FA1265" style="background-color:#FA1265; border-radius:12px;">
+          <a href="{{HERO_URL}}" style="display:block; padding:20px 24px; font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 100,'wdth' 95; font-size:17px; font-weight:800; color:#FFFFFF; letter-spacing:0.6px;">VIEW YOUR SAVED LIST &#8594;</a>
+        </td>
+      </tr></table>
+    </td>
+    </tr>
+
+  </table>
+</td>
+</tr>
+<tr><td height="18" style="height:18px; font-size:0; line-height:0;">&nbsp;</td></tr>
+
+<tr>
+<td class="gut" style="padding:0 24px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#2E2750" style="background-color:#2E2750; border-radius:20px;">
+    <tr>
+    <td class="pad" style="padding:32px 30px 34px 30px;">
+      <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 100,'wdth' 95; font-size:24px; line-height:30px; font-weight:800; color:#FFFFFF;">There are hundreds more<br>in the vault.</div>
+      <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 40; font-size:15px; line-height:23px; color:#E4DEF2; padding-top:10px;">Most of them sit under twenty five dollars.</div>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:20px;"><tr>
+        <td bgcolor="#2E2750" style="background-color:#2E2750; border:2px solid #FFFFFF; border-radius:12px;">
+          <a href="https://www.thepluginwarehouse.com/shop" style="display:block; padding:14px 24px; font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 100,'wdth' 95; font-size:14px; font-weight:800; color:#FFFFFF; letter-spacing:0.6px;">BROWSE THE VAULT &#8594;</a>
+        </td>
+      </tr></table>
+    </td>
+    </tr>
+  </table>
+</td>
+</tr>
+<tr><td height="46" style="height:46px; font-size:0; line-height:0;">&nbsp;</td></tr>
 
 </table>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#FFFFFF" style="background-color:#FFFFFF;">
+<tr><td align="center" style="padding:0;">
+  <table role="presentation" class="w600" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:600px;">
+    <tr>
+    <td class="gut" align="center" style="padding:34px 24px 36px 24px;">
+      <img src="https://thepluginwarehousefiles.com/covers/PWH%20Logo%20Dark.png" width="132" alt="Plugin Warehouse" style="width:132px; height:auto; margin:0 auto;">
+      <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 40; font-size:13px; line-height:22px; color:#08061F; padding-top:18px;">
+        <a href="https://www.thepluginwarehouse.com/contact-us" style="color:#08061F; text-decoration:underline;">Contact</a>
+        &nbsp;&nbsp;&#183;&nbsp;&nbsp;
+        <a href="https://www.thepluginwarehouse.com/shop" style="color:#08061F; text-decoration:underline;">Shop all</a>
+        &nbsp;&nbsp;&#183;&nbsp;&nbsp;
+        <a href="{{UNSUBSCRIBE_URL}}" style="color:#08061F; text-decoration:underline;">Stop saved item alerts</a>
+      </div>
+      <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 40; font-size:12px; line-height:18px; color:#6E6690; padding-top:12px;">That link only stops cart and saved item emails. Your newsletter stays put.</div>
+    </td>
+    </tr>
+  </table>
+</td></tr>
+</table>
+
 </td></tr>
 </table>
 </body>
@@ -436,108 +763,199 @@ export const SAVED_1_HTML = `<!DOCTYPE html>
 `;
 
 export const PRICE_DROP_HTML = `<!DOCTYPE html>
-<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="x-apple-disable-message-reformatting">
 <meta name="color-scheme" content="dark">
 <meta name="supported-color-schemes" content="dark">
-<title>The price just dropped</title>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Dosis:wght@400;600;700&display=swap" rel="stylesheet">
-<!--[if mso]><style>*{font-family:Arial,sans-serif !important;}</style><![endif]-->
+<title>The price dropped</title>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wdth,wght,ROND@6..144,75..125,300..1000,0..100&amp;family=Google+Sans+Code:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<!--[if mso]>
+<xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml>
+<![endif]-->
 <style>
-  body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;}
-  table,td{mso-table-lspace:0pt;mso-table-rspace:0pt;}
-  img{-ms-interpolation-mode:bicubic;border:0;height:auto;line-height:100%;outline:none;text-decoration:none;display:block;}
-  body{margin:0 !important;padding:0 !important;width:100% !important;}
-  a{text-decoration:none;}
-  @media only screen and (max-width:600px){
-    .container{width:100% !important;}
-    .px{padding-left:20px !important;padding-right:20px !important;}
-    .h1{font-size:44px !important;line-height:42px !important;}
-    .bigprice{font-size:76px !important;line-height:70px !important;}
+  @import url('https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wdth,wght,ROND@6..144,75..125,300..1000,0..100&family=Google+Sans+Code:wght@400;500;700&display=swap');
+  body { margin:0; padding:0; width:100% !important; background-color:#08061F; }
+  table { border-collapse:collapse; }
+  img { border:0; outline:none; text-decoration:none; display:block; }
+  a { text-decoration:none; }
+  .code { font-family:'Google Sans Code','SF Mono',Consolas,'Courier New',monospace; }
+  @media only screen and (max-width:620px) {
+    .w600 { width:100% !important; }
+    .gut { padding-left:16px !important; padding-right:16px !important; }
+    .pad { padding-left:22px !important; padding-right:22px !important; }
+    .fig { font-size:74px !important; line-height:70px !important; }
+    .hl  { font-size:40px !important; line-height:40px !important; }
+    .heroimg { width:100% !important; height:auto !important; }
+    .stack { display:block !important; width:100% !important; }
   }
 </style>
 </head>
-<body style="margin:0;padding:0;background-color:#0B0018;">
-<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#0B0018;opacity:0;">{{HERO_NAME}} just dropped to {{HERO_NEW_PRICE}}. Was {{HERO_OLD_PRICE}}.</div>
-
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#0B0018" style="background-color:#0B0018;">
+<body bgcolor="#08061F" style="margin:0; padding:0; background-color:#08061F;">
+<div style="display:none; font-size:1px; color:#08061F; line-height:1px; max-height:0; max-width:0; opacity:0; overflow:hidden;">
+Something on your saved list just got cheaper.&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
+</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#08061F" style="background-color:#08061F;">
 <tr><td align="center" style="padding:0;">
-<table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
+<table role="presentation" class="w600" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:600px;">
 
-<!-- LOGO BAR -->
-<tr><td align="left" bgcolor="#0B0018" style="background-color:#0B0018;padding:22px 24px 20px 24px;border-bottom:1px solid #241243;">
-  <img src="https://thepluginwarehousefiles.com/covers/PWH%20Logo%20Main.png" width="150" alt="The Plugin Warehouse" style="width:150px;height:auto;">
-</td></tr>
+<tr>
+<td class="gut" style="padding:36px 24px 0 24px;">
+  <img src="https://thepluginwarehousefiles.com/covers/PWH%20Logo%20Main.png" width="140" alt="Plugin Warehouse" style="width:140px; height:auto;">
+</td>
+</tr>
 
-<!-- HEADLINE BLOCK -->
-<tr><td bgcolor="#190737" class="px" style="background-color:#190737;padding:38px 32px 34px 32px;">
-  <div style="font-family:'Dosis',Arial,sans-serif;font-weight:700;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:#FF003C;padding-bottom:12px;">Price Drop</div>
-  <div class="h1" style="font-family:'Anton',Impact,Arial,sans-serif;font-weight:900;font-size:58px;line-height:54px;letter-spacing:0.5px;color:#FFFFFF;text-transform:uppercase;">It's cheaper now</div>
-  <div style="font-family:'Dosis',Arial,sans-serif;font-weight:500;font-size:17px;line-height:25px;color:#C9BEDD;padding-top:14px;">{{DROP_INTRO}}</div>
-</td></tr>
+<tr>
+<td class="gut" style="padding:46px 24px 0 24px;">
+  <div class="hl" style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 100,'wdth' 105; font-size:54px; line-height:52px; font-weight:800; color:#FFFFFF; letter-spacing:-1.6px;">
+    THE PRICE<br>DROPPED.
+  </div>
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:22px;"><tr>
+    <td width="72" height="5" bgcolor="#FA1265" style="width:72px; height:5px; background-color:#FA1265; font-size:0; line-height:0;">&nbsp;</td>
+  </tr></table>
+  <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 40; font-size:16px; line-height:25px; color:#C9C2E4; padding-top:20px;">
+    Something you saved is cheaper than it was when you saved it. Here is the new number.
+  </div>
+</td>
+</tr>
 
-<!-- HERO IMAGE -->
-<tr><td align="center" bgcolor="#0B0018" style="background-color:#0B0018;padding:0;">
-  <a href="{{HERO_URL}}" target="_blank"><img src="{{HERO_IMAGE}}" width="600" alt="{{HERO_NAME}}" style="width:100%;max-width:600px;height:auto;"></a>
-</td></tr>
-
-<!-- NAME -->
-<tr><td align="center" bgcolor="#0B0018" class="px" style="background-color:#0B0018;padding:26px 30px 18px 30px;">
-  <div style="font-family:'Anton',Impact,Arial,sans-serif;font-weight:900;font-size:26px;line-height:30px;letter-spacing:0.5px;color:#FFFFFF;text-transform:uppercase;">{{HERO_NAME}}</div>
-</td></tr>
-
-<!-- PRICE SLAB -->
-<tr><td align="center" bgcolor="#FF003C" style="background-color:#FF003C;padding:26px 24px 28px 24px;">
-  <div style="font-family:'Dosis',Arial,sans-serif;font-weight:700;font-size:20px;line-height:22px;color:#FFC2D2;text-decoration:line-through;padding-bottom:4px;">{{HERO_OLD_PRICE}}</div>
-  <div class="bigprice" style="font-family:'Anton',Impact,Arial,sans-serif;font-weight:900;font-size:96px;line-height:86px;color:#FFFFFF;letter-spacing:-1px;">{{HERO_NEW_PRICE}}</div>
-  <div style="font-family:'Dosis',Arial,sans-serif;font-weight:700;font-size:15px;letter-spacing:2px;text-transform:uppercase;color:#FFFFFF;padding-top:10px;">{{HERO_PERCENT_OFF}} off</div>
-</td></tr>
-
-<!-- DEADLINE STRIP -->
-<tr><td align="center" bgcolor="#0E0BD1" style="background-color:#0E0BD1;padding:16px 24px;">
-  <div style="font-family:'Dosis',Arial,sans-serif;font-weight:700;font-size:14px;letter-spacing:1.5px;text-transform:uppercase;color:#FFFFFF;">{{DEADLINE_TEXT}}</div>
-</td></tr>
-
-<!-- CTA -->
-<tr><td align="center" bgcolor="#0B0018" style="background-color:#0B0018;padding:34px 24px 30px 24px;">
+<tr>
+<td class="gut" style="padding:40px 24px 0 24px;">
   <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-    <td align="center" bgcolor="#FFFFFF" style="background-color:#FFFFFF;border-radius:6px;">
-      <a href="{{HERO_URL}}" target="_blank" style="display:inline-block;font-family:'Anton',Impact,Arial,sans-serif;font-weight:900;font-size:20px;letter-spacing:1px;text-transform:uppercase;color:#0B0018;padding:19px 52px;border-radius:6px;">Grab it now →</a>
+    <td valign="bottom" style="padding:0;">
+      <div class="code fig" style="font-family:'Google Sans Code','SF Mono',Consolas,'Courier New',monospace; font-size:94px; line-height:86px; font-weight:700; color:#FFFFFF; letter-spacing:-4px;">{{NEW_PRICE}}</div>
+    </td>
+    <td valign="bottom" style="padding:0 0 16px 14px;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td bgcolor="#7DF5AD" style="background-color:#7DF5AD; border-radius:8px; padding:8px 12px;">
+          <span class="code" style="font-family:'Google Sans Code','SF Mono',Consolas,'Courier New',monospace; font-size:14px; font-weight:700; color:#04021E; letter-spacing:0.4px;">&#8595; {{DROP_PCT}}</span>
+        </td>
+      </tr></table>
     </td>
   </tr></table>
-</td></tr>
+  <div class="code" style="font-family:'Google Sans Code','SF Mono',Consolas,'Courier New',monospace; font-size:17px; color:#6E6690; text-decoration:line-through; padding-top:10px;">{{OLD_PRICE}}</div>
+  <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 25,'wdth' 92; font-size:11px; line-height:16px; color:#8E86B4; letter-spacing:1.6px; padding-top:12px; font-weight:600;">NEW PRICE</div>
+</td>
+</tr>
+<tr><td height="42" style="height:42px; font-size:0; line-height:0;">&nbsp;</td></tr>
 
-<!-- ADDITIONAL ITEMS (render block only if more than one dropped) -->
-{{#EXTRA_ITEMS}}
-<tr><td bgcolor="#190737" class="px" style="background-color:#190737;padding:26px 28px 10px 28px;">
-  <div style="font-family:'Dosis',Arial,sans-serif;font-weight:700;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:#B8ACCC;">Also dropped</div>
-</td></tr>
-<tr><td bgcolor="#190737" class="px" style="background-color:#190737;padding:0 28px 28px 28px;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-    <!-- REPEAT PER EXTRA ITEM -->
+<tr>
+<td class="gut" style="padding:0 24px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#0D0C13" style="background-color:#0D0C13; border-radius:20px;">
+
     <tr>
-      <td width="66" style="padding:10px 0;"><a href="{{ITEM_URL}}" target="_blank"><img src="{{ITEM_IMAGE}}" width="56" alt="{{ITEM_NAME}}" style="width:56px;height:56px;border-radius:6px;"></a></td>
-      <td style="padding:10px 0;font-family:'Dosis',Arial,sans-serif;font-weight:600;font-size:16px;line-height:20px;color:#E8E0F0;">{{ITEM_NAME}}</td>
-      <td align="right" style="padding:10px 0;font-family:'Dosis',Arial,sans-serif;font-weight:700;font-size:16px;color:#FFFFFF;white-space:nowrap;"><span style="color:#B8ACCC;text-decoration:line-through;font-size:13px;">{{ITEM_OLD_PRICE}}</span>&nbsp; {{ITEM_NEW_PRICE}}</td>
+    <td class="pad" style="padding:22px 22px 0 22px;">
+      <a href="{{HERO_URL}}"><img src="{{HERO_IMAGE}}" width="508" alt="{{HERO_NAME}}" class="heroimg" style="width:508px; max-width:100%; height:auto; display:block; border-radius:12px 12px 0 0;"></a>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td height="6" bgcolor="#FA1265" style="height:6px; background-color:#FA1265; font-size:0; line-height:0; border-radius:0 0 3px 3px;">&nbsp;</td>
+      </tr></table>
+    </td>
     </tr>
-    <!-- END REPEAT -->
-  </table>
-</td></tr>
-{{/EXTRA_ITEMS}}
+    <tr>
+    <td class="pad" style="padding:24px 30px 0 30px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td valign="middle" style="padding:0;">
+          <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 100,'wdth' 95; font-size:23px; line-height:27px; font-weight:800; color:#FFFFFF;">{{HERO_NAME}}</div>
+        </td>
+        <td valign="middle" align="right" style="padding:0 0 0 16px; white-space:nowrap;">
+          <span class="code" style="font-family:'Google Sans Code','SF Mono',Consolas,'Courier New',monospace; font-size:26px; font-weight:700; color:#FA1265;">{{NEW_PRICE}}</span><br>
+          <span class="code" style="font-family:'Google Sans Code','SF Mono',Consolas,'Courier New',monospace; font-size:14px; font-weight:400; color:#6E6690; text-decoration:line-through;">{{OLD_PRICE}}</span>
+        </td>
+      </tr></table>
+    </td>
+    </tr>
 
-<!-- FOOTER -->
-<tr><td align="center" bgcolor="#0B0018" class="px" style="background-color:#0B0018;padding:30px 30px 40px 30px;border-top:1px solid #241243;">
-  <div style="font-family:'Dosis',Arial,sans-serif;font-weight:700;font-size:13px;letter-spacing:2px;color:#B8ACCC;padding-bottom:10px;">THE PLUGIN WAREHOUSE</div>
-  <div style="font-family:'Dosis',Arial,sans-serif;font-size:12px;line-height:19px;color:#8A7DA3;">
-    You saved this plugin at thepluginwarehouse.com.<br>
-    <a href="{{UNSUBSCRIBE_URL}}" style="color:#B8ACCC;text-decoration:underline;">Stop these reminders</a>
-  </div>
-</td></tr>
+    <tr>
+    <td class="pad" style="padding:24px 30px 0 30px;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td bgcolor="#4B3FE8" style="background-color:#4B3FE8; border-radius:9px; padding:11px 16px;">
+          <span class="code" style="font-family:'Google Sans Code','SF Mono',Consolas,'Courier New',monospace; font-size:13px; font-weight:700; color:#FFFFFF; letter-spacing:0.6px;">{{DEADLINE_TEXT}}</span>
+        </td>
+      </tr></table>
+    </td>
+    </tr>
+
+    <tr>
+    <td class="pad" style="padding:24px 30px 0 30px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr><td colspan="3" height="1" bgcolor="#26223A" style="height:1px; background-color:#26223A; font-size:0; line-height:0;">&nbsp;</td></tr>
+        <!-- {{EXTRA_ITEMS}} include ONLY saved items whose price actually dropped -->
+        <tr>
+          <td width="76" valign="middle" style="padding:16px 0;">
+            <a href="{{ITEM_URL}}"><img src="{{ITEM_IMAGE}}" width="64" height="64" alt="{{ITEM_NAME}}" style="width:64px; height:64px; border-radius:10px; display:block;"></a>
+          </td>
+          <td valign="middle" style="padding:16px 12px 16px 0;">
+            <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 60,'wdth' 95; font-size:16px; line-height:21px; font-weight:700; color:#FFFFFF;">{{ITEM_NAME}}</div>
+          </td>
+          <td valign="middle" align="right" style="padding:16px 0; white-space:nowrap;">
+            <span class="code" style="font-family:'Google Sans Code','SF Mono',Consolas,'Courier New',monospace; font-size:18px; font-weight:700; color:#8E86B4;">{{ITEM_PRICE}}</span><br>
+            <span class="code" style="font-family:'Google Sans Code','SF Mono',Consolas,'Courier New',monospace; font-size:12px; font-weight:400; color:#5B5478; text-decoration:line-through;">{{ITEM_ORIGINAL}}</span>
+          </td>
+        </tr>
+        <tr><td colspan="3" height="1" bgcolor="#26223A" style="height:1px; background-color:#26223A; font-size:0; line-height:0;">&nbsp;</td></tr>
+        <!-- end repeat -->
+      </table>
+    </td>
+    </tr>
+
+    <tr>
+    <td class="pad" style="padding:28px 30px 30px 30px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td align="center" bgcolor="#FA1265" style="background-color:#FA1265; border-radius:12px;">
+          <a href="{{HERO_URL}}" style="display:block; padding:20px 24px; font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 100,'wdth' 95; font-size:17px; font-weight:800; color:#FFFFFF; letter-spacing:0.6px;">GRAB THE NEW PRICE &#8594;</a>
+        </td>
+      </tr></table>
+    </td>
+    </tr>
+
+  </table>
+</td>
+</tr>
+<tr><td height="18" style="height:18px; font-size:0; line-height:0;">&nbsp;</td></tr>
+
+<tr>
+<td class="gut" style="padding:0 24px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#2E2750" style="background-color:#2E2750; border-radius:20px;">
+    <tr>
+    <td class="pad" style="padding:32px 30px 34px 30px;">
+      <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 100,'wdth' 95; font-size:24px; line-height:30px; font-weight:800; color:#FFFFFF;">There are hundreds more<br>in the vault.</div>
+      <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 40; font-size:15px; line-height:23px; color:#E4DEF2; padding-top:10px;">Most of them sit under twenty five dollars.</div>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:20px;"><tr>
+        <td bgcolor="#2E2750" style="background-color:#2E2750; border:2px solid #FFFFFF; border-radius:12px;">
+          <a href="https://www.thepluginwarehouse.com/shop" style="display:block; padding:14px 24px; font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 100,'wdth' 95; font-size:14px; font-weight:800; color:#FFFFFF; letter-spacing:0.6px;">BROWSE THE VAULT &#8594;</a>
+        </td>
+      </tr></table>
+    </td>
+    </tr>
+  </table>
+</td>
+</tr>
+<tr><td height="46" style="height:46px; font-size:0; line-height:0;">&nbsp;</td></tr>
 
 </table>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#FFFFFF" style="background-color:#FFFFFF;">
+<tr><td align="center" style="padding:0;">
+  <table role="presentation" class="w600" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:600px;">
+    <tr>
+    <td class="gut" align="center" style="padding:34px 24px 36px 24px;">
+      <img src="https://thepluginwarehousefiles.com/covers/PWH%20Logo%20Dark.png" width="132" alt="Plugin Warehouse" style="width:132px; height:auto; margin:0 auto;">
+      <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 40; font-size:13px; line-height:22px; color:#08061F; padding-top:18px;">
+        <a href="https://www.thepluginwarehouse.com/contact-us" style="color:#08061F; text-decoration:underline;">Contact</a>
+        &nbsp;&nbsp;&#183;&nbsp;&nbsp;
+        <a href="https://www.thepluginwarehouse.com/shop" style="color:#08061F; text-decoration:underline;">Shop all</a>
+        &nbsp;&nbsp;&#183;&nbsp;&nbsp;
+        <a href="{{UNSUBSCRIBE_URL}}" style="color:#08061F; text-decoration:underline;">Stop saved item alerts</a>
+      </div>
+      <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 40; font-size:12px; line-height:18px; color:#6E6690; padding-top:12px;">That link only stops cart and saved item emails. Your newsletter stays put.</div>
+    </td>
+    </tr>
+  </table>
+</td></tr>
+</table>
+
 </td></tr>
 </table>
 </body>
