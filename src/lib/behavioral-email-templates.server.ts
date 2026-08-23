@@ -10,6 +10,13 @@ import {
   PRICE_DROP_HTML,
   SAVED_1_HTML,
 } from "./behavioral-email-html.server";
+import {
+  fill,
+  money,
+  removeEmptyChips,
+  removeRowContaining,
+  renderExtras,
+} from "./email-render.server";
 
 export const SITE_URL = "https://thepluginwarehouse.com";
 
@@ -26,63 +33,34 @@ export type DropProduct = EmailProduct & { oldPrice: number; newPrice: number };
 
 const FALLBACK_COVER = `${SITE_URL}/og-cover.jpg`;
 
-function money(n: number) {
-  return n === 0 ? "FREE" : `$${n.toFixed(2)}`;
-}
-
 function productUrl(p: { slug?: string | null }, campaign: string) {
   const base = p.slug ? `${SITE_URL}/shop/p/${p.slug}` : `${SITE_URL}/shop`;
   return `${base}?utm_source=email&utm_campaign=${campaign}`;
 }
 
+/**
+ * Product covers are stored at full size on the R2 custom domain, so the same
+ * URL serves the 508px hero panel and the 128px+ retina thumbnail. No
+ * thumbnail/resize variant is ever used here.
+ */
 function cover(p: { coverUrl?: string | null }) {
   return p.coverUrl && p.coverUrl.startsWith("http") ? p.coverUrl : FALLBACK_COVER;
 }
 
-// ---------- tiny mustache-ish renderer ----------
-
-/** Removes a {{#NAME}}…{{/NAME}} block, or unwraps it when `keep` is true. */
-function block(html: string, name: string, keep: boolean): string {
-  const re = new RegExp(`\\{\\{#${name}\\}\\}([\\s\\S]*?)\\{\\{/${name}\\}\\}`, "g");
-  return html.replace(re, (_m, inner: string) => (keep ? inner : ""));
+function original(p: EmailProduct): string {
+  return p.comparePrice != null && Number(p.comparePrice) > p.price
+    ? money(Number(p.comparePrice))
+    : "";
 }
 
-/** Repeats the markup between the REPEAT markers once per row. */
-function repeatRows(html: string, rows: Record<string, string>[]): string {
-  const start = html.indexOf("<!-- REPEAT PER EXTRA ITEM -->");
-  const endMarker = "<!-- END REPEAT -->";
-  const end = html.indexOf(endMarker);
-  if (start === -1 || end === -1) return html;
-  const tpl = html.slice(start + "<!-- REPEAT PER EXTRA ITEM -->".length, end);
-  const body = rows.map((r) => fill(tpl, r)).join("");
-  return html.slice(0, start) + body + html.slice(end + endMarker.length);
+function retail(p: EmailProduct): number {
+  const c = p.comparePrice != null ? Number(p.comparePrice) : 0;
+  return c > p.price ? c : p.price;
 }
 
-function fill(html: string, vars: Record<string, string>): string {
-  return html.replace(/\{\{([A-Z0-9_]+)\}\}/g, (_m, k: string) => vars[k] ?? "");
-}
-
-function setPreheader(html: string, preview: string): string {
-  return html.replace(
-    /(<div style="display:none;max-height:0;[^"]*">)([\s\S]*?)(<\/div>)/,
-    (_m, a: string, _b: string, c: string) => `${a}${escapeHtml(preview)}${c}`,
-  );
-}
-
-function render(
-  tpl: string,
-  opts: {
-    preview: string;
-    vars: Record<string, string>;
-    heroOldPrice: boolean;
-    extras: Record<string, string>[];
-  },
-): string {
-  let html = setPreheader(tpl, opts.preview);
-  html = block(html, "HERO_OLD_PRICE", opts.heroOldPrice);
-  html = block(html, "EXTRA_ITEMS", opts.extras.length > 0);
-  if (opts.extras.length > 0) html = repeatRows(html, opts.extras);
-  return fill(html, opts.vars);
+function pctText(saved: number, base: number): string {
+  if (base <= 0 || saved <= 0) return "";
+  return `${Math.round((saved / base) * 100)}%`;
 }
 
 // ---------- deadline text ----------
@@ -111,39 +89,29 @@ export function saleDeadlineText(endAt: string | null | undefined): string | nul
   return `PRICE ENDS ${day.toUpperCase()} ${time} CT`;
 }
 
-export const DEADLINE_CART_FALLBACK = "YOUR CART CLEARS IN 7 DAYS";
-export const DEADLINE_SAVED_FALLBACK = "PRICES CHANGE WITHOUT NOTICE";
-export const DEADLINE_DROP_FALLBACK = "WHILE IT LASTS";
+// Deadlines are never invented: with no real sale end date the chip row is
+// removed instead of showing filler copy.
+export const DEADLINE_CART_FALLBACK = "";
+export const DEADLINE_SAVED_FALLBACK = "";
+export const DEADLINE_DROP_FALLBACK = "";
 
 // ---------- copy table (README) ----------
 
-const CART_COPY: Record<1 | 2 | 3, { subject: string; preview: string; tpl: string }> = {
-  1: {
-    subject: "You left something behind 🛒",
-    preview: "Your cart's still holding it — for now.",
-    tpl: CART_1_HTML,
-  },
-  2: {
-    subject: "Your cart's getting cold 🧊",
-    preview: "Prices move. Carts clear. This one's been sitting.",
-    tpl: CART_2_HTML,
-  },
-  3: {
-    subject: "Last call on your cart ⏳",
-    preview: "Final reminder before it clears.",
-    tpl: CART_3_HTML,
-  },
+const CART_COPY: Record<1 | 2 | 3, { subject: (total: string) => string; tpl: string }> = {
+  1: { subject: (t) => `${t}. Still in your cart.`, tpl: CART_1_HTML },
+  2: { subject: () => "One day later.", tpl: CART_2_HTML },
+  3: { subject: () => "Last one from us.", tpl: CART_3_HTML },
 };
 
 type Rendered = { subject: string; html: string; text: string };
 
-function plainList(items: EmailProduct[]) {
-  return items.map((i) => `• ${i.name} — ${money(i.price)}`).join("\n");
-}
-
 /** Highest-priced item first. */
 function orderByPrice<T extends EmailProduct>(items: T[]): T[] {
   return [...items].sort((a, b) => b.price - a.price);
+}
+
+function finish(html: string): string {
+  return removeEmptyChips(html);
 }
 
 // ---------- abandoned cart (steps 1-3) ----------
@@ -151,7 +119,7 @@ function orderByPrice<T extends EmailProduct>(items: T[]): T[] {
 export function renderAbandonedCart(opts: {
   step: 1 | 2 | 3;
   items: EmailProduct[];
-  deadlineText: string;
+  deadlineText?: string;
   unsubUrl: string;
 }): Rendered {
   const c = CART_COPY[opts.step];
@@ -159,41 +127,60 @@ export function renderAbandonedCart(opts: {
   const ordered = orderByPrice(opts.items);
   const hero = ordered[0]!;
   const extras = ordered.slice(1);
-  const ctaUrl = `${SITE_URL}/checkout?utm_source=email&utm_campaign=${campaign}`;
+  const cartUrl = `${SITE_URL}/checkout?utm_source=email&utm_campaign=${campaign}`;
 
-  const html = render(c.tpl, {
-    preview: c.preview,
-    heroOldPrice: hero.comparePrice != null && Number(hero.comparePrice) > hero.price,
-    extras: extras.map((it) => ({
+  const total = ordered.reduce((s, i) => s + i.price, 0);
+  const retailTotal = ordered.reduce((s, i) => s + retail(i), 0);
+  const savings = Math.max(0, retailTotal - total);
+
+  let html = renderExtras(
+    c.tpl,
+    extras.map((it) => ({
       ITEM_IMAGE: cover(it),
       ITEM_NAME: escapeHtml(it.name),
       ITEM_URL: productUrl(it, campaign),
       ITEM_PRICE: money(it.price),
+      ITEM_ORIGINAL: original(it),
     })),
-    vars: {
-      HERO_IMAGE: cover(hero),
-      HERO_NAME: escapeHtml(hero.name),
-      HERO_URL: productUrl(hero, campaign),
-      HERO_PRICE: money(hero.price),
-      HERO_OLD_PRICE: hero.comparePrice != null ? money(Number(hero.comparePrice)) : "",
-      CTA_URL: ctaUrl,
-      DEADLINE_TEXT: opts.deadlineText,
-      UNSUBSCRIBE_URL: opts.unsubUrl,
-    },
+  );
+
+  html = fill(html, {
+    HERO_IMAGE: cover(hero),
+    HERO_NAME: escapeHtml(hero.name),
+    HERO_URL: productUrl(hero, campaign),
+    HERO_PRICE: money(hero.price),
+    HERO_ORIGINAL: original(hero),
+    CART_URL: cartUrl,
+    CART_TOTAL: money(total),
+    CART_ORIGINAL_TOTAL: money(retailTotal),
+    CART_SAVINGS_AMOUNT: money(savings),
+    CART_SAVINGS_PCT: pctText(savings, retailTotal),
+    UNSUBSCRIBE_URL: opts.unsubUrl,
   });
 
-  return {
-    subject: c.subject,
-    html,
-    text: `${c.preview}\n\n${plainList(ordered)}\n\nFinish checkout: ${ctaUrl}\n\n${opts.deadlineText}\n\nStop these reminders: ${opts.unsubUrl}\n`,
-  };
+  const text = [
+    `${ordered.length === 1 ? "Your item is" : "Your items are"} still in your cart.`,
+    "",
+    ordered
+      .map((i) => `• ${i.name} — ${money(i.price)}${original(i) ? ` (was ${original(i)})` : ""}`)
+      .join("\n"),
+    "",
+    `Cart total: ${money(total)}${savings > 0 ? ` (${money(savings)} off retail)` : ""}`,
+    "",
+    `Finish checkout: ${cartUrl}`,
+    "",
+    `Stop these reminders: ${opts.unsubUrl}`,
+    "",
+  ].join("\n");
+
+  return { subject: c.subject(money(total)), html: finish(html), text };
 }
 
 // ---------- saved items step 1 (3-day nudge) ----------
 
 export function renderSavedItemsNudge(opts: {
   items: EmailProduct[];
-  deadlineText: string;
+  deadlineText?: string;
   unsubUrl: string;
 }): Rendered {
   const campaign = "saved_items_step1";
@@ -201,80 +188,104 @@ export function renderSavedItemsNudge(opts: {
   const hero = ordered[0]!;
   const extras = ordered.slice(1);
   const heroUrl = productUrl(hero, campaign);
+  const heroRetail = retail(hero);
 
-  const html = render(SAVED_1_HTML, {
-    preview: "You saved it for a reason.",
-    heroOldPrice: hero.comparePrice != null && Number(hero.comparePrice) > hero.price,
-    extras: extras.map((it) => ({
+  let html = renderExtras(
+    SAVED_1_HTML,
+    extras.map((it) => ({
       ITEM_IMAGE: cover(it),
       ITEM_NAME: escapeHtml(it.name),
       ITEM_URL: productUrl(it, campaign),
       ITEM_PRICE: money(it.price),
+      ITEM_ORIGINAL: original(it),
     })),
-    vars: {
-      HERO_IMAGE: cover(hero),
-      HERO_NAME: escapeHtml(hero.name),
-      HERO_URL: heroUrl,
-      HERO_PRICE: money(hero.price),
-      HERO_OLD_PRICE: hero.comparePrice != null ? money(Number(hero.comparePrice)) : "",
-      CTA_URL: heroUrl,
-      DEADLINE_TEXT: opts.deadlineText,
-      UNSUBSCRIBE_URL: opts.unsubUrl,
-    },
+  );
+
+  html = fill(html, {
+    HERO_IMAGE: cover(hero),
+    HERO_NAME: escapeHtml(hero.name),
+    HERO_URL: heroUrl,
+    HERO_PRICE: money(hero.price),
+    HERO_ORIGINAL: original(hero),
+    SAVED_PRICE: money(hero.price),
+    SAVED_ORIGINAL: original(hero),
+    SAVED_SAVINGS_PCT: pctText(heroRetail - hero.price, heroRetail),
+    UNSUBSCRIBE_URL: opts.unsubUrl,
   });
 
-  return {
-    subject: "Still thinking about it? 👀",
-    html,
-    text: `You saved it for a reason.\n\n${plainList(ordered)}\n\n${heroUrl}\n\n${opts.deadlineText}\n\nStop these reminders: ${opts.unsubUrl}\n`,
-  };
+  const text = [
+    "Still on your saved list.",
+    "",
+    ordered
+      .map((i) => `• ${i.name} — ${money(i.price)}${original(i) ? ` (was ${original(i)})` : ""}`)
+      .join("\n"),
+    "",
+    heroUrl,
+    "",
+    `Stop these reminders: ${opts.unsubUrl}`,
+    "",
+  ].join("\n");
+
+  return { subject: "Still on your list.", html: finish(html), text };
 }
 
 // ---------- saved items step 2 (price drop) ----------
 
 export function renderPriceDrop(opts: {
   items: DropProduct[];
-  deadlineText: string;
+  deadlineText?: string;
   unsubUrl: string;
 }): Rendered {
   const campaign = "saved_items_price_drop";
-  const pctOf = (i: DropProduct) =>
-    i.oldPrice > 0 ? (i.oldPrice - i.newPrice) / i.oldPrice : 0;
-  const ordered = [...opts.items].sort((a, b) => pctOf(b) - pctOf(a));
+  // Only items whose price actually fell belong in this email.
+  const dropped = opts.items.filter((i) => i.newPrice < i.oldPrice - 0.005);
+  const pctOf = (i: DropProduct) => (i.oldPrice > 0 ? (i.oldPrice - i.newPrice) / i.oldPrice : 0);
+  const ordered = [...dropped].sort((a, b) => pctOf(b) - pctOf(a));
   const hero = ordered[0]!;
   const extras = ordered.slice(1);
-  const pct = Math.round(pctOf(hero) * 100);
   const heroUrl = productUrl(hero, campaign);
+  const pct = Math.round(pctOf(hero) * 100);
 
-  const html = render(PRICE_DROP_HTML, {
-    preview: `${hero.name} just dropped to ${money(hero.newPrice)}. Was ${money(hero.oldPrice)}.`,
-    heroOldPrice: true,
-    extras: extras.map((it) => ({
+  let html = renderExtras(
+    PRICE_DROP_HTML,
+    extras.map((it) => ({
       ITEM_IMAGE: cover(it),
       ITEM_NAME: escapeHtml(it.name),
       ITEM_URL: productUrl(it, campaign),
-      ITEM_OLD_PRICE: money(it.oldPrice),
-      ITEM_NEW_PRICE: money(it.newPrice),
+      ITEM_PRICE: money(it.newPrice),
+      ITEM_ORIGINAL: money(it.oldPrice),
     })),
-    vars: {
-      HERO_IMAGE: cover(hero),
-      HERO_NAME: escapeHtml(hero.name),
-      HERO_URL: heroUrl,
-      HERO_OLD_PRICE: money(hero.oldPrice),
-      HERO_NEW_PRICE: money(hero.newPrice),
-      HERO_PERCENT_OFF: `${pct}%`,
-      DROP_INTRO:
-        extras.length > 0
-          ? `${ordered.length} of your saved plugins just got cheaper. Here's the biggest drop.`
-          : "One of your saved plugins just got cheaper.",
-      DEADLINE_TEXT: opts.deadlineText,
-      UNSUBSCRIBE_URL: opts.unsubUrl,
-    },
+  );
+
+  // Real sale deadline only; otherwise the whole indigo chip row goes away.
+  const deadline = opts.deadlineText?.trim() ?? "";
+  if (!deadline) html = removeRowContaining(html, "{{DEADLINE_TEXT}}");
+
+  html = fill(html, {
+    HERO_IMAGE: cover(hero),
+    HERO_NAME: escapeHtml(hero.name),
+    HERO_URL: heroUrl,
+    OLD_PRICE: money(hero.oldPrice),
+    NEW_PRICE: money(hero.newPrice),
+    DROP_PCT: pct > 0 ? `${pct}%` : "",
+    DEADLINE_TEXT: deadline,
+    UNSUBSCRIBE_URL: opts.unsubUrl,
   });
 
-  return {
-    subject: "That plugin you saved got cheaper 📉",
-    html,
-    text: `${hero.name}\nWas ${money(hero.oldPrice)} — now ${money(hero.newPrice)}${pct > 0 ? ` (${pct}% off)` : ""}\n\n${extras.map((e) => `• ${e.name} — was ${money(e.oldPrice)}, now ${money(e.newPrice)}`).join("\n")}\n\n${heroUrl}\n\n${opts.deadlineText}\n\nStop these reminders: ${opts.unsubUrl}\n`,
-  };
+  const text = [
+    `${money(hero.oldPrice)} became ${money(hero.newPrice)}.`,
+    "",
+    `${hero.name} — now ${money(hero.newPrice)}, was ${money(hero.oldPrice)}${pct > 0 ? ` (${pct}% off)` : ""}`,
+    extras
+      .map((e) => `• ${e.name} — now ${money(e.newPrice)}, was ${money(e.oldPrice)}`)
+      .join("\n"),
+    "",
+    heroUrl,
+    deadline ? `\n${deadline}` : "",
+    "",
+    `Stop these reminders: ${opts.unsubUrl}`,
+    "",
+  ].join("\n");
+
+  return { subject: `${money(hero.oldPrice)} became ${money(hero.newPrice)}.`, html: finish(html), text };
 }
