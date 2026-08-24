@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { formatDate } from "@/lib/account-data";
 import { downloadPlugin } from "@/lib/download";
+import { ProductArtwork } from "./ProductArtwork";
 
 type OwnedProduct = {
   id: string;
@@ -98,15 +99,7 @@ function LibraryCard({ item }: { item: OwnedProduct }) {
     <div className="glass-card p-4 flex flex-col h-full">
       <div className="chromatic-edge" />
       <div className="relative z-10 flex flex-col h-full">
-        <div className="relative aspect-square rounded-2xl overflow-hidden mb-4" style={{ background: item.cover_gradient ?? "#333" }}>
-          {item.cover_url ? (
-            <img src={item.cover_url} alt={item.name} className="absolute inset-0 w-full h-full object-cover" />
-          ) : (
-            <div className="absolute inset-0 flex items-center justify-center p-4">
-              <div className="font-display text-2xl text-center">{item.name}</div>
-            </div>
-          )}
-        </div>
+        <ProductArtwork src={item.cover_url} name={item.name} gradient={item.cover_gradient ?? undefined} className="aspect-[4/5] mb-4" />
         <h3 className="font-display text-lg leading-tight truncate tracking-wide">{item.name}</h3>
         <div className="label-mini mt-1 mb-4">Purchased {formatDate(item.last_purchased)}</div>
         <div className="mt-auto flex gap-2">

@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { downloadPlugin } from "@/lib/download";
+import { ProductArtwork } from "@/components/ProductArtwork";
 
 const INSTALL_GUIDE_URL =
   "https://thepluginwarehousefiles.com/other%20files/the_plugin_warehouse_installation_guide.pdf";
@@ -268,19 +269,7 @@ function PluginCard({
       <div className="chromatic-edge" />
       <div className="glass-noise" />
       <div className="relative z-10 flex flex-col h-full">
-        <div
-          className="relative aspect-square overflow-hidden"
-          style={{ background: plugin.cover_gradient ?? "#190737" }}
-        >
-          {plugin.cover_url && (
-            <img
-              src={plugin.cover_url}
-              alt={plugin.name}
-              className="absolute inset-0 w-full h-full object-cover"
-              loading="lazy"
-              onLoad={onView}
-            />
-          )}
+        <ProductArtwork src={plugin.cover_url} name={plugin.name} gradient={plugin.cover_gradient ?? undefined} className="aspect-[4/5] !rounded-none" onLoad={onView}>
           <div className="absolute top-2 left-2 flex flex-col items-start gap-1.5">
             {hasUpdate && (
               <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#FF003C]/20 border border-[#FF003C]/60 text-white font-mono text-[9px] tracking-[0.18em] font-bold backdrop-blur">
@@ -295,7 +284,7 @@ function PluginCard({
               </span>
             )}
           </div>
-        </div>
+        </ProductArtwork>
         <div className="p-3 md:p-4 flex flex-col gap-3 flex-1">
           <div className="font-bold text-sm md:text-base leading-tight line-clamp-2 min-h-[2.5em]">
             {plugin.name}

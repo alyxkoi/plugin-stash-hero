@@ -4,6 +4,7 @@ import { ArrowUpRight, X, Gift, FileText, HelpCircle, Mail } from "lucide-react"
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { getMyStoreCredit, type CreditSnapshot } from "@/lib/store-credit.functions";
+import { ProductArtwork } from "@/components/ProductArtwork";
 
 const INSTALL_GUIDE_URL =
   "https://thepluginwarehousefiles.com/other%20files/the_plugin_warehouse_installation_guide.pdf";
@@ -208,18 +209,7 @@ function OverviewPage() {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {featured.map((p) => (
               <Link key={p.product_id} to="/account/plugins" className="group block min-w-0">
-                <div
-                  className="relative aspect-square rounded-xl overflow-hidden border border-white/10 group-hover:border-[#FF003C]/50 transition"
-                  style={{ background: p.cover_gradient ?? "#190737" }}
-                >
-                  {p.cover_url && (
-                    <img
-                      src={p.cover_url}
-                      alt={p.name}
-                      loading="lazy"
-                      className="absolute inset-0 w-full h-full object-cover transition duration-500 group-hover:scale-[1.04]"
-                    />
-                  )}
+                <ProductArtwork src={p.cover_url} name={p.name} gradient={p.cover_gradient ?? undefined} className="aspect-[4/5] group-hover:border-[#FA1265]/50 transition">
                   <div className="absolute top-2 left-2 flex flex-col items-start gap-1.5">
                     {updatedIds.has(p.product_id) && (
                       <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#FF003C]/25 border border-[#FF003C]/60 text-white font-mono text-[9px] tracking-[0.18em] font-bold backdrop-blur">
@@ -234,7 +224,7 @@ function OverviewPage() {
                       </span>
                     )}
                   </div>
-                </div>
+                </ProductArtwork>
                 <div className="mt-2 text-[13px] font-bold leading-tight line-clamp-2">{p.name}</div>
               </Link>
             ))}

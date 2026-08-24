@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Product, Category } from "@/lib/mock-data";
 
@@ -42,7 +42,7 @@ function mapRow(r: Row): Product {
   };
 }
 
-async function fetchPublished(): Promise<Product[]> {
+export async function fetchPublishedProducts(): Promise<Product[]> {
   const { data, error } = await supabase
     .from("products")
     .select("id,slug,name,maker,category,formats,daws,version,library_type,tags,platforms,price,compare_at_price,description,cover_url,cover_gradient,is_free,is_featured,is_bestseller,updated_at,published_at")
@@ -52,12 +52,14 @@ async function fetchPublished(): Promise<Product[]> {
   return (data as Row[] ?? []).map(mapRow);
 }
 
+export const publishedProductsQueryOptions = queryOptions({
+  queryKey: ["storefront-products"],
+  queryFn: fetchPublishedProducts,
+  staleTime: 30_000,
+});
+
 export function usePublishedProducts() {
-  return useQuery({
-    queryKey: ["storefront-products"],
-    queryFn: fetchPublished,
-    staleTime: 30_000,
-  });
+  return useQuery(publishedProductsQueryOptions);
 }
 
 async function fetchLatest(limit: number): Promise<Product[]> {
@@ -72,12 +74,14 @@ async function fetchLatest(limit: number): Promise<Product[]> {
 }
 
 export function useLatestProducts(limit = 8) {
-  return useQuery({
+  return useQuery(latestProductsQueryOptions(limit));
+}
+
+export const latestProductsQueryOptions = (limit = 8) => queryOptions({
     queryKey: ["storefront-latest-products", limit],
     queryFn: () => fetchLatest(limit),
     staleTime: 30_000,
   });
-}
 
 async function fetchBestsellerIds(limit = 20): Promise<string[]> {
   const { data, error } = await supabase.rpc("get_bestseller_product_ids", { _limit: limit });
@@ -86,9 +90,11 @@ async function fetchBestsellerIds(limit = 20): Promise<string[]> {
 }
 
 export function useBestsellerIds(limit = 20) {
-  return useQuery({
+  return useQuery(bestsellerIdsQueryOptions(limit));
+}
+
+export const bestsellerIdsQueryOptions = (limit = 20) => queryOptions({
     queryKey: ["bestseller-ids", limit],
     queryFn: () => fetchBestsellerIds(limit),
     staleTime: 5 * 60_000,
   });
-}

@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Info, Check, Heart, Share2, ShoppingCart } from "lucide-react";
 
-import { useQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import type { Category, Product } from "@/lib/mock-data";
 import { SALE } from "@/lib/mock-data";
 import { GlassCard } from "@/components/GlassCard";
@@ -10,6 +10,7 @@ import { actions, useStore } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
 import { useSavedIds, useToggleSaved } from "@/hooks/useSaved";
 import { useSalePricing } from "@/lib/sale-pricing";
+import { ProductArtwork } from "@/components/ProductArtwork";
 
 async function fetchProductMeta(slug: string) {
   const { data } = await supabase
@@ -36,7 +37,10 @@ async function fetchProductMeta(slug: string) {
 
 
 export const Route = createFileRoute("/shop/p/$slug")({
-  loader: async ({ params }) => ({ meta: await fetchProductMeta(params.slug) }),
+  loader: async ({ params, context }) => ({
+    meta: await fetchProductMeta(params.slug),
+    detail: await context.queryClient.ensureQueryData(productDetailQueryOptions(params.slug)),
+  }),
   head: ({ params, loaderData }) => {
     const m = loaderData?.meta;
     const url = `https://www.thepluginwarehouse.com/shop/p/${params.slug}`;
@@ -171,12 +175,13 @@ async function fetchBySlug(slug: string): Promise<{ product: Product | null; rel
   return { product, related: (rel as Row[] ?? []).map(toProduct) };
 }
 
+function productDetailQueryOptions(slug: string) {
+  return queryOptions({ queryKey: ["storefront-product", slug], queryFn: () => fetchBySlug(slug), staleTime: 30_000 });
+}
+
 function ProductDetail() {
   const { slug } = Route.useParams();
-  const { data, isLoading } = useQuery({
-    queryKey: ["storefront-product", slug],
-    queryFn: () => fetchBySlug(slug),
-  });
+  const { data, isLoading } = useQuery(productDetailQueryOptions(slug));
   const { data: savedIds } = useSavedIds();
   const toggleSaved = useToggleSaved();
 
@@ -204,34 +209,17 @@ function ProductDetail() {
   const showDawLine = !["software", "daws"].includes(p.category);
 
   return (
-    <div className="px-4 md:px-12 pb-16">
+    <div className="product-detail-v2 px-4 md:px-12 pb-20">
       <nav className="font-mono text-xs text-white/50 my-6">
         <Link to="/shop" className="hover:text-white">Warehouse</Link> / <Link to="/shop/$category" params={{ category: p.category }} className="hover:text-white capitalize">{p.category}</Link> / <span className="text-white">{p.name}</span>
       </nav>
 
-      <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-10 items-start">
-        <div className="relative">
-          <div className="absolute inset-0 glow-breathe pointer-events-none" style={{ background: "radial-gradient(ellipse at center, rgba(255,0,60,0.45), transparent 65%)", filter: "blur(40px)" }} />
-          <div className="relative">
-            <GlassCard variant="heavy" className="p-4">
-              <div className="aspect-square rounded-2xl overflow-hidden relative" style={{ background: p.coverGradient }}>
-                {p.coverUrl ? (
-                  <img src={p.coverUrl} alt={p.name} className="absolute inset-0 w-full h-full object-cover" />
-                ) : (
-                  <div className="h-full w-full flex flex-col items-center justify-center">
-                    <div className="font-mono text-xs text-white/60 mb-3 tracking-[0.25em]">{p.maker.toUpperCase()}</div>
-                    <div className="font-black chrome-text text-center px-6" style={{ fontSize: "clamp(2.5rem,6vw,4.5rem)", lineHeight: 1 }}>{p.name}</div>
-                    <div className="font-mono text-xs text-white/50 mt-4 tracking-[0.2em]">{p.category === "libraries" && p.libraryType ? `FOR ${p.libraryType.toUpperCase()}` : `VERSION ${p.version}`}</div>
-                  </div>
-                )}
-              </div>
-            </GlassCard>
-          </div>
-        </div>
+      <div className="grid lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)] gap-8 xl:gap-16 items-start">
+        <ProductArtwork src={p.coverUrl} name={p.name} gradient={p.coverGradient} className="product-detail-art aspect-[4/5]" loading="eager" />
 
         <div>
           <div className="font-mono text-xs tracking-[0.2em] text-[var(--accent-red-glow)] mb-2">{p.maker.toUpperCase()}</div>
-          <h1 className="font-black chrome-text leading-[0.95] mb-3" style={{ fontSize: "clamp(2.5rem, 5vw, 4rem)" }}>{p.name}</h1>
+          <h1 className="font-black leading-[0.92] mb-3" style={{ fontSize: "clamp(2.7rem, 6vw, 6.4rem)" }}>{p.name}</h1>
           {p.tagline && <p className="text-white/70 italic text-lg mb-6">{p.tagline}</p>}
 
           <div className="flex flex-wrap gap-2 mb-6">
@@ -298,10 +286,10 @@ function ProductDetail() {
 
       {p.description && (
         <section className="mt-20">
-          <GlassCard className="p-8">
-            <h2 className="font-black uppercase tracking-wider text-2xl mb-4 chrome-text">WHAT IT IS</h2>
+          <div className="pwh-solid-panel p-6 md:p-10">
+            <h2 className="font-black uppercase tracking-wider text-2xl mb-4">WHAT IT IS</h2>
             <p className="text-white/70 leading-relaxed whitespace-pre-wrap">{p.description}</p>
-          </GlassCard>
+          </div>
         </section>
       )}
 
@@ -332,7 +320,7 @@ function AddToCartButton({ product }: { product: Product }) {
 }
 
 function Pill({ children }: { children: React.ReactNode }) {
-  return <span className="font-mono text-[10px] tracking-wider px-3 py-1 rounded-full border border-white/15 text-white/65">{children}</span>;
+  return <span className="pwh-dark-chip font-mono text-[10px] tracking-wider px-3 py-1.5">{children}</span>;
 }
 
 

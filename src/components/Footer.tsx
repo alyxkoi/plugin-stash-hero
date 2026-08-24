@@ -2,16 +2,15 @@ import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
+import { Sparkles } from "lucide-react";
 
 export function Footer() {
   return (
-    <footer className="mt-24 px-4 md:px-6 pb-6">
-      <div className="glass-card p-6 md:p-8">
-        <div className="chromatic-edge" /><div className="glass-noise" />
-        <div className="relative z-10">
+    <footer className="storefront-footer">
+      <div className="storefront-footer__inner">
           <div className="flex flex-col md:flex-row md:items-start md:gap-12 gap-8">
             <div className="md:max-w-xs">
-              <img src={logo} alt="Plugin Warehouse" className="h-10 w-auto object-contain mb-3" style={{ filter: "drop-shadow(0 2px 12px rgba(255,0,60,0.35))" }} />
+              <img src={logo} alt="Plugin Warehouse" className="h-10 w-auto object-contain mb-3" />
               <p className="text-xs text-white/60 max-w-xs mb-4">Pro-tier creative software at a fraction of the price. Yours forever.</p>
               <FooterSubscribe />
             </div>
@@ -46,13 +45,10 @@ export function Footer() {
             <div className="font-mono text-[10px] md:text-xs text-white/40 flex items-center gap-3">
               <span>© 2026 <span className="text-red">Plugin Warehouse</span></span>
               <Link to={"/dashboard/login" as any} aria-label="✦" className="text-white/25 hover:text-white/60 transition" title="">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                  <path d="M12 2l2.39 7.36H22l-6.18 4.49L18.21 22 12 17.5 5.79 22l2.39-8.15L2 9.36h7.61z" />
-                </svg>
+                <Sparkles className="w-3 h-3" aria-hidden="true" />
               </Link>
             </div>
           </div>
-        </div>
       </div>
     </footer>
   );

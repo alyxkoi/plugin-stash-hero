@@ -7,6 +7,7 @@ import { useAuth, signOut } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { downloadPlugin } from "@/lib/download";
 import { sumNetRevenue } from "@/lib/revenue";
+import { ProductArtwork } from "@/components/ProductArtwork";
 
 const INSTALL_GUIDE_URL =
   "https://thepluginwarehousefiles.com/other%20files/the_plugin_warehouse_installation_guide.pdf";
@@ -152,7 +153,7 @@ function OrderCard({ order, updatedProductIds, onOpen }: { order: Order; updated
   const [open, setOpen] = useState(false);
   const date = new Date(order.created_at);
   const items = order.order_items ?? [];
-  const statusColor = order.status === "completed" ? "bg-[var(--accent-red)]/85"
+  const statusColor = order.status === "completed" ? "bg-[#7DF5AD] text-[#0D0C13]"
     : order.status === "refunded" ? "bg-white/15" : "bg-amber-500/70";
   const orderHasUpdate = items.some(i => i.product_id && updatedProductIds.has(i.product_id));
 
@@ -172,15 +173,10 @@ function OrderCard({ order, updatedProductIds, onOpen }: { order: Order; updated
     <div className="glass-card overflow-hidden">
       <div className="chromatic-edge" /><div className="glass-noise" />
       <div className="relative z-10">
-        <button onClick={toggle} className="w-full text-left p-5 md:p-6 flex items-center gap-4 md:gap-6 hover:bg-white/[0.02] transition">
-
-          <div className="md:w-32 shrink-0">
-            <div className="font-black text-2xl md:text-3xl leading-none chrome-text">{date.toLocaleString("en-US", { month: "short", day: "numeric" }).toUpperCase()}</div>
-            <div className="font-mono text-[11px] text-white/55 mt-1">{date.getFullYear()}</div>
-          </div>
+        <button onClick={toggle} className="account-order-summary w-full text-left p-5 md:p-6 flex items-center gap-4 md:gap-6 hover:bg-white/[0.02] transition">
           <div className="flex-1 min-w-0">
             <div className="label-mini mb-2 flex items-center gap-2">
-              <span>Order {order.number}</span>
+              <span className="whitespace-nowrap">Order {order.number}</span>
               {orderHasUpdate && (
                 <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#FF003C]/15 border border-[#FF003C]/50 text-[#FF6A88] font-mono text-[9px] tracking-[0.16em] font-bold">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#FF003C] shadow-[0_0_6px_#FF003C]" />
@@ -190,20 +186,24 @@ function OrderCard({ order, updatedProductIds, onOpen }: { order: Order; updated
             </div>
             <div className="flex items-center mb-2">
               {items.slice(0, 4).map((it, i) => (
-                <div key={it.id} className="w-9 h-9 rounded-lg border border-white/20 -ml-3 first:ml-0 shadow-md overflow-hidden relative" style={{ background: it.cover_gradient ?? "#333", zIndex: 10 - i }}>
-                  {it.cover_url && <img src={it.cover_url} alt="" className="absolute inset-0 w-full h-full object-cover" />}
+                <ProductArtwork key={it.id} src={it.cover_url} name={it.name} gradient={it.cover_gradient ?? undefined} className="w-9 h-9 !rounded-lg !p-1 border border-white/20 -ml-3 first:ml-0 shadow-md" >
                   {it.product_id && updatedProductIds.has(it.product_id) && (
                     <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#FF003C] border border-black shadow-[0_0_6px_#FF003C]" />
                   )}
-                </div>
+                </ProductArtwork>
               ))}
               {items.length > 4 && <div className="ml-2 px-2 py-0.5 rounded-full text-[10px] font-mono border border-white/20 bg-white/[0.04]">+{items.length - 4}</div>}
             </div>
-            <div className="font-mono text-[11px] text-white/55 tracking-wider">{items.length} PLUGIN{items.length !== 1 ? "S" : ""}</div>
+            <div className="font-bold truncate mt-2">{items[0]?.name ?? "Plugin order"}{items.length > 1 ? ` + ${items.length - 1} more` : ""}</div>
+            <div className="font-mono text-[10px] text-white/45 tracking-wider mt-1">{items.length} PLUGIN{items.length !== 1 ? "S" : ""}</div>
+          </div>
+          <div className="account-order-date shrink-0">
+            <div className="font-bold text-base leading-none">{date.toLocaleString("en-US", { month: "short", day: "numeric" })}</div>
+            <div className="font-mono text-[10px] text-white/45 mt-1">{date.getFullYear()}</div>
           </div>
           <div className="flex flex-col items-end gap-2">
-            <div className="font-black text-2xl md:text-3xl">${Number(order.total).toFixed(2)}</div>
-            <div className={`px-2.5 py-1 rounded-full font-mono text-[10px] font-bold tracking-wider text-white ${statusColor}`}>{order.status.toUpperCase()}</div>
+            <div className="font-mono font-bold text-base md:text-lg">${Number(order.total).toFixed(2)}</div>
+            <div className={`px-2.5 py-1 rounded-md font-mono text-[10px] font-bold tracking-wider ${statusColor}`}>{order.status.toUpperCase()}</div>
           </div>
           <ChevronDown className={`w-5 h-5 text-white/50 transition-transform duration-300 ${open ? "rotate-180" : ""}`} />
         </button>
@@ -215,9 +215,7 @@ function OrderCard({ order, updatedProductIds, onOpen }: { order: Order; updated
                 const hasUpdate = !!(it.product_id && updatedProductIds.has(it.product_id));
                 return (
                 <li key={it.id} className="py-4 flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-xl border border-white/15 shrink-0 overflow-hidden relative" style={{ background: it.cover_gradient ?? "#333" }}>
-                    {it.cover_url && <img src={it.cover_url} alt={it.name} className="absolute inset-0 w-full h-full object-cover" />}
-                  </div>
+                  <ProductArtwork src={it.cover_url} name={it.name} gradient={it.cover_gradient ?? undefined} className="w-14 h-14 !rounded-xl !p-1.5 shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="font-bold truncate flex items-center gap-2">
                       <span className="truncate">{it.name}</span>

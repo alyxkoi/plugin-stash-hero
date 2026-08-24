@@ -1,6 +1,7 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { ShopPage } from "@/components/ShopPage";
 import type { Category } from "@/lib/mock-data";
+import { publishedProductsQueryOptions } from "@/hooks/useProducts";
 
 const META: Record<Category, { title: string; sub: string; seoTitle: string; desc: string }> = {
   instruments: {
@@ -45,6 +46,7 @@ export const Route = createFileRoute("/shop/$category")({
   beforeLoad: ({ params }) => {
     if (!(params.category in META)) throw notFound();
   },
+  loader: ({ context }) => context.queryClient.ensureQueryData(publishedProductsQueryOptions),
   head: ({ params }) => {
     const m = META[params.category as Category];
     const url = `https://www.thepluginwarehouse.com/shop/${params.category}`;

@@ -1,50 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { SlidersHorizontal, X } from "lucide-react";
 import { ProductCard } from "./ProductCard";
-import { GlassCard } from "./GlassCard";
 import { categories, type Category, type Product } from "@/lib/mock-data";
-import { supabase } from "@/integrations/supabase/client";
-
-type Row = {
-  id: string;
-  slug: string; name: string; maker: string; category: string;
-  formats: string[] | null; daws: string[] | null; version: string | null;
-  platforms: string[] | null;
-  price: number; compare_at_price: number | null; description: string | null;
-  cover_url: string | null; cover_gradient: string | null;
-  is_free: boolean | null; updated_at: string;
-};
-
-async function fetchPublished(): Promise<Product[]> {
-  const { data, error } = await supabase
-    .from("products")
-    .select("id,slug,name,maker,category,formats,daws,version,platforms,price,compare_at_price,description,cover_url,cover_gradient,is_free,updated_at")
-    .eq("status", "published")
-    .order("published_at", { ascending: false });
-  if (error) throw new Error(error.message);
-  return (data as Row[] ?? []).map(r => ({
-    id: r.id,
-    slug: r.slug,
-    name: r.name,
-    maker: r.maker || "",
-    category: ((r.category ?? "").toString().trim().toLowerCase() as Category),
-    daws: r.daws ?? [],
-    formats: r.formats ?? [],
-    version: r.version ?? "1.0",
-    fileSize: "—",
-    updated: new Date(r.updated_at).toLocaleDateString(undefined, { month: "short", year: "numeric" }),
-    price: Number(r.price) || 0,
-    compareAtPrice: r.compare_at_price ? Number(r.compare_at_price) : undefined,
-    tagline: "",
-    description: r.description ?? "",
-    coverGradient: r.cover_gradient ?? "linear-gradient(135deg,#3a0a4a,#7b0a5a)",
-    coverUrl: r.cover_url,
-    isFree: !!r.is_free,
-    platforms: r.platforms ?? [],
-  }));
-}
+import { usePublishedProducts } from "@/hooks/useProducts";
 
 interface ShopPageProps {
   category?: Category;
@@ -61,18 +20,22 @@ export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageP
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [saleStatus, setSaleStatus] = useState<"all" | "sale" | "free">(initialOnSale ? "sale" : "all");
   const [priceSort, setPriceSort] = useState<"none" | "low" | "high">("none");
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const reduce = useReducedMotion();
 
-  const { data: ALL = [], isLoading } = useQuery({
-    queryKey: ["storefront-products"],
-    queryFn: fetchPublished,
-    staleTime: 30_000,
-  });
+  const { data: ALL = [] } = usePublishedProducts();
 
   // Sync category filter when navigating between category pages (component doesn't remount on param change).
   useEffect(() => {
     setSelectedCats(category ? [category] : []);
   }, [category]);
+
+  useEffect(() => {
+    if (!filtersOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = previous; };
+  }, [filtersOpen]);
 
   const allFormats = ["VST", "VST3", "AU", "AAX", "Standalone"];
 
@@ -118,85 +81,72 @@ export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageP
   const showFormat = !initialOnSale && !["software", "freebies"].includes(category || "");
   const showPlatform = !["software", "libraries"].includes(category || "");
   const resultMotionKey = `${query}|${selectedCats.join(",")}|${selectedFormats.join(",")}|${selectedPlatforms.join(",")}|${saleStatus}|${priceSort}`;
+  const clearFilters = () => {
+    setSelectedCats(category ? [category] : []);
+    setSelectedFormats([]);
+    setSelectedPlatforms([]);
+    setSaleStatus("all");
+    setQuery("");
+    setPriceSort("none");
+  };
+
+  const filters = (
+    <>
+      <div className="flex items-center justify-between mb-5">
+        <h2 className="font-bold uppercase tracking-wider text-base m-0">Filters</h2>
+        <button onClick={clearFilters} className="pwh-text-button">Clear</button>
+      </div>
+      <input className="input-glass mb-5" placeholder={`Search within ${category || "warehouse"}`} value={query} onChange={(e) => setQuery(e.target.value)} />
+      {!category && (
+        <FilterGroup title="Category">
+          <div className="grid grid-cols-2 lg:grid-cols-1 gap-1">
+            {categories.map((c) => (
+              <label key={c.slug} className="pwh-check-row">
+                <input type="checkbox" checked={selectedCats.includes(c.slug)} onChange={() => togglePill(selectedCats, c.slug, setSelectedCats)} />
+                <span>{c.name}</span>
+              </label>
+            ))}
+          </div>
+        </FilterGroup>
+      )}
+      {showFormat && (
+        <FilterGroup title="Format">
+          <PillGroup options={allFormats} selected={selectedFormats} onToggle={(v) => togglePill(selectedFormats, v, setSelectedFormats)} />
+        </FilterGroup>
+      )}
+      {showPlatform && (
+        <FilterGroup title="Compatibility">
+          <PillGroup options={["Mac", "Windows"]} selected={selectedPlatforms.map((p) => p === "mac" ? "Mac" : "Windows")} onToggle={(v) => togglePill(selectedPlatforms, v.toLowerCase(), setSelectedPlatforms)} />
+        </FilterGroup>
+      )}
+      <FilterGroup title="Sale status">
+        <Segmented options={[{ value: "all", label: "All" }, { value: "sale", label: "On sale" }, { value: "free", label: "Free" }]} value={saleStatus} onChange={(value) => setSaleStatus(value as typeof saleStatus)} />
+      </FilterGroup>
+      <FilterGroup title="Sort by price">
+        <Segmented options={[{ value: "none", label: "Newest" }, { value: "low", label: "Low first" }, { value: "high", label: "High first" }]} value={priceSort} onChange={(value) => setPriceSort(value as typeof priceSort)} />
+      </FilterGroup>
+    </>
+  );
 
   return (
-    <div>
-      {/* Banner */}
-      <section className="px-4 md:px-12 py-12 md:py-16 text-center relative">
-        <h1 className="font-black chrome-text" style={{ fontSize: "clamp(2.5rem, 6vw, 5rem)" }}>{title}</h1>
-        <p className="mt-3 text-white/65 max-w-2xl mx-auto">{subtitle}</p>
+    <div className="shop-page">
+      <section className="pwh-horizon shop-horizon px-4 md:px-12 py-12 md:py-16 text-center relative">
+        <div className="pwh-eyebrow">Plugin Warehouse catalogue</div>
+        <h1 className="pwh-display mt-3">{title}</h1>
+        <p className="mt-3 text-[var(--text-2)] max-w-2xl mx-auto">{subtitle}</p>
       </section>
 
-      <div className="px-4 md:px-12 grid lg:grid-cols-[280px_1fr] gap-8 pb-16">
-        {/* Sidebar */}
-        <aside className="lg:sticky lg:top-28 self-start">
-          <GlassCard variant="subtle" className="p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-black uppercase tracking-wider text-base m-0">FILTERS</h2>
-              <button onClick={() => { setSelectedCats(category ? [category] : []); setSelectedFormats([]); setSelectedPlatforms([]); setSaleStatus("all"); setQuery(""); setPriceSort("none"); }} className="text-xs text-white/50 hover:text-white">CLEAR</button>
-            </div>
-            <input className="input-glass mb-5" placeholder={`Search within ${category || "warehouse"}`} value={query} onChange={(e) => setQuery(e.target.value)} />
-
-            {!category && (
-              <FilterGroup title="Category">
-                {categories.map((c) => (
-                  <label key={c.slug} className="flex items-center text-sm py-1.5 cursor-pointer hover:text-white text-white/70">
-                    <span className="flex items-center gap-2">
-                      <input type="checkbox" checked={selectedCats.includes(c.slug)} onChange={() => togglePill(selectedCats, c.slug, setSelectedCats)} className="accent-[var(--accent-red)]" />
-                      {c.name}
-                    </span>
-                  </label>
-                ))}
-              </FilterGroup>
-            )}
-
-
-            {showFormat && (
-              <FilterGroup title="Format">
-                <PillGroup options={allFormats} selected={selectedFormats} onToggle={(v) => togglePill(selectedFormats, v, setSelectedFormats)} />
-              </FilterGroup>
-            )}
-
-            {showPlatform && (
-              <FilterGroup title="Compatibility">
-                <PillGroup
-                  options={["Mac", "Windows"]}
-                  selected={selectedPlatforms.map((p) => p === "mac" ? "Mac" : "Windows")}
-                  onToggle={(v) => togglePill(selectedPlatforms, v.toLowerCase(), setSelectedPlatforms)}
-                />
-              </FilterGroup>
-            )}
-
-            <FilterGroup title="Sale Status">
-              <div className="flex gap-1 p-1 rounded-full bg-white/5 border border-white/10">
-                {(["all", "sale", "free"] as const).map((s) => (
-                  <button key={s} onClick={() => setSaleStatus(s)} className={`flex-1 py-1.5 rounded-full text-xs font-bold uppercase transition ${saleStatus === s ? "bg-[var(--accent-red)] text-white" : "text-white/60"}`}>
-                    {s === "all" ? "All" : s === "sale" ? "On Sale" : "Free"}
-                  </button>
-                ))}
-              </div>
-            </FilterGroup>
-
-            <FilterGroup title="Sort by Price">
-              <div className="flex gap-1 p-1 rounded-full bg-white/5 border border-white/10">
-                {([
-                  { v: "none", l: "None" },
-                  { v: "low", l: "Low → High" },
-                  { v: "high", l: "High → Low" },
-                ] as const).map((opt) => (
-                  <button key={opt.v} onClick={() => setPriceSort(opt.v)} className={`flex-1 py-1.5 rounded-full text-[11px] font-bold uppercase transition ${priceSort === opt.v ? "bg-[var(--accent-red)] text-white" : "text-white/60"}`}>
-                    {opt.l}
-                  </button>
-                ))}
-              </div>
-            </FilterGroup>
-          </GlassCard>
+      <div className="px-4 md:px-8 xl:px-12 grid lg:grid-cols-[248px_minmax(0,1fr)] gap-6 xl:gap-8 pb-20">
+        <aside className="hidden lg:block lg:sticky lg:top-28 self-start pwh-solid-panel p-5">
+          {filters}
         </aside>
 
-        {/* Main */}
-        <div>
+        <div className="min-w-0">
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-            <div className="font-mono text-sm text-white/60">{filtered.length} {filtered.length === 1 ? "PLUGIN" : "PLUGINS"}</div>
+            <div className="font-mono text-sm text-[var(--text-2)]">{filtered.length} {filtered.length === 1 ? "PLUGIN" : "PLUGINS"}</div>
+            <button className="lg:hidden pwh-filter-trigger" onClick={() => setFiltersOpen(true)}>
+              <SlidersHorizontal className="w-4 h-4" /> Filters and sort
+            </button>
           </div>
 
           <AnimatePresence mode="sync" initial={false}>
@@ -208,13 +158,13 @@ export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageP
               transition={{ duration: reduce ? 0 : 0.22, ease: [0.19, 1, 0.22, 1] }}
             >
               {filtered.length === 0 ? (
-                <GlassCard className="p-12 text-center">
-                  <h3 className="font-black text-3xl mb-2">NOTHING IN THIS COMBO.</h3>
-                  <p className="text-white/60 mb-6">Loosen up the filters.</p>
+                <div className="pwh-solid-panel p-10 md:p-16 text-center">
+                  <h3 className="font-bold text-3xl mb-2">No matches yet.</h3>
+                  <p className="text-[var(--text-2)] mb-6">Try a wider filter or another search.</p>
                   <button onClick={() => { setSelectedFormats([]); setSelectedPlatforms([]); setSaleStatus("all"); setQuery(""); setPriceSort("none"); }} className="btn-ghost">CLEAR FILTERS</button>
-                </GlassCard>
+                </div>
               ) : (
-                <div className="grid grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5">
                   {filtered.map((p) => <ProductCard key={p.slug} product={p} />)}
                 </div>
               )}
@@ -222,6 +172,20 @@ export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageP
           </AnimatePresence>
         </div>
       </div>
+      <AnimatePresence>
+        {filtersOpen && (
+          <motion.div className="pwh-mobile-sheet-layer lg:hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setFiltersOpen(false)}>
+            <motion.aside className="pwh-mobile-sheet" initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ duration: reduce ? 0 : 0.28, ease: [0.19, 1, 0.22, 1] }} onClick={(event) => event.stopPropagation()}>
+              <div className="pwh-sheet-grip" />
+              <button className="pwh-sheet-close" onClick={() => setFiltersOpen(false)} aria-label="Close filters"><X className="w-5 h-5" /></button>
+              <div className="p-5 pt-8 overflow-y-auto">{filters}</div>
+              <div className="p-4 border-t border-white/10">
+                <button className="btn-primary w-full" onClick={() => setFiltersOpen(false)}>Show {filtered.length} results</button>
+              </div>
+            </motion.aside>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -239,9 +203,19 @@ function PillGroup({ options, selected, onToggle }: { options: string[]; selecte
   return (
     <div className="flex flex-wrap gap-1.5">
       {options.map((o) => (
-        <button key={o} onClick={() => onToggle(o)} className={`px-3 py-1 rounded-full text-xs font-medium border transition ${selected.includes(o) ? "bg-[var(--accent-red)] border-[var(--accent-red)] text-white" : "border-white/15 text-white/70 hover:border-white/30"}`}>
+        <button key={o} onClick={() => onToggle(o)} className={`pwh-filter-chip ${selected.includes(o) ? "is-active" : ""}`}>
           {o}
         </button>
+      ))}
+    </div>
+  );
+}
+
+function Segmented({ options, value, onChange }: { options: { value: string; label: string }[]; value: string; onChange: (value: string) => void }) {
+  return (
+    <div className="pwh-segmented">
+      {options.map((option) => (
+        <button key={option.value} onClick={() => onChange(option.value)} className={value === option.value ? "is-active" : ""}>{option.label}</button>
       ))}
     </div>
   );

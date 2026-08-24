@@ -1,10 +1,11 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { X, ShoppingCart, Tag } from "lucide-react";
+import { ArrowRight, Lock, X, ShoppingCart, Tag } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useStore, actions } from "@/lib/store";
 import { validateDiscount } from "@/lib/checkout.functions";
 import { pickSaleFor, useAllActiveSales } from "@/lib/sale-pricing";
+import { ProductArtwork } from "./ProductArtwork";
 
 export function CartDrawer() {
   const open = useStore((s) => s.cartOpen);
@@ -40,6 +41,7 @@ export function CartDrawer() {
     return { ...i, unit, retail, salePct: hit?.pct ?? 0 };
   });
   const subtotal = priced.reduce((n, i) => n + i.unit * i.qty, 0);
+  const warehouseSubtotal = priced.reduce((n, i) => n + i.product.price * i.qty, 0);
   const retailTotal = priced.reduce((n, i) => n + i.retail * i.qty, 0);
   const saleSavings = priced.reduce((n, i) => n + (i.product.price - i.unit) * i.qty, 0);
   // Discount only applies to items in scope.
@@ -62,7 +64,7 @@ export function CartDrawer() {
     : discount.type === "percent"
       ? Math.min(eligibleSubtotal, (eligibleSubtotal * discount.value) / 100)
       : Math.min(eligibleSubtotal, discount.value);
-  const total = Math.max(0, subtotal - discountAmount);
+  const total = Math.max(0, warehouseSubtotal - saleSavings - discountAmount);
   const totalSavedVsRetail = Math.max(0, retailTotal - total);
   const itemCount = cart.reduce((n, i) => n + i.qty, 0);
 
@@ -128,9 +130,7 @@ export function CartDrawer() {
         exit={{ x: "100%", opacity: 0.8 }}
         transition={{ duration: reduce ? 0 : 0.32, ease: [0.19, 1, 0.22, 1] }}
       >
-        <div className="h-full glass-card !rounded-none md:!rounded-l-3xl md:!rounded-r-none flex flex-col"
-          style={{ background: "rgba(20,5,40,0.85)", backdropFilter: "blur(40px) saturate(180%)" }}>
-          <div className="chromatic-edge" /><div className="glass-noise" />
+        <div className="h-full pwh-cart-panel flex flex-col">
           <div className="relative z-10 flex flex-col h-full">
             <div className="p-5 border-b border-white/10 flex items-center justify-between">
               <div>
@@ -157,16 +157,7 @@ export function CartDrawer() {
               ) : (
                 priced.map((item) => (
                   <div key={item.product.slug} className="flex gap-3 p-3 rounded-xl border border-white/8 bg-white/3">
-                    <div
-                      className="w-16 h-16 rounded-lg shrink-0 overflow-hidden relative flex items-center justify-center"
-                      style={{ background: item.product.coverGradient }}
-                    >
-                      {item.product.coverUrl ? (
-                        <img src={item.product.coverUrl} alt={item.product.name} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
-                      ) : (
-                        <span className="font-mono text-[8px] text-white/70 px-1 text-center leading-tight">{item.product.name}</span>
-                      )}
-                    </div>
+                    <ProductArtwork src={item.product.coverUrl} name={item.product.name} gradient={item.product.coverGradient} className="w-16 h-16 !rounded-lg shrink-0 !p-1.5" />
                     <div className="flex-1 min-w-0">
                       <div className="font-mono text-[9px] text-white/40 tracking-wider">{item.product.maker.toUpperCase()}</div>
                       <div className="font-bold truncate">{item.product.name}</div>
@@ -221,10 +212,10 @@ export function CartDrawer() {
                 )}
 
                 <div className="p-4 rounded-xl bg-white/3 border border-white/8 space-y-2 text-sm">
-                  {retailTotal > subtotal && (
+                  {retailTotal > warehouseSubtotal && (
                     <Row label="Retail total" value={<span className="line-through text-white/50">${retailTotal.toFixed(2)}</span>} />
                   )}
-                  <Row label="Subtotal" value={`$${subtotal.toFixed(2)}`} />
+                  <Row label="Warehouse subtotal" value={`$${warehouseSubtotal.toFixed(2)}`} />
                   {saleSavings > 0 && <Row label="Sale discount" value={`-$${saleSavings.toFixed(2)}`} highlight />}
                   {discountAmount > 0 && <Row label={`Code ${discount?.code ?? ""}`} value={`-$${discountAmount.toFixed(2)}`} highlight />}
                   <div className="h-px bg-white/10 my-2" />
@@ -240,11 +231,11 @@ export function CartDrawer() {
                   )}
                 </div>
 
-                <div className="font-mono text-[10px] text-white/50 text-center">🔒 Secure checkout · Instant delivery to your library</div>
+                <div className="font-mono text-[10px] text-white/50 text-center flex items-center justify-center gap-1.5"><Lock className="w-3 h-3" /> Secure checkout · Instant delivery to your library</div>
                 <button onClick={goCheckout} disabled={goingToCheckout} className="btn-primary w-full !text-base !py-4 disabled:opacity-70">
-                  {goingToCheckout ? "OPENING CHECKOUT…" : "CHECKOUT →"}
+                  {goingToCheckout ? "OPENING CHECKOUT…" : <><span>CHECKOUT</span><ArrowRight className="w-4 h-4" /></>}
                 </button>
-                <div className="font-mono text-[10px] text-white/40 text-center">→ Powered by Stripe</div>
+                <div className="font-mono text-[10px] text-white/40 text-center">Powered by Stripe</div>
               </div>
             )}
           </div>

@@ -3,6 +3,8 @@ import { ShopPage } from "@/components/ShopPage";
 import { supabase } from "@/integrations/supabase/client";
 import heroDesktopAsset from "@/assets/summer-hero-desktop.webp.asset.json";
 import heroMobileAsset from "@/assets/summer-hero-mobile.webp.asset.json";
+import { ArrowDown, ArrowRight } from "lucide-react";
+import { publishedProductsQueryOptions } from "@/hooks/useProducts";
 
 const HERO_DESKTOP = heroDesktopAsset.url;
 const HERO_MOBILE = heroMobileAsset.url;
@@ -31,7 +33,7 @@ const SLUG_ALIASES: Record<string, string> = {
 };
 
 export const Route = createFileRoute("/sale/$slug")({
-  loader: async ({ params }) => {
+  loader: async ({ params, context }) => {
     const targetSlug = SLUG_ALIASES[params.slug] ?? params.slug;
     const { data } = await supabase
       .from("sale_events")
@@ -52,6 +54,7 @@ export const Route = createFileRoute("/sale/$slug")({
       sale = (fallback as SaleRow) ?? null;
     }
     if (!sale) throw notFound();
+    await context.queryClient.ensureQueryData(publishedProductsQueryOptions);
     return { sale };
   },
 
@@ -86,10 +89,9 @@ export const Route = createFileRoute("/sale/$slug")({
 function SaleEvent() {
   const { sale } = Route.useLoaderData();
 
-  const accent = "#FF2D6E";
   const pct = sale.discount_pct ?? 35;
-  const headline = `SUMMER'S HERE. ${pct}% OFF EVERYTHING.`;
-  const sub = "Pro plugins at summer prices. Every sound you need, while the sun's still out.";
+  const headline = sale.headline || `${sale.name}. ${pct}% OFF.`;
+  const sub = sale.subheadline || "Pro tools at warehouse prices for a limited time.";
 
   const scrollToGrid = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -98,7 +100,7 @@ function SaleEvent() {
 
   return (
     <div>
-      <section className="relative -mt-24 md:-mt-28 px-4 md:px-12 pt-40 md:pt-48 pb-16 md:pb-24 overflow-hidden">
+      <section className="sale-hero-v2 pwh-horizon">
         {/* Summer background image: desktop on md+, mobile/tablet below — blurred layer */}
         <div
           className="absolute inset-0 overflow-hidden hero-lqip"
@@ -124,19 +126,6 @@ function SaleEvent() {
           </picture>
         </div>
 
-        {/* Dotted halftone texture */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            backgroundImage: "radial-gradient(rgba(255,255,255,0.18) 1px, transparent 1.1px)",
-            backgroundSize: "5px 5px",
-            opacity: 0.35,
-            mixBlendMode: "overlay",
-            maskImage: "linear-gradient(to bottom, #000 38%, rgba(0,0,0,0.15) 68%, transparent 80%)",
-            WebkitMaskImage: "linear-gradient(to bottom, #000 38%, rgba(0,0,0,0.15) 68%, transparent 80%)",
-          }}
-        />
-
         {/* Contrast scrim: stronger behind the content, fading toward edges */}
         <div
           className="absolute inset-0 pointer-events-none"
@@ -150,21 +139,21 @@ function SaleEvent() {
         <div
           className="absolute inset-x-0 bottom-0 h-[45%] md:h-[38%] pointer-events-none"
           style={{
-            background: "linear-gradient(to bottom, rgba(19,0,44,0) 0%, rgba(19,0,44,0.45) 40%, rgba(19,0,44,0.8) 75%, #13002C 100%)",
+            background: "linear-gradient(to bottom, transparent 0%, rgba(4,2,30,.5) 45%, #04021E 100%)",
           }}
         />
 
 
         <div className="relative flex flex-col items-center justify-center text-center min-h-[70vh] gap-8 md:gap-10">
-          <h1 className="font-black chrome-text leading-[0.95] max-w-4xl mx-auto text-balance" style={{ fontSize: "clamp(2.25rem, 6.5vw, 6rem)", textShadow: "0 0 40px rgba(255,255,255,0.35)" }}>{headline}</h1>
+          <div className="pwh-eyebrow">Limited warehouse event</div>
+          <h1 className="pwh-display max-w-5xl mx-auto">{headline}</h1>
           <p className="text-white/70 text-base md:text-lg max-w-2xl mx-auto pb-2 md:pb-4">{sub}</p>
           <a
             href="#grid"
             onClick={scrollToGrid}
-            className="relative inline-flex items-center justify-center font-bold text-white text-base py-4 px-8 rounded-full overflow-hidden group animate-gradient-btn hover:animate-gradient-btn-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+            className="btn-primary"
           >
-            <span className="absolute inset-0 gradient-blob" />
-            <span className="relative z-10">SHOP THE SALE →</span>
+            <span>SHOP THE SALE</span><ArrowDown className="w-4 h-4" />
           </a>
         </div>
 
@@ -176,7 +165,7 @@ function SaleEvent() {
       <section className="px-4 md:px-12 py-16 text-center">
         <h2 className="font-black chrome-text text-4xl md:text-5xl mb-3">STILL BROWSING?</h2>
         <p className="text-white/65 mb-6">Sale ends {new Date(sale.end_at).toLocaleDateString()}. Don't sleep.</p>
-        <Link to="/shop" className="btn-ghost !text-base !py-4 !px-8">EVERYTHING ELSE →</Link>
+        <Link to="/shop" className="btn-ghost !text-base !py-4 !px-8">EVERYTHING ELSE <ArrowRight className="w-4 h-4" /></Link>
       </section>
     </div>
   );

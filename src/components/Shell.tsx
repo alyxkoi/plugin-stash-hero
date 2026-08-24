@@ -41,37 +41,38 @@ export function Shell() {
 
   return (
     <SalePricingProvider>
-      
-      <Nav />
-      <main className="pt-24 md:pt-28">
-        <div className="route-transition-stack">
-        <AnimatePresence mode="sync" initial={false}>
-          <motion.div
-            key={pathname}
-            className="route-transition-page"
-            initial={reduce ? false : { opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={reduce ? undefined : { opacity: 0 }}
-            transition={{
-              duration: reduce ? 0 : 0.28,
-              ease: "easeOut",
-            }}
-            style={{ willChange: "opacity" }}
-          >
-            <SectionErrorBoundary resetKey={pathname}>
-              <Outlet />
-            </SectionErrorBoundary>
-          </motion.div>
-        </AnimatePresence>
-        </div>
-      </main>
+      <div className="storefront-shell">
+        <div className="storefront-field" aria-hidden="true" />
+        <Nav />
+        <main className="storefront-main">
+          <div className="route-transition-stack">
+            <AnimatePresence mode="sync" initial={false}>
+              <motion.div
+                key={pathname}
+                className="route-transition-page"
+                initial={reduce ? false : { opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={reduce ? undefined : { opacity: 0 }}
+                transition={{
+                  duration: reduce ? 0 : 0.28,
+                  ease: "easeOut",
+                }}
+                style={{ willChange: "opacity" }}
+              >
+                <SectionErrorBoundary resetKey={pathname}>
+                  <Outlet />
+                </SectionErrorBoundary>
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </main>
 
-      <Footer />
-      <CartDrawer />
-      <CartSync />
-      <UtmSync />
-      <MysteryGiftPopup />
-
+        <Footer />
+        <CartDrawer />
+        <CartSync />
+        <UtmSync />
+        <MysteryGiftPopup />
+      </div>
     </SalePricingProvider>
   );
 }

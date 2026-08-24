@@ -313,7 +313,7 @@ function CheckoutPage() {
 
 function CheckoutFrame({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-[var(--bg,#0b0316)] pt-24 pb-16">
+    <div className="min-h-[calc(100svh-92px)] pt-12 pb-16">
       <div className="max-w-md mx-auto px-4 text-center">{children}</div>
     </div>
   );
@@ -321,14 +321,10 @@ function CheckoutFrame({ children }: { children: React.ReactNode }) {
 
 function GuestGateFrame({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-[var(--bg,#0b0316)] flex items-center justify-center px-4 py-16 relative overflow-hidden">
-      <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at center, rgba(255,0,60,0.18), transparent 60%)" }} />
+    <div className="checkout-gate pwh-horizon">
       <div className="relative w-full max-w-md">
-        <div className="absolute inset-0 glow-breathe pointer-events-none" style={{ background: "radial-gradient(ellipse at center, rgba(255,0,60,0.45), transparent 65%)", filter: "blur(40px)" }} />
-        <div className="glass-card glass-card--heavy p-8 md:p-10 relative">
-          <div className="chromatic-edge" />
-          <div className="glass-noise" />
-          <div className="relative z-10">{children}</div>
+        <div className="auth-panel">
+          {children}
         </div>
         <div className="text-center mt-4 font-mono text-xs text-white/40">
           Secure checkout · Powered by Stripe

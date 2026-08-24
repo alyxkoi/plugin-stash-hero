@@ -6,6 +6,7 @@ import { useStore, actions } from "@/lib/store";
 import { categories } from "@/lib/mock-data";
 import { usePublishedProducts } from "@/hooks/useProducts";
 import logo from "@/assets/logo.png";
+import { ProductArtwork } from "./ProductArtwork";
 
 const catIcons: Record<string, typeof Piano> = {
   instruments: Piano,
@@ -18,7 +19,6 @@ const catIcons: Record<string, typeof Piano> = {
 
 export function Nav() {
   const cart = useStore((s) => s.cart);
-  const [scrolled, setScrolled] = useState(false);
   const [catOpen, setCatOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerClosing, setDrawerClosing] = useState(false);
@@ -89,13 +89,6 @@ export function Nav() {
   };
 
   useEffect(() => {
-    const on = () => setScrolled(window.scrollY > 60);
-    on();
-    window.addEventListener("scroll", on, { passive: true });
-    return () => window.removeEventListener("scroll", on);
-  }, []);
-
-  useEffect(() => {
     if (!searchOpen) return;
     searchRef.current?.focus();
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setSearchOpen(false); };
@@ -125,19 +118,12 @@ export function Nav() {
 
   return (
     <>
-      <div className="fixed top-3 left-3 right-3 md:top-5 md:left-6 md:right-6 z-50 fade-in">
-        <div
-          className="glass-card"
-          style={{
-            backdropFilter: scrolled ? "blur(40px) saturate(180%)" : "blur(28px) saturate(150%)",
-            padding: "0.6rem 1rem",
-          }}
-        >
-          <div className="chromatic-edge" />
+      <div className="storefront-nav-wrap fade-in">
+        <div className="storefront-nav">
           <div className="relative z-10 flex items-center gap-3 md:gap-6">
             {/* Logo */}
             <Link to="/" className="flex items-center shrink-0">
-              <img src={logo} alt="Plugin Warehouse" className="h-10 md:h-11 w-auto object-contain" style={{ filter: "drop-shadow(0 2px 8px rgba(255,0,60,0.3))" }} />
+              <img src={logo} alt="Plugin Warehouse" className="h-9 md:h-10 w-auto object-contain" />
             </Link>
 
             {/* Desktop nav — full desktop only */}
@@ -187,9 +173,16 @@ export function Nav() {
               <button onClick={() => setSearchOpen(true)} aria-label="Search" className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-white/5 transition">
                 <Search className="w-5 h-5" />
               </button>
+              <button onClick={() => actions.openCart()} className="relative min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-white/5 transition" aria-label={count ? `Cart (${count})` : "Cart"}>
+                <ShoppingCart className="w-5 h-5" />
+                {count > 0 && (
+                  <span className="absolute top-0 right-0 min-w-[18px] h-[18px] rounded-md bg-[var(--accent-red)] text-white font-mono text-[10px] font-bold flex items-center justify-center px-1">
+                    {count}
+                  </span>
+                )}
+              </button>
               <button onClick={() => setDrawerOpen(true)} aria-label="Open menu" className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-white/5 transition relative">
                 <Menu className="w-5 h-5" />
-                {count > 0 && <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[var(--accent-red)]" />}
               </button>
             </div>
           </div>
@@ -259,14 +252,7 @@ export function Nav() {
                           onClick={() => goToProduct(p.slug)}
                           className="w-full flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-white/8 transition text-left"
                         >
-                          <div
-                            className="w-11 h-11 rounded-lg overflow-hidden shrink-0 border border-white/10"
-                            style={{ background: p.coverGradient }}
-                          >
-                            {p.coverUrl && (
-                              <img src={p.coverUrl} alt="" loading="lazy" className="w-full h-full object-cover" />
-                            )}
-                          </div>
+                          <ProductArtwork src={p.coverUrl} name={p.name} gradient={p.coverGradient} className="w-11 h-11 shrink-0 !rounded-lg !p-1" />
                           <div className="min-w-0 flex-1">
                             <div className="font-display text-base truncate">{p.name}</div>
                             <div className="font-mono text-[10px] tracking-[0.15em] text-white/50 uppercase truncate">

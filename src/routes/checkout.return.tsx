@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { actions } from "@/lib/store";
 import { clearStoredUtm } from "@/hooks/useUtmCapture";
+import { ProductArtwork } from "@/components/ProductArtwork";
 
 
 export const Route = createFileRoute("/checkout/return")({
@@ -97,7 +98,7 @@ function CheckoutReturn() {
           </div>
           <h1 className="font-display text-5xl md:text-6xl font-black tracking-tight leading-[1.02]">You're loaded up.</h1>
           <p className="mt-4 text-white/60 text-base">
-            Order <span className="font-mono text-white/90">{order!.number}</span> — grab your files below. We also emailed the links to{" "}
+            Order <span className="font-mono text-white/90 whitespace-nowrap">{order!.number}</span> — grab your files below. We also emailed the links to{" "}
             <span className="text-white/90">{order!.guest_email ?? "your inbox"}</span>.
           </p>
         </div>
@@ -106,9 +107,7 @@ function CheckoutReturn() {
         <div className="space-y-3 mb-8">
           {items.map((it) => (
             <div key={it.id} className="flex gap-4 p-4 rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur items-center">
-              <div className="w-16 h-16 rounded-xl shrink-0 overflow-hidden relative border border-white/10" style={{ background: it.cover_gradient ?? "#1F0540" }}>
-                {it.cover_url && <img src={it.cover_url} alt={it.name} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />}
-              </div>
+              <ProductArtwork src={it.cover_url} name={it.name} gradient={it.cover_gradient ?? undefined} className="w-16 h-16 !rounded-xl !p-1.5 shrink-0" />
               <div className="flex-1 min-w-0">
                 <div className="text-[10px] tracking-[0.22em] uppercase text-white/40 font-bold mb-1">Plugin</div>
                 <div className="font-bold truncate text-base">{it.name}</div>
