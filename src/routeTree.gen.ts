@@ -43,6 +43,7 @@ import { Route as DashboardCampaignLinksRouteImport } from './routes/dashboard.c
 import { Route as DashboardAnalyticsRouteImport } from './routes/dashboard.analytics'
 import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
+import { Route as AccountSavedRouteImport } from './routes/account.saved'
 import { Route as AccountPluginsRouteImport } from './routes/account.plugins'
 import { Route as AccountOrdersRouteImport } from './routes/account.orders'
 import { Route as AccountContactRouteImport } from './routes/account.contact'
@@ -232,6 +233,11 @@ const BlogSlugRoute = BlogSlugRouteImport.update({
   path: '/blog/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountSavedRoute = AccountSavedRouteImport.update({
+  id: '/saved',
+  path: '/saved',
+  getParentRoute: () => AccountRoute,
+} as any)
 const AccountPluginsRoute = AccountPluginsRouteImport.update({
   id: '/plugins',
   path: '/plugins',
@@ -347,6 +353,7 @@ export interface FileRoutesByFullPath {
   '/account/contact': typeof AccountContactRoute
   '/account/orders': typeof AccountOrdersRoute
   '/account/plugins': typeof AccountPluginsRoute
+  '/account/saved': typeof AccountSavedRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
@@ -399,6 +406,7 @@ export interface FileRoutesByTo {
   '/account/contact': typeof AccountContactRoute
   '/account/orders': typeof AccountOrdersRoute
   '/account/plugins': typeof AccountPluginsRoute
+  '/account/saved': typeof AccountSavedRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
@@ -454,6 +462,7 @@ export interface FileRoutesById {
   '/account/contact': typeof AccountContactRoute
   '/account/orders': typeof AccountOrdersRoute
   '/account/plugins': typeof AccountPluginsRoute
+  '/account/saved': typeof AccountSavedRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
@@ -510,6 +519,7 @@ export interface FileRouteTypes {
     | '/account/contact'
     | '/account/orders'
     | '/account/plugins'
+    | '/account/saved'
     | '/blog/$slug'
     | '/checkout/return'
     | '/dashboard/analytics'
@@ -562,6 +572,7 @@ export interface FileRouteTypes {
     | '/account/contact'
     | '/account/orders'
     | '/account/plugins'
+    | '/account/saved'
     | '/blog/$slug'
     | '/checkout/return'
     | '/dashboard/analytics'
@@ -616,6 +627,7 @@ export interface FileRouteTypes {
     | '/account/contact'
     | '/account/orders'
     | '/account/plugins'
+    | '/account/saved'
     | '/blog/$slug'
     | '/checkout/return'
     | '/dashboard/analytics'
@@ -924,6 +936,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/account/saved': {
+      id: '/account/saved'
+      path: '/saved'
+      fullPath: '/account/saved'
+      preLoaderRoute: typeof AccountSavedRouteImport
+      parentRoute: typeof AccountRoute
+    }
     '/account/plugins': {
       id: '/account/plugins'
       path: '/plugins'
@@ -1057,6 +1076,7 @@ interface AccountRouteChildren {
   AccountContactRoute: typeof AccountContactRoute
   AccountOrdersRoute: typeof AccountOrdersRoute
   AccountPluginsRoute: typeof AccountPluginsRoute
+  AccountSavedRoute: typeof AccountSavedRoute
   AccountIndexRoute: typeof AccountIndexRoute
 }
 
@@ -1064,6 +1084,7 @@ const AccountRouteChildren: AccountRouteChildren = {
   AccountContactRoute: AccountContactRoute,
   AccountOrdersRoute: AccountOrdersRoute,
   AccountPluginsRoute: AccountPluginsRoute,
+  AccountSavedRoute: AccountSavedRoute,
   AccountIndexRoute: AccountIndexRoute,
 }
 
