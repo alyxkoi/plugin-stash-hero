@@ -77,8 +77,8 @@ function SavedPage() {
               >
                 <ProductArtwork
                   name={p.name}
-                  coverUrl={p.cover_url}
-                  gradient={p.cover_gradient}
+                  src={p.cover_url}
+                  gradient={p.cover_gradient ?? undefined}
                   className="mb-3 aspect-video w-full rounded-xl overflow-hidden"
                 />
                 <div className="font-black leading-tight group-hover:text-[hsl(var(--accent))] transition-colors">
