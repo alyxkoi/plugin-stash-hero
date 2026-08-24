@@ -166,7 +166,7 @@ Everything you just bought, ready to download.&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwn
       <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 40; font-size:15px; line-height:23px; color:#E4DEF2; padding-top:10px;">Send us a message and a real person will answer. Large files download best on a wired connection.</div>
       <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:20px;"><tr>
         <td bgcolor="#2E2750" style="background-color:#2E2750; border:2px solid #FFFFFF; border-radius:12px;">
-          <a href="https://www.thepluginwarehouse.com/contact" style="display:block; padding:14px 24px; font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 100,'wdth' 95; font-size:14px; font-weight:800; color:#FFFFFF; letter-spacing:0.6px;">GET HELP &#8594;</a>
+          <a href="https://www.thepluginwarehouse.com/contact-us" style="display:block; padding:14px 24px; font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 100,'wdth' 95; font-size:14px; font-weight:800; color:#FFFFFF; letter-spacing:0.6px;">GET HELP &#8594;</a>
         </td>
       </tr></table>
     </td>
@@ -187,7 +187,7 @@ Everything you just bought, ready to download.&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwn
 <td class="gut" style="padding:26px 24px 0 24px;">
   <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 25,'wdth' 92; font-size:12px; line-height:18px; color:#FFFFFF; letter-spacing:2px; font-weight:700;">PLUGIN WAREHOUSE</div>
   <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 40; font-size:13px; line-height:22px; color:#C9C2E4; padding-top:12px;">
-        <a href="https://www.thepluginwarehouse.com/contact" style="color:#C9C2E4; text-decoration:underline;">Contact</a>
+        <a href="https://www.thepluginwarehouse.com/contact-us" style="color:#C9C2E4; text-decoration:underline;">Contact</a>
         &nbsp;&nbsp;&#183;&nbsp;&nbsp;
         <a href="https://www.thepluginwarehouse.com/shop" style="color:#C9C2E4; text-decoration:underline;">Shop all</a>
         &nbsp;&nbsp;&#183;&nbsp;&nbsp;
@@ -323,7 +323,7 @@ export const CONTACT_MESSAGE_HTML = `<!DOCTYPE html>
 <td class="gut" style="padding:26px 24px 0 24px;">
   <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 25,'wdth' 92; font-size:12px; line-height:18px; color:#FFFFFF; letter-spacing:2px; font-weight:700;">PLUGIN WAREHOUSE</div>
   <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 40; font-size:13px; line-height:22px; color:#C9C2E4; padding-top:12px;">
-        <a href="https://www.thepluginwarehouse.com/dashboard/messages" style="color:#C9C2E4; text-decoration:underline;">Open the dashboard</a>
+        <a href="https://www.thepluginwarehouse.com/dashboard" style="color:#C9C2E4; text-decoration:underline;">Open the dashboard</a>
         &nbsp;&nbsp;&#183;&nbsp;&nbsp;
         <a href="https://www.thepluginwarehouse.com" style="color:#C9C2E4; text-decoration:underline;">Storefront</a>
   </div>

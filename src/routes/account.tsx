@@ -13,6 +13,7 @@ const TABS = [
   { to: "/account", label: "Overview", exact: true },
   { to: "/account/plugins", label: "My Plugins", exact: false },
   { to: "/account/orders", label: "Orders", exact: false },
+  { to: "/account/saved", label: "Saved", exact: false },
   { to: "/account/contact", label: "Contact", exact: false },
 ] as const;
 

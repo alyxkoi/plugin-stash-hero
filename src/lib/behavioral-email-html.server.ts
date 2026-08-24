@@ -173,7 +173,7 @@ Nothing expired. Nothing sold out. It is exactly where you left it.&nbsp;&zwnj;&
 <td class="gut" style="padding:26px 24px 0 24px;">
   <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 25,'wdth' 92; font-size:12px; line-height:18px; color:#FFFFFF; letter-spacing:2px; font-weight:700;">PLUGIN WAREHOUSE</div>
   <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 40; font-size:13px; line-height:22px; color:#C9C2E4; padding-top:12px;">
-        <a href="https://www.thepluginwarehouse.com/contact" style="color:#C9C2E4; text-decoration:underline;">Contact</a>
+        <a href="https://www.thepluginwarehouse.com/contact-us" style="color:#C9C2E4; text-decoration:underline;">Contact</a>
         &nbsp;&nbsp;&#183;&nbsp;&nbsp;
         <a href="https://www.thepluginwarehouse.com/shop" style="color:#C9C2E4; text-decoration:underline;">Shop all</a>
         &nbsp;&nbsp;&#183;&nbsp;&nbsp;
@@ -362,7 +362,7 @@ Your cart has not moved. Neither have the prices.&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&
 <td class="gut" style="padding:26px 24px 0 24px;">
   <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 25,'wdth' 92; font-size:12px; line-height:18px; color:#FFFFFF; letter-spacing:2px; font-weight:700;">PLUGIN WAREHOUSE</div>
   <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 40; font-size:13px; line-height:22px; color:#C9C2E4; padding-top:12px;">
-        <a href="https://www.thepluginwarehouse.com/contact" style="color:#C9C2E4; text-decoration:underline;">Contact</a>
+        <a href="https://www.thepluginwarehouse.com/contact-us" style="color:#C9C2E4; text-decoration:underline;">Contact</a>
         &nbsp;&nbsp;&#183;&nbsp;&nbsp;
         <a href="https://www.thepluginwarehouse.com/shop" style="color:#C9C2E4; text-decoration:underline;">Shop all</a>
         &nbsp;&nbsp;&#183;&nbsp;&nbsp;
@@ -551,7 +551,7 @@ Three days of nudging is enough. Your cart stays saved either way.&nbsp;&zwnj;&n
 <td class="gut" style="padding:26px 24px 0 24px;">
   <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 25,'wdth' 92; font-size:12px; line-height:18px; color:#FFFFFF; letter-spacing:2px; font-weight:700;">PLUGIN WAREHOUSE</div>
   <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 40; font-size:13px; line-height:22px; color:#C9C2E4; padding-top:12px;">
-        <a href="https://www.thepluginwarehouse.com/contact" style="color:#C9C2E4; text-decoration:underline;">Contact</a>
+        <a href="https://www.thepluginwarehouse.com/contact-us" style="color:#C9C2E4; text-decoration:underline;">Contact</a>
         &nbsp;&nbsp;&#183;&nbsp;&nbsp;
         <a href="https://www.thepluginwarehouse.com/shop" style="color:#C9C2E4; text-decoration:underline;">Shop all</a>
         &nbsp;&nbsp;&#183;&nbsp;&nbsp;
@@ -740,7 +740,7 @@ Same item, same price, still sitting in your saved list.&nbsp;&zwnj;&nbsp;&zwnj;
 <td class="gut" style="padding:26px 24px 0 24px;">
   <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 25,'wdth' 92; font-size:12px; line-height:18px; color:#FFFFFF; letter-spacing:2px; font-weight:700;">PLUGIN WAREHOUSE</div>
   <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 40; font-size:13px; line-height:22px; color:#C9C2E4; padding-top:12px;">
-        <a href="https://www.thepluginwarehouse.com/contact" style="color:#C9C2E4; text-decoration:underline;">Contact</a>
+        <a href="https://www.thepluginwarehouse.com/contact-us" style="color:#C9C2E4; text-decoration:underline;">Contact</a>
         &nbsp;&nbsp;&#183;&nbsp;&nbsp;
         <a href="https://www.thepluginwarehouse.com/shop" style="color:#C9C2E4; text-decoration:underline;">Shop all</a>
         &nbsp;&nbsp;&#183;&nbsp;&nbsp;
@@ -939,7 +939,7 @@ It retails for {{SAVED_ORIGINAL}}. You can have it for {{SAVED_PRICE}}.&nbsp;&zw
 <td class="gut" style="padding:26px 24px 0 24px;">
   <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 25,'wdth' 92; font-size:12px; line-height:18px; color:#FFFFFF; letter-spacing:2px; font-weight:700;">PLUGIN WAREHOUSE</div>
   <div style="font-family:'Google Sans Flex',Verdana,Geneva,Tahoma,sans-serif; font-variation-settings:'ROND' 40; font-size:13px; line-height:22px; color:#C9C2E4; padding-top:12px;">
-        <a href="https://www.thepluginwarehouse.com/contact" style="color:#C9C2E4; text-decoration:underline;">Contact</a>
+        <a href="https://www.thepluginwarehouse.com/contact-us" style="color:#C9C2E4; text-decoration:underline;">Contact</a>
         &nbsp;&nbsp;&#183;&nbsp;&nbsp;
         <a href="https://www.thepluginwarehouse.com/shop" style="color:#C9C2E4; text-decoration:underline;">Shop all</a>
         &nbsp;&nbsp;&#183;&nbsp;&nbsp;
