@@ -157,7 +157,7 @@ export function CartDrawer() {
               ) : (
                 priced.map((item) => (
                   <div key={item.product.slug} className="flex gap-3 p-3 rounded-xl border border-white/8 bg-white/3">
-                    <ProductArtwork src={item.product.coverUrl} name={item.product.name} gradient={item.product.coverGradient} className="w-20 aspect-[4/3] !rounded-lg shrink-0 !p-1.5" />
+                    <ProductArtwork src={item.product.coverUrl} name={item.product.name} gradient={item.product.coverGradient} className="w-20 aspect-[4/3] !rounded-lg shrink-0 self-start" />
                     <div className="flex-1 min-w-0">
                       {item.product.maker.trim().toLowerCase() !== "plugin warehouse" && <div className="font-mono text-[9px] text-white/40 tracking-wider">{item.product.maker.toUpperCase()}</div>}
                       <div className="font-bold truncate">{item.product.name}</div>

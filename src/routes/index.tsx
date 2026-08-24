@@ -57,7 +57,6 @@ function Hero({ initialProducts }: { initialProducts: Product[] }) {
   const products = data ?? initialProducts;
   const { sale } = useActiveSale();
   const picks = useMemo(() => pickDaily(products, 3), [products]);
-  const lead = picks[0];
   return (
     <section className="home-hero pwh-horizon">
       <video className="home-hero__video" autoPlay muted loop playsInline preload="metadata" aria-hidden="true"><source src={heroVideoAsset.url} type={heroVideoAsset.content_type} /></video>
@@ -72,19 +71,23 @@ function Hero({ initialProducts }: { initialProducts: Product[] }) {
           </div>
         </div>
         <div className="home-hero__catalogue" aria-label="Featured products">
-          {lead ? <HeroProduct product={lead} featured /> : <CatalogueEmpty compact />}
-          <div className="home-hero__supporting">{picks.slice(1).map((product) => <HeroProduct key={product.slug} product={product} />)}</div>
+          {picks.length ? picks.map((product, index) => <HeroProduct key={product.slug} product={product} priority={index === 0} />) : <CatalogueEmpty compact />}
         </div>
       </div>
     </section>
   );
 }
 
-function HeroProduct({ product, featured = false }: { product: Product; featured?: boolean }) {
+function HeroProduct({ product, priority = false }: { product: Product; priority?: boolean }) {
   return (
-    <Link to="/shop/p/$slug" params={{ slug: product.slug }} className={`hero-product ${featured ? "hero-product--featured" : ""}`}>
-      <ProductArtwork src={product.coverUrl} name={product.name} gradient={product.coverGradient} className="hero-product__art" loading={featured ? "eager" : "lazy"} />
-      <div className="hero-product__meta"><strong>{product.name}</strong><ProductPrice product={product} currentClassName="hero-product__current" retailClassName="hero-product__retail" /></div>
+    <Link to="/shop/p/$slug" params={{ slug: product.slug }} className="hero-product">
+      <ProductArtwork src={product.coverUrl} name={product.name} gradient={product.coverGradient} className="hero-product__art" loading={priority ? "eager" : "lazy"}>
+        <div className="hero-product__overlay">
+          <strong>{product.name}</strong>
+          <ProductPrice product={product} currentClassName="hero-product__current" retailClassName="hero-product__retail" />
+          <span>View product <ArrowRight aria-hidden="true" /></span>
+        </div>
+      </ProductArtwork>
     </Link>
   );
 }
@@ -115,7 +118,7 @@ function PluginRecipes({ initialProducts }: { initialProducts: Product[] }) {
           <div className="recipe-card__index">0{recipeIndex + 1}</div><h3>{recipe.title}</h3><p>{recipe.note}</p>
           <div className="recipe-card__products">{recipe.items.map((product, index) => (
             <Link key={product.slug} to="/shop/p/$slug" params={{ slug: product.slug }} className="recipe-product">
-              <ProductArtwork src={product.coverUrl} name={product.name} gradient={product.coverGradient} className="recipe-product__art" /><span className="recipe-product__step">{index + 1}</span><span className="recipe-product__name">{product.name}</span>
+              <span className="recipe-product__step">{index + 1}</span><ProductArtwork src={product.coverUrl} name={product.name} gradient={product.coverGradient} className="recipe-product__art" /><span className="recipe-product__name">{product.name}</span>
             </Link>
           ))}</div>
         </article>
@@ -131,17 +134,17 @@ function OnRotation({ initialProducts, initialBestsellerIds }: { initialProducts
   const bestsellerIds = bestsellerData ?? initialBestsellerIds;
   const ranked = useMemo(() => {
     const byId = new Map(products.map((p) => [p.id, p]));
-    const selected = bestsellerIds.map((id) => byId.get(id)).filter(Boolean) as Product[];
-    return (selected.length ? selected : products.filter((p) => p.isBestseller)).slice(0, 8);
+    const selected = bestsellerIds.map((id) => byId.get(id)).filter((product): product is Product => Boolean(product && !product.isFree));
+    return (selected.length ? selected : products.filter((product) => product.isBestseller && !product.isFree)).slice(0, 8);
   }, [products, bestsellerIds]);
   const [touchPaused, setTouchPaused] = useState(false);
   if (!ranked.length) return null;
-  return <section className="pwh-section rotation-section"><FadeIn><SectionIntro title="PRODUCERS KEEP REACHING FOR THESE." /><div className={`rotation-marquee ${touchPaused ? "is-paused" : ""}`} onTouchStart={() => setTouchPaused(true)} onTouchEnd={() => setTouchPaused(false)} onTouchCancel={() => setTouchPaused(false)}><div className="rotation-track">{[false, true].map((duplicate) => <div key={duplicate ? "duplicate" : "primary"} className="rotation-set" aria-hidden={duplicate || undefined}>{ranked.map((product, index) => <RotationCard key={`${duplicate ? "copy-" : ""}${product.slug}`} product={product} rank={index + 1} duplicate={duplicate} />)}</div>)}</div></div></FadeIn></section>;
+  return <section className="pwh-section rotation-section"><FadeIn><SectionIntro title="PRODUCERS KEEP REACHING FOR THESE." /><div className={`rotation-marquee ${touchPaused ? "is-paused" : ""}`} onTouchStart={() => setTouchPaused(true)} onTouchEnd={() => setTouchPaused(false)} onTouchCancel={() => setTouchPaused(false)}><div className="rotation-track">{[false, true].map((duplicate) => <div key={duplicate ? "duplicate" : "primary"} className="rotation-set" aria-hidden={duplicate || undefined}>{ranked.map((product) => <RotationCard key={`${duplicate ? "copy-" : ""}${product.slug}`} product={product} duplicate={duplicate} />)}</div>)}</div></div></FadeIn></section>;
 }
 
-function RotationCard({ product, rank, duplicate }: { product: Product; rank: number; duplicate: boolean }) {
+function RotationCard({ product, duplicate }: { product: Product; duplicate: boolean }) {
   const inCart = useStore((state) => state.cart.some((item) => item.product.slug === product.slug));
-  return <article className="rotation-card"><Link to="/shop/p/$slug" params={{ slug: product.slug }} tabIndex={duplicate ? -1 : undefined}><ProductArtwork src={product.coverUrl} name={product.name} gradient={product.coverGradient} className="rotation-card__art" /><span className="rotation-card__rank">{String(rank).padStart(2, "0")}</span></Link><div className="rotation-card__details"><strong>{product.name}</strong><div className="rotation-card__buy"><ProductPrice product={product} currentClassName="rotation-card__current" retailClassName="rotation-card__retail" /><button type="button" tabIndex={duplicate ? -1 : undefined} className="rotation-card__cart" onClick={() => actions.addToCart(product)} aria-label={inCart ? `${product.name} is in your cart` : `Add ${product.name} to cart`}>{inCart ? <Check /> : <ShoppingCart />}</button></div></div></article>;
+  return <article className="rotation-card"><Link to="/shop/p/$slug" params={{ slug: product.slug }} tabIndex={duplicate ? -1 : undefined}><ProductArtwork src={product.coverUrl} name={product.name} gradient={product.coverGradient} className="rotation-card__art" /></Link><div className="rotation-card__details"><strong>{product.name}</strong><div className="rotation-card__buy"><ProductPrice product={product} currentClassName="rotation-card__current" retailClassName="rotation-card__retail" /><button type="button" tabIndex={duplicate ? -1 : undefined} className="rotation-card__cart" onClick={() => actions.addToCart(product)} aria-label={inCart ? `${product.name} is in your cart` : `Add ${product.name} to cart`}>{inCart ? <Check /> : <ShoppingCart />}<span>{inCart ? "Added" : "Add"}</span></button></div></div></article>;
 }
 
 function JustAdded({ initialProducts }: { initialProducts: Product[] }) {

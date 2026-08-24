@@ -104,7 +104,7 @@ function CheckoutReturn() {
         <div className="space-y-3 mb-8">
           {items.map((it) => (
             <div key={it.id} className="flex gap-4 p-4 rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur items-center">
-              <ProductArtwork src={it.cover_url} name={it.name} gradient={it.cover_gradient ?? undefined} className="w-20 aspect-[4/3] !rounded-xl !p-1.5 shrink-0" />
+              <ProductArtwork src={it.cover_url} name={it.name} gradient={it.cover_gradient ?? undefined} className="w-20 aspect-[4/3] !rounded-xl shrink-0" />
               <div className="flex-1 min-w-0">
                 <div className="text-[10px] tracking-[0.22em] uppercase text-white/40 font-bold mb-1">Plugin</div>
                 <div className="font-bold truncate text-base">{it.name}</div>
