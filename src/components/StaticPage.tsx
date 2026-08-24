@@ -8,12 +8,11 @@ interface StaticPageProps {
   footerCta?: { label: string; to: string };
 }
 
-export function StaticPage({ eyebrow, headline, sub, sections, footerCta }: StaticPageProps) {
+export function StaticPage({ headline, sub, sections, footerCta }: StaticPageProps) {
   return (
     <div className="static-page-v2">
       <header className="pwh-horizon static-page-hero">
-        <div className="pwh-eyebrow">{eyebrow}</div>
-        <h1 className="pwh-display mt-4">{headline}</h1>
+        <h1 className="pwh-display">{headline}</h1>
         {sub && <p>{sub}</p>}
       </header>
 

@@ -84,9 +84,6 @@ function FaqPage() {
 
   return (
     <div className="px-4 sm:px-6 md:px-12 py-12 md:py-16 max-w-3xl mx-auto">
-      <div className="font-mono text-[11px] sm:text-xs tracking-[0.24em] text-[var(--accent-red-glow)] mb-3">
-        EVERYTHING YOU MIGHT BE WONDERING
-      </div>
       <h1
         className="font-black chrome-text leading-[0.9] mb-4"
         style={{ fontSize: "clamp(3rem, 10vw, 6rem)", fontFamily: "'Anton', 'Outfit', sans-serif", letterSpacing: "-0.01em" }}

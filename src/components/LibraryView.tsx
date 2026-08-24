@@ -99,7 +99,7 @@ function LibraryCard({ item }: { item: OwnedProduct }) {
     <div className="glass-card p-4 flex flex-col h-full">
       <div className="chromatic-edge" />
       <div className="relative z-10 flex flex-col h-full">
-        <ProductArtwork src={item.cover_url} name={item.name} gradient={item.cover_gradient ?? undefined} className="aspect-[4/5] mb-4" />
+        <ProductArtwork src={item.cover_url} name={item.name} gradient={item.cover_gradient ?? undefined} className="aspect-[4/3] mb-4" />
         <h3 className="font-display text-lg leading-tight truncate tracking-wide">{item.name}</h3>
         <div className="label-mini mt-1 mb-4">Purchased {formatDate(item.last_purchased)}</div>
         <div className="mt-auto flex gap-2">

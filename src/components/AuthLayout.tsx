@@ -2,12 +2,11 @@ import { Link } from "@tanstack/react-router";
 import { forwardRef, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 
-export function AuthLayout({ eyebrow, headline, sub, children, footer }: { eyebrow: string; headline: string; sub: string; children: React.ReactNode; footer?: React.ReactNode }) {
+export function AuthLayout({ headline, sub, children, footer }: { eyebrow: string; headline: string; sub: string; children: React.ReactNode; footer?: React.ReactNode }) {
   return (
     <div className="auth-layout-v2 pwh-horizon">
       <div className="relative w-full max-w-md">
         <div className="auth-panel">
-          <div className="pwh-eyebrow mb-3">{eyebrow}</div>
           <h1>{headline}</h1>
           <p className="text-white/65 mb-8">{sub}</p>
           {children}

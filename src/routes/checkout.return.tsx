@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { CheckCircle2, Download } from "lucide-react";
+import { Download } from "lucide-react";
 import { getOrderBySession } from "@/lib/checkout.functions";
 import { downloadPlugin } from "@/lib/download";
 import { supabase } from "@/integrations/supabase/client";
@@ -93,9 +93,6 @@ function CheckoutReturn() {
         <Link to="/shop" className="text-white/50 text-sm hover:text-white">← Back to shop</Link>
 
         <div className="mt-8 mb-10">
-          <div className="text-[11px] font-black tracking-[0.28em] uppercase text-[var(--accent-red-glow)] mb-4 flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4" /> Order confirmed
-          </div>
           <h1 className="font-display text-5xl md:text-6xl font-black tracking-tight leading-[1.02]">You're loaded up.</h1>
           <p className="mt-4 text-white/60 text-base">
             Order <span className="font-mono text-white/90 whitespace-nowrap">{order!.number}</span> — grab your files below. We also emailed the links to{" "}
@@ -107,7 +104,7 @@ function CheckoutReturn() {
         <div className="space-y-3 mb-8">
           {items.map((it) => (
             <div key={it.id} className="flex gap-4 p-4 rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur items-center">
-              <ProductArtwork src={it.cover_url} name={it.name} gradient={it.cover_gradient ?? undefined} className="w-16 h-16 !rounded-xl !p-1.5 shrink-0" />
+              <ProductArtwork src={it.cover_url} name={it.name} gradient={it.cover_gradient ?? undefined} className="w-20 aspect-[4/3] !rounded-xl !p-1.5 shrink-0" />
               <div className="flex-1 min-w-0">
                 <div className="text-[10px] tracking-[0.22em] uppercase text-white/40 font-bold mb-1">Plugin</div>
                 <div className="font-bold truncate text-base">{it.name}</div>

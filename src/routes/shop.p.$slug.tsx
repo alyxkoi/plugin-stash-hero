@@ -215,10 +215,10 @@ function ProductDetail() {
       </nav>
 
       <div className="grid lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)] gap-8 xl:gap-16 items-start">
-        <ProductArtwork src={p.coverUrl} name={p.name} gradient={p.coverGradient} className="product-detail-art aspect-[4/5]" loading="eager" />
+        <ProductArtwork src={p.coverUrl} name={p.name} gradient={p.coverGradient} className="product-detail-art aspect-[4/3]" loading="eager" />
 
         <div>
-          <div className="font-mono text-xs tracking-[0.2em] text-[var(--accent-red-glow)] mb-2">{p.maker.toUpperCase()}</div>
+          {p.maker.trim().toLowerCase() !== "plugin warehouse" && <div className="font-mono text-xs tracking-[0.2em] text-[var(--text-3)] mb-2">{p.maker.toUpperCase()}</div>}
           <h1 className="font-black leading-[0.92] mb-3" style={{ fontSize: "clamp(2.7rem, 6vw, 6.4rem)" }}>{p.name}</h1>
           {p.tagline && <p className="text-white/70 italic text-lg mb-6">{p.tagline}</p>}
 
@@ -295,7 +295,6 @@ function ProductDetail() {
 
       {related.length > 0 && (
         <section className="mt-16">
-          <div className="font-mono text-xs tracking-[0.2em] text-[var(--accent-red-glow)] mb-3">IF YOU LIKE THIS</div>
           <h2 className="section-header chrome-text">MORE HEAT</h2>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
             {related.map((r) => <ProductCard key={r.slug} product={r} />)}

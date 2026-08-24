@@ -8,6 +8,7 @@ export type ActiveSale = {
   headline: string | null;
   subheadline: string | null;
   discount_pct: number;
+  scope: "all" | "categories" | "selected";
   theme_color: string | null;
   start_at: string;
   end_at: string;
@@ -25,7 +26,7 @@ export function useActiveSale() {
       const nowIso = new Date().toISOString();
       const { data } = await supabase
         .from("sale_events")
-        .select("id, name, slug, headline, subheadline, discount_pct, theme_color, start_at, end_at, status")
+        .select("id, name, slug, headline, subheadline, discount_pct, scope, theme_color, start_at, end_at, status")
         .in("status", ["active", "scheduled", "ended"])
         .lte("start_at", nowIso)
         .gte("end_at", nowIso)

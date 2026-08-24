@@ -131,18 +131,17 @@ export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageP
   return (
     <div className="shop-page">
       <section className="pwh-horizon shop-horizon px-4 md:px-12 py-12 md:py-16 text-center relative">
-        <div className="pwh-eyebrow">Plugin Warehouse catalogue</div>
-        <h1 className="pwh-display mt-3">{title}</h1>
+        <h1 className="pwh-display">{title}</h1>
         <p className="mt-3 text-[var(--text-2)] max-w-2xl mx-auto">{subtitle}</p>
       </section>
 
-      <div className="px-4 md:px-8 xl:px-12 grid lg:grid-cols-[248px_minmax(0,1fr)] gap-6 xl:gap-8 pb-20">
+      <div className="shop-results px-4 md:px-8 xl:px-12 grid lg:grid-cols-[248px_minmax(0,1fr)] gap-6 xl:gap-8 pb-20">
         <aside className="hidden lg:block lg:sticky lg:top-28 self-start pwh-solid-panel p-5">
           {filters}
         </aside>
 
         <div className="min-w-0">
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+          <div className="shop-result-count flex flex-wrap items-center justify-between gap-4">
             <div className="font-mono text-sm text-[var(--text-2)]">{filtered.length} {filtered.length === 1 ? "PLUGIN" : "PLUGINS"}</div>
             <button className="lg:hidden pwh-filter-trigger" onClick={() => setFiltersOpen(true)}>
               <SlidersHorizontal className="w-4 h-4" /> Filters and sort

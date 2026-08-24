@@ -177,7 +177,6 @@ function CheckoutPage() {
   if (needsEmail) {
     return (
       <GuestGateFrame>
-        <div className="font-mono text-xs tracking-[0.2em] text-[var(--accent-red-glow)] mb-3">CHECKOUT</div>
         <h1 className="font-black text-4xl md:text-5xl chrome-text mb-2">GUEST CHECKOUT.</h1>
         <p className="text-white/65 mb-8">We'll send your receipt and download links here. No account needed.</p>
         <form
@@ -237,7 +236,6 @@ function CheckoutPage() {
   if (user && creditLoaded && creditCents > 0 && !creditReviewed && !clientSecret) {
     return (
       <GuestGateFrame>
-        <div className="font-mono text-xs tracking-[0.2em] text-[var(--accent-red-glow)] mb-3">CHECKOUT</div>
         <h1 className="font-black text-4xl md:text-5xl chrome-text mb-2">YOU'VE GOT CREDIT.</h1>
         <p className="text-white/65 mb-8">
           ${(creditCents / 100).toFixed(2)} of store credit is sitting on your account. Use it now, or save it for later.

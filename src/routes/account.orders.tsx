@@ -186,7 +186,7 @@ function OrderCard({ order, updatedProductIds, onOpen }: { order: Order; updated
             </div>
             <div className="flex items-center mb-2">
               {items.slice(0, 4).map((it, i) => (
-                <ProductArtwork key={it.id} src={it.cover_url} name={it.name} gradient={it.cover_gradient ?? undefined} className="w-9 h-9 !rounded-lg !p-1 border border-white/20 -ml-3 first:ml-0 shadow-md" >
+                <ProductArtwork key={it.id} src={it.cover_url} name={it.name} gradient={it.cover_gradient ?? undefined} className="w-12 aspect-[4/3] !rounded-lg !p-1 border border-white/20 -ml-3 first:ml-0 shadow-md" >
                   {it.product_id && updatedProductIds.has(it.product_id) && (
                     <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#FF003C] border border-black shadow-[0_0_6px_#FF003C]" />
                   )}
@@ -215,7 +215,7 @@ function OrderCard({ order, updatedProductIds, onOpen }: { order: Order; updated
                 const hasUpdate = !!(it.product_id && updatedProductIds.has(it.product_id));
                 return (
                 <li key={it.id} className="py-4 flex items-center gap-4">
-                  <ProductArtwork src={it.cover_url} name={it.name} gradient={it.cover_gradient ?? undefined} className="w-14 h-14 !rounded-xl !p-1.5 shrink-0" />
+                  <ProductArtwork src={it.cover_url} name={it.name} gradient={it.cover_gradient ?? undefined} className="w-16 aspect-[4/3] !rounded-xl !p-1.5 shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="font-bold truncate flex items-center gap-2">
                       <span className="truncate">{it.name}</span>

@@ -7,6 +7,7 @@ import { categories } from "@/lib/mock-data";
 import { usePublishedProducts } from "@/hooks/useProducts";
 import logo from "@/assets/logo.png";
 import { ProductArtwork } from "./ProductArtwork";
+import { ProductPrice } from "./ProductPrice";
 
 const catIcons: Record<string, typeof Piano> = {
   instruments: Piano,
@@ -252,16 +253,14 @@ export function Nav() {
                           onClick={() => goToProduct(p.slug)}
                           className="w-full flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-white/8 transition text-left"
                         >
-                          <ProductArtwork src={p.coverUrl} name={p.name} gradient={p.coverGradient} className="w-11 h-11 shrink-0 !rounded-lg !p-1" />
+                          <ProductArtwork src={p.coverUrl} name={p.name} gradient={p.coverGradient} className="w-14 aspect-[4/3] shrink-0 !rounded-lg !p-1" />
                           <div className="min-w-0 flex-1">
                             <div className="font-display text-base truncate">{p.name}</div>
                             <div className="font-mono text-[10px] tracking-[0.15em] text-white/50 uppercase truncate">
-                              {p.maker} · {p.category}
+                              {p.maker.trim().toLowerCase() === "plugin warehouse" ? p.category : `${p.maker} · ${p.category}`}
                             </div>
                           </div>
-                          <div className="font-mono text-xs text-white/60 shrink-0">
-                            {p.isFree ? "FREE" : `$${Number(p.price).toFixed(2)}`}
-                          </div>
+                          <ProductPrice product={p} className="shrink-0" currentClassName="text-xs" retailClassName="text-[9px]" />
                         </button>
                       </li>
                     ))}

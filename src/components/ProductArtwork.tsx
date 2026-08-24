@@ -1,5 +1,5 @@
 import { PackageOpen } from "lucide-react";
-import { useState, type CSSProperties, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 type ProductArtworkProps = {
   src?: string | null;
@@ -15,7 +15,6 @@ type ProductArtworkProps = {
 export function ProductArtwork({
   src,
   name,
-  gradient,
   className = "",
   imageClassName = "",
   loading = "lazy",
@@ -26,10 +25,7 @@ export function ProductArtwork({
   const showImage = Boolean(src) && !failed;
 
   return (
-    <div
-      className={`pwh-product-art ${className}`}
-      style={{ "--product-glow": gradient ?? "linear-gradient(135deg,#231D46,#553871)" } as CSSProperties}
-    >
+    <div className={`pwh-product-art ${className}`}>
       {showImage ? (
         <img
           src={src ?? undefined}

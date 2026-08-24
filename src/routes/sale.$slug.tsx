@@ -145,7 +145,6 @@ function SaleEvent() {
 
 
         <div className="relative flex flex-col items-center justify-center text-center min-h-[70vh] gap-8 md:gap-10">
-          <div className="pwh-eyebrow">Limited warehouse event</div>
           <h1 className="pwh-display max-w-5xl mx-auto">{headline}</h1>
           <p className="text-white/70 text-base md:text-lg max-w-2xl mx-auto pb-2 md:pb-4">{sub}</p>
           <a

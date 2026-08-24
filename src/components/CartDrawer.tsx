@@ -86,7 +86,7 @@ export function CartDrawer() {
         });
         setCode("");
       } else {
-        setCodeError((res as any).error ?? "That code isn't valid.");
+        setCodeError("error" in res && typeof res.error === "string" ? res.error : "That code isn't valid.");
       }
     } catch (err) {
       setCodeError(err instanceof Error ? err.message : "Couldn't validate that code.");
@@ -157,9 +157,9 @@ export function CartDrawer() {
               ) : (
                 priced.map((item) => (
                   <div key={item.product.slug} className="flex gap-3 p-3 rounded-xl border border-white/8 bg-white/3">
-                    <ProductArtwork src={item.product.coverUrl} name={item.product.name} gradient={item.product.coverGradient} className="w-16 h-16 !rounded-lg shrink-0 !p-1.5" />
+                    <ProductArtwork src={item.product.coverUrl} name={item.product.name} gradient={item.product.coverGradient} className="w-20 aspect-[4/3] !rounded-lg shrink-0 !p-1.5" />
                     <div className="flex-1 min-w-0">
-                      <div className="font-mono text-[9px] text-white/40 tracking-wider">{item.product.maker.toUpperCase()}</div>
+                      {item.product.maker.trim().toLowerCase() !== "plugin warehouse" && <div className="font-mono text-[9px] text-white/40 tracking-wider">{item.product.maker.toUpperCase()}</div>}
                       <div className="font-bold truncate">{item.product.name}</div>
                       {item.salePct > 0 && (
                         <div className="font-mono text-[10px] text-[var(--accent-red-glow)] mt-0.5">{item.salePct}% off applied</div>

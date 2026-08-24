@@ -269,7 +269,7 @@ function PluginCard({
       <div className="chromatic-edge" />
       <div className="glass-noise" />
       <div className="relative z-10 flex flex-col h-full">
-        <ProductArtwork src={plugin.cover_url} name={plugin.name} gradient={plugin.cover_gradient ?? undefined} className="aspect-[4/5] !rounded-none" onLoad={onView}>
+        <ProductArtwork src={plugin.cover_url} name={plugin.name} gradient={plugin.cover_gradient ?? undefined} className="aspect-[4/3] !rounded-none" onLoad={onView}>
           <div className="absolute top-2 left-2 flex flex-col items-start gap-1.5">
             {hasUpdate && (
               <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#FF003C]/20 border border-[#FF003C]/60 text-white font-mono text-[9px] tracking-[0.18em] font-bold backdrop-blur">

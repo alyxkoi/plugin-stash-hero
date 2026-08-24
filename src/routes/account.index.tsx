@@ -209,7 +209,7 @@ function OverviewPage() {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {featured.map((p) => (
               <Link key={p.product_id} to="/account/plugins" className="group block min-w-0">
-                <ProductArtwork src={p.cover_url} name={p.name} gradient={p.cover_gradient ?? undefined} className="aspect-[4/5] group-hover:border-[#FA1265]/50 transition">
+                <ProductArtwork src={p.cover_url} name={p.name} gradient={p.cover_gradient ?? undefined} className="aspect-[4/3] group-hover:border-[#FA1265]/50 transition">
                   <div className="absolute top-2 left-2 flex flex-col items-start gap-1.5">
                     {updatedIds.has(p.product_id) && (
                       <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#FF003C]/25 border border-[#FF003C]/60 text-white font-mono text-[9px] tracking-[0.18em] font-bold backdrop-blur">

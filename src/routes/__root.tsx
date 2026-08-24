@@ -16,7 +16,6 @@ function NotFoundComponent() {
   return (
     <div className="error-state-v2 pwh-horizon">
       <div className="max-w-xl text-center">
-        <div className="pwh-eyebrow">Error 404</div>
         <h1>WRONG AISLE.</h1>
         <p>
           That page is no longer on the shelf.
