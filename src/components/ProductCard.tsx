@@ -56,9 +56,9 @@ export function ProductCard({ product, variant = "default", rank }: { product: P
             ))}
           </div>
         </Link>
-        <div className="mt-auto flex items-end justify-between pt-2">
+        <div className="product-card__footer mt-auto flex items-end justify-between pt-2">
           <ProductPrice product={product} currentClassName="font-mono font-bold text-xl" retailClassName="font-mono text-xs text-white/40" />
-          <div className="flex gap-2 items-center">
+          <div className="product-card__actions flex gap-2 items-center">
             <button
               onClick={(e) => { e.preventDefault(); toggleSaved.mutate(product); }}
               className="pwh-icon-button"

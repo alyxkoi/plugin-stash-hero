@@ -131,7 +131,7 @@ export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageP
   return (
     <div className="shop-page">
       <section className="pwh-horizon shop-horizon px-4 md:px-12 py-12 md:py-16 text-center relative">
-        <h1 className="pwh-display">{title}</h1>
+        <h1 className="pwh-display shop-horizon__title">{title}</h1>
         <p className="mt-3 text-[var(--text-2)] max-w-2xl mx-auto">{subtitle}</p>
       </section>
 

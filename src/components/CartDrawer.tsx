@@ -124,7 +124,7 @@ export function CartDrawer() {
         transition={{ duration: reduce ? 0 : 0.28, ease: [0.19, 1, 0.22, 1] }}
       />
       <motion.div
-        className="absolute top-0 right-0 h-full w-[92%] md:w-[440px]"
+        className="absolute top-0 right-0 h-full w-full sm:w-[92%] md:w-[460px]"
         initial={reduce ? false : { x: "100%", opacity: 0.7 }}
         animate={{ x: 0, opacity: 1 }}
         exit={{ x: "100%", opacity: 0.8 }}
@@ -132,7 +132,7 @@ export function CartDrawer() {
       >
         <div className="h-full pwh-cart-panel flex flex-col">
           <div className="relative z-10 flex flex-col h-full">
-            <div className="p-5 border-b border-white/10 flex items-center justify-between">
+            <div className="pwh-cart-header p-5 border-b border-white/10 flex items-center justify-between">
               <div>
                 <h2 className="font-black text-2xl">LOADED UP</h2>
                 <div className="font-mono text-xs text-white/50">{itemCount} {itemCount === 1 ? "PLUGIN" : "PLUGINS"} LOADED</div>
@@ -142,7 +142,7 @@ export function CartDrawer() {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-5 space-y-3">
+            <div className="pwh-cart-items flex-1 min-h-0 overflow-y-auto p-5 space-y-3">
               {cart.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center px-6">
                   <div className="w-20 h-20 rounded-2xl border-2 border-dashed border-white/20 flex items-center justify-center mb-6">
@@ -156,7 +156,7 @@ export function CartDrawer() {
                 </div>
               ) : (
                 priced.map((item) => (
-                  <div key={item.product.slug} className="flex gap-3 p-3 rounded-xl border border-white/8 bg-white/3">
+                  <div key={item.product.slug} className="pwh-cart-item flex gap-3 p-3 rounded-xl border border-white/8 bg-white/3">
                     <ProductArtwork src={item.product.coverUrl} name={item.product.name} gradient={item.product.coverGradient} className="w-20 aspect-[4/3] !rounded-lg shrink-0 self-start" />
                     <div className="flex-1 min-w-0">
                       {item.product.maker.trim().toLowerCase() !== "plugin warehouse" && <div className="font-mono text-[9px] text-white/40 tracking-wider">{item.product.maker.toUpperCase()}</div>}
@@ -181,7 +181,7 @@ export function CartDrawer() {
             </div>
 
             {cart.length > 0 && (
-              <div className="border-t border-white/10 p-5 space-y-4 safe-bottom">
+              <div className="pwh-cart-footer border-t border-white/10 p-5 space-y-4 safe-bottom">
                 {/* Discount */}
                 {discount ? (
                   <div className="flex items-center justify-between p-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5">
@@ -211,7 +211,7 @@ export function CartDrawer() {
                   </form>
                 )}
 
-                <div className="p-4 rounded-xl bg-white/3 border border-white/8 space-y-2 text-sm">
+                <div className="pwh-cart-summary p-4 rounded-xl bg-white/3 border border-white/8 space-y-2 text-sm">
                   {retailTotal > warehouseSubtotal && (
                     <Row label="Retail total" value={<span className="line-through text-white/50">${retailTotal.toFixed(2)}</span>} />
                   )}
@@ -224,14 +224,17 @@ export function CartDrawer() {
                     <span className="font-mono font-black text-2xl">${total.toFixed(2)}</span>
                   </div>
                   {totalSavedVsRetail > 0 && (
-                    <div className="mt-2 flex justify-between items-center rounded-lg bg-emerald-500/10 border border-emerald-500/25 px-3 py-2">
-                      <span className="font-mono text-[11px] uppercase tracking-wider text-emerald-300">You save vs retail</span>
-                      <span className="font-mono font-bold text-emerald-300">${totalSavedVsRetail.toFixed(2)}</span>
+                    <div className="pwh-cart-savings mt-3">
+                      <span className="pwh-cart-savings__label"><strong>You save</strong><small>versus retail</small></span>
+                      <span className="pwh-cart-savings__value">${totalSavedVsRetail.toFixed(2)}</span>
                     </div>
                   )}
                 </div>
 
-                <div className="font-mono text-[10px] text-white/50 text-center flex items-center justify-center gap-1.5"><Lock className="w-3 h-3" /> Secure checkout · Instant delivery to your library</div>
+                <div className="pwh-cart-trust">
+                  <span className="pwh-cart-trust__icon"><Lock className="w-4 h-4" /></span>
+                  <span><strong>Secure checkout</strong><small>Instant delivery to your library</small></span>
+                </div>
                 <button onClick={goCheckout} disabled={goingToCheckout} className="btn-primary w-full !text-base !py-4 disabled:opacity-70">
                   {goingToCheckout ? "OPENING CHECKOUT…" : <><span>CHECKOUT</span><ArrowRight className="w-4 h-4" /></>}
                 </button>
