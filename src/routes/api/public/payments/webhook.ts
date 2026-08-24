@@ -117,6 +117,7 @@ async function handleCheckoutCompleted(session: any, env: StripeEnv) {
 
   const itemCount = items.reduce((n, i) => n + (i.qty || 1), 0);
   if (result) {
+    await markCheckoutAttempt(sessionId, meta.checkout_attempt_key, "completed");
     await notifyTelegram(formatSaleMessage(result.number, itemCount, totalCents));
   }
 }
@@ -127,6 +128,7 @@ async function handleSessionExpired(session: any) {
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await supabaseAdmin.rpc("release_credit_reservation", { _session_id: session.id as string } as any);
+    await markCheckoutAttempt(session.id as string, session.metadata?.checkout_attempt_key, "expired");
   } catch (e) {
     console.error("[webhook] release reservation failed", e);
   }
@@ -177,10 +179,10 @@ async function handleChargeRefunded(charge: any) {
 
 async function handlePaymentFailed(intent: any) {
   const meta = intent.metadata ?? {};
-  let items: FulfillItem[] = [];
-  try { items = JSON.parse(meta.items_json ?? "[]"); } catch { items = []; }
-  const itemCount = items.reduce((n, i) => n + (i.qty || 1), 0);
+  const compact = parseCompactItems(meta);
+  const itemCount = compact.reduce((n, i) => n + i.qty, 0);
   const totalCents = Number(meta.total_cents ?? intent.amount ?? 0);
+  await markCheckoutAttempt(null, meta.checkout_attempt_key, "failed");
 
   // Orders are only created on success, so usually there's no order number here.
   let orderNumber: string | null = null;
@@ -199,6 +201,29 @@ async function handlePaymentFailed(intent: any) {
   await notifyTelegram(formatFailureMessage(orderNumber, itemCount, totalCents));
 }
 
+async function markCheckoutAttempt(
+  sessionId: string | null,
+  attemptKey: string | null | undefined,
+  status: "completed" | "expired" | "failed",
+) {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    let query = (supabaseAdmin as any)
+      .from("checkout_attempts")
+      .update({
+        status,
+        ...(status === "completed" ? { completed_at: new Date().toISOString() } : {}),
+      });
+    query = attemptKey
+      ? query.eq("idempotency_key", attemptKey)
+      : query.eq("stripe_session_id", sessionId);
+    const { error } = await query;
+    if (error) console.error("[webhook] checkout attempt update failed", error);
+  } catch (error) {
+    console.error("[webhook] checkout attempt update threw", error);
+  }
+}
+
 export const Route = createFileRoute("/api/public/payments/webhook")({
   server: {
     handlers: {
@@ -206,9 +231,10 @@ export const Route = createFileRoute("/api/public/payments/webhook")({
         const rawEnv = new URL(request.url).searchParams.get("env");
         if (rawEnv !== "sandbox" && rawEnv !== "live") {
           console.error("[webhook] invalid env:", rawEnv);
-          return Response.json({ received: true, ignored: "invalid env" });
+          return Response.json({ received: false, error: "invalid env" }, { status: 400 });
         }
         const env: StripeEnv = rawEnv;
+        let eventId: string | undefined;
         try {
           // Signature is verified on every request before anything is read.
           const event = await verifyWebhook(request, env);
@@ -216,7 +242,7 @@ export const Route = createFileRoute("/api/public/payments/webhook")({
           // ---- Event-level idempotency ----
           // Stripe retries deliveries, and an endpoint can be registered more
           // than once. Claim the event id first; if it's already logged, skip.
-          const eventId = (event as any).id as string | undefined;
+          eventId = (event as any).id as string | undefined;
           if (eventId) {
             const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
             const { data: claimed, error: claimErr } = await supabaseAdmin
@@ -256,7 +282,22 @@ export const Route = createFileRoute("/api/public/payments/webhook")({
           return Response.json({ received: true });
         } catch (e) {
           console.error("[webhook] error:", e);
-          return new Response("Webhook error", { status: 400 });
+          // A claimed-but-unprocessed event must be retryable. Leaving the row
+          // behind makes every later Stripe delivery look like a completed
+          // duplicate and can permanently strand an order or refund.
+          if (eventId) {
+            try {
+              const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+              await supabaseAdmin
+                .from("stripe_webhook_events")
+                .delete()
+                .eq("event_id", eventId)
+                .is("processed_at", null);
+            } catch (cleanupError) {
+              console.error("[webhook] failed to release event claim", cleanupError);
+            }
+          }
+          return new Response("Webhook error", { status: eventId ? 500 : 400 });
         }
       },
     },

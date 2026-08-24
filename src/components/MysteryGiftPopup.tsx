@@ -13,18 +13,18 @@ function hasSeen(): boolean {
   try {
     if (typeof window === "undefined") return true;
     if (localStorage.getItem(STORAGE_KEY)) return true;
-  } catch {}
+  } catch { /* storage may be disabled */ }
   if (typeof document !== "undefined" && document.cookie.includes(`${COOKIE_KEY}=1`)) return true;
   return false;
 }
 
 function markSeen() {
-  try { localStorage.setItem(STORAGE_KEY, "1"); } catch {}
+  try { localStorage.setItem(STORAGE_KEY, "1"); } catch { /* storage may be disabled */ }
   try {
     const days = 365;
     const d = new Date(); d.setTime(d.getTime() + days * 864e5);
     document.cookie = `${COOKIE_KEY}=1; expires=${d.toUTCString()}; path=/; SameSite=Lax`;
-  } catch {}
+  } catch { /* cookies may be disabled */ }
 }
 
 type Step = "email" | "account" | "done";
@@ -51,7 +51,6 @@ export function MysteryGiftPopup() {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") close(); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   function close() {

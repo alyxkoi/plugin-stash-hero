@@ -7,7 +7,10 @@ import { claimMyOrders } from "@/lib/order-claim.functions";
 
 export const Route = createFileRoute("/login")({
   validateSearch: (s: Record<string, unknown>): { next?: string } => ({
-    next: typeof s.next === "string" && s.next.startsWith("/") ? s.next : undefined,
+    next:
+      typeof s.next === "string" && s.next.startsWith("/") && !s.next.startsWith("//")
+        ? s.next
+        : undefined,
   }),
   head: () => ({ meta: [{ title: "Sign In — Plugin Warehouse" }] }),
   component: LoginPage,

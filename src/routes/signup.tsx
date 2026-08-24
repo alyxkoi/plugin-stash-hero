@@ -56,14 +56,14 @@ function SignupPage() {
       return;
     }
     if (data.session) {
-      syncSignupToMailchimp(email.trim());
+      if (marketing) syncSignupToMailchimp(email.trim());
       navigate({ to: "/account" });
       return;
     }
     // No session but user created — sign them in immediately (email confirmation is off).
     const { error: signInErr } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
     if (signInErr) { setError(signInErr.message); return; }
-    syncSignupToMailchimp(email.trim());
+    if (marketing) syncSignupToMailchimp(email.trim());
     navigate({ to: "/account" });
   };
 

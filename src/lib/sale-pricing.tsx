@@ -112,13 +112,14 @@ export function pickSaleFor(
 
 export function useSalePricing(product: { id?: string; category?: string | null; price: number; isFree?: boolean }) {
   const { sales, loaded } = useContext(Ctx);
+  const { id, category, price, isFree } = product;
   return useMemo(() => {
-    if (!loaded || product.isFree) return { finalPrice: product.price, originalPrice: product.price, pct: 0, sale: null as ActiveSaleRow | null };
-    const hit = pickSaleFor(sales, product);
-    if (!hit) return { finalPrice: product.price, originalPrice: product.price, pct: 0, sale: null };
-    const finalPrice = Math.round((product.price * (100 - hit.pct)) * 100 / 100) / 100;
-    return { finalPrice, originalPrice: product.price, pct: hit.pct, sale: hit.sale };
-  }, [loaded, sales, product.id, product.category, product.price, product.isFree]);
+    if (!loaded || isFree) return { finalPrice: price, originalPrice: price, pct: 0, sale: null as ActiveSaleRow | null };
+    const hit = pickSaleFor(sales, { id, category });
+    if (!hit) return { finalPrice: price, originalPrice: price, pct: 0, sale: null };
+    const finalPrice = Math.round((price * (100 - hit.pct)) * 100 / 100) / 100;
+    return { finalPrice, originalPrice: price, pct: hit.pct, sale: hit.sale };
+  }, [loaded, sales, id, category, price, isFree]);
 }
 
 export function useAllActiveSales() {

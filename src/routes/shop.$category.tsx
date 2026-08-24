@@ -64,9 +64,11 @@ export const Route = createFileRoute("/shop/$category")({
       links: [{ rel: "canonical", href: url }],
     };
   },
-  component: () => {
-    const { category } = Route.useParams();
-    const m = META[category as Category];
-    return <ShopPage category={category as Category} title={m.title} subtitle={m.sub} />;
-  },
+  component: CategoryPage,
 });
+
+function CategoryPage() {
+  const { category } = Route.useParams();
+  const m = META[category as Category];
+  return <ShopPage category={category as Category} title={m.title} subtitle={m.sub} />;
+}

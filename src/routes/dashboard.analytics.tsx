@@ -77,9 +77,15 @@ type SaleEventRow = {
   status: string;
 };
 
+type CheckoutAttemptRow = {
+  created_at: string;
+  status: string;
+};
+
 function Analytics() {
   const [range, setRange] = useState<AnalyticsRange>("mtd");
   const [orders, setOrders] = useState<OrderRow[]>([]);
+  const [attempts, setAttempts] = useState<CheckoutAttemptRow[]>([]);
   const [sales, setSales] = useState<SaleEventRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [identity, setIdentity] = useState<IdentityMap>(() => new Map());
@@ -97,7 +103,7 @@ function Analytics() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [ordersRes, salesRes] = await Promise.all([
+      const [ordersRes, salesRes, attemptsRes] = await Promise.all([
         supabase
           .from("orders")
           .select(
@@ -110,10 +116,16 @@ function Analytics() {
           .select("id, name, slug, discount_pct, start_at, end_at, status")
           .neq("status", "draft")
           .order("start_at", { ascending: false }),
+        (supabase as any)
+          .from("checkout_attempts")
+          .select("created_at, status")
+          .order("created_at", { ascending: false })
+          .limit(10000),
       ]);
       if (cancelled) return;
       setOrders((ordersRes.data ?? []) as OrderRow[]);
       setSales((salesRes.data ?? []) as SaleEventRow[]);
+      setAttempts((attemptsRes.data ?? []) as CheckoutAttemptRow[]);
       setLoading(false);
     })();
     return () => {
@@ -136,22 +148,20 @@ function Analytics() {
     [completed, bounds],
   );
   const currentAttempts = useMemo(
-    () =>
-      orders.filter((order) => within(order.created_at, bounds.currentStart, bounds.currentEnd)),
-    [orders, bounds],
+    () => attempts.filter((attempt) => within(attempt.created_at, bounds.currentStart, bounds.currentEnd)),
+    [attempts, bounds],
   );
   const previousAttempts = useMemo(
-    () =>
-      orders.filter((order) => within(order.created_at, bounds.previousStart, bounds.previousEnd)),
-    [orders, bounds],
+    () => attempts.filter((attempt) => within(attempt.created_at, bounds.previousStart, bounds.previousEnd)),
+    [attempts, bounds],
   );
   const revenue = sumNetRevenue(inRange);
   const previousRevenue = sumNetRevenue(previousRange);
   const aov = inRange.length ? revenue / inRange.length : 0;
   const previousAov = previousRange.length ? previousRevenue / previousRange.length : 0;
-  const conversion = currentAttempts.length ? (inRange.length / currentAttempts.length) * 100 : 0;
+  const conversion = currentAttempts.length ? Math.min(100, (inRange.length / currentAttempts.length) * 100) : 0;
   const previousConversion = previousAttempts.length
-    ? (previousRange.length / previousAttempts.length) * 100
+    ? Math.min(100, (previousRange.length / previousAttempts.length) * 100)
     : 0;
   const chartSeries = useMemo(
     () => buildPairedSeries(completed, bounds, range),

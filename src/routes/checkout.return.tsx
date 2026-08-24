@@ -34,9 +34,13 @@ function CheckoutReturn() {
   const [items, setItems] = useState<ItemView[]>([]);
   const [status, setStatus] = useState<"loading" | "ok" | "missing" | "invalid">("loading");
 
-  // Clear the local cart on landing here — webhook has also cleared server cart.
-  // Also drop the stored first-touch UTM so it can't attribute a later, unrelated order.
-  useEffect(() => { actions.clearCart(); clearStoredUtm(); }, []);
+  // Only clear checkout state after an order is actually confirmed. A malformed
+  // or stale return URL must not erase a shopper's cart and attribution.
+  useEffect(() => {
+    if (status !== "ok") return;
+    actions.clearCart();
+    clearStoredUtm();
+  }, [status]);
 
 
 
@@ -44,6 +48,7 @@ function CheckoutReturn() {
     if (!session_id) { setStatus("invalid"); return; }
     let cancelled = false;
     let attempts = 0;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
 
     const poll = async () => {
       attempts += 1;
@@ -57,11 +62,14 @@ function CheckoutReturn() {
           return;
         }
       } catch { /* retry */ }
-      if (attempts < 20) setTimeout(poll, 1500);
+      if (attempts < 20) retryTimer = setTimeout(poll, 1500);
       else if (!cancelled) setStatus("missing");
     };
     poll();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      if (retryTimer) clearTimeout(retryTimer);
+    };
   }, [session_id]);
 
   async function download(productId: string | null) {

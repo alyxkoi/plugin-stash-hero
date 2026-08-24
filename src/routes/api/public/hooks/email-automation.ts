@@ -5,16 +5,24 @@ export const Route = createFileRoute("/api/public/hooks/email-automation")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const key = request.headers.get("apikey") ?? "";
-        const allowed = [
-          process.env.SUPABASE_ANON_KEY,
-          process.env.SUPABASE_PUBLISHABLE_KEY,
-          process.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined,
-        ].filter(Boolean) as string[];
-        const expected = allowed.includes(key) ? key : "";
+        // Supabase publishable/anon keys are intentionally public and must not
+        // authorize a route capable of sending email to the entire audience.
+        const expected = process.env.EMAIL_AUTOMATION_CRON_SECRET ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+        const bearer = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ?? "";
+        const provided =
+          request.headers.get("x-cron-secret") ??
+          request.headers.get("apikey") ??
+          bearer;
 
-        if (!key || !expected || key !== expected) {
+        if (!expected) {
+          console.error("[email-automation] no cron secret is configured");
+          return new Response(JSON.stringify({ error: "Email automation is not configured" }), {
+            status: 503,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
+        if (!provided || provided !== expected) {
           return new Response(JSON.stringify({ error: "Unauthorized" }), {
             status: 401,
             headers: { "Content-Type": "application/json" },

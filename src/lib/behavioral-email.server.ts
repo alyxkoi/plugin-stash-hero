@@ -26,7 +26,8 @@ export function normalizeEmail(e: string | null | undefined): string {
 }
 
 export function unsubToken(email: string): string {
-  const secret = process.env.EMAIL_UNSUB_SECRET ?? "";
+  const secret = process.env.EMAIL_UNSUB_SECRET ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+  if (!secret) throw new Error("EMAIL_UNSUB_SECRET is not configured");
   return createHmac("sha256", secret).update(normalizeEmail(email)).digest("hex").slice(0, 32);
 }
 
@@ -222,6 +223,7 @@ export async function runBehavioralEmailJob(
     .from("email_automation_log")
     .select("customer_email, sequence_type, step, trigger_ref")
     .eq("status", "sent")
+    .eq("dry_run", false)
     .gte("created_at", new Date(now - 60 * DAY).toISOString());
   const sentKeys = new Set<string>(
     (sentRows ?? []).map((r) => `${r.customer_email}|${r.sequence_type}|${r.step}|${r.trigger_ref}`),
@@ -245,6 +247,7 @@ export async function runBehavioralEmailJob(
     const { data: logs } = await supabaseAdmin
       .from("email_automation_log")
       .select("id, customer_email, sequence_type, step, trigger_ref, status, skip_reason, attempts, sent_at")
+      .eq("dry_run", dryRun)
       .in("customer_email", emails);
     for (const l of (logs ?? []) as LogRow[]) {
       existing.set(`${l.customer_email}|${l.sequence_type}|${l.step}|${l.trigger_ref}`, l);
@@ -260,6 +263,7 @@ export async function runBehavioralEmailJob(
       .from("email_automation_log")
       .select("customer_email, sent_at")
       .eq("status", "sent")
+      .eq("dry_run", false)
       .gte("sent_at", new Date(now - DAY).toISOString())
       .in("customer_email", emails);
     for (const r of recent ?? []) {
@@ -340,7 +344,7 @@ export async function runBehavioralEmailJob(
           attempts: (prior?.attempts ?? 0) + 1,
           dry_run: dryRun,
         },
-        { onConflict: "customer_email,sequence_type,step,trigger_ref" },
+        { onConflict: "customer_email,sequence_type,step,trigger_ref,dry_run" },
       );
       stats.failed++;
       continue;
@@ -359,7 +363,7 @@ export async function runBehavioralEmailJob(
         attempts: (prior?.attempts ?? 0) + 1,
         dry_run: dryRun,
       },
-      { onConflict: "customer_email,sequence_type,step,trigger_ref" },
+      { onConflict: "customer_email,sequence_type,step,trigger_ref,dry_run" },
     );
     sentKeys.add(`${c.email}|${c.sequence}|${c.step}|${c.triggerRef}`);
     usedThisRun.add(c.email);
@@ -384,7 +388,7 @@ async function logSkip(c: Candidate, reason: string, dryRun: boolean) {
       skip_reason: reason,
       dry_run: dryRun,
     },
-    { onConflict: "customer_email,sequence_type,step,trigger_ref", ignoreDuplicates: !retryable },
+    { onConflict: "customer_email,sequence_type,step,trigger_ref,dry_run", ignoreDuplicates: !retryable },
   );
 }
 
@@ -443,7 +447,7 @@ async function buildCartCandidates(
           skip_reason: "no_valid_email",
           dry_run: dryRun,
         },
-        { onConflict: "customer_email,sequence_type,step,trigger_ref", ignoreDuplicates: true },
+        { onConflict: "customer_email,sequence_type,step,trigger_ref,dry_run", ignoreDuplicates: true },
       );
       continue;
     }
@@ -468,7 +472,7 @@ async function buildCartCandidates(
           skip_reason: "prior_step_not_sent",
           dry_run: dryRun,
         },
-        { onConflict: "customer_email,sequence_type,step,trigger_ref" },
+        { onConflict: "customer_email,sequence_type,step,trigger_ref,dry_run" },
       );
     }
 
@@ -531,7 +535,8 @@ async function buildSavedCandidates(
     .select("trigger_ref")
     .eq("sequence_type", "saved_items")
     .eq("step", 2)
-    .eq("status", "sent");
+    .eq("status", "sent")
+    .eq("dry_run", false);
   const step2Done = new Set<string>();
   for (const r of sentStep2 ?? []) {
     for (const id of (r.trigger_ref ?? "").replace(/^s2:/, "").split(",")) {

@@ -44,17 +44,20 @@ export type FulfillInput = {
 export async function finalizeOrder(input: FulfillInput): Promise<{ orderId: string; number: string } | null> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-  // Idempotency: skip if already recorded for this session id
+  // Reuse an existing order on retries, but continue the idempotent downstream
+  // work. Returning here would prevent a transient item/email failure from ever
+  // being repaired by the next webhook delivery.
   const { data: existing } = await supabaseAdmin
     .from("orders")
     .select("id, number")
     .eq("stripe_session_id", input.sessionId)
     .maybeSingle();
-  if (existing) return { orderId: existing.id as string, number: existing.number as string };
 
-  // Sequential order number
-  let number: string;
-  {
+  let number = (existing?.number as string | undefined) ?? "";
+  let orderId = (existing?.id as string | undefined) ?? "";
+
+  if (!existing) {
+    // Sequential order number
     const { data: nn, error: nnErr } = await supabaseAdmin.rpc("next_order_number");
     if (nnErr || !nn) {
       console.error("[fulfill] next_order_number failed", nnErr);
@@ -62,7 +65,7 @@ export async function finalizeOrder(input: FulfillInput): Promise<{ orderId: str
     } else {
       number = nn as unknown as string;
     }
-  }
+
 
   // Find the sale event active at this moment so revenue attributes correctly.
   let activeSaleId: string | null = null;
@@ -83,9 +86,9 @@ export async function finalizeOrder(input: FulfillInput): Promise<{ orderId: str
   // Structurally idempotent: the unique index on stripe_session_id makes a
   // duplicate impossible. On conflict we ignore and re-read the existing row,
   // so a retried webhook/handler returns the original order instead of erroring.
-  const { error: insertErr } = await supabaseAdmin
-    .from("orders")
-    .upsert(
+    const { error: insertErr } = await supabaseAdmin
+      .from("orders")
+      .upsert(
       {
         number,
         user_id: input.userId ?? null,
@@ -105,23 +108,22 @@ export async function finalizeOrder(input: FulfillInput): Promise<{ orderId: str
         credit_applied_cents: 0,
       } as any,
       { onConflict: "stripe_session_id", ignoreDuplicates: true },
-    );
-  if (insertErr) console.error("[fulfill] order upsert warning", insertErr);
+      );
+    if (insertErr) console.error("[fulfill] order upsert warning", insertErr);
 
-  const { data: inserted } = await supabaseAdmin
-    .from("orders")
-    .select("id, number")
-    .eq("stripe_session_id", input.sessionId)
-    .maybeSingle();
+    const { data: inserted } = await supabaseAdmin
+      .from("orders")
+      .select("id, number")
+      .eq("stripe_session_id", input.sessionId)
+      .maybeSingle();
 
-  if (!inserted) {
-    console.error("[fulfill] order insert failed", insertErr);
-    return null;
+    if (!inserted) {
+      console.error("[fulfill] order insert failed", insertErr);
+      return null;
+    }
+    number = inserted.number as string;
+    orderId = inserted.id as string;
   }
-  number = inserted.number as string;
-
-
-  const orderId = inserted.id as string;
 
   // ---- Store credit: atomic debit tied to this session id (retry-safe) ----
   if (input.userId && (input.creditMaxCents ?? 0) > 0) {
@@ -134,6 +136,7 @@ export async function finalizeOrder(input: FulfillInput): Promise<{ orderId: str
     } as any);
     if (creditErr) {
       console.error("[fulfill] store credit debit failed", creditErr);
+      throw new Error("Store credit could not be finalized");
     } else if (Number(debited ?? 0) > 0) {
       await supabaseAdmin
         .from("orders")
@@ -196,7 +199,10 @@ export async function finalizeOrder(input: FulfillInput): Promise<{ orderId: str
       })),
     );
     const { error: itemsErr } = await supabaseAdmin.from("order_items").insert(rows);
-    if (itemsErr) console.error("[fulfill] order_items insert failed", itemsErr);
+    if (itemsErr) {
+      console.error("[fulfill] order_items insert failed", itemsErr);
+      throw new Error("Order items could not be saved");
+    }
 
 
     // Seed per-user file-update acknowledgements so newly purchased products
@@ -232,20 +238,17 @@ export async function finalizeOrder(input: FulfillInput): Promise<{ orderId: str
     await supabaseAdmin.from("cart_items").delete().eq("user_id", input.userId);
   }
 
-  // ---- Confirmation email: exactly once per order ----
-  // Claim the send by flipping confirmation_email_sent_at from NULL in a
-  // conditional UPDATE. Only the caller that wins the claim sends the email,
-  // so repeated handler runs can never produce a second confirmation.
+  // ---- Confirmation email: retry until successfully accepted by Resend ----
   const recipient = input.guestEmail;
   let mayEmail = false;
   if (recipient && input.items.length > 0) {
-    const { data: claimed } = await supabaseAdmin
+    const { data: emailState, error: emailStateError } = await supabaseAdmin
       .from("orders")
-      .update({ confirmation_email_sent_at: new Date().toISOString() } as any)
+      .select("confirmation_email_sent_at")
       .eq("id", orderId)
-      .is("confirmation_email_sent_at", null)
-      .select("id");
-    mayEmail = (claimed ?? []).length > 0;
+      .maybeSingle();
+    if (emailStateError) throw new Error("Confirmation email state could not be read");
+    mayEmail = !emailState?.confirmation_email_sent_at;
   }
 
   if (recipient && input.items.length > 0 && mayEmail) {
@@ -253,7 +256,7 @@ export async function finalizeOrder(input: FulfillInput): Promise<{ orderId: str
     const origin =
       process.env.PUBLIC_SITE_URL ||
       process.env.SITE_URL ||
-      "https://plugin-stash-hero.lovable.app";
+      "https://www.thepluginwarehouse.com";
     // `/api/public/download` verifies entitlement and 302s to the R2 custom
     // domain (thepluginwarehousefiles.com). Never build R2 S3 API URLs here.
     const emailItems = input.items.map((it) => ({
@@ -277,7 +280,16 @@ export async function finalizeOrder(input: FulfillInput): Promise<{ orderId: str
       html: rendered.html,
       text: rendered.text,
     });
-    if (send.error) console.error("[fulfill] order email send failed:", send.error);
+    if (send.error) {
+      console.error("[fulfill] order email send failed:", send.error);
+      throw new Error("Confirmation email could not be sent");
+    }
+    const { error: markEmailError } = await supabaseAdmin
+      .from("orders")
+      .update({ confirmation_email_sent_at: new Date().toISOString() } as any)
+      .eq("id", orderId)
+      .is("confirmation_email_sent_at", null);
+    if (markEmailError) throw new Error("Confirmation email state could not be saved");
   }
 
   // Add buyer to Mailchimp audience with a "customer" tag. Non-fatal.

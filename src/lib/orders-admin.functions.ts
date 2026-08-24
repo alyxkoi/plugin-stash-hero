@@ -102,7 +102,11 @@ async function fetchStripeDetails(
 
   const { createStripeClient } = await import("@/lib/stripe.server");
   type StripeEnv = "sandbox" | "live";
-  const envs: StripeEnv[] = ["live", "sandbox"];
+  const envs: StripeEnv[] = stripeSessionId?.startsWith("cs_test_")
+    ? ["sandbox"]
+    : stripeSessionId?.startsWith("cs_live_")
+      ? ["live"]
+      : ["live", "sandbox"];
   for (const env of envs) {
     try {
       const stripe = createStripeClient(env);
@@ -290,6 +294,7 @@ export const setOrderRefund = createServerFn({ method: "POST" })
             refunded_at: null,
             refund_note: data.note,
             refunded_by: userId,
+            status: "completed",
           } as any)
           .eq("id", data.orderId);
         if (error) return { error: error.message };

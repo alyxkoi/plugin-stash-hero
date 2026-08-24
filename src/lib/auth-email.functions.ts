@@ -4,8 +4,30 @@ import { sendEmail, FROM_CONTACT, escapeHtml } from "@/lib/resend.server";
 
 const ResetSchema = z.object({
   email: z.string().trim().email().max(255),
-  redirectTo: z.string().url(),
+  redirectTo: z.string().url().refine(isAllowedResetRedirect, "Invalid reset destination"),
 });
+
+function isAllowedResetRedirect(value: string): boolean {
+  try {
+    const url = new URL(value);
+    if (url.pathname !== "/reset-password") return false;
+    const configured = [process.env.PUBLIC_SITE_URL, process.env.SITE_URL]
+      .filter(Boolean)
+      .map((origin) => new URL(origin!).origin);
+    const production = ["https://thepluginwarehouse.com", "https://www.thepluginwarehouse.com"];
+    if ([...configured, ...production].includes(url.origin)) return true;
+    if (process.env.NODE_ENV !== "production" && ["localhost", "127.0.0.1"].includes(url.hostname)) return true;
+    return url.protocol === "https:" && [
+      "lovable.app",
+      "lovableproject.com",
+      "lovableproject-dev.com",
+      "gpt-eng.com",
+      "gptengineer.run",
+    ].some((zone) => url.hostname === zone || url.hostname.endsWith(`.${zone}`));
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Sends a password-reset email through Resend so delivery is reliable on our

@@ -17,12 +17,14 @@ export function useAuth(): AuthState {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let hasCheckedIdentity = false;
     let lastCheckedUid: string | null | undefined = undefined;
 
     const checkAdmin = (uid: string | undefined) => {
       // Skip re-check if user identity hasn't changed (prevents flicker on
       // TOKEN_REFRESHED / window refocus events).
-      if (uid === lastCheckedUid) return;
+      if (hasCheckedIdentity && uid === lastCheckedUid) return;
+      hasCheckedIdentity = true;
       lastCheckedUid = uid ?? null;
       setAdminReady(false);
       if (!uid) { setIsAdmin(false); setAdminReady(true); return; }

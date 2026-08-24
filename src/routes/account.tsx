@@ -29,7 +29,7 @@ function AccountGate() {
   useEffect(() => {
     if (loading || !user) return;
     claimMyOrders().catch(() => { /* non-blocking */ });
-  }, [loading, user?.id]);
+  }, [loading, user]);
 
   if (loading || !user) {
     return (

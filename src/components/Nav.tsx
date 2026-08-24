@@ -5,7 +5,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useStore, actions } from "@/lib/store";
 import { categories } from "@/lib/mock-data";
 import { usePublishedProducts } from "@/hooks/useProducts";
-import logo from "@/assets/logo.png";
+import logo from "@/assets/logo-dashboard.webp";
 import { ProductArtwork } from "./ProductArtwork";
 import { ProductPrice } from "./ProductPrice";
 

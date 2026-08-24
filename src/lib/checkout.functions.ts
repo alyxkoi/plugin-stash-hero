@@ -115,6 +115,12 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
       if (!Number.isInteger(it.qty) || it.qty < 1 || it.qty > 20) throw new Error("Invalid qty");
     }
     if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) throw new Error("Invalid email");
+    if (data.email) data.email = data.email.trim().toLowerCase();
+    if (data.environment !== "sandbox" && data.environment !== "live") throw new Error("Invalid payment environment");
+    if (!isAllowedCheckoutReturn(data.returnUrl)) throw new Error("Invalid checkout return URL");
+    if (data.discountCode && data.discountCode.length > 80) throw new Error("Invalid discount code");
+    if (data.utmSource && data.utmSource.length > 100) data.utmSource = null;
+    if (data.utmCampaign && data.utmCampaign.length > 200) data.utmCampaign = null;
     if (data.pwCid && !/^[A-Za-z0-9]{6,32}$/.test(data.pwCid)) data.pwCid = null;
     data.applyCredit = data.applyCredit === true;
     if (data.idempotencyKey && !/^[A-Za-z0-9_-]{8,64}$/.test(data.idempotencyKey)) data.idempotencyKey = null;
@@ -127,6 +133,7 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const userId = await optionalUserId();
+      const attemptKey = data.idempotencyKey ?? crypto.randomUUID().replace(/-/g, "");
 
       // Load product rows
       const productIds = data.items.map((i) => i.productId);
@@ -150,7 +157,7 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
         .lte("start_at", nowIso)
         .gte("end_at", nowIso);
       const saleList = (activeSales ?? []) as Array<{ id: string; discount_pct: number; scope: string; categories: string[] | null }>;
-      let saleProdMap = new Map<string, Set<string>>(); // sale_id -> product_ids
+      const saleProdMap = new Map<string, Set<string>>(); // sale_id -> product_ids
       if (saleList.length > 0) {
         const { data: jr } = await supabaseAdmin
           .from("sale_event_products")
@@ -265,6 +272,24 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
 
       const netCents = Math.max(0, totalCents - creditCents);
 
+      // Track real checkout initiations so dashboard conversion is based on
+      // sessions started, not on the orders table (which only contains wins).
+      const { error: attemptError } = await (supabaseAdmin as any)
+        .from("checkout_attempts")
+        .upsert(
+          {
+            idempotency_key: attemptKey,
+            user_id: userId,
+            guest_email: data.email ?? null,
+            environment: data.environment,
+            status: "initiated",
+            subtotal_cents: subtotalCents,
+            total_cents: netCents,
+          },
+          { onConflict: "idempotency_key", ignoreDuplicates: true },
+        );
+      if (attemptError) console.error("[checkout] attempt tracking failed", attemptError);
+
       // Free-checkout path: nothing left to charge (freebies, a discount that
       // zeroed the cart, or store credit covering the full order). Skip Stripe
       // entirely and create the order directly.
@@ -272,7 +297,7 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
         // Deterministic session id when the client supplied an idempotency key,
         // so a retried call resolves to the SAME order row (unique index on
         // stripe_session_id) instead of minting a second order + email.
-        const freeSessionId = `free_${data.idempotencyKey ?? crypto.randomUUID()}`;
+        const freeSessionId = `free_${attemptKey}`;
         const fulfillItems: FulfillItem[] = items.map((i) => ({
           product_id: i.product.id as string,
           slug: i.product.slug as string,
@@ -301,6 +326,10 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
         });
 
         if (!finalized) return { error: "Could not complete free order." };
+        await (supabaseAdmin as any)
+          .from("checkout_attempts")
+          .update({ stripe_session_id: freeSessionId, status: "completed", completed_at: new Date().toISOString() })
+          .eq("idempotency_key", attemptKey);
         return { freeSessionId };
       }
 
@@ -349,7 +378,7 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
             duration: "once",
             name: `Store credit ($${(creditCents / 100).toFixed(2)})`,
             metadata: { kind: "store_credit", userId: userId ?? "" },
-          });
+          }, { idempotencyKey: `credit_${attemptKey}` });
           creditCoupon = coupon.id;
         } catch (e) {
           console.error("[checkout] store credit coupon failed", e);
@@ -373,8 +402,17 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
           description: items.length === 1
             ? (items[0].product.name as string)
             : `Plugin Warehouse — ${items.length} items`,
+          metadata: {
+            checkout_attempt_key: attemptKey,
+            total_cents: String(netCents),
+            items: items
+              .map((item) => `${item.qty}x ${item.product.name as string}`)
+              .join(", ")
+              .slice(0, 500),
+          },
         },
         metadata: {
+          checkout_attempt_key: attemptKey,
           userId: userId ?? "",
           guest_email: userId ? "" : (email ?? ""),
           discount_code: discountCode ?? "",
@@ -391,7 +429,12 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
         },
 
 
-      });
+      }, { idempotencyKey: `checkout_${attemptKey}` });
+
+      await (supabaseAdmin as any)
+        .from("checkout_attempts")
+        .update({ stripe_session_id: session.id, status: "pending" })
+        .eq("idempotency_key", attemptKey);
 
       // Reserve (don't debit) the credit against this session so an abandoned
       // checkout can release it later.
@@ -410,6 +453,28 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
       return { error: getStripeErrorMessage(error) };
     }
   });
+
+function isAllowedCheckoutReturn(value: string): boolean {
+  try {
+    const url = new URL(value);
+    if (url.pathname !== "/checkout/return" || url.search || url.hash) return false;
+    const configured = [process.env.PUBLIC_SITE_URL, process.env.SITE_URL]
+      .filter(Boolean)
+      .map((origin) => new URL(origin!).origin);
+    const production = ["https://thepluginwarehouse.com", "https://www.thepluginwarehouse.com"];
+    if ([...configured, ...production].includes(url.origin)) return true;
+    if (process.env.NODE_ENV !== "production" && ["localhost", "127.0.0.1"].includes(url.hostname)) return true;
+    return url.protocol === "https:" && [
+      "lovable.app",
+      "lovableproject.com",
+      "lovableproject-dev.com",
+      "gpt-eng.com",
+      "gptengineer.run",
+    ].some((zone) => url.hostname === zone || url.hostname.endsWith(`.${zone}`));
+  } catch {
+    return false;
+  }
+}
 
 // -------------------- Fetch order after checkout return --------------------
 // Public: session_id is an unguessable Stripe token. Guests need it to see their order.
