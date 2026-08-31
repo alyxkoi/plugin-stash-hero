@@ -137,7 +137,7 @@ export function Nav() {
                   <div className="absolute left-0 top-full pt-3 w-64">
                     <div className="smoked-menu">
                       {categories.map((c) => (
-                        <Link key={c.slug} to="/shop/$category" params={{ category: c.slug }} className="smoked-item">
+                        <Link key={c.slug} to="/shop/$category" params={{ category: c.slug }} onClick={() => setCatOpen(false)} className="smoked-item">
                           <span>{c.name}</span>
                         </Link>
                       ))}

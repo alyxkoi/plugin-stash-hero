@@ -1,13 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ShopPage } from "@/components/ShopPage";
-import { publishedProductsQueryOptions } from "@/hooks/useProducts";
 
 const TITLE = "Shop All Plugins | Cheap VST Plugins & Bundles | Plugin Warehouse";
 const DESC = "Browse every plugin in the vault. Synths, effects, mixing and mastering tools at deep discounts. The pro tools you want without the retail markup.";
 const URL = "https://www.thepluginwarehouse.com/shop";
 
 export const Route = createFileRoute("/shop/")({
-  loader: ({ context }) => context.queryClient.ensureQueryData(publishedProductsQueryOptions),
   head: () => ({
     meta: [
       { title: TITLE },

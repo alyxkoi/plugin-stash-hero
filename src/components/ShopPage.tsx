@@ -25,7 +25,7 @@ export function ShopPage({ category, title, subtitle, initialOnSale, activeSale 
   const [filtersOpen, setFiltersOpen] = useState(false);
   const reduce = useReducedMotion();
 
-  const { data: ALL = [] } = usePublishedProducts();
+  const { data: ALL = [], isLoading } = usePublishedProducts();
 
   // Sync category filter when navigating between category pages (component doesn't remount on param change).
   useEffect(() => {
@@ -159,7 +159,11 @@ export function ShopPage({ category, title, subtitle, initialOnSale, activeSale 
               exit={reduce ? undefined : { opacity: 0, x: -16 }}
               transition={{ duration: reduce ? 0 : 0.22, ease: [0.19, 1, 0.22, 1] }}
             >
-              {filtered.length === 0 ? (
+              {isLoading ? (
+                <div className="pwh-solid-panel p-10 md:p-16 text-center" role="status">
+                  <div className="font-mono text-sm tracking-wider text-[var(--text-2)]">LOADING PLUGINS…</div>
+                </div>
+              ) : filtered.length === 0 ? (
                 <div className="pwh-solid-panel p-10 md:p-16 text-center">
                   <h3 className="font-bold text-3xl mb-2">No matches yet.</h3>
                   <p className="text-[var(--text-2)] mb-6">Try a wider filter or another search.</p>
