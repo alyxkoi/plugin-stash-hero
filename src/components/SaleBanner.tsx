@@ -44,8 +44,7 @@ export function SaleBanner() {
         <span className="hidden lg:inline opacity-80">— {sub}</span>
         <div className="flex-1" />
         <Link
-          to="/sale/$slug"
-          params={{ slug: sale.slug }}
+          to="/deals"
           className="uppercase font-bold underline underline-offset-4 hover:opacity-80 whitespace-nowrap"
         >
           Shop the sale →

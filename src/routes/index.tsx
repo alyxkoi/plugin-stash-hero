@@ -67,7 +67,7 @@ function Hero({ initialProducts }: { initialProducts: Product[] }) {
           <p className="home-hero__lede">Plugins, DAWs, libraries, and creative software selected for working producers.</p>
           <div className="home-hero__actions">
             <Link to="/shop" className="btn-primary">Explore the warehouse <ArrowRight className="w-4 h-4" /></Link>
-            {sale && <Link to="/sale/$slug" params={{ slug: sale.slug }} className="btn-ghost">{sale.scope === "all" ? `${sale.discount_pct}% OFF STOREWIDE` : sale.name.toUpperCase()}</Link>}
+            {sale && <Link to="/deals" className="btn-ghost">{sale.scope === "all" ? `${sale.discount_pct}% OFF STOREWIDE` : sale.name.toUpperCase()}</Link>}
           </div>
         </div>
         <div className="home-hero__catalogue" aria-label="Featured products">

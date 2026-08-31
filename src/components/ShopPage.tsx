@@ -4,16 +4,18 @@ import { SlidersHorizontal, X } from "lucide-react";
 import { ProductCard } from "./ProductCard";
 import { categories, type Category, type Product } from "@/lib/mock-data";
 import { usePublishedProducts } from "@/hooks/useProducts";
+import { pickSaleFor, type ActiveSaleRow } from "@/lib/sale-pricing";
 
 interface ShopPageProps {
   category?: Category;
   title: string;
   subtitle: string;
   initialOnSale?: boolean;
+  activeSale?: ActiveSaleRow | null;
   themeAccent?: string;
 }
 
-export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageProps) {
+export function ShopPage({ category, title, subtitle, initialOnSale, activeSale }: ShopPageProps) {
   const [query, setQuery] = useState("");
   const [selectedCats, setSelectedCats] = useState<Category[]>(category ? [category] : []);
   const [selectedFormats, setSelectedFormats] = useState<string[]>([]);
@@ -41,6 +43,7 @@ export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageP
 
   const filtered = useMemo(() => {
     let r: Product[] = [...ALL];
+    if (activeSale) r = r.filter((p) => pickSaleFor([activeSale], p) !== null);
     if (selectedCats.length) {
       const wanted = new Set(selectedCats.map((c) => c.toLowerCase()));
       // The "freebies" category is a virtual bucket: any published product
@@ -57,7 +60,7 @@ export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageP
     if (query) r = r.filter((p) => p.name.toLowerCase().includes(query.toLowerCase()) || p.maker.toLowerCase().includes(query.toLowerCase()));
     if (selectedFormats.length) r = r.filter((p) => p.formats.some((f) => selectedFormats.includes(f)));
     if (selectedPlatforms.length) r = r.filter((p) => (p.platforms ?? []).some((pl) => selectedPlatforms.includes(pl)));
-    if (saleStatus === "sale") r = r.filter((p) => p.compareAtPrice && p.compareAtPrice > p.price);
+    if (saleStatus === "sale" && !activeSale) r = r.filter((p) => p.compareAtPrice && p.compareAtPrice > p.price);
     if (saleStatus === "free") r = r.filter((p) => p.isFree);
 
     if (priceSort === "low") {
@@ -73,7 +76,7 @@ export function ShopPage({ category, title, subtitle, initialOnSale }: ShopPageP
       });
     }
     return r;
-  }, [ALL, query, selectedCats, selectedFormats, selectedPlatforms, saleStatus, priceSort]);
+  }, [ALL, activeSale, query, selectedCats, selectedFormats, selectedPlatforms, saleStatus, priceSort]);
 
   const togglePill = <T,>(list: T[], v: T, set: (l: T[]) => void) =>
     set(list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);

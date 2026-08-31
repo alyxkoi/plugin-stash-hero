@@ -19,6 +19,7 @@ export const Route = createFileRoute("/sitemap.xml")({
         const entries: SitemapEntry[] = [
           { path: "/", changefreq: "daily", priority: "1.0" },
           { path: "/shop", changefreq: "daily", priority: "0.9" },
+          { path: "/deals", changefreq: "daily", priority: "0.8" },
           { path: "/blog", changefreq: "weekly", priority: "0.7" },
           { path: "/search", changefreq: "weekly", priority: "0.5" },
           { path: "/our-story", changefreq: "monthly", priority: "0.6" },
@@ -55,14 +56,6 @@ export const Route = createFileRoute("/sitemap.xml")({
             .eq("status", "published");
           for (const p of products ?? []) {
             if (p.slug) entries.push({ path: `/shop/p/${p.slug}`, lastmod: p.updated_at?.slice(0, 10), changefreq: "weekly", priority: "0.7" });
-          }
-
-          const { data: sales } = await supabase
-            .from("sale_events")
-            .select("slug, updated_at, status")
-            .eq("status", "active");
-          for (const s of sales ?? []) {
-            if (s.slug) entries.push({ path: `/sale/${s.slug}`, lastmod: s.updated_at?.slice(0, 10), changefreq: "daily", priority: "0.8" });
           }
 
           const { data: posts } = await supabase

@@ -19,7 +19,7 @@ function EditSale() {
     (async () => {
       const { data: row, error } = await supabase
         .from("sale_events")
-        .select("id, name, slug, discount_pct, scope, categories, start_at, end_at, status")
+        .select("id, name, slug, headline, subheadline, discount_pct, scope, categories, start_at, end_at, status")
         .eq("id", id)
         .maybeSingle();
       if (error) { console.error("[sales] edit load failed", error); setNotFound(true); return; }
@@ -32,6 +32,8 @@ function EditSale() {
         id: row.id as string,
         name: (row.name as string) ?? "",
         slug: (row.slug as string) ?? "",
+        headline: (row.headline as string | null) ?? "",
+        subheadline: (row.subheadline as string | null) ?? "",
         discount_pct: (row.discount_pct as number) ?? 0,
         scope: (row.scope as any) ?? "all",
         categories: ((row as any).categories ?? []) as string[],

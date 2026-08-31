@@ -234,7 +234,7 @@ function SalesPage() {
                 </div>
                 <div className="dash-live-sale-actions">
                   <a
-                    href={`/sale/${active.slug}`}
+                    href="/deals"
                     target="_blank"
                     rel="noreferrer"
                     className="dash-charged-button dash-sale-action-preview"

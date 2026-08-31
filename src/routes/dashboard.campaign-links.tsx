@@ -531,7 +531,7 @@ function CreateLinkForm({
         </Field>
 
         <Field label="Sends To" help="The page on thepluginwarehouse.com this link opens." className="md:col-span-2">
-          <input value={dest} onChange={(e) => setDest(e.target.value)} placeholder="/ or /sale/summer-steals" className={inputCls} required />
+          <input value={dest} onChange={(e) => setDest(e.target.value)} placeholder="/ or /deals" className={inputCls} required />
         </Field>
 
         <div className="md:col-span-2">

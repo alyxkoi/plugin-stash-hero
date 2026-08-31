@@ -16,6 +16,8 @@ export type SaleFormValues = {
   id?: string;
   name: string;
   slug: string;
+  headline: string;
+  subheadline: string;
   discount_pct: number;
   scope: Scope;
   categories: string[];
@@ -26,7 +28,7 @@ export type SaleFormValues = {
 };
 
 const EMPTY: SaleFormValues = {
-  name: "", slug: "", discount_pct: 25, scope: "all",
+  name: "", slug: "", headline: "", subheadline: "", discount_pct: 25, scope: "all",
   categories: [], productIds: [], startAt: "", endAt: "",
 };
 
@@ -202,9 +204,8 @@ export function SaleForm({
         start_at: startAtIso,
         end_at: endAtIso,
         status: liveStatus as any,
-        // Clear any old presentation fields — this form no longer sets them.
-        headline: null,
-        subheadline: null,
+        headline: v.headline.trim() || null,
+        subheadline: v.subheadline.trim() || null,
         theme_color: null,
       };
 
@@ -269,7 +270,23 @@ export function SaleForm({
           </Field>
           <Field label="Slug (URL)">
             <input value={v.slug} onChange={(e) => set("slug", slugify(e.target.value))} className="ipt" />
-            <div className="text-[10px] text-white/40 mt-1 font-mono">/sale/{v.slug || "..."}</div>
+            <div className="text-[10px] text-white/40 mt-1 font-mono">/deals</div>
+          </Field>
+          <Field label="Headline (optional)">
+            <input
+              value={v.headline}
+              onChange={(e) => set("headline", e.target.value)}
+              placeholder={`${v.name.trim() || "Sale name"}. ${v.discount_pct}% OFF.`}
+              className="ipt"
+            />
+          </Field>
+          <Field label="Subheadline (optional)">
+            <input
+              value={v.subheadline}
+              onChange={(e) => set("subheadline", e.target.value)}
+              placeholder="Pro tools at warehouse prices for a limited time."
+              className="ipt"
+            />
           </Field>
         </DashCard>
 

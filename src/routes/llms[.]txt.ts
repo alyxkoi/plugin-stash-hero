@@ -11,7 +11,7 @@ const content = `# Plugin Warehouse
 - [/shop](/shop): Browse the full catalog of plugins, instruments, effects, libraries, and DAWs.
 - [/shop/:category](/shop/software): Filtered category pages for Software, Instruments, Libraries, DAWs, and Effects.
 - [/shop/p/:slug](/shop/p): Individual product detail pages with descriptions, pricing, and purchase options.
-- [/sale/:slug](/sale): Time-limited sale event pages with discounted plugin collections.
+- [/deals](/deals): Time-limited sale events and evergreen discounted plugin collections.
 - [/search](/search): Search the plugin catalog by name, category, or tag.
 - [/our-story](/our-story): The story behind Plugin Warehouse and our mission.
 - [/faq](/faq): Frequently asked questions about purchasing, licensing, and downloads.

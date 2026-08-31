@@ -21,6 +21,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as FaqRouteImport } from './routes/faq'
+import { Route as DealsRouteImport } from './routes/deals'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ContactUsRouteImport } from './routes/contact-us'
 import { Route as AccountRouteImport } from './routes/account'
@@ -121,6 +122,11 @@ const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
 const FaqRoute = FaqRouteImport.update({
   id: '/faq',
   path: '/faq',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DealsRoute = DealsRouteImport.update({
+  id: '/deals',
+  path: '/deals',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -338,6 +344,7 @@ export interface FileRoutesByFullPath {
   '/account': typeof AccountRouteWithChildren
   '/contact-us': typeof ContactUsRoute
   '/dashboard': typeof DashboardRouteWithChildren
+  '/deals': typeof DealsRoute
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/llms.txt': typeof LlmsDottxtRoute
@@ -391,6 +398,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/404': typeof R404Route
   '/contact-us': typeof ContactUsRoute
+  '/deals': typeof DealsRoute
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/llms.txt': typeof LlmsDottxtRoute
@@ -447,6 +455,7 @@ export interface FileRoutesById {
   '/account': typeof AccountRouteWithChildren
   '/contact-us': typeof ContactUsRoute
   '/dashboard': typeof DashboardRouteWithChildren
+  '/deals': typeof DealsRoute
   '/faq': typeof FaqRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/llms.txt': typeof LlmsDottxtRoute
@@ -504,6 +513,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/contact-us'
     | '/dashboard'
+    | '/deals'
     | '/faq'
     | '/forgot-password'
     | '/llms.txt'
@@ -557,6 +567,7 @@ export interface FileRouteTypes {
     | '/'
     | '/404'
     | '/contact-us'
+    | '/deals'
     | '/faq'
     | '/forgot-password'
     | '/llms.txt'
@@ -612,6 +623,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/contact-us'
     | '/dashboard'
+    | '/deals'
     | '/faq'
     | '/forgot-password'
     | '/llms.txt'
@@ -668,6 +680,7 @@ export interface RootRouteChildren {
   AccountRoute: typeof AccountRouteWithChildren
   ContactUsRoute: typeof ContactUsRoute
   DashboardRoute: typeof DashboardRouteWithChildren
+  DealsRoute: typeof DealsRoute
   FaqRoute: typeof FaqRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LlmsDottxtRoute: typeof LlmsDottxtRoute
@@ -780,6 +793,13 @@ declare module '@tanstack/react-router' {
       path: '/faq'
       fullPath: '/faq'
       preLoaderRoute: typeof FaqRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/deals': {
+      id: '/deals'
+      path: '/deals'
+      fullPath: '/deals'
+      preLoaderRoute: typeof DealsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -1141,6 +1161,7 @@ const rootRouteChildren: RootRouteChildren = {
   AccountRoute: AccountRouteWithChildren,
   ContactUsRoute: ContactUsRoute,
   DashboardRoute: DashboardRouteWithChildren,
+  DealsRoute: DealsRoute,
   FaqRoute: FaqRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LlmsDottxtRoute: LlmsDottxtRoute,

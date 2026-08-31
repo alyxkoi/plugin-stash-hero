@@ -9,10 +9,27 @@ export type ActiveSale = {
   subheadline: string | null;
   discount_pct: number;
   scope: "all" | "categories" | "selected";
+  categories: string[];
   theme_color: string | null;
   start_at: string;
   end_at: string;
+  status: string;
 };
+
+export async function resolveActiveSale(): Promise<ActiveSale | null> {
+  const nowIso = new Date().toISOString();
+  const { data } = await supabase
+    .from("sale_events")
+    .select("id, name, slug, headline, subheadline, discount_pct, scope, categories, theme_color, start_at, end_at, status")
+    .in("status", ["active", "scheduled", "ended"])
+    .lte("start_at", nowIso)
+    .gte("end_at", nowIso)
+    .order("start_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  return (data as ActiveSale) ?? null;
+}
 
 // Returns the currently-active sale (status='active' AND now between start/end),
 // or null. Also auto-refreshes when the end date passes so the banner disappears.
@@ -23,18 +40,9 @@ export function useActiveSale() {
   useEffect(() => {
     let cancelled = false;
     async function load() {
-      const nowIso = new Date().toISOString();
-      const { data } = await supabase
-        .from("sale_events")
-        .select("id, name, slug, headline, subheadline, discount_pct, scope, theme_color, start_at, end_at, status")
-        .in("status", ["active", "scheduled", "ended"])
-        .lte("start_at", nowIso)
-        .gte("end_at", nowIso)
-        .order("start_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      const data = await resolveActiveSale();
       if (cancelled) return;
-      setSale((data as ActiveSale) ?? null);
+      setSale(data);
       setLoaded(true);
     }
     load();
