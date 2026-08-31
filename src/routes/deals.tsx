@@ -14,7 +14,10 @@ const HERO_LQIP_MOBILE = "data:image/webp;base64,UklGRg4BAABXRUJQVlA4IAIBAAAwBwC
 
 export const Route = createFileRoute("/deals")({
   loader: async ({ context }) => {
-    const activeSale = await resolveActiveSale();
+    const [activeSale] = await Promise.all([
+      resolveActiveSale(),
+      context.queryClient.ensureQueryData(publishedProductsQueryOptions),
+    ]);
     let productIds: string[] = [];
     if (activeSale?.scope === "selected") {
       const { data } = await supabase
@@ -24,7 +27,6 @@ export const Route = createFileRoute("/deals")({
       productIds = (data ?? []).map((row) => row.product_id);
     }
     const sale = activeSale ? { ...activeSale, productIds } : null;
-    await context.queryClient.ensureQueryData(publishedProductsQueryOptions);
     return { sale };
   },
   head: ({ loaderData }) => {

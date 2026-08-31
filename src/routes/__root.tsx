@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -137,9 +138,19 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <div className="app-background-field" aria-hidden="true" />
       <div className="app-content-root">
+        <NavigationIndicator />
         <Shell />
         <Toaster theme="dark" position="bottom-right" />
       </div>
     </QueryClientProvider>
+  );
+}
+
+function NavigationIndicator() {
+  const isLoading = useRouterState({ select: (state) => state.isLoading });
+  return (
+    <div className={`route-progress${isLoading ? " is-active" : ""}`} aria-hidden="true">
+      <span />
+    </div>
   );
 }

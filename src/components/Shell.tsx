@@ -26,7 +26,9 @@ function UtmSync() {
 
 
 export function Shell() {
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const pathname = useRouterState({
+    select: (s) => (s.resolvedLocation ?? s.location).pathname,
+  });
   const reduce = useReducedMotion();
   const isDashboard = pathname === "/dashboard" || pathname.startsWith("/dashboard/");
 

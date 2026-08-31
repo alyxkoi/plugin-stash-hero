@@ -1310,6 +1310,42 @@ select.input-glass option:checked,
   min-width: 0;
 }
 
+.route-progress {
+  position: fixed;
+  z-index: 200;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 80ms ease;
+}
+
+.route-progress.is-active {
+  opacity: 1;
+  transition-delay: 120ms;
+}
+
+.route-progress span {
+  display: block;
+  width: 42%;
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-red), #7df5ad);
+  box-shadow: 0 0 14px rgba(250, 18, 101, 0.55);
+  animation: route-progress-travel 850ms ease-in-out infinite;
+}
+
+@keyframes route-progress-travel {
+  from { transform: translateX(-110%); }
+  to { transform: translateX(350%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-progress span { animation: none; width: 100%; }
+}
+
 .skeleton-line,
 .skeleton-block {
   border-radius: 999px;

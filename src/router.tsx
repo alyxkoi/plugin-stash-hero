@@ -25,9 +25,9 @@ export const getRouter = () => {
           const status = statusOf(error);
           // Don't hammer real client errors (except auth, retried once after refresh).
           if (status && status >= 400 && status < 500) return status === 401 && failureCount < 1;
-          return failureCount < 3;
+          return failureCount < 1;
         },
-        retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
+        retryDelay: 400,
       },
       mutations: { retry: 0 },
     },
@@ -37,6 +37,8 @@ export const getRouter = () => {
     routeTree,
     context: { queryClient },
     scrollRestoration: true,
+    defaultPreload: "intent",
+    defaultPreloadDelay: 40,
     defaultPreloadStaleTime: 0,
   });
 

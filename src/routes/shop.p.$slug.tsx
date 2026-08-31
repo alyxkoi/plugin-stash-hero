@@ -12,35 +12,13 @@ import { useSavedIds, useToggleSaved } from "@/hooks/useSaved";
 import { useSalePricing } from "@/lib/sale-pricing";
 import { ProductArtwork } from "@/components/ProductArtwork";
 
-async function fetchProductMeta(slug: string) {
-  const { data } = await supabase
-    .from("products")
-    .select("name,maker,tagline,description,category,cover_url,price,compare_at_price,is_free,seo_title,seo_description")
-    .eq("slug", slug)
-    .eq("status", "published")
-    .maybeSingle();
-  return data as {
-    name: string;
-    maker: string | null;
-    tagline: string | null;
-    description: string | null;
-    category: string;
-    cover_url: string | null;
-    price: number | null;
-    compare_at_price: number | null;
-    is_free: boolean | null;
-    seo_title: string | null;
-    seo_description: string | null;
-  } | null;
-}
-
 
 
 export const Route = createFileRoute("/shop/p/$slug")({
-  loader: async ({ params, context }) => ({
-    meta: await fetchProductMeta(params.slug),
-    detail: await context.queryClient.ensureQueryData(productDetailQueryOptions(params.slug)),
-  }),
+  loader: async ({ params, context }) => {
+    const detail = await context.queryClient.ensureQueryData(productDetailQueryOptions(params.slug));
+    return { meta: detail.meta, detail };
+  },
   head: ({ params, loaderData }) => {
     const m = loaderData?.meta;
     const url = `https://www.thepluginwarehouse.com/shop/p/${params.slug}`;
@@ -127,7 +105,24 @@ type Row = {
   cover_url: string | null; cover_gradient: string | null;
   is_free: boolean | null; updated_at: string;
   file_size: string | null;
+  seo_title: string | null;
+  seo_description: string | null;
 };
+
+type ProductMeta = Pick<
+  Row,
+  | "name"
+  | "maker"
+  | "tagline"
+  | "description"
+  | "category"
+  | "cover_url"
+  | "price"
+  | "compare_at_price"
+  | "is_free"
+  | "seo_title"
+  | "seo_description"
+>;
 
 function toProduct(r: Row): Product {
   return {
@@ -153,8 +148,8 @@ function toProduct(r: Row): Product {
   };
 }
 
-async function fetchBySlug(slug: string): Promise<{ product: Product | null; related: Product[] }> {
-  const cols = "id,slug,name,maker,category,formats,daws,version,library_type,platforms,price,compare_at_price,description,tagline,cover_url,cover_gradient,is_free,updated_at,file_size";
+async function fetchBySlug(slug: string): Promise<{ product: Product | null; related: Product[]; meta: ProductMeta | null }> {
+  const cols = "id,slug,name,maker,category,formats,daws,version,library_type,platforms,price,compare_at_price,description,tagline,cover_url,cover_gradient,is_free,updated_at,file_size,seo_title,seo_description";
 
   const { data, error } = await supabase
     .from("products")
@@ -163,8 +158,9 @@ async function fetchBySlug(slug: string): Promise<{ product: Product | null; rel
     .eq("status", "published")
     .maybeSingle();
   if (error) throw new Error(error.message);
-  if (!data) return { product: null, related: [] };
-  const product = toProduct(data as Row);
+  if (!data) return { product: null, related: [], meta: null };
+  const row = data as Row;
+  const product = toProduct(row);
   const { data: rel } = await supabase
     .from("products")
     .select(cols)
@@ -172,7 +168,7 @@ async function fetchBySlug(slug: string): Promise<{ product: Product | null; rel
     .eq("category", product.category)
     .neq("slug", product.slug)
     .limit(4);
-  return { product, related: (rel as Row[] ?? []).map(toProduct) };
+  return { product, related: (rel as Row[] ?? []).map(toProduct), meta: row };
 }
 
 function productDetailQueryOptions(slug: string) {

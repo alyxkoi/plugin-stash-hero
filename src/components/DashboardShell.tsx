@@ -128,7 +128,9 @@ function DashboardChromeRoot({
     action: initialAction,
   });
   const navigate = useNavigate();
-  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const pathname = useRouterState({
+    select: (state) => (state.resolvedLocation ?? state.location).pathname,
+  });
   const reduceMotion = useReducedMotion();
   const mainRef = useRef<HTMLElement>(null);
   const isProductDetail = /^\/dashboard\/products\/[^/]+$/.test(pathname);
