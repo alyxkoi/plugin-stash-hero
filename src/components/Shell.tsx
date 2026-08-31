@@ -1,5 +1,4 @@
 import { Outlet, useRouterState } from "@tanstack/react-router";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Nav } from "./Nav";
 import { Footer } from "./Footer";
 import { CartDrawer } from "./CartDrawer";
@@ -28,7 +27,6 @@ export function Shell() {
   const pathname = useRouterState({
     select: (s) => s.location.pathname,
   });
-  const reduce = useReducedMotion();
   const isDashboard = pathname === "/dashboard" || pathname.startsWith("/dashboard/");
 
   if (isDashboard) {
@@ -42,24 +40,11 @@ export function Shell() {
         <Nav />
         <main className="storefront-main">
           <div className="route-transition-stack">
-            <AnimatePresence mode="sync" initial={false}>
-              <motion.div
-                key={pathname}
-                className="route-transition-page"
-                initial={reduce ? false : { opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={reduce ? undefined : { opacity: 0 }}
-                transition={{
-                  duration: reduce ? 0 : 0.28,
-                  ease: "easeOut",
-                }}
-                style={{ willChange: "opacity" }}
-              >
-                <SectionErrorBoundary resetKey={pathname}>
-                  <Outlet />
-                </SectionErrorBoundary>
-              </motion.div>
-            </AnimatePresence>
+            <div className="route-transition-page">
+              <SectionErrorBoundary resetKey={pathname}>
+                <Outlet />
+              </SectionErrorBoundary>
+            </div>
           </div>
         </main>
 
