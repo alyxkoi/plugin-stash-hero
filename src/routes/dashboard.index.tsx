@@ -13,13 +13,18 @@ import { OrderDrawer } from "@/components/AdminDrawers";
 import { supabase } from "@/integrations/supabase/client";
 import { allocateLineRevenue, netRevenue, saleOrders, sumNetRevenue } from "@/lib/revenue";
 import { deriveSaleStatus, formatInSaleTimeZone } from "@/lib/sale-time";
+import {
+  chicagoComparisonBounds,
+  startOfChicagoDay,
+  type DashboardRange,
+} from "@/lib/analytics-time";
 
 export const Route = createFileRoute("/dashboard/")({
   head: () => ({ meta: [{ title: "Overview — Plugin Warehouse" }] }),
   component: Overview,
 });
 
-type OverviewRange = "today" | "7d" | "30d" | "mtd";
+type OverviewRange = DashboardRange;
 
 const RANGE_OPTIONS = [
   { value: "today", label: "Today" },
@@ -103,8 +108,9 @@ function Overview() {
     };
   }, []);
 
-  const bounds = useMemo(() => comparisonBounds(range), [range]);
+  const bounds = useMemo(() => chicagoComparisonBounds(range), [range]);
   const completed = useMemo(() => saleOrders(orders), [orders]);
+  const now = Date.now();
   const currentOrders = useMemo(
     () =>
       completed.filter((order) => within(order.created_at, bounds.currentStart, bounds.currentEnd)),
@@ -132,6 +138,12 @@ function Overview() {
   const ordersDelta = percentDelta(currentOrders.length, previousOrders.length);
   const customersDelta = percentDelta(currentCustomers, previousCustomers);
   const aovDelta = percentDelta(currentAov, previousAov);
+  const todayRevenue = useMemo(() => {
+    const todayStart = startOfChicagoDay(new Date(now));
+    return sumNetRevenue(
+      completed.filter((order) => within(order.created_at, todayStart, new Date(now))),
+    );
+  }, [completed, now]);
 
   const series = useMemo(
     () => buildComparisonSeries(completed, bounds, range),
@@ -180,7 +192,6 @@ function Overview() {
     }
     return [...map.values()].sort((a, b) => b.revenue - a.revenue).slice(0, 5);
   }, [completed]);
-  const now = Date.now();
   const currentSale =
     sales.find(
       (sale) => deriveSaleStatus(sale.start_at, sale.end_at, sale.status, now) === "active",
@@ -285,12 +296,18 @@ function Overview() {
             title="Recent orders"
             className="xl:col-span-7"
             action={
-              <Link
-                to="/dashboard/orders"
-                className="text-xs text-[var(--text-tertiary)] hover:text-white"
-              >
-                View all →
-              </Link>
+              <div className="dash-recent-orders-action">
+                <Link
+                  to="/dashboard/orders"
+                  className="text-xs text-[var(--text-tertiary)] hover:text-white"
+                >
+                  View all →
+                </Link>
+                <span className="dash-today-revenue">
+                  <span>TODAY</span>
+                  <strong>{moneyExact(todayRevenue)}</strong>
+                </span>
+              </div>
             }
           >
             <div className="dash-desktop-table -m-5 overflow-x-auto">
@@ -556,30 +573,9 @@ function campaignCountdown(endAt: string, now: number) {
   return `${hours}h ${minutes}m`;
 }
 
-function comparisonBounds(range: OverviewRange) {
-  const currentEnd = new Date();
-  const currentStart = new Date(currentEnd);
-  if (range === "today") {
-    currentStart.setHours(0, 0, 0, 0);
-  } else if (range === "7d") {
-    currentStart.setDate(currentStart.getDate() - 6);
-    currentStart.setHours(0, 0, 0, 0);
-  } else if (range === "30d") {
-    currentStart.setDate(currentStart.getDate() - 29);
-    currentStart.setHours(0, 0, 0, 0);
-  } else {
-    currentStart.setDate(1);
-    currentStart.setHours(0, 0, 0, 0);
-  }
-  const duration = currentEnd.getTime() - currentStart.getTime();
-  const previousEnd = new Date(currentStart.getTime() - 1);
-  const previousStart = new Date(previousEnd.getTime() - duration);
-  return { currentStart, currentEnd, previousStart, previousEnd };
-}
-
 function buildComparisonSeries(
   orders: OrderRow[],
-  bounds: ReturnType<typeof comparisonBounds>,
+  bounds: ReturnType<typeof chicagoComparisonBounds>,
   range: OverviewRange,
 ) {
   const hourly = range === "today";

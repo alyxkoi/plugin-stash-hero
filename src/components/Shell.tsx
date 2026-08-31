@@ -7,6 +7,7 @@ import { SectionErrorBoundary } from "./SectionErrorBoundary";
 import { useCartSync } from "@/hooks/useCartSync";
 import { useUtmCapture, usePwCidUrlPersistence } from "@/hooks/useUtmCapture";
 import { SalePricingProvider } from "@/lib/sale-pricing";
+import { StorefrontVisitTracker } from "./StorefrontVisitTracker";
 
 
 function CartSync() {
@@ -52,6 +53,7 @@ export function Shell() {
         <CartDrawer />
         <CartSync />
         <UtmSync />
+        <StorefrontVisitTracker />
         <MysteryGiftPopup />
       </div>
     </SalePricingProvider>

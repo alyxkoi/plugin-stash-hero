@@ -59,6 +59,7 @@ import { Route as DashboardProductsNewRouteImport } from './routes/dashboard.pro
 import { Route as DashboardProductsIdRouteImport } from './routes/dashboard.products.$id'
 import { Route as DashboardOrdersIdRouteImport } from './routes/dashboard.orders.$id'
 import { Route as DashboardCustomersIdRouteImport } from './routes/dashboard.customers.$id'
+import { Route as ApiPublicVisitRouteImport } from './routes/api/public/visit'
 import { Route as ApiPublicDownloadRouteImport } from './routes/api/public/download'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicHooksEmailAutomationRouteImport } from './routes/api/public/hooks/email-automation'
@@ -314,6 +315,11 @@ const DashboardCustomersIdRoute = DashboardCustomersIdRouteImport.update({
   path: '/customers/$id',
   getParentRoute: () => DashboardRoute,
 } as any)
+const ApiPublicVisitRoute = ApiPublicVisitRouteImport.update({
+  id: '/api/public/visit',
+  path: '/api/public/visit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicDownloadRoute = ApiPublicDownloadRouteImport.update({
   id: '/api/public/download',
   path: '/api/public/download',
@@ -379,6 +385,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/': typeof DashboardIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/api/public/download': typeof ApiPublicDownloadRoute
+  '/api/public/visit': typeof ApiPublicVisitRoute
   '/dashboard/customers/$id': typeof DashboardCustomersIdRoute
   '/dashboard/orders/$id': typeof DashboardOrdersIdRoute
   '/dashboard/products/$id': typeof DashboardProductsIdRoute
@@ -433,6 +440,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardIndexRoute
   '/shop': typeof ShopIndexRoute
   '/api/public/download': typeof ApiPublicDownloadRoute
+  '/api/public/visit': typeof ApiPublicVisitRoute
   '/dashboard/customers/$id': typeof DashboardCustomersIdRoute
   '/dashboard/orders/$id': typeof DashboardOrdersIdRoute
   '/dashboard/products/$id': typeof DashboardProductsIdRoute
@@ -490,6 +498,7 @@ export interface FileRoutesById {
   '/dashboard/': typeof DashboardIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/api/public/download': typeof ApiPublicDownloadRoute
+  '/api/public/visit': typeof ApiPublicVisitRoute
   '/dashboard/customers/$id': typeof DashboardCustomersIdRoute
   '/dashboard/orders/$id': typeof DashboardOrdersIdRoute
   '/dashboard/products/$id': typeof DashboardProductsIdRoute
@@ -548,6 +557,7 @@ export interface FileRouteTypes {
     | '/dashboard/'
     | '/shop/'
     | '/api/public/download'
+    | '/api/public/visit'
     | '/dashboard/customers/$id'
     | '/dashboard/orders/$id'
     | '/dashboard/products/$id'
@@ -602,6 +612,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/shop'
     | '/api/public/download'
+    | '/api/public/visit'
     | '/dashboard/customers/$id'
     | '/dashboard/orders/$id'
     | '/dashboard/products/$id'
@@ -658,6 +669,7 @@ export interface FileRouteTypes {
     | '/dashboard/'
     | '/shop/'
     | '/api/public/download'
+    | '/api/public/visit'
     | '/dashboard/customers/$id'
     | '/dashboard/orders/$id'
     | '/dashboard/products/$id'
@@ -703,6 +715,7 @@ export interface RootRouteChildren {
   CheckoutIndexRoute: typeof CheckoutIndexRoute
   ShopIndexRoute: typeof ShopIndexRoute
   ApiPublicDownloadRoute: typeof ApiPublicDownloadRoute
+  ApiPublicVisitRoute: typeof ApiPublicVisitRoute
   ShopPSlugRoute: typeof ShopPSlugRoute
   ApiPublicEmailUnsubscribeRoute: typeof ApiPublicEmailUnsubscribeRoute
   ApiPublicHooksEmailAutomationRoute: typeof ApiPublicHooksEmailAutomationRoute
@@ -1061,6 +1074,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardCustomersIdRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/api/public/visit': {
+      id: '/api/public/visit'
+      path: '/api/public/visit'
+      fullPath: '/api/public/visit'
+      preLoaderRoute: typeof ApiPublicVisitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/download': {
       id: '/api/public/download'
       path: '/api/public/download'
@@ -1184,6 +1204,7 @@ const rootRouteChildren: RootRouteChildren = {
   CheckoutIndexRoute: CheckoutIndexRoute,
   ShopIndexRoute: ShopIndexRoute,
   ApiPublicDownloadRoute: ApiPublicDownloadRoute,
+  ApiPublicVisitRoute: ApiPublicVisitRoute,
   ShopPSlugRoute: ShopPSlugRoute,
   ApiPublicEmailUnsubscribeRoute: ApiPublicEmailUnsubscribeRoute,
   ApiPublicHooksEmailAutomationRoute: ApiPublicHooksEmailAutomationRoute,

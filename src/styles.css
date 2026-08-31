@@ -6778,6 +6778,34 @@ body.dashboard-active {
   letter-spacing: -0.025em;
 }
 
+.dashboard-scope .dash-recent-orders-action,
+.dashboard-scope .dash-today-revenue {
+  display: flex;
+  align-items: baseline;
+}
+
+.dashboard-scope .dash-recent-orders-action {
+  justify-content: flex-end;
+  gap: 18px;
+}
+
+.dashboard-scope .dash-today-revenue {
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.dashboard-scope .dash-today-revenue > span {
+  color: var(--text-tertiary);
+  font: 700 9px/1 var(--f-data);
+  letter-spacing: 0.12em;
+}
+
+.dashboard-scope .dash-today-revenue > strong {
+  color: var(--crimson);
+  font: 650 1rem/1 var(--f-data);
+  font-variant-numeric: tabular-nums;
+}
+
 .dashboard-scope .dash-panel-body {
   padding: 18px 22px 22px;
 }
@@ -6979,7 +7007,7 @@ body.dashboard-active {
 /* Analytics: the first figure owns the horizon; the plot bleeds to both sides. */
 .dashboard-scope .dash-analytics-metrics {
   display: grid;
-  grid-template-columns: minmax(320px, 1.55fr) repeat(3, minmax(130px, 0.55fr));
+  grid-template-columns: minmax(300px, 1.45fr) repeat(4, minmax(118px, 0.55fr));
   align-items: start;
   gap: 0;
   padding: 4px 14px 0;
@@ -10260,7 +10288,7 @@ body.dashboard-active {
 
 /* Hero metric rows keep their full cadence without clipping values or deltas. */
 .dashboard-scope .dash-analytics-metrics {
-  grid-template-columns: minmax(0, 1.45fr) repeat(3, minmax(0, 0.6fr));
+  grid-template-columns: minmax(0, 1.45fr) repeat(4, minmax(0, 0.6fr));
 }
 
 .dashboard-scope .dash-analytics-metric,
@@ -10750,7 +10778,7 @@ body.dashboard-active {
 
 @media (max-width: 1100px) {
   .dashboard-scope .dash-analytics-metrics {
-    grid-template-columns: minmax(0, 1.3fr) repeat(3, minmax(0, 0.7fr));
+    grid-template-columns: minmax(0, 1.3fr) repeat(4, minmax(0, 0.7fr));
   }
 
   .dashboard-scope .dash-analytics-metric:first-child > strong {
@@ -11069,7 +11097,7 @@ body.dashboard-active {
   line-height: .88;
   letter-spacing: -.055em;
   font-weight: 860;
-  font-variation-settings: "ROND" 88, "wdth" 96;
+  font-variation-settings: "ROND" 0, "wdth" 96;
   text-wrap: balance;
 }
 
@@ -11330,7 +11358,7 @@ body.dashboard-active {
 .pwh-section { padding: clamp(68px, 8vw, 124px) clamp(16px, 4vw, 64px); }
 .pwh-section > * { width: min(1500px, 100%); margin-inline: auto; }
 .section-intro { display: flex; align-items: end; justify-content: space-between; gap: 32px; margin-bottom: clamp(28px, 4vw, 52px); }
-.section-intro h2 { max-width: 980px; margin-top: 10px; font-size: clamp(2.15rem, 5vw, 5.2rem); line-height: .94; letter-spacing: -.045em; font-weight: 820; font-variation-settings: "ROND" 72, "wdth" 96; text-wrap: balance; }
+.section-intro h2 { max-width: 980px; margin-top: 10px; font-size: clamp(2.15rem, 5vw, 5.2rem); line-height: .94; letter-spacing: -.045em; font-weight: 820; font-variation-settings: "ROND" 0, "wdth" 96; text-wrap: balance; }
 .section-intro p { max-width: 670px; margin-top: 14px; color: var(--text-2); line-height: 1.6; }
 .pwh-inline-link { display: inline-flex; min-height: 48px; align-items: center; gap: 8px; flex: 0 0 auto; color: var(--text-2); font-weight: 700; }
 .pwh-inline-link svg { width: 18px; }
@@ -11977,7 +12005,7 @@ body.dashboard-active {
   font-size: clamp(3.2rem, 7vw, 7.2rem);
   font-weight: 860;
   font-variation-settings:
-    "ROND" 82,
+    "ROND" 0,
     "wdth" 95;
   letter-spacing: -0.06em;
   line-height: 0.86;

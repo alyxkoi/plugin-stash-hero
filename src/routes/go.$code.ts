@@ -5,38 +5,8 @@
 // UTM query strings get stripped by a client-side redirect.
 
 import { createFileRoute } from "@tanstack/react-router";
-import { createHash } from "crypto";
 import { generateClickId } from "@/lib/utm";
-
-
-// Confident bot / crawler / scripting signals only.
-// Anything ambiguous (including a missing UA) is counted — under-counting
-// real humans is worse than the occasional stray hit.
-const BOT_UA_RE =
-  /(bot\b|bot\/|crawler|spider|slurp|facebookexternalhit|facebot|twitterbot|slackbot|discordbot|telegrambot|linkedinbot|pinterestbot|redditbot|googlebot|bingbot|duckduckbot|yandex|baiduspider|ahrefs|semrushbot|mj12bot|applebot|petalbot|headlesschrome|phantomjs|puppeteer|playwright|selenium|lighthouse|pagespeed|gtmetrix|pingdom|uptimerobot|curl\/|wget|python-requests|python-urllib|node-fetch|go-http-client|scrapy|prerender|nikto|acunetix|nuclei|zgrab)/i;
-
-function isPrefetch(headers: Headers): boolean {
-  const purpose = (headers.get("purpose") || headers.get("x-purpose") || "").toLowerCase();
-  if (purpose === "prefetch" || purpose === "preview") return true;
-  const moz = (headers.get("x-moz") || "").toLowerCase();
-  if (moz === "prefetch") return true;
-  const sec = (headers.get("sec-purpose") || "").toLowerCase();
-  if (sec.includes("prefetch") || sec.includes("preview")) return true;
-  return false;
-}
-
-function firstIp(headers: Headers): string {
-  return (
-    headers.get("cf-connecting-ip") ||
-    (headers.get("x-forwarded-for") || "").split(",")[0].trim() ||
-    headers.get("x-real-ip") ||
-    ""
-  );
-}
-
-function sha256(input: string): string {
-  return createHash("sha256").update(input).digest("hex");
-}
+import { requestTrafficIdentity } from "@/lib/traffic.server";
 
 // Short dedup window: only collapses double-fires of the same navigation,
 // never a genuine repeat visit later in the day.
@@ -55,11 +25,8 @@ async function logAndRedirect(
     .maybeSingle();
   if (!link) return new Response(null, { status: 302, headers: { Location: "/" } });
 
-  const ua = request.headers.get("user-agent") || "";
-  const ip = firstIp(request.headers);
-  const isBot = BOT_UA_RE.test(ua);
-  const prefetch = isPrefetch(request.headers);
-  const ipUaHash = ip || ua ? sha256(`${ip}|${ua}`) : null;
+  const identity = requestTrafficIdentity(request);
+  const { visitorHash: ipUaHash, isBot, isPrefetch: prefetch } = identity;
 
   let counted = countable && !isBot && !prefetch;
 

@@ -23,8 +23,12 @@ import {
   SegmentedBar,
   StatusBadge,
 } from "@/components/DashboardShell";
-import { type AnalyticsRange, RANGE_LABEL } from "@/lib/dashboard-mock";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  chicagoComparisonBounds,
+  DASHBOARD_RANGE_LABEL,
+  type DashboardRange,
+} from "@/lib/analytics-time";
 import { deriveSaleStatus, formatInSaleTimeZone } from "@/lib/sale-time";
 import { normalizeUtmSource } from "@/lib/utm";
 import {
@@ -41,12 +45,12 @@ export const Route = createFileRoute("/dashboard/analytics")({
   component: Analytics,
 });
 
-const RANGES = ["wtd", "mtd", "last-month", "30d", "12mo", "all"] as const;
-const RANGE_OPTIONS = RANGES.map((value) => ({
-  value,
-  label: value === "last-month" ? "Last mo" : value.toUpperCase(),
-  title: RANGE_LABEL[value],
-}));
+const RANGE_OPTIONS = [
+  { value: "today", label: "Today" },
+  { value: "7d", label: "7D" },
+  { value: "30d", label: "30D" },
+  { value: "mtd", label: "MTD" },
+] as const;
 
 type OrderRow = {
   id: string;
@@ -77,15 +81,16 @@ type SaleEventRow = {
   status: string;
 };
 
-type CheckoutAttemptRow = {
-  created_at: string;
-  status: string;
-};
+type VisitMetrics = { pageviews: number; uniqueSessions: number };
 
 function Analytics() {
-  const [range, setRange] = useState<AnalyticsRange>("mtd");
+  const [range, setRange] = useState<DashboardRange>("mtd");
   const [orders, setOrders] = useState<OrderRow[]>([]);
-  const [attempts, setAttempts] = useState<CheckoutAttemptRow[]>([]);
+  const [visits, setVisits] = useState<VisitMetrics>({ pageviews: 0, uniqueSessions: 0 });
+  const [previousVisits, setPreviousVisits] = useState<VisitMetrics>({
+    pageviews: 0,
+    uniqueSessions: 0,
+  });
   const [sales, setSales] = useState<SaleEventRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [identity, setIdentity] = useState<IdentityMap>(() => new Map());
@@ -103,7 +108,7 @@ function Analytics() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [ordersRes, salesRes, attemptsRes] = await Promise.all([
+      const [ordersRes, salesRes] = await Promise.all([
         supabase
           .from("orders")
           .select(
@@ -116,16 +121,10 @@ function Analytics() {
           .select("id, name, slug, discount_pct, start_at, end_at, status")
           .neq("status", "draft")
           .order("start_at", { ascending: false }),
-        (supabase as any)
-          .from("checkout_attempts")
-          .select("created_at, status")
-          .order("created_at", { ascending: false })
-          .limit(10000),
       ]);
       if (cancelled) return;
       setOrders((ordersRes.data ?? []) as OrderRow[]);
       setSales((salesRes.data ?? []) as SaleEventRow[]);
-      setAttempts((attemptsRes.data ?? []) as CheckoutAttemptRow[]);
       setLoading(false);
     })();
     return () => {
@@ -134,7 +133,7 @@ function Analytics() {
   }, []);
 
   const completed = useMemo(() => saleOrders(orders), [orders]);
-  const bounds = useMemo(() => analyticsBounds(range, completed), [range, completed]);
+  const bounds = useMemo(() => chicagoComparisonBounds(range), [range]);
   const inRange = useMemo(
     () =>
       completed.filter((order) => within(order.created_at, bounds.currentStart, bounds.currentEnd)),
@@ -147,21 +146,49 @@ function Analytics() {
       ),
     [completed, bounds],
   );
-  const currentAttempts = useMemo(
-    () => attempts.filter((attempt) => within(attempt.created_at, bounds.currentStart, bounds.currentEnd)),
-    [attempts, bounds],
-  );
-  const previousAttempts = useMemo(
-    () => attempts.filter((attempt) => within(attempt.created_at, bounds.previousStart, bounds.previousEnd)),
-    [attempts, bounds],
-  );
+  useEffect(() => {
+    let cancelled = false;
+    const readMetrics = async (start: Date, end: Date): Promise<VisitMetrics> => {
+      const { data, error } = await (supabase as any).rpc("storefront_visit_metrics", {
+        _start_at: start.toISOString(),
+        _end_at: end.toISOString(),
+      });
+      if (error) throw error;
+      const row = Array.isArray(data) ? data[0] : data;
+      return {
+        pageviews: Number(row?.pageviews ?? 0),
+        uniqueSessions: Number(row?.unique_sessions ?? 0),
+      };
+    };
+
+    Promise.all([
+      readMetrics(bounds.currentStart, bounds.currentEnd),
+      readMetrics(bounds.previousStart, bounds.previousEnd),
+    ])
+      .then(([current, previous]) => {
+        if (cancelled) return;
+        setVisits(current);
+        setPreviousVisits(previous);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setVisits({ pageviews: 0, uniqueSessions: 0 });
+        setPreviousVisits({ pageviews: 0, uniqueSessions: 0 });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [bounds]);
   const revenue = sumNetRevenue(inRange);
   const previousRevenue = sumNetRevenue(previousRange);
   const aov = inRange.length ? revenue / inRange.length : 0;
   const previousAov = previousRange.length ? previousRevenue / previousRange.length : 0;
-  const conversion = currentAttempts.length ? Math.min(100, (inRange.length / currentAttempts.length) * 100) : 0;
-  const previousConversion = previousAttempts.length
-    ? Math.min(100, (previousRange.length / previousAttempts.length) * 100)
+  const conversion = visits.uniqueSessions
+    ? (inRange.length / visits.uniqueSessions) * 100
+    : 0;
+  const previousConversion = previousVisits.uniqueSessions
+    ? (previousRange.length / previousVisits.uniqueSessions) * 100
     : 0;
   const chartSeries = useMemo(
     () => buildPairedSeries(completed, bounds, range),
@@ -261,6 +288,7 @@ function Analytics() {
   const ordersDelta = percentDelta(inRange.length, previousRange.length);
   const aovDelta = percentDelta(aov, previousAov);
   const conversionDelta = percentDelta(conversion, previousConversion);
+  const sessionsDelta = percentDelta(visits.uniqueSessions, previousVisits.uniqueSessions);
 
   return (
     <DashboardShell
@@ -278,16 +306,22 @@ function Analytics() {
               delta={ordersDelta}
             />
             <AnalyticsMetric
+              label="Unique sessions"
+              value={visits.uniqueSessions.toLocaleString()}
+              delta={sessionsDelta}
+              helper={`${visits.pageviews.toLocaleString()} pageviews in this range`}
+            />
+            <AnalyticsMetric
               label="Conversion"
               value={`${conversion.toFixed(1)}%`}
               delta={conversionDelta}
-              helper="Share of order attempts that completed in this range"
+              helper="Completed orders divided by unique storefront sessions"
             />
           </div>
           <div
             className="dash-hero-chart px-4 pb-4 md:px-6"
             role="img"
-            aria-label={`Revenue is ${money(revenue)} for ${RANGE_LABEL[range]}, ${revenueDelta.label} versus the prior equivalent period.`}
+            aria-label={`Revenue is ${money(revenue)} for ${DASHBOARD_RANGE_LABEL[range]}, ${revenueDelta.label} versus the prior equivalent period.`}
           >
             {loading ? (
               <div className="skeleton-block h-full" />
@@ -578,45 +612,12 @@ function RevenueTooltip({
   );
 }
 
-function analyticsBounds(range: AnalyticsRange, orders: OrderRow[]) {
-  const currentEnd = new Date();
-  const currentStart = new Date(currentEnd);
-  if (range === "wtd") {
-    currentStart.setDate(currentStart.getDate() - currentStart.getDay());
-    currentStart.setHours(0, 0, 0, 0);
-  } else if (range === "mtd") {
-    currentStart.setDate(1);
-    currentStart.setHours(0, 0, 0, 0);
-  } else if (range === "last-month") {
-    currentStart.setFullYear(currentStart.getFullYear(), currentStart.getMonth() - 1, 1);
-    currentStart.setHours(0, 0, 0, 0);
-    currentEnd.setFullYear(currentEnd.getFullYear(), currentEnd.getMonth(), 0);
-    currentEnd.setHours(23, 59, 59, 999);
-  } else if (range === "30d") {
-    currentStart.setDate(currentStart.getDate() - 29);
-    currentStart.setHours(0, 0, 0, 0);
-  } else if (range === "12mo") {
-    currentStart.setFullYear(currentStart.getFullYear() - 1);
-  } else {
-    const earliest = orders.reduce(
-      (time, order) => Math.min(time, new Date(order.created_at).getTime()),
-      Date.now(),
-    );
-    currentStart.setTime(earliest);
-    currentStart.setHours(0, 0, 0, 0);
-  }
-  const duration = Math.max(1, currentEnd.getTime() - currentStart.getTime());
-  const previousEnd = new Date(currentStart.getTime() - 1);
-  const previousStart = new Date(previousEnd.getTime() - duration);
-  return { currentStart, currentEnd, previousStart, previousEnd };
-}
-
 function buildPairedSeries(
   orders: OrderRow[],
-  bounds: ReturnType<typeof analyticsBounds>,
-  range: AnalyticsRange,
+  bounds: ReturnType<typeof chicagoComparisonBounds>,
+  range: DashboardRange,
 ) {
-  const monthly = range === "12mo" || range === "all";
+  const monthly = false;
   const currentBuckets = makeBuckets(bounds.currentStart, bounds.currentEnd, monthly);
   const previousBuckets = makeBuckets(bounds.previousStart, bounds.previousEnd, monthly);
   return currentBuckets.map((bucket, index) => {
