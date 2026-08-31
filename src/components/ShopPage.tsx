@@ -17,7 +17,7 @@ interface ShopPageProps {
 
 export function ShopPage({ category, title, subtitle, initialOnSale, activeSale }: ShopPageProps) {
   const [query, setQuery] = useState("");
-  const [selectedCats, setSelectedCats] = useState<Category[]>(category ? [category] : []);
+  const [selectedCats, setSelectedCats] = useState<Category[]>([]);
   const [selectedFormats, setSelectedFormats] = useState<string[]>([]);
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [saleStatus, setSaleStatus] = useState<"all" | "sale" | "free">(initialOnSale ? "sale" : "all");
@@ -26,11 +26,10 @@ export function ShopPage({ category, title, subtitle, initialOnSale, activeSale 
   const reduce = useReducedMotion();
 
   const { data: ALL = [], isLoading } = usePublishedProducts();
-
-  // Sync category filter when navigating between category pages (component doesn't remount on param change).
-  useEffect(() => {
-    setSelectedCats(category ? [category] : []);
-  }, [category]);
+  const effectiveCats = useMemo<Category[]>(
+    () => (category ? [category] : selectedCats),
+    [category, selectedCats],
+  );
 
   useEffect(() => {
     if (!filtersOpen) return;
@@ -44,8 +43,8 @@ export function ShopPage({ category, title, subtitle, initialOnSale, activeSale 
   const filtered = useMemo(() => {
     let r: Product[] = [...ALL];
     if (activeSale) r = r.filter((p) => pickSaleFor([activeSale], p) !== null);
-    if (selectedCats.length) {
-      const wanted = new Set(selectedCats.map((c) => c.toLowerCase()));
+    if (effectiveCats.length) {
+      const wanted = new Set(effectiveCats.map((c) => c.toLowerCase()));
       // The "freebies" category is a virtual bucket: any published product
       // marked is_free (or priced at $0) belongs here regardless of its
       // real category (effects, instruments, etc.).
@@ -76,16 +75,16 @@ export function ShopPage({ category, title, subtitle, initialOnSale, activeSale 
       });
     }
     return r;
-  }, [ALL, activeSale, query, selectedCats, selectedFormats, selectedPlatforms, saleStatus, priceSort]);
+  }, [ALL, activeSale, query, effectiveCats, selectedFormats, selectedPlatforms, saleStatus, priceSort]);
 
   const togglePill = <T,>(list: T[], v: T, set: (l: T[]) => void) =>
     set(list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
 
   const showFormat = !initialOnSale && !["software", "freebies"].includes(category || "");
   const showPlatform = !["software", "libraries"].includes(category || "");
-  const resultMotionKey = `${query}|${selectedCats.join(",")}|${selectedFormats.join(",")}|${selectedPlatforms.join(",")}|${saleStatus}|${priceSort}`;
+  const resultMotionKey = `${query}|${effectiveCats.join(",")}|${selectedFormats.join(",")}|${selectedPlatforms.join(",")}|${saleStatus}|${priceSort}`;
   const clearFilters = () => {
-    setSelectedCats(category ? [category] : []);
+    setSelectedCats([]);
     setSelectedFormats([]);
     setSelectedPlatforms([]);
     setSaleStatus("all");
