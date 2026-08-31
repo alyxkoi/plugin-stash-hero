@@ -11612,6 +11612,7 @@ body.dashboard-active {
 }
 
 .fresh-section { padding-top: clamp(64px, 7vw, 104px); }
+.shop-page { background: #04021e; }
 .shop-results { padding-top: clamp(40px, 5vw, 72px); }
 .shop-result-count { margin-bottom: clamp(28px, 3vw, 42px); }
 
