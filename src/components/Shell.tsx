@@ -1,6 +1,5 @@
 import { Outlet, useRouterState } from "@tanstack/react-router";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { useEffect } from "react";
 import { Nav } from "./Nav";
 import { Footer } from "./Footer";
 import { CartDrawer } from "./CartDrawer";
@@ -27,14 +26,10 @@ function UtmSync() {
 
 export function Shell() {
   const pathname = useRouterState({
-    select: (s) => (s.resolvedLocation ?? s.location).pathname,
+    select: (s) => s.location.pathname,
   });
   const reduce = useReducedMotion();
   const isDashboard = pathname === "/dashboard" || pathname.startsWith("/dashboard/");
-
-  useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-  }, [pathname]);
 
   if (isDashboard) {
     // Dashboard manages its own chrome (sidebar + topbar).

@@ -129,7 +129,7 @@ function DashboardChromeRoot({
   });
   const navigate = useNavigate();
   const pathname = useRouterState({
-    select: (state) => (state.resolvedLocation ?? state.location).pathname,
+    select: (state) => state.location.pathname,
   });
   const reduceMotion = useReducedMotion();
   const mainRef = useRef<HTMLElement>(null);
@@ -154,7 +154,6 @@ function DashboardChromeRoot({
   }, []);
 
   useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
     setAccountOpen(false);
     window.requestAnimationFrame(() => mainRef.current?.focus({ preventScroll: true }));
   }, [pathname]);
