@@ -42,7 +42,6 @@ export function Shell() {
   return (
     <SalePricingProvider>
       <div className="storefront-shell">
-        <div className="storefront-field" aria-hidden="true" />
         <Nav />
         <main className="storefront-main">
           <div className="route-transition-stack">

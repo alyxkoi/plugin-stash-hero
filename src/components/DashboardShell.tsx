@@ -168,7 +168,6 @@ function DashboardChromeRoot({
       data-domain={domain}
       style={{ "--section-color": DOMAIN_COLOR[domain] } as React.CSSProperties}
     >
-      <div className="dash-background-field" aria-hidden="true" />
       <DesktopRail effectivePath={effectivePath} onLogout={logout} reduceMotion={reduceMotion} />
 
       <div className="dashboard-column">

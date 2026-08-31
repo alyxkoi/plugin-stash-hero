@@ -72,10 +72,7 @@ function DashboardLogin() {
 
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 relative" style={{ background: "var(--bg-base)" }}>
-      <div className="absolute inset-0 pointer-events-none" style={{
-        background: "radial-gradient(ellipse 70% 50% at 50% 30%, rgba(255,0,60,0.18), transparent 60%), radial-gradient(ellipse 50% 50% at 70% 90%, rgba(14,11,209,0.18), transparent 60%)",
-      }} />
+    <div className="min-h-screen flex items-center justify-center px-4 py-12 relative">
       <div className="glass-card p-8 w-full max-w-[420px] relative z-10">
         <div className="chromatic-edge" />
         <div className="relative z-10">

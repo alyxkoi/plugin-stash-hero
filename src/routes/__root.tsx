@@ -135,8 +135,11 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Shell />
-      <Toaster theme="dark" position="bottom-right" />
+      <div className="app-background-field" aria-hidden="true" />
+      <div className="app-content-root">
+        <Shell />
+        <Toaster theme="dark" position="bottom-right" />
+      </div>
     </QueryClientProvider>
   );
 }

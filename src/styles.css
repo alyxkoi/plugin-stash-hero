@@ -70,10 +70,10 @@
   }
   html {
     scroll-behavior: smooth;
+    background: #04021e;
   }
-  html,
   body {
-    background: var(--bg-base);
+    background: transparent;
     color: var(--text-primary);
     font-family: "Google Sans Flex", system-ui, sans-serif;
     font-weight: 400;
@@ -81,13 +81,7 @@
     overflow-x: hidden;
     max-width: 100vw;
   }
-  body {
-    background-image:
-      radial-gradient(ellipse 80% 60% at 50% -10%, rgba(255, 0, 60, 0.18), transparent 60%),
-      radial-gradient(ellipse 60% 60% at 100% 100%, rgba(14, 11, 209, 0.18), transparent 60%);
-    background-attachment: fixed;
-    min-height: 100vh;
-  }
+  body { min-height: 100vh; }
   ::selection {
     background: var(--accent-red);
     color: white;
@@ -2496,12 +2490,6 @@ input[type="submit"],
     min-height: 44px;
   }
 
-  /* Fixed background attachment repaints the full-page gradient on every
-     scroll frame on mobile GPUs — the main source of the choppiness. */
-  body {
-    background-attachment: scroll;
-  }
-
   /* Native momentum scrolling wins over JS-smooth scrolling on touch. */
   html {
     scroll-behavior: auto;
@@ -2542,8 +2530,7 @@ input[type="submit"],
    ADMIN CONSOLE V2 — semantic, matte and responsive
    ===================================================================== */
 body.dashboard-active {
-  background: #181434;
-  background-image: none;
+  background: transparent;
 }
 
 /* ========================================================================== */
@@ -2592,7 +2579,7 @@ body.dashboard-active {
 
   min-height: 100dvh;
   width: 100%;
-  background: var(--canvas);
+  background: transparent;
   color: var(--text-primary);
   font-family: var(--f-sans);
   font-size: 15px;
@@ -6515,37 +6502,51 @@ body.dashboard-active .dashboard-select-content {
   font-family: var(--f-sans);
 }
 
-.dashboard-scope .dash-background-field {
-  position: fixed;
-  inset: 0;
-  z-index: -2;
-  pointer-events: none;
-  background:
-    radial-gradient(80% 54% at 78% 2%, rgba(47, 28, 110, 0.34), transparent 68%),
-    linear-gradient(180deg, #080612 0%, #120b28 27%, #37226f 62%, #a24c78 100%);
+body.dashboard-active {
+  min-height: 100dvh;
+  background: transparent !important;
+  overscroll-behavior-y: none;
+  scrollbar-gutter: stable;
 }
 
-.dashboard-scope .dash-background-field::after {
+/* The application owns one viewport-sized colour field. Page and layout
+   wrappers remain transparent and scroll above it; only the grain layer tiles. */
+.app-background-field {
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    #04021e 0%,
+    #231d46 31%,
+    #553871 70%,
+    #ad4069 100%
+  );
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
+
+.app-background-field::after {
   content: "";
   position: absolute;
   inset: 0;
-  background-image: var(--noise-png);
-  background-repeat: repeat;
-  opacity: 0.05;
-  mix-blend-mode: screen;
+  opacity: 0.055;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle at 15% 25%, #fff 0 0.55px, transparent 0.75px),
+    radial-gradient(circle at 70% 80%, #fff 0 0.4px, transparent 0.7px);
+  background-size: 7px 7px, 9px 9px;
 }
 
-body.dashboard-active {
+.app-content-root {
+  position: relative;
+  z-index: 1;
   min-height: 100dvh;
-  background-color: #a24c78 !important;
-  background-image:
-    radial-gradient(80% 54% at 78% 2%, rgba(47, 28, 110, 0.34), transparent 68%),
-    linear-gradient(180deg, #080612 0%, #120b28 27%, #37226f 62%, #a24c78 100%) !important;
-  background-repeat: no-repeat !important;
-  background-size: 100% 100dvh !important;
-  background-attachment: fixed !important;
-  overscroll-behavior-y: none;
-  scrollbar-gutter: stable;
+  background: transparent;
 }
 
 .dashboard-scope .dashboard-column {
@@ -10109,13 +10110,14 @@ body.dashboard-active {
 
 /* Admin dashboard targeted revision pass. */
 .dashboard-scope .dash-delta {
+  --delta-tint: color-mix(in srgb, var(--delta-fill) 14%, transparent);
   gap: 6px;
   min-height: 32px;
   padding: 7px 13px;
-  border: 1px solid var(--delta-fill) !important;
+  border: 1px solid color-mix(in srgb, var(--delta-fill) 38%, transparent) !important;
   border-radius: 9px;
-  background: var(--delta-fill) !important;
-  color: #ffffff !important;
+  background: var(--delta-tint) !important;
+  color: var(--delta-fill) !important;
   font: 800 12px/1 var(--f-data);
   box-shadow: none;
   overflow: visible;
@@ -10124,11 +10126,11 @@ body.dashboard-active {
 }
 
 .dashboard-scope .dash-delta[data-direction="positive"] {
-  --delta-fill: #078a55;
+  --delta-fill: #7df5ad;
 }
 
 .dashboard-scope .dash-delta[data-direction="negative"] {
-  --delta-fill: #c11246;
+  --delta-fill: #ff6b6b;
 }
 
 .dashboard-scope .dash-delta[data-direction="neutral"] {
@@ -10136,14 +10138,14 @@ body.dashboard-active {
 }
 
 .dashboard-scope .dash-delta.dash-hero-comparison {
-  border-color: var(--delta-fill) !important;
-  background: var(--delta-fill) !important;
-  color: #ffffff !important;
+  border-color: color-mix(in srgb, var(--delta-fill) 38%, transparent) !important;
+  background: var(--delta-tint) !important;
+  color: var(--delta-fill) !important;
 }
 
 .dashboard-scope .dash-delta-arrow,
 .dashboard-scope .dash-delta-value {
-  color: #ffffff;
+  color: var(--delta-fill);
   opacity: 1;
 }
 
@@ -10955,10 +10957,6 @@ body.dashboard-active {
 /* ===== STOREFRONT THEME V2 =====
    Intentionally scoped so dashboard routes keep their own design system. */
 .storefront-shell {
-  --field-top: #04021e;
-  --field-upper: #231d46;
-  --field-lower: #553871;
-  --field-bottom: #ad4069;
   --solid: #0d0c13;
   --accent: #fa1265;
   --indigo: #4b3fe8;
@@ -10984,31 +10982,6 @@ body.dashboard-active {
 .storefront-shell [class*="tabular"] {
   font-family: "Google Sans Code", ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
-}
-
-.storefront-field {
-  position: fixed;
-  z-index: -1;
-  inset: 0;
-  background:
-    linear-gradient(180deg,
-      var(--field-top) 0%,
-      var(--field-upper) 31%,
-      var(--field-lower) 70%,
-      var(--field-bottom) 100%);
-  pointer-events: none;
-}
-
-.storefront-field::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  opacity: 0.055;
-  background-image:
-    radial-gradient(circle at 15% 25%, #fff 0 0.55px, transparent 0.75px),
-    radial-gradient(circle at 70% 80%, #fff 0 0.4px, transparent 0.7px);
-  background-size: 7px 7px, 9px 9px;
-  pointer-events: none;
 }
 
 .storefront-main {
@@ -11258,7 +11231,14 @@ body.dashboard-active {
 @media (max-width: 639px) {
   .storefront-main { padding-top: 84px; }
   .storefront-nav-wrap { left: 8px; right: 8px; top: max(8px, env(safe-area-inset-top)); }
-  .storefront-nav { min-height: 60px; padding: 8px 10px; border-radius: 15px; }
+  .storefront-nav {
+    min-height: 60px;
+    padding: 8px 10px;
+    border-radius: 15px;
+    background: #0d0c13;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
   .pwh-display { font-size: clamp(2.6rem, 16vw, 4.5rem); }
   .shop-horizon { padding-top: 2rem; padding-bottom: 2.5rem; }
   .product-card > div { padding: 10px; }
