@@ -131,6 +131,7 @@ function DashboardChromeRoot({
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const reduceMotion = useReducedMotion();
   const mainRef = useRef<HTMLElement>(null);
+  const isProductDetail = /^\/dashboard\/products\/[^/]+$/.test(pathname);
 
   const effectivePath = pathname.startsWith("/dashboard/campaign-links")
     ? "/dashboard/analytics"
@@ -212,14 +213,29 @@ function DashboardChromeRoot({
         </header>
 
         <main ref={mainRef} id="dashboard-main" tabIndex={-1} className="dashboard-main">
-          <AnimatePresence mode="wait" initial={false}>
+          <AnimatePresence mode={isProductDetail ? "sync" : "wait"} initial={false}>
             <motion.div
               key={pathname}
               className="dash-page"
-              initial={reduceMotion ? false : { opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={reduceMotion ? undefined : { opacity: 0 }}
-              transition={{ duration: reduceMotion ? 0 : 0.18, ease: "easeOut" }}
+              initial={
+                reduceMotion
+                  ? false
+                  : isProductDetail
+                    ? { opacity: 0, y: 8, scale: 0.992 }
+                    : { opacity: 0 }
+              }
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={
+                reduceMotion
+                  ? undefined
+                  : isProductDetail
+                    ? { opacity: 0, y: 5, scale: 0.996 }
+                    : { opacity: 0 }
+              }
+              transition={{
+                duration: reduceMotion ? 0 : isProductDetail ? 0.16 : 0.18,
+                ease: [0.22, 1, 0.36, 1],
+              }}
             >
               <SectionErrorBoundary resetKey={pathname}>
                 <DashboardChromeContext.Provider value={chrome}>

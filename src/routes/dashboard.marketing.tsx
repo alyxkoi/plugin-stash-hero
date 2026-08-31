@@ -502,10 +502,10 @@ function DiscountCodesPanel() {
           </table>
         </div>
 
-        <ul className="dash-mobile-list -mx-4 -my-4">
+        <ul className="dash-mobile-list dash-discount-mobile-list -mx-4 -my-4">
           {rows.map((code) => (
             <li key={code.id} className="border-b border-[var(--border)] last:border-b-0">
-              <div className="px-4 py-3">
+              <div className="dash-discount-mobile-card px-4 py-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="truncate text-sm font-semibold text-white">
@@ -529,38 +529,40 @@ function DiscountCodesPanel() {
                     <StatusBadge status={code.status} />
                   </div>
                 </div>
-                <div className="mt-3 grid grid-cols-3 gap-2 font-mono text-[10px] text-[var(--text-tertiary)]">
-                  <span>
-                    <small className="block font-sans uppercase">Value</small>
-                    {code.type === "percent" ? `${code.value}%` : `$${code.value}`}
-                  </span>
-                  <span>
-                    <small className="block font-sans uppercase">Uses</small>
-                    {code.uses}
-                    {code.usage_limit ? ` / ${code.usage_limit}` : " / ∞"}
-                  </span>
-                  <span className={expiresSoon(code.expires_at) ? "text-[var(--st-warning)]" : ""}>
-                    <small className="block font-sans uppercase">Expires</small>
-                    {code.expires_at ? new Date(code.expires_at).toLocaleDateString() : "Never"}
-                  </span>
-                </div>
-                <div className="mt-2 flex justify-end gap-1">
-                  <button
-                    type="button"
-                    onClick={() => setEditing(code)}
-                    className="dash-icon-button"
-                    aria-label={`Edit ${code.code}`}
-                  >
-                    <Pencil size={14} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => remove(code.id)}
-                    className="dash-icon-button is-danger"
-                    aria-label={`Delete ${code.code}`}
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                <div className="dash-discount-mobile-lower">
+                  <div className="dash-discount-mobile-meta font-mono text-[10px] text-[var(--text-tertiary)]">
+                    <span>
+                      <small className="block font-sans uppercase">Value</small>
+                      {code.type === "percent" ? `${code.value}%` : `$${code.value}`}
+                    </span>
+                    <span>
+                      <small className="block font-sans uppercase">Uses</small>
+                      {code.uses}
+                      {code.usage_limit ? ` / ${code.usage_limit}` : " / ∞"}
+                    </span>
+                    <span className={expiresSoon(code.expires_at) ? "text-[var(--st-warning)]" : ""}>
+                      <small className="block font-sans uppercase">Expires</small>
+                      {code.expires_at ? new Date(code.expires_at).toLocaleDateString() : "Never"}
+                    </span>
+                  </div>
+                  <div className="dash-discount-mobile-actions">
+                    <button
+                      type="button"
+                      onClick={() => setEditing(code)}
+                      className="dash-icon-button"
+                      aria-label={`Edit ${code.code}`}
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => remove(code.id)}
+                      className="dash-icon-button is-danger"
+                      aria-label={`Delete ${code.code}`}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
               </div>
             </li>
