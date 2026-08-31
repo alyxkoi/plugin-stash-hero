@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ArchiveRestore, ArrowRight, AudioWaveform, Check, Headphones, Infinity as InfinityIcon, Layers3, ShoppingCart, Sparkles, Zap } from "lucide-react";
 import type { Product } from "@/lib/mock-data";
@@ -143,7 +143,10 @@ function OnRotation({ initialProducts, initialBestsellerIds }: { initialProducts
 }
 
 function RotationCard({ product, duplicate }: { product: Product; duplicate: boolean }) {
-  const inCart = useStore((state) => state.cart.some((item) => item.product.slug === product.slug));
+  const inCartState = useStore((state) => state.cart.some((item) => item.product.slug === product.slug));
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const inCart = mounted && inCartState;
   return <article className="rotation-card"><Link to="/shop/p/$slug" params={{ slug: product.slug }} tabIndex={duplicate ? -1 : undefined}><ProductArtwork src={product.coverUrl} name={product.name} gradient={product.coverGradient} className="rotation-card__art" /></Link><div className="rotation-card__details"><strong>{product.name}</strong><div className="rotation-card__buy"><ProductPrice product={product} currentClassName="rotation-card__current" retailClassName="rotation-card__retail" /><button type="button" tabIndex={duplicate ? -1 : undefined} className="rotation-card__cart" onClick={() => actions.addToCart(product)} aria-label={inCart ? `${product.name} is in your cart` : `Add ${product.name} to cart`}>{inCart ? <Check /> : <ShoppingCart />}<span>{inCart ? "Added" : "Add"}</span></button></div></div></article>;
 }
 

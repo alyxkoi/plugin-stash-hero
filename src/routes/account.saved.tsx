@@ -39,9 +39,9 @@ function SavedPage() {
     queryFn: async (): Promise<SavedProduct[]> => {
       const { data: rows, error } = await supabase
         .from("saved_items")
-        .select("product_id, created_at, products(id, name, slug, price, cover_url, cover_gradient)")
+        .select("product_id, saved_at, products(id, name, slug, price, cover_url, cover_gradient)")
         .eq("user_id", user!.id)
-        .order("created_at", { ascending: false });
+        .order("saved_at", { ascending: false });
       if (error) throw error;
       return ((rows ?? []) as any[])
         .map((r) => r.products)
