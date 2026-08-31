@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ArchiveRestore, ArrowRight, AudioWaveform, Check, Headphones, Infinity as InfinityIcon, Layers3, ShoppingCart, Sparkles, Zap } from "lucide-react";
 import type { Product } from "@/lib/mock-data";
