@@ -299,6 +299,48 @@ export type Database = {
           },
         ]
       }
+      checkout_attempts: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          environment: string
+          guest_email: string | null
+          id: string
+          idempotency_key: string
+          status: string
+          stripe_session_id: string | null
+          subtotal_cents: number
+          total_cents: number
+          user_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          environment: string
+          guest_email?: string | null
+          id?: string
+          idempotency_key: string
+          status?: string
+          stripe_session_id?: string | null
+          subtotal_cents?: number
+          total_cents?: number
+          user_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          environment?: string
+          guest_email?: string | null
+          id?: string
+          idempotency_key?: string
+          status?: string
+          stripe_session_id?: string | null
+          subtotal_cents?: number
+          total_cents?: number
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           created_at: string
