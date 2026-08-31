@@ -238,17 +238,26 @@ export async function finalizeOrder(input: FulfillInput): Promise<{ orderId: str
     await supabaseAdmin.from("cart_items").delete().eq("user_id", input.userId);
   }
 
-  // ---- Confirmation email: retry until successfully accepted by Resend ----
+  // ---- Confirmation email ----
+  // Claim atomically (conditional UPDATE ... IS NULL returning rows) so exactly
+  // one confirmation goes out per order even with concurrent webhook deliveries.
+  // A send failure is logged and the claim released — it must never abort the
+  // order flow, which would strand the buyer on an error screen and make Stripe
+  // retry a fully-completed order forever.
   const recipient = input.guestEmail;
   let mayEmail = false;
   if (recipient && input.items.length > 0) {
-    const { data: emailState, error: emailStateError } = await supabaseAdmin
+    const { data: claimedEmail, error: claimEmailError } = await supabaseAdmin
       .from("orders")
-      .select("confirmation_email_sent_at")
+      .update({ confirmation_email_sent_at: new Date().toISOString() } as any)
       .eq("id", orderId)
-      .maybeSingle();
-    if (emailStateError) throw new Error("Confirmation email state could not be read");
-    mayEmail = !emailState?.confirmation_email_sent_at;
+      .is("confirmation_email_sent_at", null)
+      .select("id");
+    if (claimEmailError) {
+      console.error("[fulfill] confirmation email claim failed", claimEmailError);
+    } else {
+      mayEmail = (claimedEmail ?? []).length > 0;
+    }
   }
 
   if (recipient && input.items.length > 0 && mayEmail) {
@@ -281,16 +290,16 @@ export async function finalizeOrder(input: FulfillInput): Promise<{ orderId: str
       text: rendered.text,
     });
     if (send.error) {
+      // Non-fatal: release the claim so a later retry can try again.
       console.error("[fulfill] order email send failed:", send.error);
-      throw new Error("Confirmation email could not be sent");
+      const { error: releaseError } = await supabaseAdmin
+        .from("orders")
+        .update({ confirmation_email_sent_at: null } as any)
+        .eq("id", orderId);
+      if (releaseError) console.error("[fulfill] email claim release failed", releaseError);
     }
-    const { error: markEmailError } = await supabaseAdmin
-      .from("orders")
-      .update({ confirmation_email_sent_at: new Date().toISOString() } as any)
-      .eq("id", orderId)
-      .is("confirmation_email_sent_at", null);
-    if (markEmailError) throw new Error("Confirmation email state could not be saved");
   }
+
 
   // Add buyer to Mailchimp audience with a "customer" tag. Non-fatal.
   if (recipient) {
