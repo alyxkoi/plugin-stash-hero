@@ -65,6 +65,9 @@ export function useCartSync() {
           .eq("user_id", user.id);
 
         const local = cart;
+        const serverQty = new Map(
+          (serverRows ?? []).map((row) => [row.product_id as string, Number(row.qty)]),
+        );
         const merged = new Map<string, { product: Product; qty: number }>();
 
         // seed with local (indexed by product id, fall back to slug)
@@ -86,11 +89,13 @@ export function useCartSync() {
         const mergedArr = Array.from(merged.values());
         actions.setCart(mergedArr);
 
-        // Push union to server (upsert)
+        // Push only new/changed rows. Re-upserting unchanged rows refreshes
+        // updated_at and prevents the abandoned-cart timer from ever maturing.
         if (mergedArr.length > 0) {
           const upserts = mergedArr
             .filter((i) => i.product.id)
-            .map((i) => ({ user_id: user.id, product_id: i.product.id!, qty: i.qty }));
+            .map((i) => ({ user_id: user.id, product_id: i.product.id!, qty: i.qty }))
+            .filter((row) => serverQty.get(row.product_id) !== row.qty);
           if (upserts.length > 0) {
             await supabase.from("cart_items").upsert(upserts, { onConflict: "user_id,product_id" });
           }
@@ -113,17 +118,23 @@ export function useCartSync() {
       // Fetch current server ids to compute deletions
       const { data: current } = await supabase
         .from("cart_items")
-        .select("product_id")
+        .select("product_id, qty")
         .eq("user_id", user.id);
       const currentIds = new Set((current ?? []).map((r) => r.product_id as string));
+      const currentQty = new Map(
+        (current ?? []).map((row) => [row.product_id as string, Number(row.qty)]),
+      );
       const nextIds = new Set(rowsToUpsert.map((r) => r.product_id));
       const toDelete = [...currentIds].filter((id) => !nextIds.has(id));
+      const changedRows = rowsToUpsert.filter(
+        (row) => currentQty.get(row.product_id) !== row.qty,
+      );
 
       if (toDelete.length > 0) {
         await supabase.from("cart_items").delete().eq("user_id", user.id).in("product_id", toDelete);
       }
-      if (rowsToUpsert.length > 0) {
-        await supabase.from("cart_items").upsert(rowsToUpsert, { onConflict: "user_id,product_id" });
+      if (changedRows.length > 0) {
+        await supabase.from("cart_items").upsert(changedRows, { onConflict: "user_id,product_id" });
       }
     }, 350);
     return () => clearTimeout(timer);

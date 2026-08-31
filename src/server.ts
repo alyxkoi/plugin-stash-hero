@@ -7,6 +7,11 @@ type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
 };
 
+type ScheduledEvent = {
+  cron: string;
+  scheduledTime: number;
+};
+
 let serverEntryPromise: Promise<ServerEntry> | undefined;
 
 async function getServerEntry(): Promise<ServerEntry> {
@@ -75,6 +80,20 @@ export default {
     } catch (error) {
       console.error(error);
       return brandedErrorResponse();
+    }
+  },
+  async scheduled(controller: ScheduledEvent) {
+    try {
+      const { runBehavioralEmailJob } = await import("./lib/behavioral-email.server");
+      const stats = await runBehavioralEmailJob();
+      console.log("[email-automation:scheduled]", {
+        cron: controller.cron,
+        scheduledTime: controller.scheduledTime,
+        ...stats,
+      });
+    } catch (error) {
+      console.error("[email-automation:scheduled] failed", error);
+      throw error;
     }
   },
 };

@@ -21,6 +21,10 @@ const DAY = 24 * HOUR;
 
 type SequenceType = "abandoned_cart" | "saved_items";
 
+function assertDb(error: { message: string } | null, operation: string): void {
+  if (error) throw new Error(`${operation}: ${error.message}`);
+}
+
 export function normalizeEmail(e: string | null | undefined): string {
   return (e ?? "").trim().toLowerCase();
 }
@@ -73,18 +77,20 @@ type ActiveSale = {
 
 async function loadActiveSales(): Promise<ActiveSale[]> {
   const nowIso = new Date().toISOString();
-  const { data: sales } = await supabaseAdmin
+  const { data: sales, error: salesError } = await supabaseAdmin
     .from("sale_events")
     .select("id, discount_pct, scope, categories, start_at, end_at, status")
     .in("status", ["active", "scheduled", "ended"])
     .lte("start_at", nowIso)
     .gte("end_at", nowIso);
+  assertDb(salesError, "Load active sales");
   const list = sales ?? [];
   if (list.length === 0) return [];
-  const { data: junction } = await supabaseAdmin
+  const { data: junction, error: junctionError } = await supabaseAdmin
     .from("sale_event_products")
     .select("sale_event_id, product_id")
     .in("sale_event_id", list.map((s) => s.id));
+  assertDb(junctionError, "Load active sale products");
   return list.map((s) => ({
     discount_pct: s.discount_pct ?? 0,
     scope: s.scope as string,
@@ -156,14 +162,16 @@ async function hasPurchased(email: string, productIds: string[], since?: string)
     .in("status", ["completed", "partial"])
     .in("order_items.product_id", productIds);
   if (since) q = q.gte("created_at", since);
-  const { data } = await q.limit(1);
+  const { data, error } = await q.limit(1);
+  assertDb(error, "Check completed purchases");
   if (data && data.length > 0) {
     // Confirm the order belongs to this email
     const ids = data.map((o) => o.id);
-    const { data: owned } = await supabaseAdmin
+    const { data: owned, error: ownedError } = await supabaseAdmin
       .from("orders")
       .select("id, guest_email, user_id, profiles:user_id(email)")
       .in("id", ids);
+    assertDb(ownedError, "Load purchase owners");
     for (const o of owned ?? []) {
       const em = normalizeEmail(o.guest_email ?? (o as unknown as { profiles?: { email?: string } }).profiles?.email);
       if (em === email) return true;
@@ -174,10 +182,11 @@ async function hasPurchased(email: string, productIds: string[], since?: string)
 
 async function optedOut(emails: string[]): Promise<Set<string>> {
   if (emails.length === 0) return new Set();
-  const { data } = await supabaseAdmin
+  const { data, error } = await supabaseAdmin
     .from("email_preferences")
     .select("customer_email, behavioral_emails_enabled, unsubscribed_at")
     .in("customer_email", emails);
+  assertDb(error, "Load behavioral email preferences");
   const out = new Set<string>();
   for (const r of data ?? []) {
     if (!r.behavioral_emails_enabled || r.unsubscribed_at) out.add(r.customer_email);
@@ -205,26 +214,29 @@ export async function runBehavioralEmailJob(
   const now = Date.now();
   const stats = { sent: 0, failed: 0, skipped: 0, deferred: 0, dryRun };
 
-  const { data: settingsRows } = await supabaseAdmin
+  const { data: settingsRows, error: settingsError } = await supabaseAdmin
     .from("email_sequence_settings")
     .select("sequence_type, enabled");
+  assertDb(settingsError, "Load behavioral email settings");
   const enabled = new Map<string, boolean>((settingsRows ?? []).map((r) => [r.sequence_type, r.enabled]));
 
   const sales = await loadActiveSales();
 
-  const { data: productRows } = await supabaseAdmin
+  const { data: productRows, error: productsError } = await supabaseAdmin
     .from("products")
     .select("id, slug, name, price, cover_url, category, status")
     .eq("status", "published");
+  assertDb(productsError, "Load published products");
   const products = new Map<string, ProductRow>((productRows ?? []).map((p) => [p.id, p as ProductRow]));
 
   // Sequence progression: every step already delivered (real or dry-run).
-  const { data: sentRows } = await supabaseAdmin
+  const { data: sentRows, error: sentRowsError } = await supabaseAdmin
     .from("email_automation_log")
     .select("customer_email, sequence_type, step, trigger_ref")
     .eq("status", "sent")
     .eq("dry_run", false)
     .gte("created_at", new Date(now - 60 * DAY).toISOString());
+  assertDb(sentRowsError, "Load behavioral delivery history");
   const sentKeys = new Set<string>(
     (sentRows ?? []).map((r) => `${r.customer_email}|${r.sequence_type}|${r.step}|${r.trigger_ref}`),
   );
@@ -244,11 +256,12 @@ export async function runBehavioralEmailJob(
   const emails = Array.from(new Set(scoped.map((c) => c.email)));
   const existing = new Map<string, LogRow>();
   if (emails.length > 0) {
-    const { data: logs } = await supabaseAdmin
+    const { data: logs, error: logsError } = await supabaseAdmin
       .from("email_automation_log")
       .select("id, customer_email, sequence_type, step, trigger_ref, status, skip_reason, attempts, sent_at")
       .eq("dry_run", dryRun)
       .in("customer_email", emails);
+    assertDb(logsError, "Load existing behavioral delivery logs");
     for (const l of (logs ?? []) as LogRow[]) {
       existing.set(`${l.customer_email}|${l.sequence_type}|${l.step}|${l.trigger_ref}`, l);
     }
@@ -259,13 +272,14 @@ export async function runBehavioralEmailJob(
   // Frequency cap: last successful behavioral send per email (any sequence)
   const lastSent = new Map<string, number>();
   if (emails.length > 0) {
-    const { data: recent } = await supabaseAdmin
+    const { data: recent, error: recentError } = await supabaseAdmin
       .from("email_automation_log")
       .select("customer_email, sent_at")
       .eq("status", "sent")
       .eq("dry_run", false)
       .gte("sent_at", new Date(now - DAY).toISOString())
       .in("customer_email", emails);
+    assertDb(recentError, "Load behavioral frequency caps");
     for (const r of recent ?? []) {
       if (!r.sent_at) continue;
       const t = new Date(r.sent_at).getTime();
@@ -333,7 +347,7 @@ export async function runBehavioralEmailJob(
         });
 
     if (res.error) {
-      await supabaseAdmin.from("email_automation_log").upsert(
+      const { error: logError } = await supabaseAdmin.from("email_automation_log").upsert(
         {
           customer_email: c.email,
           sequence_type: c.sequence,
@@ -346,11 +360,12 @@ export async function runBehavioralEmailJob(
         },
         { onConflict: "customer_email,sequence_type,step,trigger_ref,dry_run" },
       );
+      assertDb(logError, "Log failed behavioral delivery");
       stats.failed++;
       continue;
     }
 
-    await supabaseAdmin.from("email_automation_log").upsert(
+    const { error: logError } = await supabaseAdmin.from("email_automation_log").upsert(
       {
         customer_email: c.email,
         sequence_type: c.sequence,
@@ -365,6 +380,7 @@ export async function runBehavioralEmailJob(
       },
       { onConflict: "customer_email,sequence_type,step,trigger_ref,dry_run" },
     );
+    assertDb(logError, "Log successful behavioral delivery");
     sentKeys.add(`${c.email}|${c.sequence}|${c.step}|${c.triggerRef}`);
     usedThisRun.add(c.email);
     lastSent.set(c.email, now);
@@ -378,7 +394,7 @@ async function logSkip(c: Candidate, reason: string, dryRun: boolean) {
   // Retryable suppressions must be able to change on a later run, so they are
   // upserted (not ignored) and re-evaluated next time.
   const retryable = RETRYABLE_SKIPS.has(reason);
-  await supabaseAdmin.from("email_automation_log").upsert(
+  const { error } = await supabaseAdmin.from("email_automation_log").upsert(
     {
       customer_email: c.email,
       sequence_type: c.sequence,
@@ -390,6 +406,7 @@ async function logSkip(c: Candidate, reason: string, dryRun: boolean) {
     },
     { onConflict: "customer_email,sequence_type,step,trigger_ref,dry_run", ignoreDuplicates: !retryable },
   );
+  assertDb(error, "Log skipped behavioral delivery");
 }
 
 
@@ -402,10 +419,11 @@ async function buildCartCandidates(
   sentKeys: Set<string>,
   dryRun: boolean,
 ): Promise<Candidate[]> {
-  const { data: items } = await supabaseAdmin
+  const { data: items, error: itemsError } = await supabaseAdmin
     .from("cart_items")
     .select("id, user_id, product_id, created_at, updated_at")
     .gte("updated_at", new Date(now - 30 * DAY).toISOString());
+  assertDb(itemsError, "Load abandoned carts");
   if (!items || items.length === 0) return [];
 
   const byUser = new Map<string, typeof items>();
@@ -416,7 +434,11 @@ async function buildCartCandidates(
   }
 
   const userIds = Array.from(byUser.keys());
-  const { data: profs } = await supabaseAdmin.from("profiles").select("id, email").in("id", userIds);
+  const { data: profs, error: profilesError } = await supabaseAdmin
+    .from("profiles")
+    .select("id, email")
+    .in("id", userIds);
+  assertDb(profilesError, "Load abandoned-cart recipients");
   const emailByUser = new Map<string, string>((profs ?? []).map((p) => [p.id, normalizeEmail(p.email)]));
 
   const out: Candidate[] = [];
@@ -437,7 +459,7 @@ async function buildCartCandidates(
 
     if (!email) {
       // Unrecoverable cart — log once so it is auditable.
-      await supabaseAdmin.from("email_automation_log").upsert(
+      const { error: logError } = await supabaseAdmin.from("email_automation_log").upsert(
         {
           customer_email: `unknown:${userId}`,
           sequence_type: "abandoned_cart" as const,
@@ -449,6 +471,7 @@ async function buildCartCandidates(
         },
         { onConflict: "customer_email,sequence_type,step,trigger_ref,dry_run", ignoreDuplicates: true },
       );
+      assertDb(logError, "Log abandoned cart without email");
       continue;
     }
 
@@ -462,7 +485,7 @@ async function buildCartCandidates(
 
     // Audit the fact that a later step was time-eligible but held back.
     if (step < ageStep) {
-      await supabaseAdmin.from("email_automation_log").upsert(
+      const { error: logError } = await supabaseAdmin.from("email_automation_log").upsert(
         {
           customer_email: email,
           sequence_type: "abandoned_cart" as const,
@@ -474,6 +497,7 @@ async function buildCartCandidates(
         },
         { onConflict: "customer_email,sequence_type,step,trigger_ref,dry_run" },
       );
+      assertDb(logError, "Log deferred abandoned-cart step");
     }
 
     const productIds = rows.map((r) => r.product_id);
@@ -494,10 +518,11 @@ async function buildCartCandidates(
 
 
       guard: async () => {
-        const { data: still } = await supabaseAdmin
+        const { data: still, error: stillError } = await supabaseAdmin
           .from("cart_items")
           .select("product_id")
           .eq("user_id", userId);
+        assertDb(stillError, "Recheck abandoned cart");
         if (!still || still.length === 0) return "cart_empty";
         const liveNow = still.map((s) => products.get(s.product_id)).filter(Boolean);
         if (liveNow.length === 0) return "product_unavailable";
@@ -520,23 +545,29 @@ async function buildSavedCandidates(
   sales: ActiveSale[],
   _dryRun: boolean,
 ): Promise<Candidate[]> {
-  const { data: saved } = await supabaseAdmin
+  const { data: saved, error: savedError } = await supabaseAdmin
     .from("saved_items")
     .select("id, user_id, product_id, price_at_save, saved_at");
+  assertDb(savedError, "Load saved items");
   if (!saved || saved.length === 0) return [];
 
   const userIds = Array.from(new Set(saved.map((s) => s.user_id)));
-  const { data: profs } = await supabaseAdmin.from("profiles").select("id, email").in("id", userIds);
+  const { data: profs, error: profilesError } = await supabaseAdmin
+    .from("profiles")
+    .select("id, email")
+    .in("id", userIds);
+  assertDb(profilesError, "Load saved-item recipients");
   const emailByUser = new Map<string, string>((profs ?? []).map((p) => [p.id, normalizeEmail(p.email)]));
 
   // Saved-items step 2 is sent at most once per saved item, ever.
-  const { data: sentStep2 } = await supabaseAdmin
+  const { data: sentStep2, error: sentStep2Error } = await supabaseAdmin
     .from("email_automation_log")
     .select("trigger_ref")
     .eq("sequence_type", "saved_items")
     .eq("step", 2)
     .eq("status", "sent")
     .eq("dry_run", false);
+  assertDb(sentStep2Error, "Load saved-item final-nudge history");
   const step2Done = new Set<string>();
   for (const r of sentStep2 ?? []) {
     for (const id of (r.trigger_ref ?? "").replace(/^s2:/, "").split(",")) {
@@ -565,11 +596,12 @@ async function buildSavedCandidates(
   for (const [userId, { email, rows }] of byUser) {
     // guard shared by both saved-items emails, scoped to the batched item ids
     const guardFor = (savedIds: string[], productIds: string[]) => async (): Promise<string | null> => {
-      const { data: still } = await supabaseAdmin
+      const { data: still, error: stillError } = await supabaseAdmin
         .from("saved_items")
         .select("id")
         .eq("user_id", userId)
         .in("id", savedIds);
+      assertDb(stillError, "Recheck saved items");
       if (!still || still.length === 0) return "no_longer_saved";
       if (productIds.every((id) => !products.get(id))) return "product_unavailable";
       if (await hasPurchased(email, productIds)) return "already_purchased";

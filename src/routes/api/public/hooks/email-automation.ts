@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-// Scheduled every 15 minutes by pg_cron. Runs the behavioral email sequences.
+// Authenticated manual/webhook entry point. Production recurrence is handled
+// by the Worker's 15-minute scheduled event in src/server.ts.
 export const Route = createFileRoute("/api/public/hooks/email-automation")({
   server: {
     handlers: {
