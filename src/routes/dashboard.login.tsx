@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import logo from "@/assets/logo-dashboard.webp";
 import { supabase } from "@/integrations/supabase/client";
 import { sendPasswordResetEmail } from "@/lib/auth-email.functions";
-import { checkIsAdmin } from "@/lib/admin-auth.functions";
+import { checkIsAdmin, adminPasswordSignIn } from "@/lib/admin-auth.functions";
 
 export const Route = createFileRoute("/dashboard/login")({
   head: () => ({ meta: [{ title: "Dashboard access — Plugin Warehouse" }] }),
@@ -21,6 +21,7 @@ function DashboardLogin() {
   const [recoverEmail, setRecoverEmail] = useState("");
 
   const verifyAdmin = useServerFn(checkIsAdmin);
+  const serverSignIn = useServerFn(adminPasswordSignIn);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,8 +30,43 @@ function DashboardLogin() {
     if (!email.trim() || !password) { setError("Enter email and password."); return; }
     setBusy(true);
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-      if (error || !data.user || !data.session) {
+      let data: Awaited<ReturnType<typeof supabase.auth.signInWithPassword>>["data"] | null = null;
+      let error: { message: string } | null = null;
+      try {
+        const res = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+        data = res.data;
+        error = res.error;
+      } catch (netErr) {
+        error = { message: netErr instanceof Error ? netErr.message : "Load failed" };
+      }
+
+      const networkFailure =
+        !!error && !/invalid login credentials/i.test(error.message) &&
+        /load failed|failed to fetch|network|timeout|typeerror/i.test(error.message);
+
+      if (networkFailure || (!error && (!data?.user || !data?.session))) {
+        // Direct auth request was blocked (Safari/iOS tracking protection, ad
+        // blockers, restrictive networks). Retry through our own origin.
+        const res = await serverSignIn({ data: { email: email.trim(), password } });
+        if (!res.ok) {
+          setError(
+            res.reason === "credentials"
+              ? "Incorrect email or password."
+              : res.reason === "not_admin"
+                ? "This account is not an admin. Contact support if you think that's wrong."
+                : "Sign-in didn't complete. Try again.",
+          );
+          return;
+        }
+        await supabase.auth.setSession({
+          access_token: res.access_token,
+          refresh_token: res.refresh_token,
+        });
+        navigate({ to: "/dashboard" as any });
+        return;
+      }
+
+      if (error || !data?.user || !data?.session) {
         const msg = error && /invalid login credentials/i.test(error.message)
           ? "Incorrect email or password."
           : error?.message ?? "Sign-in didn't complete. Try again.";
