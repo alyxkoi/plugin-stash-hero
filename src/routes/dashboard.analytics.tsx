@@ -155,7 +155,13 @@ function Analytics() {
   useEffect(() => {
     let cancelled = false;
     const liveBounds = chicagoComparisonBounds(range, new Date(now));
-    const sessionBuckets = makeBuckets(liveBounds.currentStart, liveBounds.currentEnd, false);
+    const sessionBuckets = makeBuckets(
+      liveBounds.currentStart,
+      liveBounds.currentEnd,
+      false,
+      range === "today",
+    );
+
     const bucketStarts = sessionBuckets.map((bucket) => bucket.start.toISOString());
     const bucketEnds = sessionBuckets.map((bucket) =>
       new Date(
@@ -734,8 +740,10 @@ function buildPairedSeries(
   range: DashboardRange,
 ) {
   const monthly = false;
-  const currentBuckets = makeBuckets(bounds.currentStart, bounds.currentEnd, monthly);
-  const previousBuckets = makeBuckets(bounds.previousStart, bounds.previousEnd, monthly);
+  const hourly = range === "today";
+  const currentBuckets = makeBuckets(bounds.currentStart, bounds.currentEnd, monthly, hourly);
+  const previousBuckets = makeBuckets(bounds.previousStart, bounds.previousEnd, monthly, hourly);
+
   return currentBuckets.map((bucket, index) => {
     const previous = previousBuckets[index];
     return {
@@ -752,27 +760,35 @@ function buildPairedSeries(
   });
 }
 
-function makeBuckets(start: Date, end: Date, monthly: boolean) {
+function makeBuckets(start: Date, end: Date, monthly: boolean, hourly = false) {
   const buckets: { start: Date; end: Date; label: string }[] = [];
   let cursor = new Date(start);
-  cursor.setHours(0, 0, 0, 0);
+  if (hourly) cursor.setMinutes(0, 0, 0);
+  else cursor.setHours(0, 0, 0, 0);
   if (monthly) cursor.setDate(1);
   while (cursor <= end && buckets.length < 60) {
     const next = new Date(cursor);
     if (monthly) next.setMonth(next.getMonth() + 1);
+    else if (hourly) next.setHours(next.getHours() + 1);
     else next.setDate(next.getDate() + 1);
     buckets.push({
       start: new Date(cursor),
       end: new Date(Math.min(next.getTime() - 1, end.getTime())),
-      label: cursor.toLocaleDateString(
-        "en",
-        monthly ? { month: "short", year: "2-digit" } : { month: "short", day: "numeric" },
-      ),
+      label: hourly
+        ? cursor.toLocaleTimeString("en", {
+            hour: "numeric",
+            timeZone: SALE_TIME_ZONE,
+          })
+        : cursor.toLocaleDateString(
+            "en",
+            monthly ? { month: "short", year: "2-digit" } : { month: "short", day: "numeric" },
+          ),
     });
     cursor = next;
   }
   return buckets;
 }
+
 
 function within(iso: string, start: Date, end: Date) {
   const time = new Date(iso).getTime();

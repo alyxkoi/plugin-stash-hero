@@ -127,10 +127,11 @@ function DealsPage() {
         <ShopPage
           title={sale ? "EVERYTHING ON SALE." : "THE FULL WAREHOUSE."}
           subtitle={sale ? "Pre-filtered. Best discounts up top." : "Browse every plugin in the catalog."}
-          initialOnSale
+          initialOnSale={Boolean(sale)}
           activeSale={sale}
         />
       </div>
+
 
       <section className="px-4 md:px-12 py-16 text-center">
         <h2 className="font-black chrome-text text-4xl md:text-5xl mb-3">STILL BROWSING?</h2>
