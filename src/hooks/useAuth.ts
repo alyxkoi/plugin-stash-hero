@@ -30,13 +30,32 @@ export function useAuth(): AuthState {
       if (!uid) { setIsAdmin(false); setAdminReady(true); return; }
       // defer to avoid auth callback deadlock
       setTimeout(async () => {
-        const { data } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", uid)
-          .eq("role", "admin")
-          .maybeSingle();
-        setIsAdmin(!!data);
+        // Retry transient network errors — a single failed request must not
+        // demote a signed-in admin and bounce them out of the dashboard.
+        for (let attempt = 0; attempt < 3; attempt++) {
+          try {
+            const { data, error } = await supabase
+              .from("user_roles")
+              .select("role")
+              .eq("user_id", uid)
+              .eq("role", "admin")
+              .maybeSingle();
+            if (error) throw new Error(error.message);
+            setIsAdmin(!!data);
+            setAdminReady(true);
+            return;
+          } catch {
+            if (attempt < 2) await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
+          }
+        }
+        // Last resort: same-origin server-side check.
+        try {
+          const { checkIsAdmin } = await import("@/lib/admin-auth.functions");
+          const res = await checkIsAdmin();
+          setIsAdmin(res.isAdmin);
+        } catch {
+          setIsAdmin(false);
+        }
         setAdminReady(true);
       }, 0);
     };
