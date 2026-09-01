@@ -57,6 +57,13 @@
       "when": 1788275184935,
       "tag": "0007_discount_code_archiving",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1788302294298,
+      "tag": "0008_grant_user_roles_access",
+      "breakpoints": true
     }
   ]
 }
