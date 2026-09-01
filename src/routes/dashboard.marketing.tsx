@@ -10,7 +10,16 @@ import {
   SegmentedBar,
   StatusBadge,
 } from "@/components/DashboardShell";
-import { BadgePercent, Copy, Link2, Mail, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+  Archive,
+  ArchiveRestore,
+  BadgePercent,
+  Copy,
+  Link2,
+  Mail,
+  Pencil,
+  Plus,
+} from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { DiscountCodeModal, type DiscountRow } from "@/components/dashboard/DiscountCodeModal";
@@ -292,6 +301,20 @@ function MarketingHero({ tab }: { tab: "codes" | "campaign" | "emails" }) {
                   segments={18}
                   tone={index === 0 ? "money" : "indigo"}
                 />
+                <div
+                  className="dash-marketing-mobile-bar"
+                  role="progressbar"
+                  aria-label={`${item.label}: ${item.valueText}`}
+                  aria-valuemin={0}
+                  aria-valuemax={max}
+                  aria-valuenow={Math.max(0, item.value)}
+                >
+                  <span
+                    style={{
+                      width: `${Math.max(0, Math.min(100, (item.value / max) * 100))}%`,
+                    }}
+                  />
+                </div>
                 <em>{item.valueText}</em>
               </div>
             ))}
@@ -324,6 +347,7 @@ function DiscountCodesPanel() {
   const [genOpen, setGenOpen] = useState(false);
   const [editing, setEditing] = useState<DiscountRow | null>(null);
   const [rows, setRows] = useState<DiscountRow[]>([]);
+  const [showArchived, setShowArchived] = useState(false);
   const [attributedOrders, setAttributedOrders] = useState<
     {
       discount_code: string | null;
@@ -370,12 +394,14 @@ function DiscountCodesPanel() {
     return () => window.removeEventListener("pw:open-discount-modal", onOpen);
   }, []);
 
-  async function remove(id: string) {
-    if (!confirm("Delete this discount code?")) return;
-    const { error } = await supabase.from("discount_codes").delete().eq("id", id);
+  async function setArchived(code: DiscountRow, archived: boolean) {
+    const status = archived ? "archived" : "disabled";
+    const { error } = await supabase.from("discount_codes").update({ status }).eq("id", code.id);
     if (error) return toast.error(error.message);
-    toast.success("Code deleted");
-    setRows((r) => r.filter((x) => x.id !== id));
+    toast.success(archived ? "Code archived" : "Code restored as disabled");
+    setRows((current) =>
+      current.map((row) => (row.id === code.id ? { ...row, status } : row)),
+    );
   }
 
   const revenueByCode = useMemo(() => {
@@ -387,10 +413,25 @@ function DiscountCodesPanel() {
     }
     return map;
   }, [attributedOrders]);
+  const visibleRows = rows.filter((code) =>
+    showArchived ? code.status === "archived" : code.status !== "archived",
+  );
 
   return (
     <>
-      <DashCard title="Discount codes">
+      <DashCard
+        title="Discount codes"
+        className="dash-section-header-solid"
+        action={
+          <button
+            type="button"
+            onClick={() => setShowArchived((current) => !current)}
+            className="dash-archive-filter"
+          >
+            {showArchived ? "Show active" : `Archived (${rows.filter((code) => code.status === "archived").length})`}
+          </button>
+        }
+      >
         <div className="dash-desktop-table overflow-x-auto -mx-5 -my-5">
           <table className="min-w-[980px]">
             <thead className="text-[10px] uppercase tracking-wider text-white/40">
@@ -412,7 +453,7 @@ function DiscountCodesPanel() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((c) => (
+              {visibleRows.map((c) => (
                 <tr key={c.id} className="border-t border-white/5">
                   <td className="py-2 px-2">
                     {c.name && (
@@ -474,27 +515,46 @@ function DiscountCodesPanel() {
                     >
                       <Copy size={13} />
                     </button>
-                    <button
-                      onClick={() => setEditing(c)}
-                      className="p-1.5 rounded hover:bg-white/10 text-white/70 hover:text-white"
-                      title="Edit"
-                    >
-                      <Pencil size={13} />
-                    </button>
-                    <button
-                      onClick={() => remove(c.id)}
-                      className="p-1.5 rounded hover:bg-white/10 text-white/60 hover:text-[var(--accent-red-glow)]"
-                      title="Delete"
-                    >
-                      <Trash2 size={13} />
-                    </button>
+                    {showArchived ? (
+                      <button
+                        type="button"
+                        onClick={() => setArchived(c, false)}
+                        className="p-1.5 rounded hover:bg-white/10 text-white/70 hover:text-white"
+                        title="Restore as disabled"
+                      >
+                        <ArchiveRestore size={13} />
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setEditing(c)}
+                          className="p-1.5 rounded hover:bg-white/10 text-white/70 hover:text-white"
+                          title="Edit"
+                        >
+                          <Pencil size={13} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setArchived(c, true)}
+                          className="p-1.5 rounded hover:bg-white/10 text-white/60 hover:text-white"
+                          title="Archive"
+                        >
+                          <Archive size={13} />
+                        </button>
+                      </>
+                    )}
                   </td>
                 </tr>
               ))}
-              {rows.length === 0 && (
+              {visibleRows.length === 0 && (
                 <tr>
                   <td colSpan={9} className="py-12 text-center text-white/40 text-sm">
-                    {loading ? "Loading…" : "No discount codes yet. Generate one to get started."}
+                    {loading
+                      ? "Loading…"
+                      : showArchived
+                        ? "No archived discount codes."
+                        : "No discount codes yet. Generate one to get started."}
                   </td>
                 </tr>
               )}
@@ -503,7 +563,7 @@ function DiscountCodesPanel() {
         </div>
 
         <ul className="dash-mobile-list dash-discount-mobile-list -mx-4 -my-4">
-          {rows.map((code) => (
+          {visibleRows.map((code) => (
             <li key={code.id} className="border-b border-[var(--border)] last:border-b-0">
               <div className="dash-discount-mobile-card px-4 py-3">
                 <div className="flex items-start justify-between gap-3">
@@ -546,28 +606,52 @@ function DiscountCodesPanel() {
                     </span>
                   </div>
                   <div className="dash-discount-mobile-actions">
-                    <button
-                      type="button"
-                      onClick={() => setEditing(code)}
-                      className="dash-icon-button"
-                      aria-label={`Edit ${code.code}`}
-                    >
-                      <Pencil size={14} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => remove(code.id)}
-                      className="dash-icon-button is-danger"
-                      aria-label={`Delete ${code.code}`}
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                    {showArchived ? (
+                      <button
+                        type="button"
+                        onClick={() => setArchived(code, false)}
+                        className="dash-icon-button"
+                        aria-label={`Restore ${code.code} as disabled`}
+                      >
+                        <ArchiveRestore size={14} />
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setEditing(code)}
+                          className="dash-icon-button"
+                          aria-label={`Edit ${code.code}`}
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setArchived(code, true)}
+                          className="dash-icon-button"
+                          aria-label={`Archive ${code.code}`}
+                        >
+                          <Archive size={14} />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
             </li>
           ))}
         </ul>
+        {visibleRows.length === 0 && (
+          <div className="dash-mobile-list dash-empty">
+            <p>
+              {loading
+                ? "Loading…"
+                : showArchived
+                  ? "No archived discount codes."
+                  : "No discount codes yet. Generate one to get started."}
+            </p>
+          </div>
+        )}
       </DashCard>
 
       <AnimatePresence>

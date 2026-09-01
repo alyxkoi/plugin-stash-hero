@@ -306,7 +306,7 @@ function SalesPage() {
           </ChargedPanel>
         )}
 
-        <DashCard title="Past and scheduled sales">
+        <DashCard title="Past and scheduled sales" className="dash-section-header-solid">
           <div className="dash-desktop-table -m-5 overflow-x-auto">
             <table className="min-w-[820px]">
               <thead>

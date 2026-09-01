@@ -6778,34 +6778,6 @@ body.dashboard-active {
   letter-spacing: -0.025em;
 }
 
-.dashboard-scope .dash-recent-orders-action,
-.dashboard-scope .dash-today-revenue {
-  display: flex;
-  align-items: baseline;
-}
-
-.dashboard-scope .dash-recent-orders-action {
-  justify-content: flex-end;
-  gap: 18px;
-}
-
-.dashboard-scope .dash-today-revenue {
-  gap: 8px;
-  white-space: nowrap;
-}
-
-.dashboard-scope .dash-today-revenue > span {
-  color: var(--text-tertiary);
-  font: 700 9px/1 var(--f-data);
-  letter-spacing: 0.12em;
-}
-
-.dashboard-scope .dash-today-revenue > strong {
-  color: var(--crimson);
-  font: 650 1rem/1 var(--f-data);
-  font-variant-numeric: tabular-nums;
-}
-
 .dashboard-scope .dash-panel-body {
   padding: 18px 22px 22px;
 }
@@ -9458,29 +9430,6 @@ body.dashboard-active {
 .dashboard-scope .dash-compact-metrics-panel .dash-panel-body {
   padding: 14px 18px;
 }
-.dashboard-scope .dash-orders-metrics {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  padding: 0;
-}
-.dashboard-scope .dash-orders-metrics .dash-analytics-metric {
-  min-height: 82px;
-}
-.dashboard-scope .dash-orders-metrics .dash-analytics-metric:first-child {
-  padding: 10px 24px 10px 0;
-}
-.dashboard-scope .dash-orders-metrics .dash-analytics-metric > strong {
-  font-size: clamp(2rem, 3.4vw, 3.4rem);
-}
-.dashboard-scope .dash-orders-metrics .dash-analytics-metric > small {
-  grid-column: 1 / -1;
-  grid-row: 3;
-  margin: 6px 0 0;
-  padding: 0;
-  border: 0;
-  background: transparent !important;
-  color: var(--text-tertiary) !important;
-}
-
 .dashboard-scope .dash-detail-sheet {
   animation-duration: 170ms !important;
 }
@@ -9682,13 +9631,6 @@ body.dashboard-active {
 @media (max-width: 767px) {
   .dashboard-scope .dash-rank-row {
     grid-template-columns: 30px minmax(0, 1fr) minmax(42px, auto);
-  }
-  .dashboard-scope .dash-orders-metrics {
-    grid-template-columns: 1fr;
-  }
-  .dashboard-scope .dash-orders-metrics .dash-analytics-metric,
-  .dashboard-scope .dash-orders-metrics .dash-analytics-metric:first-child {
-    padding: 10px 0;
   }
   .dashboard-scope .dash-customers-charge {
     min-height: 300px !important;
@@ -10291,6 +10233,10 @@ body.dashboard-active {
   grid-template-columns: minmax(0, 1.45fr) repeat(4, minmax(0, 0.6fr));
 }
 
+.dashboard-scope .dash-revenue-metrics {
+  grid-template-columns: minmax(0, 1.45fr) repeat(2, minmax(0, 0.6fr));
+}
+
 .dashboard-scope .dash-analytics-metric,
 .dashboard-scope .dash-analytics-metric:first-child {
   min-width: 0;
@@ -10324,6 +10270,114 @@ body.dashboard-active {
   margin-top: 9px;
   overflow: visible;
   white-space: nowrap;
+}
+
+/* Traffic is polled independently beneath the revenue horizon. */
+.dashboard-scope .dash-session-panel > .dash-panel-body {
+  display: grid;
+  gap: 18px;
+  padding-top: 12px;
+}
+
+.dashboard-scope .dash-traffic-refresh {
+  color: var(--text-tertiary);
+  font: 600 9px/1 var(--f-data);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dashboard-scope .dash-session-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-height: 104px;
+  border-bottom: 1px solid var(--border);
+}
+
+.dashboard-scope .dash-session-stat {
+  display: grid;
+  align-content: center;
+  min-width: 0;
+  padding: 8px 24px 18px 0;
+}
+
+.dashboard-scope .dash-session-stat + .dash-session-stat {
+  padding-left: 24px;
+  border-left: 1px solid var(--border);
+}
+
+.dashboard-scope .dash-session-stat > span {
+  color: var(--text-tertiary);
+  font: 700 10px/1 var(--f-data);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.dashboard-scope .dash-session-stat > strong {
+  margin-top: 9px;
+  color: var(--text-primary);
+  font: 600 clamp(2.15rem, 4vw, 3.8rem)/0.95 var(--f-data);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.045em;
+}
+
+.dashboard-scope .dash-session-stat > small {
+  margin-top: 8px;
+  color: var(--text-tertiary);
+  font: 500 10px/1.3 var(--f-data);
+}
+
+.dashboard-scope .dash-session-conversion > strong {
+  color: var(--mint);
+}
+
+.dashboard-scope .dash-tracking-note {
+  max-width: 520px;
+  min-height: 45px;
+  margin-top: 12px;
+  color: var(--text-secondary);
+  font: 500 12px/1.5 var(--f-sans);
+}
+
+.dashboard-scope .dash-session-chart {
+  height: 220px;
+  min-height: 220px;
+}
+
+.dashboard-scope .dash-sessions-tooltip > strong {
+  color: #8b80ff;
+}
+
+/* Dense section headers sit on one quiet solid surface. */
+.dashboard-scope .dash-section-header-solid > .dash-panel-header {
+  min-height: 54px;
+  margin: 0;
+  padding: 0 22px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.13);
+  background: #100d24;
+}
+
+.dashboard-scope .dash-archive-filter {
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  background: #181334;
+  color: var(--text-secondary);
+  font: 650 10px/1 var(--f-data);
+  transition:
+    border-color 140ms ease-out,
+    background-color 140ms ease-out,
+    color 140ms ease-out;
+}
+
+.dashboard-scope .dash-archive-filter:hover {
+  border-color: rgba(255, 255, 255, 0.28);
+  background: #211a43;
+  color: var(--text-primary);
+}
+
+.dashboard-scope .dash-marketing-mobile-bar {
+  display: none;
 }
 
 /* Customer hero metrics use one equal cadence instead of promoting the first value. */
@@ -10600,33 +10654,10 @@ body.dashboard-active {
   font-variant-numeric: tabular-nums;
 }
 
-/* Orders summary sits directly on the page and clears the account control. */
+/* The compact orders list clears the floating account control. */
 .dashboard-scope .dash-orders-page,
 .dashboard-scope .dash-form-page {
-  padding-top: 78px;
-}
-
-.dashboard-scope .dash-orders-metrics {
-  width: min(760px, 100%);
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  padding: 0;
-}
-
-.dashboard-scope .dash-orders-metrics .dash-analytics-metric,
-.dashboard-scope .dash-orders-metrics .dash-analytics-metric:first-child {
-  min-height: 96px;
-  padding: 8px 28px;
-  background: transparent;
-}
-
-.dashboard-scope .dash-orders-metrics .dash-analytics-metric:first-child {
-  padding-left: 0;
-}
-
-.dashboard-scope .dash-orders-metrics .dash-analytics-metric > strong,
-.dashboard-scope .dash-orders-metrics .dash-analytics-metric.is-top-spender > strong {
-  font-size: clamp(2.3rem, 4vw, 3.8rem);
-  text-align: left;
+  padding-top: 64px;
 }
 
 /* Traffic and customer mix share one analytical surface. */
@@ -10781,6 +10812,10 @@ body.dashboard-active {
     grid-template-columns: minmax(0, 1.3fr) repeat(4, minmax(0, 0.7fr));
   }
 
+  .dashboard-scope .dash-revenue-metrics {
+    grid-template-columns: minmax(0, 1.3fr) repeat(2, minmax(0, 0.7fr));
+  }
+
   .dashboard-scope .dash-analytics-metric:first-child > strong {
     font-size: clamp(3.7rem, 7vw, 5.2rem);
   }
@@ -10822,6 +10857,30 @@ body.dashboard-active {
 
   .dashboard-scope .dash-analytics-metric:first-child {
     grid-column: auto;
+  }
+
+  .dashboard-scope .dash-revenue-metrics > .dash-analytics-metric:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .dashboard-scope .dash-session-summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dashboard-scope .dash-session-stat,
+  .dashboard-scope .dash-session-stat + .dash-session-stat {
+    min-height: 96px;
+    padding: 14px 0;
+    border-left: 0;
+  }
+
+  .dashboard-scope .dash-session-stat + .dash-session-stat {
+    border-top: 1px solid var(--border);
+  }
+
+  .dashboard-scope .dash-session-chart {
+    height: 196px;
+    min-height: 196px;
   }
 
   .dashboard-scope .dash-analytics-metric > strong,
@@ -10916,28 +10975,7 @@ body.dashboard-active {
 
   .dashboard-scope .dash-orders-page,
   .dashboard-scope .dash-form-page {
-    padding-top: max(68px, calc(58px + env(safe-area-inset-top)));
-  }
-
-  .dashboard-scope .dash-orders-metrics {
-    grid-template-columns: 1fr;
-  }
-
-  .dashboard-scope .dash-orders-metrics .dash-analytics-metric,
-  .dashboard-scope .dash-orders-metrics .dash-analytics-metric:first-child {
-    min-height: 88px;
-    padding: 12px 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.15);
-    border-left: 0;
-  }
-
-  .dashboard-scope .dash-orders-metrics .dash-analytics-metric:first-child {
-    border-top: 0;
-  }
-
-  .dashboard-scope .dash-orders-metrics .dash-analytics-metric > strong,
-  .dashboard-scope .dash-orders-metrics .dash-analytics-metric.is-top-spender > strong {
-    font-size: clamp(2.35rem, 12vw, 3.35rem);
+    padding-top: max(60px, calc(52px + env(safe-area-inset-top)));
   }
 
   .dashboard-scope .dash-sale-performance-list li {
@@ -12776,5 +12814,43 @@ body.dashboard-active {
   }
   .contact-spinner {
     animation-duration: 1.4s;
+  }
+}
+
+@media (max-width: 767px) {
+  .dashboard-scope .dash-section-header-solid > .dash-panel-header {
+    min-height: 52px;
+    padding-inline: 16px;
+  }
+
+  .dashboard-scope .dash-marketing-workspaces {
+    width: min(300px, 100%);
+    margin: 16px auto 20px;
+  }
+
+  .dashboard-scope .dash-marketing-chart > div > .dash-segment-bar {
+    display: none;
+  }
+
+  .dashboard-scope .dash-marketing-mobile-bar {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    display: block;
+    height: 8px;
+    overflow: hidden;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.055);
+  }
+
+  .dashboard-scope .dash-marketing-mobile-bar > span {
+    display: block;
+    min-width: 0;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--indigo);
+  }
+
+  .dashboard-scope .dash-marketing-chart .is-leader .dash-marketing-mobile-bar > span {
+    background: var(--crimson);
   }
 }

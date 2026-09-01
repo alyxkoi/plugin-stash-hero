@@ -17,7 +17,7 @@ export type DiscountRow = {
   usage_limit: number | null;
   uses: number;
   expires_at: string | null;
-  status: "active" | "expired" | "disabled";
+  status: "active" | "expired" | "disabled" | "archived";
   applies_to: string | null;
   scope: Scope;
   categories: string[];

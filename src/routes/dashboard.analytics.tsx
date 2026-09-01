@@ -27,14 +27,16 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   chicagoComparisonBounds,
   DASHBOARD_RANGE_LABEL,
+  startOfChicagoDay,
   type DashboardRange,
 } from "@/lib/analytics-time";
-import { deriveSaleStatus, formatInSaleTimeZone } from "@/lib/sale-time";
+import { deriveSaleStatus, formatInSaleTimeZone, SALE_TIME_ZONE } from "@/lib/sale-time";
 import { normalizeUtmSource } from "@/lib/utm";
 import {
   allocateLineRevenue,
   countsAsSale,
   netRevenue,
+  SALE_STATUSES,
   saleOrders,
   sumNetRevenue,
 } from "@/lib/revenue";
@@ -81,16 +83,19 @@ type SaleEventRow = {
   status: string;
 };
 
-type VisitMetrics = { pageviews: number; uniqueSessions: number };
+type TrafficSnapshot = {
+  pageviews: number;
+  uniqueSessions: number;
+  completedOrders: number;
+  trackingStartedAt: string | null;
+  series: { label: string; sessions: number }[];
+};
 
 function Analytics() {
   const [range, setRange] = useState<DashboardRange>("mtd");
   const [orders, setOrders] = useState<OrderRow[]>([]);
-  const [visits, setVisits] = useState<VisitMetrics>({ pageviews: 0, uniqueSessions: 0 });
-  const [previousVisits, setPreviousVisits] = useState<VisitMetrics>({
-    pageviews: 0,
-    uniqueSessions: 0,
-  });
+  const [traffic, setTraffic] = useState<TrafficSnapshot | null>(null);
+  const [trafficLoading, setTrafficLoading] = useState(true);
   const [sales, setSales] = useState<SaleEventRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [identity, setIdentity] = useState<IdentityMap>(() => new Map());
@@ -146,50 +151,73 @@ function Analytics() {
       ),
     [completed, bounds],
   );
+  useEffect(() => setTrafficLoading(true), [range]);
   useEffect(() => {
     let cancelled = false;
-    const readMetrics = async (start: Date, end: Date): Promise<VisitMetrics> => {
-      const { data, error } = await (supabase as any).rpc("storefront_visit_metrics", {
-        _start_at: start.toISOString(),
-        _end_at: end.toISOString(),
-      });
-      if (error) throw error;
-      const row = Array.isArray(data) ? data[0] : data;
-      return {
-        pageviews: Number(row?.pageviews ?? 0),
-        uniqueSessions: Number(row?.unique_sessions ?? 0),
-      };
-    };
+    const liveBounds = chicagoComparisonBounds(range, new Date(now));
+    const sessionBuckets = makeBuckets(liveBounds.currentStart, liveBounds.currentEnd, false);
+    const bucketStarts = sessionBuckets.map((bucket) => bucket.start.toISOString());
+    const bucketEnds = sessionBuckets.map((bucket) =>
+      new Date(
+        Math.min(bucket.end.getTime() + 1, liveBounds.currentEnd.getTime()),
+      ).toISOString(),
+    );
 
     Promise.all([
-      readMetrics(bounds.currentStart, bounds.currentEnd),
-      readMetrics(bounds.previousStart, bounds.previousEnd),
+      supabase.rpc("storefront_traffic_metrics", {
+        _start_at: liveBounds.currentStart.toISOString(),
+        _end_at: liveBounds.currentEnd.toISOString(),
+        _bucket_starts: bucketStarts,
+        _bucket_ends: bucketEnds,
+      }),
+      supabase
+        .from("orders")
+        .select("id", { count: "exact", head: true })
+        .in("status", [...SALE_STATUSES])
+        .gte("created_at", liveBounds.currentStart.toISOString())
+        .lt("created_at", liveBounds.currentEnd.toISOString()),
     ])
-      .then(([current, previous]) => {
+      .then(([trafficResult, orderResult]) => {
         if (cancelled) return;
-        setVisits(current);
-        setPreviousVisits(previous);
+        if (trafficResult.error) throw trafficResult.error;
+        if (orderResult.error) throw orderResult.error;
+        const row = Array.isArray(trafficResult.data)
+          ? trafficResult.data[0]
+          : trafficResult.data;
+        const counts = (row?.session_buckets ?? []).map(Number);
+        setTraffic({
+          pageviews: Number(row?.pageviews ?? 0),
+          uniqueSessions: Number(row?.unique_sessions ?? 0),
+          completedOrders: Number(orderResult.count ?? 0),
+          trackingStartedAt: row?.tracking_started_at ?? null,
+          series: sessionBuckets.map((bucket, index) => ({
+            label: bucket.label,
+            sessions: counts[index] ?? 0,
+          })),
+        });
+        setTrafficLoading(false);
       })
       .catch(() => {
-        if (cancelled) return;
-        setVisits({ pageviews: 0, uniqueSessions: 0 });
-        setPreviousVisits({ pageviews: 0, uniqueSessions: 0 });
+        if (!cancelled) setTrafficLoading(false);
       });
 
     return () => {
       cancelled = true;
     };
-  }, [bounds]);
+  }, [range, now]);
   const revenue = sumNetRevenue(inRange);
   const previousRevenue = sumNetRevenue(previousRange);
   const aov = inRange.length ? revenue / inRange.length : 0;
   const previousAov = previousRange.length ? previousRevenue / previousRange.length : 0;
-  const conversion = visits.uniqueSessions
-    ? (inRange.length / visits.uniqueSessions) * 100
+  const conversion = traffic?.uniqueSessions
+    ? (traffic.completedOrders / traffic.uniqueSessions) * 100
     : 0;
-  const previousConversion = previousVisits.uniqueSessions
-    ? (previousRange.length / previousVisits.uniqueSessions) * 100
-    : 0;
+  const trackingStartDay = traffic?.trackingStartedAt
+    ? startOfChicagoDay(new Date(traffic.trackingStartedAt))
+    : null;
+  const conversionAvailable = Boolean(
+    trackingStartDay && bounds.currentStart.getTime() >= trackingStartDay.getTime(),
+  );
   const chartSeries = useMemo(
     () => buildPairedSeries(completed, bounds, range),
     [completed, bounds, range],
@@ -287,8 +315,6 @@ function Analytics() {
   const revenueDelta = percentDelta(revenue, previousRevenue);
   const ordersDelta = percentDelta(inRange.length, previousRange.length);
   const aovDelta = percentDelta(aov, previousAov);
-  const conversionDelta = percentDelta(conversion, previousConversion);
-  const sessionsDelta = percentDelta(visits.uniqueSessions, previousVisits.uniqueSessions);
 
   return (
     <DashboardShell
@@ -297,25 +323,13 @@ function Analytics() {
     >
       <div className="space-y-6">
         <ChargedPanel domain="money" material="grain" form="arc" silhouette="inset" title="Revenue">
-          <div className="dash-analytics-metrics">
+          <div className="dash-analytics-metrics dash-revenue-metrics">
             <AnalyticsMetric label="Revenue" value={money(revenue)} delta={revenueDelta} />
             <AnalyticsMetric label="Average order" value={money(aov)} delta={aovDelta} />
             <AnalyticsMetric
               label="Orders"
               value={inRange.length.toLocaleString()}
               delta={ordersDelta}
-            />
-            <AnalyticsMetric
-              label="Unique sessions"
-              value={visits.uniqueSessions.toLocaleString()}
-              delta={sessionsDelta}
-              helper={`${visits.pageviews.toLocaleString()} pageviews in this range`}
-            />
-            <AnalyticsMetric
-              label="Conversion"
-              value={`${conversion.toFixed(1)}%`}
-              delta={conversionDelta}
-              helper="Completed orders divided by unique storefront sessions"
             />
           </div>
           <div
@@ -381,6 +395,90 @@ function Analytics() {
             )}
           </div>
         </ChargedPanel>
+
+        <DashCard
+          title="Storefront traffic"
+          action={<span className="dash-traffic-refresh">Updates every 30 sec</span>}
+          className="dash-session-panel dash-solid-panel"
+        >
+          <div className="dash-session-summary">
+            <div className="dash-session-stat">
+              <span>Unique sessions</span>
+              <strong>
+                {trafficLoading && !traffic
+                  ? "—"
+                  : (traffic?.uniqueSessions ?? 0).toLocaleString()}
+              </strong>
+              <small>{(traffic?.pageviews ?? 0).toLocaleString()} recorded pageviews</small>
+            </div>
+            <div className="dash-session-stat dash-session-conversion">
+              <span>Conversion rate</span>
+              {conversionAvailable ? (
+                <>
+                  <strong>{conversion.toFixed(1)}%</strong>
+                  <small>Completed orders ÷ unique sessions</small>
+                </>
+              ) : (
+                <p className="dash-tracking-note">
+                  {traffic?.trackingStartedAt
+                    ? `Tracking began ${formatTrackingDate(traffic.trackingStartedAt)}. Conversion appears once the full selected window is tracked.`
+                    : "Waiting for the first tracked storefront visit."}
+                </p>
+              )}
+            </div>
+          </div>
+          <div
+            className="dash-session-chart"
+            role="img"
+            aria-label={`Unique storefront sessions for ${DASHBOARD_RANGE_LABEL[range]}.`}
+          >
+            {trafficLoading && !traffic ? (
+              <div className="skeleton-block h-full" />
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart
+                  data={traffic?.series ?? []}
+                  margin={{ top: 8, right: 4, left: -18, bottom: 0 }}
+                >
+                  <defs>
+                    <linearGradient id="analytics-session-fill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#4B3FE8" stopOpacity={0.42} />
+                      <stop offset="100%" stopColor="#4B3FE8" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid stroke="rgba(255,255,255,0.12)" vertical={false} />
+                  <XAxis
+                    dataKey="label"
+                    tickLine={false}
+                    axisLine={false}
+                    minTickGap={22}
+                    tick={{ fill: "rgba(255,255,255,.72)", fontSize: 10 }}
+                  />
+                  <YAxis
+                    allowDecimals={false}
+                    tickLine={false}
+                    axisLine={false}
+                    width={56}
+                    tick={{ fill: "rgba(255,255,255,.72)", fontSize: 10 }}
+                  />
+                  <Tooltip
+                    content={<SessionsTooltip />}
+                    cursor={{ stroke: "rgba(255,255,255,.22)" }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="sessions"
+                    stroke="#7D6CFF"
+                    strokeWidth={2}
+                    fill="url(#analytics-session-fill)"
+                    dot={false}
+                    isAnimationActive={false}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </DashCard>
 
         <div className="dash-analytics-detail-grid grid grid-cols-1 xl:grid-cols-12 gap-6">
           <DashCard
@@ -612,6 +710,24 @@ function RevenueTooltip({
   );
 }
 
+function SessionsTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: Array<{ value?: number }>;
+  label?: string;
+}) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="dash-revenue-tooltip dash-sessions-tooltip">
+      <span>{label}</span>
+      <strong>{Number(payload[0]?.value ?? 0).toLocaleString()} sessions</strong>
+    </div>
+  );
+}
+
 function buildPairedSeries(
   orders: OrderRow[],
   bounds: ReturnType<typeof chicagoComparisonBounds>,
@@ -676,4 +792,13 @@ function percentDelta(current: number, previous: number) {
 
 function money(value: number) {
   return `$${Number(value || 0).toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
+}
+
+function formatTrackingDate(iso: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: SALE_TIME_ZONE,
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(iso));
 }

@@ -15,7 +15,6 @@ import { allocateLineRevenue, netRevenue, saleOrders, sumNetRevenue } from "@/li
 import { deriveSaleStatus, formatInSaleTimeZone } from "@/lib/sale-time";
 import {
   chicagoComparisonBounds,
-  startOfChicagoDay,
   type DashboardRange,
 } from "@/lib/analytics-time";
 
@@ -138,13 +137,6 @@ function Overview() {
   const ordersDelta = percentDelta(currentOrders.length, previousOrders.length);
   const customersDelta = percentDelta(currentCustomers, previousCustomers);
   const aovDelta = percentDelta(currentAov, previousAov);
-  const todayRevenue = useMemo(() => {
-    const todayStart = startOfChicagoDay(new Date(now));
-    return sumNetRevenue(
-      completed.filter((order) => within(order.created_at, todayStart, new Date(now))),
-    );
-  }, [completed, now]);
-
   const series = useMemo(
     () => buildComparisonSeries(completed, bounds, range),
     [completed, bounds, range],
@@ -294,20 +286,14 @@ function Overview() {
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
           <DashCard
             title="Recent orders"
-            className="xl:col-span-7"
+            className="xl:col-span-7 dash-section-header-solid"
             action={
-              <div className="dash-recent-orders-action">
-                <Link
-                  to="/dashboard/orders"
-                  className="text-xs text-[var(--text-tertiary)] hover:text-white"
-                >
-                  View all →
-                </Link>
-                <span className="dash-today-revenue">
-                  <span>TODAY</span>
-                  <strong>{moneyExact(todayRevenue)}</strong>
-                </span>
-              </div>
+              <Link
+                to="/dashboard/orders"
+                className="text-xs text-[var(--text-tertiary)] hover:text-white"
+              >
+                View all →
+              </Link>
             }
           >
             <div className="dash-desktop-table -m-5 overflow-x-auto">

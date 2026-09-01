@@ -15,6 +15,20 @@
       "when": 1788221191181,
       "tag": "0001_storefront_visit_tracking",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788224400000,
+      "tag": "0002_storefront_traffic_panel",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1788228000000,
+      "tag": "0003_discount_code_archiving",
+      "breakpoints": true
     }
   ]
 }

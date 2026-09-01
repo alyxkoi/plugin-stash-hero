@@ -4,7 +4,7 @@ import { Download, Search } from "lucide-react";
 import { DashCard, DashboardShell, DomainChip, StatusBadge } from "@/components/DashboardShell";
 import { OrderDrawer } from "@/components/AdminDrawers";
 import { supabase } from "@/integrations/supabase/client";
-import { countsAsSale, netRevenue, sumNetRevenue } from "@/lib/revenue";
+import { netRevenue, sumNetRevenue } from "@/lib/revenue";
 
 type Row = {
   id: string;
@@ -15,7 +15,6 @@ type Row = {
   utm_source: string | null;
   status: string;
   created_at: string;
-  user_id: string | null;
   refunded_amount_cents: number | null;
   customer_name: string | null;
   guest_email: string | null;
@@ -55,7 +54,7 @@ function OrdersPage() {
       const { data } = await supabase
         .from("orders")
         .select(
-          "id, number, total, discount, discount_code, refunded_amount_cents, utm_source, status, created_at, user_id, customer_name, guest_email, order_items(name)",
+          "id, number, total, discount, discount_code, refunded_amount_cents, utm_source, status, created_at, customer_name, guest_email, order_items(name)",
         )
         .order("created_at", { ascending: false })
         .limit(500);
@@ -107,26 +106,6 @@ function OrdersPage() {
 
   const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const orderStats = useMemo(() => {
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const completed = rows.filter(countsAsSale);
-    const today = completed.filter((order) => new Date(order.created_at) >= todayStart);
-    const spenders = new Map<string, { name: string; total: number }>();
-    for (const order of completed) {
-      const key =
-        order.user_id || order.guest_email?.trim().toLowerCase() || order.customer_name || order.id;
-      const current = spenders.get(key) ?? {
-        name: order.customer_name || order.guest_email || "Guest",
-        total: 0,
-      };
-      current.total += netRevenue(order);
-      spenders.set(key, current);
-    }
-    const topSpender = [...spenders.values()].sort((a, b) => b.total - a.total)[0] ?? null;
-    return { salesToday: sumNetRevenue(today), ordersToday: today.length, topSpender };
-  }, [rows]);
-
   function exportCsv() {
     const header = [
       "Order",
@@ -164,20 +143,7 @@ function OrdersPage() {
 
   return (
     <DashboardShell title="Orders">
-      <div className="dash-orders-page space-y-6">
-        <section className="dash-analytics-metrics dash-orders-metrics" aria-label="Order summary">
-          <div className="dash-analytics-metric">
-            <span>Sales today</span>
-            <strong>{money(orderStats.salesToday)}</strong>
-            <small>{orderStats.ordersToday.toLocaleString()} completed orders</small>
-          </div>
-          <div className="dash-analytics-metric is-top-spender">
-            <span>Top spender</span>
-            <strong>{orderStats.topSpender ? money(orderStats.topSpender.total) : money(0)}</strong>
-            <small>{orderStats.topSpender?.name ?? "No completed orders yet"}</small>
-          </div>
-        </section>
-
+      <div className="dash-orders-page space-y-4">
         <div className="dash-filter-bar dash-orders-filter" aria-label="Order filters">
           <label className="dash-search-field">
             <span className="sr-only">Search orders</span>
