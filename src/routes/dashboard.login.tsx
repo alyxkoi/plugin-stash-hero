@@ -19,6 +19,8 @@ function DashboardLogin() {
   const [recover, setRecover] = useState(false);
   const [recoverEmail, setRecoverEmail] = useState("");
 
+  const verifyAdmin = useServerFn(checkIsAdmin);
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (busy) return;
@@ -34,17 +36,35 @@ function DashboardLogin() {
         setError(msg);
         return;
       }
-      const { data: roleRow, error: roleErr } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", data.user.id)
-        .eq("role", "admin")
-        .maybeSingle();
-      if (roleErr) {
-        setError("Couldn't verify admin access. Try again.");
-        return;
+
+      // Verify admin role. Retry transient network failures, and fall back to a
+      // same-origin server check if the direct database request keeps failing.
+      let isAdmin: boolean | null = null;
+      for (let attempt = 0; attempt < 2 && isAdmin === null; attempt++) {
+        try {
+          const { data: roleRow, error: roleErr } = await supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", data.user.id)
+            .eq("role", "admin")
+            .maybeSingle();
+          if (roleErr) throw new Error(roleErr.message);
+          isAdmin = !!roleRow;
+        } catch {
+          if (attempt === 1) break;
+          await new Promise((r) => setTimeout(r, 400));
+        }
       }
-      if (!roleRow) {
+      if (isAdmin === null) {
+        try {
+          const res = await verifyAdmin();
+          isAdmin = res.isAdmin;
+        } catch {
+          setError("Couldn't reach the server to verify admin access. Check your connection and try again.");
+          return;
+        }
+      }
+      if (!isAdmin) {
         await supabase.auth.signOut();
         setError("This account is not an admin. Contact support if you think that's wrong.");
         return;
