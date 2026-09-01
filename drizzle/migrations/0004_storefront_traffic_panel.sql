@@ -99,4 +99,3 @@ GRANT EXECUTE ON FUNCTION public.storefront_traffic_metrics(
   TIMESTAMPTZ[],
   TIMESTAMPTZ[]
 ) TO authenticated;
-
