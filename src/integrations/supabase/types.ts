@@ -1707,25 +1707,11 @@ export type Database = {
           unique_sessions: number
         }[]
       }
-      storefront_traffic_metrics: {
-        Args: {
-          _bucket_ends: string[]
-          _bucket_starts: string[]
-          _end_at: string
-          _start_at: string
-        }
-        Returns: {
-          pageviews: number
-          session_buckets: number[]
-          tracking_started_at: string | null
-          unique_sessions: number
-        }[]
-      }
     }
     Enums: {
       app_role: "admin" | "customer"
       customer_status: "active" | "refunded" | "banned"
-      discount_status: "active" | "expired" | "disabled" | "archived"
+      discount_status: "active" | "expired" | "disabled"
       discount_type: "percent" | "flat"
       email_send_status: "sent" | "failed" | "skipped"
       email_sequence_type: "abandoned_cart" | "saved_items"
@@ -1863,7 +1849,7 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "customer"],
       customer_status: ["active", "refunded", "banned"],
-      discount_status: ["active", "expired", "disabled", "archived"],
+      discount_status: ["active", "expired", "disabled"],
       discount_type: ["percent", "flat"],
       email_send_status: ["sent", "failed", "skipped"],
       email_sequence_type: ["abandoned_cart", "saved_items"],
