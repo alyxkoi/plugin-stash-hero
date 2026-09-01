@@ -1383,6 +1383,33 @@ export type Database = {
           },
         ]
       }
+      storefront_pageviews: {
+        Row: {
+          created_at: string
+          id: number
+          is_bot: boolean
+          path: string
+          referrer: string | null
+          visitor_hash: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          is_bot?: boolean
+          path: string
+          referrer?: string | null
+          visitor_hash?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          is_bot?: boolean
+          path?: string
+          referrer?: string | null
+          visitor_hash?: string | null
+        }
+        Relationships: []
+      }
       stripe_webhook_events: {
         Row: {
           created_at: string
@@ -1655,6 +1682,13 @@ export type Database = {
         Returns: number
       }
       store_credit_balance: { Args: { _customer_id: string }; Returns: number }
+      storefront_visit_metrics: {
+        Args: { _end_at: string; _start_at: string }
+        Returns: {
+          pageviews: number
+          unique_sessions: number
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "customer"
