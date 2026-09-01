@@ -15,6 +15,13 @@
       "when": 1788221191181,
       "tag": "0001_storefront_visit_tracking",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788224497092,
+      "tag": "0002_email_automation_cron_secret",
+      "breakpoints": true
     }
   ]
 }
