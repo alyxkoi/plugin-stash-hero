@@ -156,29 +156,29 @@ function deadlineFor(hero: ProductRow | undefined, sales: ActiveSale[], fallback
 
 async function hasPurchased(email: string, productIds: string[], since?: string): Promise<boolean> {
   if (productIds.length === 0) return false;
-  let q = supabaseAdmin
-    .from("orders")
-    .select("id, created_at, order_items!inner(product_id)")
-    .in("status", ["completed", "partial"])
-    .in("order_items.product_id", productIds);
-  if (since) q = q.gte("created_at", since);
-  const { data, error } = await q.limit(1);
+
+  // Identify this shopper's orders by normalized email (guest + account orders).
+  let idq = supabaseAdmin
+    .from("order_customer_identity")
+    .select("order_id, created_at")
+    .eq("normalized_email", email);
+  if (since) idq = idq.gte("created_at", since);
+  const { data: ids, error: idError } = await idq.limit(500);
+  assertDb(idError, "Load purchase owners");
+  const orderIds = (ids ?? []).map((r) => r.order_id).filter(Boolean) as string[];
+  if (orderIds.length === 0) return false;
+
+  const { data, error } = await supabaseAdmin
+    .from("order_items")
+    .select("order_id, product_id, orders!inner(status)")
+    .in("order_id", orderIds)
+    .in("product_id", productIds)
+    .in("orders.status", ["completed", "partial"])
+    .limit(1);
   assertDb(error, "Check completed purchases");
-  if (data && data.length > 0) {
-    // Confirm the order belongs to this email
-    const ids = data.map((o) => o.id);
-    const { data: owned, error: ownedError } = await supabaseAdmin
-      .from("orders")
-      .select("id, guest_email, user_id, profiles:user_id(email)")
-      .in("id", ids);
-    assertDb(ownedError, "Load purchase owners");
-    for (const o of owned ?? []) {
-      const em = normalizeEmail(o.guest_email ?? (o as unknown as { profiles?: { email?: string } }).profiles?.email);
-      if (em === email) return true;
-    }
-  }
-  return false;
+  return (data ?? []).length > 0;
 }
+
 
 async function optedOut(emails: string[]): Promise<Set<string>> {
   if (emails.length === 0) return new Set();

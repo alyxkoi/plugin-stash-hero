@@ -467,6 +467,24 @@ export type Database = {
         }
         Relationships: []
       }
+      email_automation_config: {
+        Row: {
+          cron_secret: string
+          id: boolean
+          updated_at: string
+        }
+        Insert: {
+          cron_secret?: string
+          id?: boolean
+          updated_at?: string
+        }
+        Update: {
+          cron_secret?: string
+          id?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       email_automation_log: {
         Row: {
           attempts: number

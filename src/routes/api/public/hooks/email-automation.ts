@@ -8,14 +8,22 @@ export const Route = createFileRoute("/api/public/hooks/email-automation")({
       POST: async ({ request }) => {
         // Supabase publishable/anon keys are intentionally public and must not
         // authorize a route capable of sending email to the entire audience.
-        const expected = process.env.EMAIL_AUTOMATION_CRON_SECRET ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
         const bearer = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ?? "";
-        const provided =
-          request.headers.get("x-cron-secret") ??
-          request.headers.get("apikey") ??
-          bearer;
+        const provided = request.headers.get("x-cron-secret") ?? bearer;
 
-        if (!expected) {
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { data: cfg } = await supabaseAdmin
+          .from("email_automation_config")
+          .select("cron_secret")
+          .maybeSingle();
+
+        const accepted = [
+          cfg?.cron_secret ?? "",
+          process.env.EMAIL_AUTOMATION_CRON_SECRET ?? "",
+          process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
+        ].filter(Boolean);
+
+        if (accepted.length === 0) {
           console.error("[email-automation] no cron secret is configured");
           return new Response(JSON.stringify({ error: "Email automation is not configured" }), {
             status: 503,
@@ -23,12 +31,14 @@ export const Route = createFileRoute("/api/public/hooks/email-automation")({
           });
         }
 
-        if (!provided || provided !== expected) {
+        if (!provided || !accepted.includes(provided)) {
+          console.error("[email-automation] unauthorized trigger attempt");
           return new Response(JSON.stringify({ error: "Unauthorized" }), {
             status: 401,
             headers: { "Content-Type": "application/json" },
           });
         }
+
         try {
           const body = (await request.json().catch(() => ({}))) as {
             dryRun?: boolean;
