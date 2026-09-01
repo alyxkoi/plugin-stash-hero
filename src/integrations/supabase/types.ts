@@ -1700,13 +1700,6 @@ export type Database = {
         Returns: number
       }
       store_credit_balance: { Args: { _customer_id: string }; Returns: number }
-      storefront_visit_metrics: {
-        Args: { _end_at: string; _start_at: string }
-        Returns: {
-          pageviews: number
-          unique_sessions: number
-        }[]
-      }
       storefront_traffic_metrics: {
         Args: {
           _bucket_ends: string[]
@@ -1717,7 +1710,14 @@ export type Database = {
         Returns: {
           pageviews: number
           session_buckets: number[]
-          tracking_started_at: string | null
+          tracking_started_at: string
+          unique_sessions: number
+        }[]
+      }
+      storefront_visit_metrics: {
+        Args: { _end_at: string; _start_at: string }
+        Returns: {
+          pageviews: number
           unique_sessions: number
         }[]
       }
