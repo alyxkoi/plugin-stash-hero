@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import logo from "@/assets/logo-dashboard.webp";
 import { supabase } from "@/integrations/supabase/client";
 import { sendPasswordResetEmail } from "@/lib/auth-email.functions";
+import { checkIsAdmin } from "@/lib/admin-auth.functions";
 
 export const Route = createFileRoute("/dashboard/login")({
   head: () => ({ meta: [{ title: "Dashboard access — Plugin Warehouse" }] }),
