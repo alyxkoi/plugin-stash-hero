@@ -105,6 +105,8 @@ type ProductRow = {
   slug: string;
   name: string;
   price: number;
+  /** RETAIL — the developer's list price (products.compare_at_price). */
+  compare_at_price: number | null;
   cover_url: string | null;
   category: string;
   status: string;
@@ -124,18 +126,27 @@ function bestSale(p: ProductRow, sales: ActiveSale[]): ActiveSale | null {
   return best && (best.discount_pct ?? 0) > 0 ? best : null;
 }
 
+/**
+ * EFFECTIVE = STORE price (products.price) with the live sale percentage
+ * applied. The sale percentage is NEVER applied to RETAIL.
+ */
 function effectivePrice(p: ProductRow, sales: ActiveSale[]): number {
   const s = bestSale(p, sales);
   if (!s) return Number(p.price);
   return Math.round(Number(p.price) * (1 - (s.discount_pct ?? 0) / 100) * 100) / 100;
 }
 
+/**
+ * The struck-through price in every email is RETAIL (compare_at_price), not the
+ * pre-sale store price. Null/zero/<= EFFECTIVE retail means "no retail gap" and
+ * renders as an empty string.
+ */
 function toEmailProduct(p: ProductRow, price: number): EmailProduct {
-  const list = Number(p.price);
+  const retail = p.compare_at_price == null ? 0 : Number(p.compare_at_price);
   return {
     name: p.name,
     price,
-    comparePrice: price < list - 0.005 ? list : null,
+    comparePrice: retail > price + 0.005 ? retail : null,
     coverUrl: p.cover_url,
     slug: p.slug,
   };
@@ -224,7 +235,7 @@ export async function runBehavioralEmailJob(
 
   const { data: productRows, error: productsError } = await supabaseAdmin
     .from("products")
-    .select("id, slug, name, price, cover_url, category, status")
+    .select("id, slug, name, price, compare_at_price, cover_url, category, status")
     .eq("status", "published");
   assertDb(productsError, "Load published products");
   const products = new Map<string, ProductRow>((productRows ?? []).map((p) => [p.id, p as ProductRow]));

@@ -268,9 +268,25 @@ export async function finalizeOrder(input: FulfillInput): Promise<{ orderId: str
       "https://www.thepluginwarehouse.com";
     // `/api/public/download` verifies entitlement and 302s to the R2 custom
     // domain (thepluginwarehousefiles.com). Never build R2 S3 API URLs here.
+    // RETAIL prices for the struck-through "was" figure. Read-only lookup.
+    const retailByProduct = new Map<string, number>();
+    {
+      const ids = input.items.map((it) => it.product_id).filter(Boolean);
+      if (ids.length > 0) {
+        const { data: retailRows } = await supabaseAdmin
+          .from("products")
+          .select("id, compare_at_price")
+          .in("id", ids);
+        for (const r of retailRows ?? []) {
+          const c = (r as any).compare_at_price;
+          if (c != null) retailByProduct.set((r as any).id as string, Number(c));
+        }
+      }
+    }
     const emailItems = input.items.map((it) => ({
       name: it.name,
       price: it.price,
+      comparePrice: retailByProduct.get(it.product_id) ?? null,
       coverUrl: it.cover_url,
       downloadUrl: `${origin}/api/public/download?session_id=${encodeURIComponent(input.sessionId)}&product_id=${encodeURIComponent(it.product_id)}`,
     }));

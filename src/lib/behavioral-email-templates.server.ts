@@ -46,20 +46,23 @@ function cover(p: { coverUrl?: string | null }) {
   return p.coverUrl && p.coverUrl.startsWith("http") ? p.coverUrl : FALLBACK_COVER;
 }
 
+/** RETAIL as display text, or "" when there is no valid retail gap. */
 function original(p: EmailProduct): string {
   return p.comparePrice != null && Number(p.comparePrice) > p.price
     ? money(Number(p.comparePrice))
     : "";
 }
 
+/** RETAIL when it exceeds EFFECTIVE, otherwise EFFECTIVE (keeps totals sane). */
 function retail(p: EmailProduct): number {
   const c = p.comparePrice != null ? Number(p.comparePrice) : 0;
   return c > p.price ? c : p.price;
 }
 
+/** Savings percentage, always rounded DOWN so a discount is never overstated. */
 function pctText(saved: number, base: number): string {
   if (base <= 0 || saved <= 0) return "";
-  return `${Math.round((saved / base) * 100)}%`;
+  return `${Math.floor((saved / base) * 100)}%`;
 }
 
 // ---------- deadline text ----------
@@ -145,6 +148,15 @@ export function renderAbandonedCart(opts: {
     })),
   );
 
+  // No real retail gap across the cart: drop the struck total and the savings
+  // figures entirely instead of rendering "$0.00" / "0% OFF".
+  const pct = pctText(savings, retailTotal);
+  if (savings <= 0 || !pct) {
+    for (const needle of ["{{CART_ORIGINAL_TOTAL}}", "{{CART_SAVINGS_AMOUNT}}", "{{CART_SAVINGS_PCT}}"]) {
+      html = removeRowContaining(html, needle, "innermost");
+    }
+  }
+
   html = fill(html, {
     HERO_IMAGE: cover(hero),
     HERO_NAME: escapeHtml(hero.name),
@@ -153,9 +165,9 @@ export function renderAbandonedCart(opts: {
     HERO_ORIGINAL: original(hero),
     CART_URL: cartUrl,
     CART_TOTAL: money(total),
-    CART_ORIGINAL_TOTAL: money(retailTotal),
-    CART_SAVINGS_AMOUNT: money(savings),
-    CART_SAVINGS_PCT: pctText(savings, retailTotal),
+    CART_ORIGINAL_TOTAL: pct ? money(retailTotal) : "",
+    CART_SAVINGS_AMOUNT: pct ? money(savings) : "",
+    CART_SAVINGS_PCT: pct,
     UNSUBSCRIBE_URL: opts.unsubUrl,
   });
 
