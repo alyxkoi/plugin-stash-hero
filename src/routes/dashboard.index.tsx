@@ -1,8 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import {
+  CalendarClock,
+  CircleDollarSign,
+  ReceiptText,
+  ShoppingBag,
+  UsersRound,
+} from "lucide-react";
+import {
   ChargedPanel,
   DashCard,
+  DashboardMetric,
   DashboardShell,
   DeltaChip,
   DomainChip,
@@ -457,8 +465,8 @@ function Overview() {
           }
         >
           {currentSale ? (
-            <div className="dash-campaign-performance">
-              <div className="dash-campaign-performance-main">
+            <div className="dash-campaign-summary">
+              <header className="dash-campaign-summary-header">
                 <div className="dash-campaign-performance-heading">
                   <h3>{currentSale.name}</h3>
                   <StatusBadge
@@ -470,17 +478,47 @@ function Overview() {
                     )}
                   />
                 </div>
-                <p>
-                  {formatInSaleTimeZone(currentSale.start_at)} -{" "}
-                  {formatInSaleTimeZone(currentSale.end_at)} · {currentSale.discount_pct}% off ·{" "}
-                  {campaignCountdown(currentSale.end_at, now)} remaining
-                </p>
+                <div className="dash-campaign-summary-meta">
+                  <span>
+                    {formatInSaleTimeZone(currentSale.start_at)} -{" "}
+                    {formatInSaleTimeZone(currentSale.end_at)}
+                  </span>
+                  <span>{currentSale.discount_pct}% off</span>
+                  <span>{campaignCountdown(currentSale.end_at, now)} remaining</span>
+                </div>
+              </header>
+              <div className="dash-campaign-stat-grid">
+                <DashboardMetric
+                  icon={UsersRound}
+                  label="Customers"
+                  value={campaignCustomers.toLocaleString()}
+                  className="dash-campaign-stat"
+                />
+                <DashboardMetric
+                  icon={ShoppingBag}
+                  label="Orders"
+                  value={campaignOrders.length.toLocaleString()}
+                  className="dash-campaign-stat"
+                />
+                <DashboardMetric
+                  icon={CircleDollarSign}
+                  label="Revenue"
+                  value={moneyExact(campaignRevenue)}
+                  className="dash-campaign-stat"
+                />
+                <DashboardMetric
+                  icon={CalendarClock}
+                  label="Per day"
+                  value={moneyExact(campaignRevenuePerDay)}
+                  className="dash-campaign-stat"
+                />
+                <DashboardMetric
+                  icon={ReceiptText}
+                  label="Average order"
+                  value={moneyExact(campaignAov)}
+                  className="dash-campaign-stat"
+                />
               </div>
-              <CampaignDatum label="Customers" value={campaignCustomers.toLocaleString()} />
-              <CampaignDatum label="Orders" value={campaignOrders.length.toLocaleString()} />
-              <CampaignDatum label="Revenue" value={moneyExact(campaignRevenue)} />
-              <CampaignDatum label="Per day" value={moneyExact(campaignRevenuePerDay)} />
-              <CampaignDatum label="Average order" value={moneyExact(campaignAov)} />
             </div>
           ) : (
             <div className="dash-empty">
@@ -538,15 +576,6 @@ function ChargedStat({
     </Link>
   ) : (
     <div className="dash-charged-stat">{content}</div>
-  );
-}
-
-function CampaignDatum({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="dash-campaign-performance-value">
-      <small>{label}</small>
-      <strong>{value}</strong>
-    </div>
   );
 }
 

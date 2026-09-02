@@ -7,6 +7,7 @@ import { z } from "zod";
 import {
   ChargedPanel,
   DashboardShell,
+  DashboardMetric,
   DashCard,
   DomainChip,
   StatusBadge,
@@ -893,13 +894,7 @@ function CatalogStat({
   label: string;
   value: string;
 }) {
-  return (
-    <div className="dash-catalog-stat dash-analytics-metric">
-      <Icon size={24} strokeWidth={1.6} aria-hidden="true" />
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
-  );
+  return <DashboardMetric icon={Icon} label={label} value={value} />;
 }
 
 function ProductThumb({ product }: { product: Row }) {

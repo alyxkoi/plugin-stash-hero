@@ -546,6 +546,31 @@ export function StatCard({
   );
 }
 
+export function DashboardMetric({
+  icon: Icon,
+  label,
+  value,
+  delta,
+  className = "",
+  title,
+}: {
+  icon: typeof LayoutDashboard;
+  label: string;
+  value: string;
+  delta?: { value: string; direction: DeltaDirection };
+  className?: string;
+  title?: string;
+}) {
+  return (
+    <div className={`dash-unified-stat ${className}`.trim()} title={title}>
+      <Icon size={24} strokeWidth={1.6} aria-hidden="true" />
+      <span>{label}</span>
+      <strong>{value}</strong>
+      {delta && <DeltaChip value={delta.value} direction={delta.direction} />}
+    </div>
+  );
+}
+
 export function DeltaChip({
   value,
   direction,

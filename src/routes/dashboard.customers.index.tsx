@@ -1,11 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Repeat2, Search, UserRound } from "lucide-react";
+import { BadgeDollarSign, Repeat2, Search, UserPlus, UserRound, UsersRound } from "lucide-react";
 import {
   ChargedPanel,
   DashCard,
+  DashboardMetric,
   DashboardShell,
-  DeltaChip,
   DomainChip,
 } from "@/components/DashboardShell";
 import { CustomerDrawer, type CustomerDrawerData } from "@/components/AdminDrawers";
@@ -208,21 +208,25 @@ function CustomersPage() {
         >
           <div className="dash-analytics-metrics dash-customer-unified-metrics">
             <CustomerMetric
+              icon={UsersRound}
               label="Customers"
               value={customerTotal.toLocaleString()}
               delta={totalDelta}
             />
             <CustomerMetric
+              icon={UserPlus}
               label="New this month"
               value={metrics.newCurrent.toLocaleString()}
               delta={newDelta}
             />
             <CustomerMetric
+              icon={Repeat2}
               label="Repeat rate"
               value={`${Math.round(metrics.current.repeatRate)}%`}
               delta={repeatDelta}
             />
             <CustomerMetric
+              icon={BadgeDollarSign}
               label="Average LTV"
               value={money(metrics.current.averageLtv)}
               delta={ltvDelta}
@@ -520,25 +524,26 @@ function percentDelta(current: number, previous: number) {
 }
 
 function CustomerMetric({
+  icon,
   label,
   value,
   delta,
 }: {
+  icon: typeof UsersRound;
   label: string;
   value: string;
   delta: ReturnType<typeof percentDelta>;
 }) {
   return (
-    <div className="dash-analytics-metric">
-      <span>{label}</span>
-      <strong>{value}</strong>
-      <DeltaChip
-        value={delta.label}
-        direction={
-          delta.positive == null ? "neutral" : delta.positive ? "positive" : "negative"
-        }
-      />
-    </div>
+    <DashboardMetric
+      icon={icon}
+      label={label}
+      value={value}
+      delta={{
+        value: delta.label,
+        direction: delta.positive == null ? "neutral" : delta.positive ? "positive" : "negative",
+      }}
+    />
   );
 }
 

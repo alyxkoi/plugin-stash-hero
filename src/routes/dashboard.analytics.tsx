@@ -1,12 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useReducedMotion } from "framer-motion";
+import { CircleDollarSign, ReceiptText, ShoppingBag } from "lucide-react";
 import {
   Area,
   AreaChart,
   CartesianGrid,
   Cell,
-  Line,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -17,8 +17,8 @@ import {
 import {
   ChargedPanel,
   DashCard,
+  DashboardMetric,
   DashboardShell,
-  DeltaChip,
   RangeControl,
   SegmentedBar,
   StatusBadge,
@@ -330,16 +330,27 @@ function Analytics() {
       <div className="space-y-6">
         <ChargedPanel domain="money" material="grain" form="arc" silhouette="inset" title="Revenue">
           <div className="dash-analytics-metrics dash-revenue-metrics">
-            <AnalyticsMetric label="Revenue" value={money(revenue)} delta={revenueDelta} />
-            <AnalyticsMetric label="Average order" value={money(aov)} delta={aovDelta} />
             <AnalyticsMetric
+              icon={CircleDollarSign}
+              label="Revenue"
+              value={money(revenue)}
+              delta={revenueDelta}
+            />
+            <AnalyticsMetric
+              icon={ReceiptText}
+              label="Average order"
+              value={money(aov)}
+              delta={aovDelta}
+            />
+            <AnalyticsMetric
+              icon={ShoppingBag}
               label="Orders"
               value={inRange.length.toLocaleString()}
               delta={ordersDelta}
             />
           </div>
           <div
-            className="dash-hero-chart px-4 pb-4 md:px-6"
+            className="dash-hero-chart dash-revenue-chart pb-4"
             role="img"
             aria-label={`Revenue is ${money(revenue)} for ${DASHBOARD_RANGE_LABEL[range]}, ${revenueDelta.label} versus the prior equivalent period.`}
           >
@@ -351,46 +362,62 @@ function Analytics() {
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartSeries} margin={{ top: 8, right: 4, left: -18, bottom: 0 }}>
+                <AreaChart data={chartSeries} margin={{ top: 8, right: 0, left: -8, bottom: 0 }}>
                   <defs>
                     <linearGradient id="analytics-revenue-fill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#FA1265" stopOpacity={0.32} />
-                      <stop offset="100%" stopColor="#FA1265" stopOpacity={0} />
+                      <stop offset="0%" stopColor="#4B3FE8" stopOpacity={0.54} />
+                      <stop offset="58%" stopColor="#4B3FE8" stopOpacity={0.18} />
+                      <stop offset="100%" stopColor="#4B3FE8" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="analytics-previous-fill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#F8F6FB" stopOpacity={0.1} />
+                      <stop offset="100%" stopColor="#F8F6FB" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid stroke="rgba(255,255,255,0.18)" vertical={false} />
+                  <CartesianGrid stroke="rgba(255,255,255,0.1)" vertical={false} />
                   <XAxis
                     dataKey="label"
                     tickLine={false}
                     axisLine={false}
                     minTickGap={22}
-                    tick={{ fill: "rgba(255,255,255,.72)", fontSize: 10 }}
+                    tick={{
+                      fill: "rgba(255,255,255,.72)",
+                      fontFamily: "var(--f-data)",
+                      fontSize: 10,
+                      fontWeight: 600,
+                    }}
                   />
                   <YAxis
                     tickLine={false}
                     axisLine={false}
-                    width={56}
-                    tickFormatter={(value) => `$${value}`}
-                    tick={{ fill: "rgba(255,255,255,.72)", fontSize: 10 }}
+                    tickCount={3}
+                    width={48}
+                    tickFormatter={formatAxisMoney}
+                    tick={{
+                      fill: "rgba(255,255,255,.62)",
+                      fontFamily: "var(--f-data)",
+                      fontSize: 10,
+                      fontWeight: 600,
+                    }}
                   />
                   <Tooltip
                     content={<RevenueTooltip />}
                     cursor={{ stroke: "rgba(255,255,255,.22)" }}
                   />
-                  <Line
-                    type="monotone"
+                  <Area
+                    type="monotoneX"
                     dataKey="previous"
-                    stroke="rgba(255,255,255,.38)"
-                    strokeWidth={1.5}
-                    strokeDasharray="5 5"
+                    stroke="none"
+                    strokeWidth={0}
+                    fill="url(#analytics-previous-fill)"
                     dot={false}
                     isAnimationActive={false}
                   />
                   <Area
-                    type="monotone"
+                    type="monotoneX"
                     dataKey="current"
-                    stroke="#FA1265"
-                    strokeWidth={2}
+                    stroke="none"
+                    strokeWidth={0}
                     fill="url(#analytics-revenue-fill)"
                     dot={false}
                     isAnimationActive={!reduceMotion}
@@ -669,29 +696,34 @@ function Analytics() {
 }
 
 function AnalyticsMetric({
+  icon,
   label,
   value,
   delta,
   helper,
 }: {
+  icon: typeof CircleDollarSign;
   label: string;
   value: string;
   delta?: ReturnType<typeof percentDelta>;
   helper?: string;
 }) {
   return (
-    <div className="dash-analytics-metric" title={helper}>
-      <span>{label}</span>
-      <strong>{value}</strong>
-      {delta && (
-        <DeltaChip
-          value={delta.label}
-          direction={
-            delta.positive == null ? "neutral" : delta.positive ? "positive" : "negative"
-          }
-        />
-      )}
-    </div>
+    <DashboardMetric
+      icon={icon}
+      label={label}
+      value={value}
+      title={helper}
+      delta={
+        delta
+          ? {
+              value: delta.label,
+              direction:
+                delta.positive == null ? "neutral" : delta.positive ? "positive" : "negative",
+            }
+          : undefined
+      }
+    />
   );
 }
 
@@ -808,6 +840,13 @@ function percentDelta(current: number, previous: number) {
 
 function money(value: number) {
   return `$${Number(value || 0).toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
+}
+
+function formatAxisMoney(value: number) {
+  const absolute = Math.abs(Number(value || 0));
+  if (absolute >= 1_000_000) return `$${(absolute / 1_000_000).toFixed(1).replace(".0", "")}M`;
+  if (absolute >= 1_000) return `$${(absolute / 1_000).toFixed(1).replace(".0", "")}K`;
+  return `$${absolute.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
 }
 
 function formatTrackingDate(iso: string) {
