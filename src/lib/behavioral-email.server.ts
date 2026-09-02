@@ -713,46 +713,9 @@ async function buildSavedCandidates(
       return null;
     };
 
-    // ---- STEP 2: 5-day final nudge (timer driven, never a price change)
-    const final5 = rows
-      .filter((r) => {
-        if (step2Done.has(r.id)) return false;
-        const age = now - new Date(r.saved_at).getTime();
-        return age >= 5 * DAY && age <= 30 * DAY;
-      })
-      .sort((a, b) => new Date(a.saved_at).getTime() - new Date(b.saved_at).getTime());
-
-    if (final5.length > 0) {
-      const byPrice = [...final5].sort(
-        (a, b) =>
-          effectivePrice(products.get(b.product_id)!, sales) -
-          effectivePrice(products.get(a.product_id)!, sales),
-      );
-      const items: EmailProduct[] = byPrice.map((r) => {
-        const product = products.get(r.product_id)!;
-        return toEmailProduct(product, effectivePrice(product, sales));
-      });
-      const deadlineText = deadlineFor(
-        products.get(byPrice[0]!.product_id),
-        sales,
-        DEADLINE_SAVED_FALLBACK,
-      );
-      out.push({
-        email,
-        sequence: "saved_items",
-        step: 2,
-        // same anchor as step 1 so sequencing holds and it fires once per item
-        triggerRef: `s2:${final5.map((r) => r.id).join(",")}`,
-        exemptFromSequencing: true,
-        render: () => renderSavedItemsFinal({ items, deadlineText, unsubUrl: unsubUrl(email) }),
-        guard: guardFor(
-          final5.map((r) => r.id),
-          final5.map((r) => r.product_id),
-        ),
-      });
-    }
-
-    // ---- STEP 1: 3-day nudge across every eligible saved item
+    // Eligible batch: everything saved at least 3 days ago. The OLDEST item
+    // anchors the trigger for BOTH steps so step 2 can be scheduled relative to
+    // step 1's actual send.
     const eligible = rows
       .filter((r) => {
         const age = now - new Date(r.saved_at).getTime();
@@ -760,34 +723,46 @@ async function buildSavedCandidates(
       })
       .sort((a, b) => new Date(a.saved_at).getTime() - new Date(b.saved_at).getTime());
 
-    if (eligible.length > 0) {
-      const byPrice = [...eligible].sort(
-        (a, b) =>
-          effectivePrice(products.get(b.product_id)!, sales) -
-          effectivePrice(products.get(a.product_id)!, sales),
-      );
-      const items = byPrice.map((r) => {
-        const product = products.get(r.product_id)!;
-        return toEmailProduct(product, effectivePrice(product, sales));
-      });
-      const deadlineText = deadlineFor(
-        products.get(byPrice[0]!.product_id),
-        sales,
-        DEADLINE_SAVED_FALLBACK,
-      );
-      out.push({
-        email,
-        sequence: "saved_items",
-        step: 1,
-        // oldest eligible saved item anchors the trigger so the nudge fires once
-        triggerRef: eligible[0]!.id,
-        render: () => renderSavedItemsNudge({ items, deadlineText, unsubUrl: unsubUrl(email) }),
-        guard: guardFor(
-          eligible.map((r) => r.id),
-          eligible.map((r) => r.product_id),
-        ),
-      });
-    }
+    if (eligible.length === 0) continue;
+
+    const anchor = eligible[0]!.id;
+    const step1At = sentAt.get(`${email}|saved_items|1|${anchor}`) ?? 0;
+    const step2At = sentAt.get(`${email}|saved_items|2|${anchor}`) ?? 0;
+    if (step2At) continue; // hard stop: two saved-items emails maximum
+    // Legacy step-2 rows were keyed as `s2:<ids>`; honour them so nobody is
+    // re-mailed after the migration to anchored refs.
+    if (legacyStep2Done.has(anchor)) continue;
+
+    const step: 1 | 2 = step1At ? 2 : 1;
+    // Step 1 due at save + 3 days (already filtered), step 2 at step 1 + 2 days.
+    if (step === 2 && now < step1At + 2 * DAY) continue;
+
+    const byPrice = [...eligible].sort(
+      (a, b) =>
+        effectivePrice(products.get(b.product_id)!, sales) -
+        effectivePrice(products.get(a.product_id)!, sales),
+    );
+    const items: EmailProduct[] = byPrice.map((r) => {
+      const product = products.get(r.product_id)!;
+      return toEmailProduct(product, effectivePrice(product, sales));
+    });
+    const deadlineText = deadlineFor(products.get(byPrice[0]!.product_id), sales, DEADLINE_SAVED_FALLBACK);
+
+    out.push({
+      email,
+      sequence: "saved_items",
+      step,
+      triggerRef: anchor,
+      render: () =>
+        step === 1
+          ? renderSavedItemsNudge({ items, deadlineText, unsubUrl: unsubUrl(email) })
+          : renderSavedItemsFinal({ items, deadlineText, unsubUrl: unsubUrl(email) }),
+      guard: guardFor(
+        eligible.map((r) => r.id),
+        eligible.map((r) => r.product_id),
+      ),
+    });
+
   }
 
   return out;
