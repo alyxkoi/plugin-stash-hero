@@ -664,7 +664,8 @@ async function buildSavedCandidates(
   assertDb(profilesError, "Load saved-item recipients");
   const emailByUser = new Map<string, string>((profs ?? []).map((p) => [p.id, normalizeEmail(p.email)]));
 
-  // Saved-items step 2 is sent at most once per saved item, ever.
+  // Legacy step-2 refs (`s2:<savedId,savedId>`) — honoured so the switch to
+  // anchored refs cannot re-send a final nudge someone already received.
   const { data: sentStep2, error: sentStep2Error } = await supabaseAdmin
     .from("email_automation_log")
     .select("trigger_ref")
@@ -673,12 +674,13 @@ async function buildSavedCandidates(
     .eq("status", "sent")
     .eq("dry_run", false);
   assertDb(sentStep2Error, "Load saved-item final-nudge history");
-  const step2Done = new Set<string>();
+  const legacyStep2Done = new Set<string>();
   for (const r of sentStep2 ?? []) {
     for (const id of (r.trigger_ref ?? "").replace(/^s2:/, "").split(",")) {
-      if (id) step2Done.add(id);
+      if (id) legacyStep2Done.add(id);
     }
   }
+
 
   type SavedRow = { id: string; product_id: string; price_at_save: number | null; saved_at: string };
   const byUser = new Map<string, { email: string; rows: SavedRow[] }>();
