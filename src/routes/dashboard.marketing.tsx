@@ -1,9 +1,10 @@
 import { createFileRoute, useSearch, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import {
   ChargedPanel,
+  DashboardMetric,
   DashboardShell,
   DashCard,
   DomainChip,
@@ -14,11 +15,16 @@ import {
   Archive,
   ArchiveRestore,
   BadgePercent,
+  CircleDollarSign,
   Copy,
   Link2,
   Mail,
+  MousePointerClick,
   Pencil,
   Plus,
+  Send,
+  ShoppingBag,
+  TicketCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,7 +32,10 @@ import { DiscountCodeModal, type DiscountRow } from "@/components/dashboard/Disc
 import { CampaignLinksPage } from "./dashboard.campaign-links";
 import { EmailAutomationsPanel } from "@/components/dashboard/EmailAutomationsPanel";
 import { netRevenue } from "@/lib/revenue";
-import { getEmailAutomationStats } from "@/lib/email-automation-admin.functions";
+import {
+  getEmailAutomationStats,
+  type RangeKey,
+} from "@/lib/email-automation-admin.functions";
 
 type MarketingSearch = { tab?: "codes" | "campaign" | "emails" };
 
@@ -43,6 +52,12 @@ function Marketing() {
   const search = useSearch({ from: "/dashboard/marketing" }) as MarketingSearch;
   const navigate = useNavigate();
   const tab = search.tab ?? "codes";
+  const [emailRange, setEmailRange] = useState<RangeKey>("mtd");
+  const [performanceVersion, setPerformanceVersion] = useState(0);
+  const refreshPerformance = useCallback(
+    () => setPerformanceVersion((current) => current + 1),
+    [],
+  );
   const setTab = (t: "codes" | "campaign" | "emails") =>
     navigate({ to: "/dashboard/marketing", search: { tab: t }, replace: true });
   const workspaces = [
@@ -65,7 +80,7 @@ function Marketing() {
 
   return (
     <DashboardShell title="Marketing" action={tab === "codes" ? <MarketingCodesAction /> : null}>
-      <MarketingHero tab={tab} />
+      <MarketingHero tab={tab} emailRange={emailRange} refreshVersion={performanceVersion} />
 
       <nav
         className="dash-marketing-workspaces"
@@ -94,11 +109,11 @@ function Marketing() {
 
       <section className="dash-marketing-content" aria-live="polite">
         {tab === "codes" ? (
-          <DiscountCodesPanel />
+          <DiscountCodesPanel onPerformanceChange={refreshPerformance} />
         ) : tab === "campaign" ? (
-          <CampaignLinksPage embedded />
+          <CampaignLinksPage embedded onDataChanged={refreshPerformance} />
         ) : (
-          <EmailAutomationsPanel />
+          <EmailAutomationsPanel range={emailRange} onRangeChange={setEmailRange} />
         )}
       </section>
     </DashboardShell>
@@ -112,7 +127,21 @@ type MarketingHeroModel = {
   empty: string;
 };
 
-function MarketingHero({ tab }: { tab: "codes" | "campaign" | "emails" }) {
+const MARKETING_METRIC_ICONS = {
+  codes: [BadgePercent, TicketCheck, CircleDollarSign],
+  campaign: [Link2, MousePointerClick, ShoppingBag],
+  emails: [Send, ShoppingBag, CircleDollarSign],
+} as const;
+
+function MarketingHero({
+  tab,
+  emailRange,
+  refreshVersion,
+}: {
+  tab: "codes" | "campaign" | "emails";
+  emailRange: RangeKey;
+  refreshVersion: number;
+}) {
   const emailStats = useServerFn(getEmailAutomationStats);
   const [model, setModel] = useState<MarketingHeroModel | null>(null);
   const [loading, setLoading] = useState(true);
@@ -138,20 +167,21 @@ function MarketingHero({ tab }: { tab: "codes" | "campaign" | "emails" }) {
             uses: number;
             status: string;
           }[];
+          const activeCodes = codes.filter((code) => code.status === "active");
           const orders = (ordersRes.data ?? []) as {
             discount_code: string | null;
             total: number;
             status: string;
             refunded_amount_cents: number | null;
           }[];
-          const allPerformance = codes
+          const allPerformance = activeCodes
             .map((code) => {
               const matched = orders.filter(
                 (order) => order.discount_code?.toLowerCase() === code.code.toLowerCase(),
               );
               const revenue = matched.reduce((sum, order) => sum + netRevenue(order), 0);
               return {
-                label: code.code,
+                label: code.name?.trim() || code.code,
                 value: revenue,
                 valueText: money(revenue),
                 detail: `${code.uses.toLocaleString()} redemptions`,
@@ -165,11 +195,11 @@ function MarketingHero({ tab }: { tab: "codes" | "campaign" | "emails" }) {
             metrics: [
               {
                 label: "Active codes",
-                value: codes.filter((code) => code.status === "active").length.toLocaleString(),
+                value: activeCodes.length.toLocaleString(),
               },
               {
                 label: "Redemptions",
-                value: codes
+                value: activeCodes
                   .reduce((sum, code) => sum + Number(code.uses || 0), 0)
                   .toLocaleString(),
               },
@@ -195,8 +225,10 @@ function MarketingHero({ tab }: { tab: "codes" | "campaign" | "emails" }) {
             purchases: number;
           }[];
           const statsById = new Map(stats.map((row) => [row.link_id, row]));
-          const performance = links
-            .filter((link) => !link.archived_at)
+          const activeLinks = links.filter((link) => !link.archived_at);
+          const activeLinkIds = new Set(activeLinks.map((link) => link.id));
+          const activeStats = stats.filter((row) => activeLinkIds.has(row.link_id));
+          const performance = activeLinks
             .map((link) => {
               const row = statsById.get(link.id);
               const clicks = Number(row?.clicks || 0);
@@ -211,14 +243,17 @@ function MarketingHero({ tab }: { tab: "codes" | "campaign" | "emails" }) {
             })
             .sort((a, b) => b.value - a.value)
             .slice(0, 4);
-          const clicks = stats.reduce((sum, row) => sum + Number(row.clicks || 0), 0);
-          const purchases = stats.reduce((sum, row) => sum + Number(row.purchases || 0), 0);
+          const clicks = activeStats.reduce((sum, row) => sum + Number(row.clicks || 0), 0);
+          const purchases = activeStats.reduce(
+            (sum, row) => sum + Number(row.purchases || 0),
+            0,
+          );
           next = {
             title: "Campaign performance",
             metrics: [
               {
                 label: "Active links",
-                value: links.filter((link) => !link.archived_at).length.toLocaleString(),
+                value: activeLinks.length.toLocaleString(),
               },
               { label: "Tracked clicks", value: clicks.toLocaleString() },
               { label: "Purchases", value: purchases.toLocaleString() },
@@ -227,7 +262,7 @@ function MarketingHero({ tab }: { tab: "codes" | "campaign" | "emails" }) {
             empty: "No campaign-link performance yet.",
           };
         } else {
-          const data = await emailStats({ data: { range: "mtd" } });
+          const data = await emailStats({ data: { range: emailRange } });
           const sent = data.steps.reduce((sum, step) => sum + step.sent, 0);
           const sales = data.steps.reduce((sum, step) => sum + step.sales, 0);
           const netCents = data.steps.reduce((sum, step) => sum + step.netCents, 0);
@@ -248,7 +283,7 @@ function MarketingHero({ tab }: { tab: "codes" | "campaign" | "emails" }) {
               { label: "Recovered revenue", value: money(netCents / 100) },
             ],
             items: performance,
-            empty: "No behavioral-email performance this month yet.",
+            empty: "No behavioral-email performance in this range yet.",
           };
         }
         if (!cancelled) setModel(next);
@@ -262,7 +297,7 @@ function MarketingHero({ tab }: { tab: "codes" | "campaign" | "emails" }) {
     return () => {
       cancelled = true;
     };
-  }, [emailStats, tab]);
+  }, [emailRange, emailStats, refreshVersion, tab]);
 
   const max = Math.max(1, ...(model?.items.map((item) => item.value) ?? []));
   return (
@@ -280,11 +315,14 @@ function MarketingHero({ tab }: { tab: "codes" | "campaign" | "emails" }) {
       ) : model && model.items.length > 0 ? (
         <div className="dash-marketing-performance">
           <div className="dash-marketing-metrics">
-            {model.metrics.map((metric) => (
-              <div key={metric.label}>
-                <span>{metric.label}</span>
-                <strong>{metric.value}</strong>
-              </div>
+            {model.metrics.map((metric, index) => (
+              <DashboardMetric
+                key={metric.label}
+                icon={MARKETING_METRIC_ICONS[tab][index] ?? CircleDollarSign}
+                label={metric.label}
+                value={metric.value}
+                className="dash-marketing-metric"
+              />
             ))}
           </div>
           <div className="dash-marketing-chart">
@@ -299,7 +337,7 @@ function MarketingHero({ tab }: { tab: "codes" | "campaign" | "emails" }) {
                   max={max}
                   label={`${item.label}: ${item.valueText}`}
                   segments={18}
-                  tone={index === 0 ? "money" : "indigo"}
+                  tone="indigo"
                 />
                 <div
                   className="dash-marketing-mobile-bar"
@@ -343,7 +381,7 @@ function MarketingCodesAction() {
   );
 }
 
-function DiscountCodesPanel() {
+function DiscountCodesPanel({ onPerformanceChange }: { onPerformanceChange: () => void }) {
   const [genOpen, setGenOpen] = useState(false);
   const [editing, setEditing] = useState<DiscountRow | null>(null);
   const [rows, setRows] = useState<DiscountRow[]>([]);
@@ -402,6 +440,7 @@ function DiscountCodesPanel() {
     setRows((current) =>
       current.map((row) => (row.id === code.id ? { ...row, status } : row)),
     );
+    onPerformanceChange();
   }
 
   const revenueByCode = useMemo(() => {
@@ -662,6 +701,7 @@ function DiscountCodesPanel() {
               setRows((r) => [row, ...r]);
               setGenOpen(false);
               load();
+              onPerformanceChange();
             }}
           />
         )}
@@ -677,6 +717,7 @@ function DiscountCodesPanel() {
               setRows((r) => r.map((x) => (x.id === row.id ? row : x)));
               setEditing(null);
               load();
+              onPerformanceChange();
             }}
           />
         )}

@@ -43,7 +43,7 @@ function OrdersPage() {
   const [q, setQ] = useState("");
   const [segment, setSegment] = useState<Segment>("all");
   const [status, setStatus] = useState("all");
-  const [dateRange, setDateRange] = useState<DateRange>("mtd");
+  const [dateRange, setDateRange] = useState<DateRange>("all");
   const [page, setPage] = useState(1);
   const [openOrderId, setOpenOrderId] = useState<string | null>(null);
   const pageSize = 25;

@@ -11369,6 +11369,121 @@ body.dashboard-active {
   }
 }
 
+/* Dashboard orders, analytics, and marketing targeted fixes. */
+.dashboard-scope .dash-recent-orders-panel > .dash-panel-header,
+.dashboard-scope .dash-recent-orders-panel thead {
+  background: #100d24;
+}
+
+.dashboard-scope .dash-analytics-metrics + .dash-revenue-chart {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  height: 218px;
+  margin: 4px 0 -12px;
+  padding: 0 !important;
+}
+
+.dashboard-scope .dash-revenue-chart .recharts-responsive-container,
+.dashboard-scope .dash-revenue-chart .recharts-wrapper,
+.dashboard-scope .dash-revenue-chart .recharts-surface {
+  max-width: 100%;
+}
+
+.dashboard-scope .dash-marketing-metrics > .dash-marketing-metric {
+  grid-template-columns: 28px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  min-height: 76px;
+  padding: 10px 0;
+  border: 0;
+}
+
+.dashboard-scope .dash-marketing-metric > svg {
+  grid-column: 1;
+  grid-row: 1 / 3;
+}
+
+.dashboard-scope .dash-marketing-metric > span,
+.dashboard-scope .dash-marketing-metric > strong {
+  grid-column: 2;
+}
+
+.dashboard-scope .dash-marketing-metric + .dash-marketing-metric::before {
+  inset: 0 8% auto;
+  width: auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+}
+
+.dashboard-scope .dash-marketing-chart > div {
+  padding: 10px 0;
+}
+
+.dashboard-scope .dash-marketing-chart > div + div {
+  border-top: 1px solid var(--border);
+}
+
+.dashboard-scope .dash-marketing-chart .is-leader b,
+.dashboard-scope .dash-marketing-chart .is-leader .dash-marketing-mobile-bar > span {
+  background: var(--indigo) !important;
+}
+
+@media (max-width: 767px) {
+  .dashboard-scope .dash-analytics-metrics + .dash-revenue-chart {
+    width: 100%;
+    height: 190px;
+    margin: 8px 0 -4px;
+  }
+
+  .dashboard-scope .dash-marketing-performance {
+    gap: 16px;
+  }
+
+  .dashboard-scope .dash-marketing-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-scope .dash-marketing-metrics > .dash-marketing-metric {
+    min-height: 104px;
+    padding: 14px 12px;
+  }
+
+  .dashboard-scope .dash-marketing-metrics > .dash-marketing-metric::before {
+    content: none;
+  }
+
+  .dashboard-scope .dash-marketing-metrics > .dash-marketing-metric:nth-child(even)::before {
+    inset: 10% auto 10% 0;
+    width: 1px;
+    height: auto;
+    content: "";
+    background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  }
+
+  .dashboard-scope .dash-marketing-metrics > .dash-marketing-metric:nth-child(3) {
+    grid-column: 1 / -1;
+  }
+
+  .dashboard-scope .dash-marketing-metrics > .dash-marketing-metric:nth-child(3)::after {
+    position: absolute;
+    inset: 0 8% auto;
+    height: 1px;
+    content: "";
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  }
+
+  .dashboard-scope .dash-marketing-chart > div {
+    padding: 12px 0;
+  }
+
+  .dashboard-scope .dash-marketing-chart strong,
+  .dashboard-scope .dash-marketing-chart small {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+  }
+}
+
 /* ===== STOREFRONT THEME V2 =====
    Intentionally scoped so dashboard routes keep their own design system. */
 .storefront-shell {

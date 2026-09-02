@@ -225,7 +225,7 @@ function Analytics() {
     trackingStartDay && bounds.currentStart.getTime() >= trackingStartDay.getTime(),
   );
   const chartSeries = useMemo(
-    () => buildPairedSeries(completed, bounds, range),
+    () => buildRevenueSeries(completed, bounds, range),
     [completed, bounds, range],
   );
 
@@ -352,7 +352,7 @@ function Analytics() {
           <div
             className="dash-hero-chart dash-revenue-chart pb-4"
             role="img"
-            aria-label={`Revenue is ${money(revenue)} for ${DASHBOARD_RANGE_LABEL[range]}, ${revenueDelta.label} versus the prior equivalent period.`}
+            aria-label={`Revenue chart for ${DASHBOARD_RANGE_LABEL[range]}, totaling ${money(revenue)}.`}
           >
             {loading ? (
               <div className="skeleton-block h-full" />
@@ -362,16 +362,12 @@ function Analytics() {
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartSeries} margin={{ top: 8, right: 0, left: -8, bottom: 0 }}>
+                <AreaChart data={chartSeries} margin={{ top: 8, right: 14, left: -4, bottom: 0 }}>
                   <defs>
                     <linearGradient id="analytics-revenue-fill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#4B3FE8" stopOpacity={0.54} />
-                      <stop offset="58%" stopColor="#4B3FE8" stopOpacity={0.18} />
-                      <stop offset="100%" stopColor="#4B3FE8" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="analytics-previous-fill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#F8F6FB" stopOpacity={0.1} />
-                      <stop offset="100%" stopColor="#F8F6FB" stopOpacity={0} />
+                      <stop offset="0%" stopColor="#FF4D8F" stopOpacity={0.82} />
+                      <stop offset="58%" stopColor="#FF4D8F" stopOpacity={0.3} />
+                      <stop offset="100%" stopColor="#FF4D8F" stopOpacity={0.03} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid stroke="rgba(255,255,255,0.1)" vertical={false} />
@@ -403,15 +399,6 @@ function Analytics() {
                   <Tooltip
                     content={<RevenueTooltip />}
                     cursor={{ stroke: "rgba(255,255,255,.22)" }}
-                  />
-                  <Area
-                    type="monotoneX"
-                    dataKey="previous"
-                    stroke="none"
-                    strokeWidth={0}
-                    fill="url(#analytics-previous-fill)"
-                    dot={false}
-                    isAnimationActive={false}
                   />
                   <Area
                     type="monotoneX"
@@ -738,12 +725,10 @@ function RevenueTooltip({
 }) {
   if (!active || !payload?.length) return null;
   const current = payload.find((entry) => entry.dataKey === "current")?.value ?? 0;
-  const previous = payload.find((entry) => entry.dataKey === "previous")?.value ?? 0;
   return (
     <div className="dash-revenue-tooltip">
       <span>{label}</span>
       <strong>{money(current)}</strong>
-      <small>Previous {money(previous)}</small>
     </div>
   );
 }
@@ -766,7 +751,7 @@ function SessionsTooltip({
   );
 }
 
-function buildPairedSeries(
+function buildRevenueSeries(
   orders: OrderRow[],
   bounds: ReturnType<typeof chicagoComparisonBounds>,
   range: DashboardRange,
@@ -774,22 +759,13 @@ function buildPairedSeries(
   const monthly = false;
   const hourly = range === "today";
   const currentBuckets = makeBuckets(bounds.currentStart, bounds.currentEnd, monthly, hourly);
-  const previousBuckets = makeBuckets(bounds.previousStart, bounds.previousEnd, monthly, hourly);
 
-  return currentBuckets.map((bucket, index) => {
-    const previous = previousBuckets[index];
-    return {
-      label: bucket.label,
-      current: sumNetRevenue(
-        orders.filter((order) => within(order.created_at, bucket.start, bucket.end)),
-      ),
-      previous: previous
-        ? sumNetRevenue(
-            orders.filter((order) => within(order.created_at, previous.start, previous.end)),
-          )
-        : 0,
-    };
-  });
+  return currentBuckets.map((bucket) => ({
+    label: bucket.label,
+    current: sumNetRevenue(
+      orders.filter((order) => within(order.created_at, bucket.start, bucket.end)),
+    ),
+  }));
 }
 
 function makeBuckets(start: Date, end: Date, monthly: boolean, hourly = false) {

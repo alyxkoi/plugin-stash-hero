@@ -68,7 +68,13 @@ function slugFromDateRange(start: string | null, end: string | null): string {
   return `${MONTHS[m - 1].toLowerCase()}-${y}`;
 }
 
-export function CampaignLinksPage({ embedded = false }: { embedded?: boolean } = {}) {
+export function CampaignLinksPage({
+  embedded = false,
+  onDataChanged,
+}: {
+  embedded?: boolean;
+  onDataChanged?: () => void;
+} = {}) {
   const [groups, setGroups] = useState<Group[]>([]);
   const [links, setLinks] = useState<LinkRow[]>([]);
   const [clicks, setClicks] = useState<ClickAgg>(new Map());
@@ -122,6 +128,11 @@ export function CampaignLinksPage({ embedded = false }: { embedded?: boolean } =
     }
     setUnattributed(unmatched);
     setHasLoadedOnce(true);
+  };
+
+  const refreshAfterMutation = async () => {
+    await reload();
+    onDataChanged?.();
   };
 
 
@@ -257,7 +268,11 @@ export function CampaignLinksPage({ embedded = false }: { embedded?: boolean } =
   return (
     <Shell {...shellProps}>
       <div className="mb-6">
-        <CreateLinkForm groups={groups} onCreated={reload} onGroupCreated={reload} />
+        <CreateLinkForm
+          groups={groups}
+          onCreated={refreshAfterMutation}
+          onGroupCreated={refreshAfterMutation}
+        />
       </div>
 
 
@@ -315,7 +330,7 @@ export function CampaignLinksPage({ embedded = false }: { embedded?: boolean } =
                       );
                     })()}
                   </div>
-                  <GroupActions group={g} onChanged={reload} />
+                  <GroupActions group={g} onChanged={refreshAfterMutation} />
                 </div>
                 {inGroup.length === 0 ? (
                   <div className="text-[11px] font-mono text-white/40 py-2">Drag links here or create one in this group.</div>
@@ -328,7 +343,7 @@ export function CampaignLinksPage({ embedded = false }: { embedded?: boolean } =
                         group={g}
                         stats={stats.get(link.id)}
                         groups={groups}
-                        onChanged={reload}
+                        onChanged={refreshAfterMutation}
                         onCopy={copyLink}
                         dragRef={dragRef}
                         onDropOnLink={handleDropOnLink}
@@ -359,7 +374,7 @@ export function CampaignLinksPage({ embedded = false }: { embedded?: boolean } =
                       group={null}
                       stats={stats.get(link.id)}
                       groups={groups}
-                      onChanged={reload}
+                      onChanged={refreshAfterMutation}
                       onCopy={copyLink}
                       dragRef={dragRef}
                       onDropOnLink={handleDropOnLink}

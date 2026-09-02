@@ -69,13 +69,18 @@ const rate = (sales: number, sent: number) => (sent > 0 ? (sales / sent) * 100 :
 const rateText = (sales: number, sent: number) =>
   sent > 0 ? `${rate(sales, sent).toFixed(1)}%` : "—";
 
-export function EmailAutomationsPanel() {
+export function EmailAutomationsPanel({
+  range,
+  onRangeChange,
+}: {
+  range: RangeKey;
+  onRangeChange: (range: RangeKey) => void;
+}) {
   const fetchStats = useServerFn(getEmailAutomationStats);
   const toggleFn = useServerFn(setEmailSequenceEnabled);
   const testSendFn = useServerFn(sendBehavioralTestEmail);
   const qc = useQueryClient();
 
-  const [range, setRange] = useState<RangeKey>("mtd");
   const [skipsOpen, setSkipsOpen] = useState(false);
   const [testTemplate, setTestTemplate] = useState<TestTemplateKey>("cart_1h");
   const [testTo, setTestTo] = useState("alexrunsit@gmail.com");
@@ -155,7 +160,7 @@ export function EmailAutomationsPanel() {
               <button
                 key={key}
                 type="button"
-                onClick={() => setRange(key)}
+                onClick={() => onRangeChange(key)}
                 aria-pressed={range === key}
               >
                 {RANGE_LABELS[key]}

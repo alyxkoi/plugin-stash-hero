@@ -294,7 +294,7 @@ function Overview() {
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
           <DashCard
             title="Recent orders"
-            className="xl:col-span-7 dash-section-header-solid"
+            className="xl:col-span-7 dash-section-header-solid dash-recent-orders-panel"
             action={
               <Link
                 to="/dashboard/orders"
