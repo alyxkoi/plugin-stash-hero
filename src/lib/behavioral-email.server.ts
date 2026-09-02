@@ -58,7 +58,7 @@ type LogRow = {
   sequence_type: SequenceType;
   step: number;
   trigger_ref: string;
-  status: "sent" | "failed" | "skipped";
+  status: "sent" | "failed" | "skipped" | "deferred";
   skip_reason: string | null;
   attempts: number;
   sent_at: string | null;
