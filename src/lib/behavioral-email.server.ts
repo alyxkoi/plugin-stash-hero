@@ -648,7 +648,7 @@ async function buildSavedCandidates(
   now: number,
   products: Map<string, ProductRow>,
   sales: ActiveSale[],
-  _dryRun: boolean,
+  sentAt: Map<string, number>,
 ): Promise<Candidate[]> {
   const { data: saved, error: savedError } = await supabaseAdmin
     .from("saved_items")
