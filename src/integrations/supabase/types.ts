@@ -1727,7 +1727,7 @@ export type Database = {
       customer_status: "active" | "refunded" | "banned"
       discount_status: "active" | "expired" | "disabled" | "archived"
       discount_type: "percent" | "flat"
-      email_send_status: "sent" | "failed" | "skipped"
+      email_send_status: "sent" | "failed" | "skipped" | "deferred"
       email_sequence_type: "abandoned_cart" | "saved_items"
       order_status: "completed" | "refunded" | "partial" | "pending"
       product_status: "published" | "draft" | "archived"
@@ -1865,7 +1865,7 @@ export const Constants = {
       customer_status: ["active", "refunded", "banned"],
       discount_status: ["active", "expired", "disabled", "archived"],
       discount_type: ["percent", "flat"],
-      email_send_status: ["sent", "failed", "skipped"],
+      email_send_status: ["sent", "failed", "skipped", "deferred"],
       email_sequence_type: ["abandoned_cart", "saved_items"],
       order_status: ["completed", "refunded", "partial", "pending"],
       product_status: ["published", "draft", "archived"],
