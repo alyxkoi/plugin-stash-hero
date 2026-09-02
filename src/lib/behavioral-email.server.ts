@@ -522,7 +522,7 @@ async function buildCartCandidates(
   now: number,
   products: Map<string, ProductRow>,
   sales: ActiveSale[],
-  sentKeys: Set<string>,
+  sentAt: Map<string, number>,
   dryRun: boolean,
 ): Promise<Candidate[]> {
   const { data: items, error: itemsError } = await supabaseAdmin
@@ -548,63 +548,62 @@ async function buildCartCandidates(
   const emailByUser = new Map<string, string>((profs ?? []).map((p) => [p.id, normalizeEmail(p.email)]));
 
   const out: Candidate[] = [];
+  // Relative step intervals: step 1 from cart activity, later steps from the
+  // previous SEND, so a delayed step shifts the rest instead of dropping them.
+  const CART_DELAY: Record<1 | 2 | 3, number> = { 1: 1 * HOUR, 2: 24 * HOUR, 3: 48 * HOUR };
 
   for (const [userId, rows] of byUser) {
     const email = emailByUser.get(userId) ?? "";
     const activity = Math.max(...rows.map((r) => new Date(r.updated_at ?? r.created_at).getTime()));
     const age = now - activity;
-    // Stale carts (older than a week) are past the sequence window — never back-blast them.
-    if (age > 7 * DAY) continue;
-    // Elapsed time only sets the CEILING; progression decides the actual step.
-    const ageStep: 1 | 2 | 3 | null =
-      age >= 72 * HOUR ? 3 : age >= 24 * HOUR ? 2 : age >= 1 * HOUR ? 1 : null;
-
-    if (!ageStep) continue;
+    // Window is wide enough for a fully relative 3-step sequence, but never a
+    // back-blast of long-dead carts.
+    if (age > 14 * DAY) continue;
+    if (age < CART_DELAY[1]) continue;
 
     const triggerRef = `${userId}:${new Date(activity).toISOString()}`;
 
     if (!email) {
       // Unrecoverable cart — log once so it is auditable.
-      const { error: logError } = await supabaseAdmin.from("email_automation_log").upsert(
-        {
+      const { data: dupe } = await supabaseAdmin
+        .from("email_automation_log")
+        .select("id")
+        .eq("customer_email", `unknown:${userId}`)
+        .eq("trigger_ref", triggerRef)
+        .eq("dry_run", dryRun)
+        .maybeSingle();
+      if (!dupe) {
+        const { error: logError } = await supabaseAdmin.from("email_automation_log").insert({
           customer_email: `unknown:${userId}`,
           sequence_type: "abandoned_cart" as const,
-          step: ageStep,
+          step: 1,
           trigger_ref: triggerRef,
           status: "skipped" as const,
           skip_reason: "no_valid_email",
           dry_run: dryRun,
-        },
-        { onConflict: "customer_email,sequence_type,step,trigger_ref,dry_run", ignoreDuplicates: true },
-      );
-      assertDb(logError, "Log abandoned cart without email");
+        });
+        assertDb(logError, "Log abandoned cart without email");
+      }
       continue;
     }
 
-    // highest step already delivered for this exact trigger
+    // Highest step already delivered for this exact trigger, and when.
     let prevSent = 0;
+    let prevSentAt = 0;
     for (const s of [1, 2, 3]) {
-      if (sentKeys.has(`${email}|abandoned_cart|${s}|${triggerRef}`)) prevSent = s;
+      const t = sentAt.get(`${email}|abandoned_cart|${s}|${triggerRef}`);
+      if (t) {
+        prevSent = s;
+        prevSentAt = t;
+      }
     }
-    const step = Math.min(ageStep, prevSent + 1) as 1 | 2 | 3;
-    if (step > 3) continue;
+    if (prevSent >= 3) continue; // hard stop: three cart emails maximum
+    const step = (prevSent + 1) as 1 | 2 | 3;
 
-    // Audit the fact that a later step was time-eligible but held back.
-    if (step < ageStep) {
-      const { error: logError } = await supabaseAdmin.from("email_automation_log").upsert(
-        {
-          customer_email: email,
-          sequence_type: "abandoned_cart" as const,
-          step: ageStep,
-          trigger_ref: triggerRef,
-          status: "skipped" as const,
-          skip_reason: "prior_step_not_sent",
-          dry_run: dryRun,
-        },
-        { onConflict: "customer_email,sequence_type,step,trigger_ref,dry_run" },
-      );
-      assertDb(logError, "Log deferred abandoned-cart step");
-    }
+    // Relative due time. Not yet due => not a candidate at all (no log row).
+    const dueAt = step === 1 ? activity + CART_DELAY[1] : prevSentAt + CART_DELAY[step];
+    if (now < dueAt) continue;
+
 
     const productIds = rows.map((r) => r.product_id);
     const live = productIds.map((id) => products.get(id)).filter(Boolean) as ProductRow[];
