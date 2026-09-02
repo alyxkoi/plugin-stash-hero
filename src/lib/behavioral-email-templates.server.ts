@@ -165,8 +165,8 @@ export function renderAbandonedCart(opts: {
     HERO_ORIGINAL: original(hero),
     CART_URL: cartUrl,
     CART_TOTAL: money(total),
-    CART_ORIGINAL_TOTAL: money(retailTotal),
-    CART_SAVINGS_AMOUNT: money(savings),
+    CART_ORIGINAL_TOTAL: pct ? money(retailTotal) : "",
+    CART_SAVINGS_AMOUNT: pct ? money(savings) : "",
     CART_SAVINGS_PCT: pct,
     UNSUBSCRIBE_URL: opts.unsubUrl,
   });
