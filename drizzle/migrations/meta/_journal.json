@@ -64,6 +64,13 @@
       "when": 1788302294298,
       "tag": "0008_grant_user_roles_access",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1788366061289,
+      "tag": "0009_behavioral_email_status_aware_uniqueness",
+      "breakpoints": true
     }
   ]
 }
