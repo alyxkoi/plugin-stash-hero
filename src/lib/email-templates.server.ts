@@ -16,6 +16,8 @@ type OrderItem = {
    */
   downloadUrl: string;
   coverUrl?: string | null;
+  /** RETAIL (products.compare_at_price) — struck-through "was" price. */
+  comparePrice?: number | null;
 };
 
 function cover(it: OrderItem) {
@@ -60,7 +62,10 @@ export function renderOrderConfirmation(opts: {
     HERO_IMAGE: cover(hero),
     HERO_NAME: escapeHtml(hero.name),
     HERO_PRICE: money(hero.price),
-    HERO_ORIGINAL: "",
+    HERO_ORIGINAL:
+      hero.comparePrice != null && Number(hero.comparePrice) > hero.price
+        ? money(Number(hero.comparePrice))
+        : "",
     HERO_DOWNLOAD_URL: hero.downloadUrl,
   });
 
