@@ -46,20 +46,23 @@ function cover(p: { coverUrl?: string | null }) {
   return p.coverUrl && p.coverUrl.startsWith("http") ? p.coverUrl : FALLBACK_COVER;
 }
 
+/** RETAIL as display text, or "" when there is no valid retail gap. */
 function original(p: EmailProduct): string {
   return p.comparePrice != null && Number(p.comparePrice) > p.price
     ? money(Number(p.comparePrice))
     : "";
 }
 
+/** RETAIL when it exceeds EFFECTIVE, otherwise EFFECTIVE (keeps totals sane). */
 function retail(p: EmailProduct): number {
   const c = p.comparePrice != null ? Number(p.comparePrice) : 0;
   return c > p.price ? c : p.price;
 }
 
+/** Savings percentage, always rounded DOWN so a discount is never overstated. */
 function pctText(saved: number, base: number): string {
   if (base <= 0 || saved <= 0) return "";
-  return `${Math.round((saved / base) * 100)}%`;
+  return `${Math.floor((saved / base) * 100)}%`;
 }
 
 // ---------- deadline text ----------
