@@ -235,7 +235,7 @@ export async function runBehavioralEmailJob(
 
   const { data: productRows, error: productsError } = await supabaseAdmin
     .from("products")
-    .select("id, slug, name, price, cover_url, category, status")
+    .select("id, slug, name, price, compare_at_price, cover_url, category, status")
     .eq("status", "published");
   assertDb(productsError, "Load published products");
   const products = new Map<string, ProductRow>((productRows ?? []).map((p) => [p.id, p as ProductRow]));
